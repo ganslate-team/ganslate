@@ -21,13 +21,7 @@ class AlignedDataset(BaseDataset):
 
     def __getitem__(self, index):
         AB_path = self.AB_paths[index]
-
-        #----
-        import numpy as np
-        arr = np.load(AB_path)
-        #----
-
-        AB = Image.fromarray(arr).convert('RGB')
+        AB = Image.open(AB_path).convert('RGB')
         w, h = AB.size
         w2 = int(w / 2)
         A = AB.crop((0, 0, w2, h)).resize((self.opt.loadSize, self.opt.loadSize), Image.BICUBIC)
@@ -68,7 +62,6 @@ class AlignedDataset(BaseDataset):
             tmp = B[0, ...] * 0.299 + B[1, ...] * 0.587 + B[2, ...] * 0.114
             B = tmp.unsqueeze(0)
 
-        print(A.size())
         return {'A': A, 'B': B,
                 'A_paths': AB_path, 'B_paths': AB_path}
 
