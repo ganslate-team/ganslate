@@ -1,17 +1,21 @@
 import torch
 import torch.nn as nn
 import copy
-from torch import set_grad_enabled
-import warnings
-import numpy as np
+from contextlib import contextmanager
 
+use_context_mans = int(torch.__version__[0]) * 100 + int(torch.__version__[2]) - \
+                   (1 if 'a' in torch.__version__ else 0) > 3
 
-class NonMemorySavingWarning(UserWarning):
-    pass
-
+@contextmanager
+def set_grad_enabled(grad_mode):
+    if not use_context_mans:
+        yield
+    else:
+        with torch.set_grad_enabled(grad_mode) as c:
+            yield [c]
 
 class AdditiveBlock(nn.Module):
-    def __init__(self, Fm, Gm=None, implementation_fwd=1, implementation_bwd=1):
+    def __init__(self, Fm, Gm=None, keep_input=True, implementation_fwd=0, implementation_bwd=0):
         """The AdditiveBlock
 
         Parameters
@@ -21,7 +25,17 @@ class AdditiveBlock(nn.Module):
 
             Gm : torch.nn.Module
                 A torch.nn.Module encapsulating an arbitrary function
-                (If not specified a deepcopy of Fm is used as a Module)
+                (If not specified a deepcopy of Gm is used as a Module)
+
+            implementation_fwd : int
+                Switch between different Additive Operation implementations for forward pass. Default = 1
+
+            implementation_bwd : int
+                Switch between different Additive Operation implementations for inverse pass. Default = 1
+
+            keep_input : bool
+                Retain the input information, by default it can be discarded since it will be
+                reconstructed upon the backward pass.
 
             implementation_fwd : int
                 Switch between different Additive Operation implementations for forward pass. Default = 1
@@ -39,6 +53,7 @@ class AdditiveBlock(nn.Module):
         self.Fm = Fm
         self.implementation_fwd = implementation_fwd
         self.implementation_bwd = implementation_bwd
+        self.keep_input = keep_input
 
     def forward(self, x):
         args = [x, self.Fm, self.Gm] + [w for w in self.Fm.parameters()] + [w for w in self.Gm.parameters()]
@@ -47,18 +62,23 @@ class AdditiveBlock(nn.Module):
             out = AdditiveBlockFunction.apply(*args)
         elif self.implementation_fwd == 1:
             out = AdditiveBlockFunction2.apply(*args)
-        elif self.implementation_fwd == -1:
-            warnings.warn('Using direct non-memory saving implementation.', NonMemorySavingWarning)
+        elif self.implementation_fwd == 2:
+            # Naive
             x1, x2 = torch.chunk(x, 2, dim=1)
             x1, x2 = x1.contiguous(), x2.contiguous()
-            fmd = self.Fm.forward(x2)
-            y1 = x1 + fmd
-            gmd = self.Gm.forward(y1)
-            y2 = x2 + gmd
+
+            y1 = x1 + self.Fm.forward(x2)
+            y2 = x2 + self.Gm.forward(y1)
+
             out = torch.cat([y1, y2], dim=1)
         else:
             raise NotImplementedError("Selected implementation ({}) not implemented..."
                                       .format(self.implementation_fwd))
+
+        # clears the input data as it can be reversed on the backward pass
+        if not self.keep_input:
+            x.data.set_()
+            del x
 
         return out
 
@@ -69,17 +89,22 @@ class AdditiveBlock(nn.Module):
             x = AdditiveBlockInverseFunction.apply(*args)
         elif self.implementation_bwd == 1:
             x = AdditiveBlockInverseFunction2.apply(*args)
-        elif self.implementation_bwd == -1:
+        elif self.implementation_bwd == 2:
             y1, y2 = torch.chunk(y, 2, dim=1)
             y1, y2 = y1.contiguous(), y2.contiguous()
-            gmd = self.Gm.forward(y1)
-            x2 = y2 - gmd
-            fmd = self.Fm.forward(x2)
-            x1 = y1 - fmd
+
+            x2 = y2 - self.Gm.forward(y1)
+            x1 = y1 - self.Fm.forward(x2)
+
             x = torch.cat([x1, x2], dim=1)
         else:
             raise NotImplementedError("Inverse for selected implementation ({}) not implemented..."
                                       .format(self.implementation_bwd))
+
+        # clears the input data as it can be reversed on the backward pass
+        if not self.keep_input:
+            y.data.set_()
+            del y
 
         return x
 
@@ -109,7 +134,7 @@ class AdditiveBlockFunction(torch.autograd.Function):
         Note
         ----
         All tensor/autograd variable input arguments and the output are
-        TorchTensors for the scope of this function
+        TorchTensors for the scope of this fuction
 
         """
         # check if possible to partition into two equally sized partitions
@@ -140,12 +165,12 @@ class AdditiveBlockFunction(torch.autograd.Function):
             del y1, y2
 
         # save the (empty) input and (non-empty) output variables
-        ctx.save_for_backward(x.data, output)
+        ctx.save_for_backward(x, output)
 
         return output
 
     @staticmethod
-    def backward(ctx, grad_output):  # pragma: no cover
+    def backward(ctx, grad_output):
         # retrieve weight references
         Fm, Gm = ctx.Fm, ctx.Gm
 
@@ -185,10 +210,7 @@ class AdditiveBlockFunction(torch.autograd.Function):
             del y1, y2
 
         # restore input
-        xout = torch.cat([x1, x2], dim=1).contiguous()
-        with torch.no_grad():
-            x.storage().resize_(int(np.prod(xout.shape)))
-            x.set_(xout)
+        x.set_(torch.cat([x1, x2], dim=1).contiguous())
 
         return (grad_input, None, None) + FWgrads + GWgrads
 
@@ -249,12 +271,12 @@ class AdditiveBlockInverseFunction(torch.autograd.Function):
             del x1, x2
 
         # save the (empty) input and (non-empty) output variables
-        cty.save_for_backward(y.data, output)
+        cty.save_for_backward(y, output)
 
         return output
 
     @staticmethod
-    def backward(cty, grad_output):  # pragma: no cover
+    def backward(cty, grad_output):
         # retrieve weight references
         Fm, Gm = cty.Fm, cty.Gm
 
@@ -295,10 +317,7 @@ class AdditiveBlockInverseFunction(torch.autograd.Function):
             del x1, x2
 
         # restore input
-        yout = torch.cat([y1, y2], dim=1).contiguous()
-        with torch.no_grad():
-            x.storage().resize_(int(np.prod(yout.shape)))
-            y.set_(yout)
+        y.set_(torch.cat([y1, y2], dim=1).contiguous())
 
         return (grad_input, None, None) + FWgrads + GWgrads
 
@@ -359,12 +378,12 @@ class AdditiveBlockFunction2(torch.autograd.Function):
             del y2
 
         # save the input and output variables
-        ctx.save_for_backward(x.data, output)
+        ctx.save_for_backward(x, output)
 
         return output
 
     @staticmethod
-    def backward(ctx, grad_output):  # pragma: no cover
+    def backward(ctx, grad_output):
 
         Fm, Gm = ctx.Fm, ctx.Gm
         # are all variable objects now
@@ -397,17 +416,14 @@ class AdditiveBlockFunction2(torch.autograd.Function):
             x1_stop.requires_grad = True
 
             # restore input
-            xout = torch.cat([x1, x2], dim=1).contiguous()
-            with torch.no_grad():
-                x.storage().resize_(int(np.prod(xout.shape)))
-                x.set_(xout).detach()  # NOTE .detach() is very important here.
+            x.set_(torch.cat([x1, x2], dim=1).contiguous()).detach()
 
             # compute outputs building a sub-graph
             y1 = x1_stop + F_x2
             y2 = x2_stop + G_z1
 
             # calculate the final gradients for the weights and inputs
-            dd = torch.autograd.grad(y2, (z1_stop,) + tuple(Gm.parameters()), y2_grad, retain_graph=False)
+            dd = torch.autograd.grad(y2, (z1_stop,) + tuple(Gm.parameters()), y2_grad) #, retain_graph=False)
             z1_grad = dd[0] + y1_grad
             GWgrads = dd[1:]
 
@@ -482,12 +498,12 @@ class AdditiveBlockInverseFunction2(torch.autograd.Function):
             del x2
 
         # save the input and output variables
-        cty.save_for_backward(y.data, output)
+        cty.save_for_backward(y, output)
 
         return output
 
     @staticmethod
-    def backward(cty, grad_output):  # pragma: no cover
+    def backward(cty, grad_output):
 
         Fm, Gm = cty.Fm, cty.Gm
         # are all variable objects now
@@ -520,10 +536,7 @@ class AdditiveBlockInverseFunction2(torch.autograd.Function):
             y2_stop.requires_grad = True
 
             # restore input
-            yout = torch.cat([y1, y2], dim=1).contiguous()
-            with torch.no_grad():
-                y.storage().resize_(int(np.prod(yout.shape)))
-                y.set_(yout).detach()  # NOTE .detach() is very important here.
+            y.set_(torch.cat([y1, y2], dim=1).contiguous()).detach()
 
             # compute outputs building a sub-graph
             z1 = y2_stop - G_y1
@@ -531,7 +544,7 @@ class AdditiveBlockInverseFunction2(torch.autograd.Function):
             x2 = z1
 
             # calculate the final gradients for the weights and inputs
-            dd = torch.autograd.grad(x1, (z1_stop,) + tuple(Fm.parameters()), x1_grad)
+            dd = torch.autograd.grad(x1, (z1_stop,) + tuple(Fm.parameters()), x1_grad) #, retain_graph=False)
             z1_grad = dd[0] + x2_grad # + or - ?
             FWgrads = dd[1:]
 

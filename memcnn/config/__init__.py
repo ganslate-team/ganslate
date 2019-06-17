@@ -1,12 +1,11 @@
 import json
 import os
 
-
 class Config(dict):
+
     def __init__(self, dic=None, verbose=False):
-        super(Config, self).__init__()
         if dic is None:
-            fname = self.get_filename()
+            fname = Config.get_filename()
             if verbose:
                 print("loading default {0}".format(fname))
             with open(fname, "r") as f:
@@ -19,4 +18,4 @@ class Config(dict):
 
     @staticmethod
     def get_dir():
-        return os.path.dirname(__file__)
+        return  os.path.join(os.path.dirname(__file__))

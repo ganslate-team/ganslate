@@ -13,6 +13,7 @@ Github: https://github.com/renmengye/revnet-public
 Author: Sil van de Leemput
 
 """
+import torch
 import torch.nn as nn
 import math
 from memcnn.models.revop import ReversibleBlock
@@ -85,12 +86,13 @@ class RevBasicBlock(nn.Module):
         residual = x
         if self.downsample is not None:
             out = self.basicblock_sub(x)
-            residual = self.downsample(x)
+            if self.downsample is not None:
+                residual = self.downsample(x)
+
             out += residual
         else:
             out = self.revblock(x)
         return out
-
 
 class RevBottleneck(nn.Module):
     expansion = 4
@@ -98,8 +100,8 @@ class RevBottleneck(nn.Module):
     def __init__(self, inplanes, planes, stride=1, downsample=None, noactivation=False):
         super(RevBottleneck, self).__init__()
         if downsample is None and stride == 1:
-            Gm = BottleneckSub(inplanes // 2, planes // 2, stride, noactivation)
-            Fm = BottleneckSub(inplanes // 2, planes // 2, stride, noactivation)
+            Gm = BottleneckSub(inplanes / 2, planes / 2, stride, noactivation)
+            Fm = BottleneckSub(inplanes / 2, planes / 2, stride, noactivation)
             self.revblock = ReversibleBlock(Gm, Fm)
         else:
             self.bottleneck_sub = BottleneckSub(inplanes, planes, stride, noactivation)
@@ -110,7 +112,9 @@ class RevBottleneck(nn.Module):
         residual = x
         if self.downsample is not None:
             out = self.bottleneck_sub(x)
-            residual = self.downsample(x)
+            if self.downsample is not None:
+                residual = self.downsample(x)
+
             out += residual
         else:
             out = self.revblock(x)
@@ -182,7 +186,7 @@ class ResNet(nn.Module):
         assert(len(self.channels_per_layer) == len(layers) + 1)
         self.inplanes = channels_per_layer[0]  # 64 by default
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=init_kernel_size, stride=strides[0], padding=(init_kernel_size - 1) // 2,
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=init_kernel_size, stride=strides[0], padding=(init_kernel_size - 1) / 2,
                                bias=False)
         self.bn1 = batch_norm(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
@@ -201,6 +205,7 @@ class ResNet(nn.Module):
         self.configure()
         self.init_weights()
 
+
     def init_weights(self):
         """Initialization using He initialization"""
         for m in self.modules():
@@ -209,6 +214,7 @@ class ResNet(nn.Module):
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
                 m.reset_parameters()
+
 
     def configure(self):
         """Initialization specific configuration settings"""
@@ -231,7 +237,8 @@ class ResNet(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 batch_norm(planes * block.expansion),
             )
-        layers = [block(self.inplanes, planes, stride, downsample, noactivation)]
+        layers = []
+        layers.append(block(self.inplanes, planes, stride, downsample, noactivation))
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes))

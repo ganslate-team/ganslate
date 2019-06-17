@@ -1,12 +1,10 @@
 import json
 import copy
 
-
 def get_attr_from_module(pclass):
     pclass = pclass.rsplit(".", 1)
     mod = __import__(pclass[0], fromlist=[str(pclass[1])])
     return getattr(mod, pclass[1])
-
 
 def load_experiment_config(experiments_file, experiment_tags):
     with open(experiments_file, 'r') as f:
@@ -17,10 +15,9 @@ def load_experiment_config(experiments_file, experiment_tags):
 
     return d
 
-
 def _inject_items(tempdict, d):
     """inject tempdict into d"""
-    for k, v in tempdict.items():
+    for k, v in tempdict.iteritems():
         if isinstance(v, dict):
             if k not in d:
                 d[k] = {}
@@ -28,7 +25,6 @@ def _inject_items(tempdict, d):
         else:
             d[k] = v
     return d
-
 
 def build_dict(experiments_dict, experiment_name, classhist=None):
     tempdict = experiments_dict[experiment_name]
