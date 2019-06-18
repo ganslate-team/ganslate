@@ -1,40 +1,29 @@
 import torch
 import torch.nn as nn
 import copy
-from contextlib import contextmanager
 import warnings
+from torch import set_grad_enabled
+import numpy as np
 
 warnings.filterwarnings(action='ignore', category=UserWarning)
 
 
-use_context_mans = int(torch.__version__[0]) * 100 + int(torch.__version__[2]) - \
-                   (1 if 'a' in torch.__version__ else 0) > 3
-
-@contextmanager
-def set_grad_enabled(grad_mode):
-    if not use_context_mans:
-        yield
-    else:
-        with torch.set_grad_enabled(grad_mode) as c:
-            yield [c]
-
 class NN(nn.Module):
     """ Affine subnetwork:
-        Copy function and output s and t
+        Outputs exp(f(x)), f(x) given f(.) and x
     """
     def __init__(self, module):
         super(NN, self).__init__()
-        self.NN_logs = copy.deepcopy(module)
         self.NN_t = module
 
     def forward(self, x):
-        s = torch.exp(self.NN_logs(x))
         t = self.NN_t(x)
+        s = torch.exp(t)
         return s, t
 
 
 class AffineBlock(nn.Module):
-    def __init__(self, Fm, Gm=None, keep_input=False, implementation_fwd=1, implementation_bwd=1):
+    def __init__(self, Fm, Gm=None, implementation_fwd=1, implementation_bwd=1):
         """The AffineBlock
 
         Parameters
@@ -52,16 +41,6 @@ class AffineBlock(nn.Module):
             implementation_bwd : int
                 Switch between different Affine Operation implementations for inverse pass. Default = 1
 
-            keep_input : bool
-                Retain the input information, by default it can be discarded since it will be
-                reconstructed upon the backward pass.
-
-            implementation_fwd : int
-                Switch between different Affine Operation implementations for forward pass. Default = 1
-
-            implementation_bwd : int
-                Switch between different Affine Operation implementations for inverse pass. Default = 1
-
 
         """
         super(AffineBlock, self).__init__()
@@ -72,7 +51,6 @@ class AffineBlock(nn.Module):
         self.Fm = NN(Fm)
         self.implementation_fwd = implementation_fwd
         self.implementation_bwd = implementation_bwd
-        self.keep_input = keep_input
 
     def forward(self, x):
         args = [x, self.Fm, self.Gm] + [w for w in self.Fm.parameters()] + [w for w in self.Gm.parameters()]
@@ -81,13 +59,17 @@ class AffineBlock(nn.Module):
             out = AffineBlockFunction.apply(*args)
         elif self.implementation_fwd == 1:
             out = AffineBlockFunction2.apply(*args)
+        elif self.implementation_fwd == -1:
+            x1, x2 = torch.chunk(x, 2, dim=1)
+            x1, x2 = x1.contiguous(), x2.contiguous()
+            fmr1, fmr2 = self.Fm.forward(x2)
+            y1 = (x1 * fmr1) + fmr2
+            gmr1, gmr2 = self.Gm.forward(y1)
+            y2 = (x2 * gmr1) + gmr2
+            out = torch.cat([y1, y2], dim=1)
         else:
             raise NotImplementedError("Selected implementation ({}) not implemented..."
                                       .format(self.implementation_fwd))
-
-        # clears the input data as it can be reversed on the backward pass
-        if not self.keep_input:
-            x.data.set_()
 
         return out
 
@@ -98,15 +80,20 @@ class AffineBlock(nn.Module):
             x = AffineBlockInverseFunction.apply(*args)
         elif self.implementation_bwd == 1:
             x = AffineBlockInverseFunction2.apply(*args)
+        elif self.implementation_bwd == -1:
+            y1, y2 = torch.chunk(y, 2, dim=1)
+            y1, y2 = y1.contiguous(), y2.contiguous()
+            gmr1, gmr2 = self.Gm.forward(y1)
+            x2 = (y2 - gmr2) / gmr1
+            fmr1, fmr2 = self.Fm.forward(x2)
+            x1 = (y1 - fmr2) / fmr1
+            x = torch.cat([x1, x2], dim=1)
         else:
             raise NotImplementedError("Inverse for selected implementation ({}) not implemented..."
                                       .format(self.implementation_bwd))
 
-        # clears the input data as it can be reversed on the backward pass
-        if not self.keep_input:
-            y.data.set_()
-
         return x
+
 
 class AffineBlockFunction(torch.autograd.Function):
     @staticmethod
@@ -141,7 +128,7 @@ class AffineBlockFunction(torch.autograd.Function):
 
         """
         # check if possible to partition into two equally sized partitions
-        assert(x.shape[1] % 2 == 0)  # assert if proper split is possible
+        assert (x.shape[1] % 2 == 0)  # assert if proper split is possible
 
         # store partition size, Fm and Gm functions in context
         ctx.Fm = Fm
@@ -170,12 +157,12 @@ class AffineBlockFunction(torch.autograd.Function):
             del y1, y2
 
         # save the (empty) input and (non-empty) output variables
-        ctx.save_for_backward(x, output)
+        ctx.save_for_backward(x.data, output)
 
         return output
 
     @staticmethod
-    def backward(ctx, grad_output):
+    def backward(ctx, grad_output):  # pragma: no cover
         # retrieve weight references
         Fm, Gm = ctx.Fm, ctx.Gm
 
@@ -185,7 +172,7 @@ class AffineBlockFunction(torch.autograd.Function):
         y1, y2 = y1.contiguous(), y2.contiguous()
 
         # partition output gradient also on channels
-        assert(grad_output.shape[1] % 2 == 0)
+        assert (grad_output.shape[1] % 2 == 0)
 
         with set_grad_enabled(False):
             # recompute x
@@ -196,7 +183,6 @@ class AffineBlockFunction(torch.autograd.Function):
             x2 = (y2 - gmr2) / gmr1
             fmr1, fmr2 = Fm.forward(x2)
             x1 = (y1 - fmr2) / fmr1
-
 
         with set_grad_enabled(True):
             # compute outputs building a sub-graph
@@ -210,10 +196,10 @@ class AffineBlockFunction(torch.autograd.Function):
             y = torch.cat([y1, y2], dim=1)
 
             # perform full backward pass on graph...
-            dd = torch.autograd.grad(y, (x1, x2 ) + tuple(Gm.parameters()) + tuple(Fm.parameters()), grad_output)
+            dd = torch.autograd.grad(y, (x1, x2) + tuple(Gm.parameters()) + tuple(Fm.parameters()), grad_output)
 
-            GWgrads = dd[2:2+len(GWeights)]
-            FWgrads = dd[2+len(GWeights):]
+            GWgrads = dd[2:2 + len(GWeights)]
+            FWgrads = dd[2 + len(GWeights):]
             grad_input = torch.cat([dd[0], dd[1]], dim=1)
 
             # cleanup sub-graph
@@ -222,7 +208,10 @@ class AffineBlockFunction(torch.autograd.Function):
             del y1, y2
 
         # restore input
-        x.set_(torch.cat([x1, x2], dim=1).contiguous())
+        xout = torch.cat([x1, x2], dim=1).contiguous()
+        with torch.no_grad():
+            x.storage().resize_(int(np.prod(xout.shape)))
+            x.set_(xout)
 
         return (grad_input, None, None) + FWgrads + GWgrads
 
@@ -260,7 +249,7 @@ class AffineBlockInverseFunction(torch.autograd.Function):
 
         """
         # check if possible to partition into two equally sized partitions
-        assert(y.shape[1] % 2 == 0)  # assert if proper split is possible
+        assert (y.shape[1] % 2 == 0)  # assert if proper split is possible
 
         # store partition size, Fm and Gm functions in context
         cty.Fm = Fm
@@ -273,7 +262,7 @@ class AffineBlockInverseFunction(torch.autograd.Function):
 
             # compute outputs
             y1var = y1
-            
+
             gmr1, gmr2 = Gm.forward(y1var)
 
             x2 = (y2 - gmr2) / gmr1
@@ -282,7 +271,7 @@ class AffineBlockInverseFunction(torch.autograd.Function):
             x2var = x2
             fmr1, fmr2 = Fm.forward(x2var)
 
-            x1 = (y1 - fmr2 ) / fmr1
+            x1 = (y1 - fmr2) / fmr1
             y1.set_()
             del y1
             output = torch.cat([x1, x2], dim=1)
@@ -291,12 +280,12 @@ class AffineBlockInverseFunction(torch.autograd.Function):
             del x1, x2
 
         # save the (empty) input and (non-empty) output variables
-        cty.save_for_backward(y, output)
+        cty.save_for_backward(y.data, output)
 
         return output
 
     @staticmethod
-    def backward(cty, grad_output):
+    def backward(cty, grad_output):  # pragma: no cover
         # retrieve weight references
         Fm, Gm = cty.Fm, cty.Gm
 
@@ -306,7 +295,7 @@ class AffineBlockInverseFunction(torch.autograd.Function):
         x1, x2 = x1.contiguous(), x2.contiguous()
 
         # partition output gradient also on channels
-        assert(grad_output.shape[1] % 2 == 0)
+        assert (grad_output.shape[1] % 2 == 0)
 
         with set_grad_enabled(False):
             # recompute y
@@ -318,23 +307,22 @@ class AffineBlockInverseFunction(torch.autograd.Function):
             gmr1, gmr2 = Gm.forward(y1)
             y2 = (gmr1 * x2) + gmr2
 
-
         with set_grad_enabled(True):
             # compute outputs building a sub-graph
             y2.requires_grad = True
             y1.requires_grad = True
 
-            gmr1, gmr2 = Gm.forward(y1) #
+            gmr1, gmr2 = Gm.forward(y1)  #
             x2 = (y2 - gmr2) / gmr1
             fmr1, fmr2 = Fm.forward(x2)
             x1 = (y1 - fmr2) / fmr1
             x = torch.cat([x1, x2], dim=1)
 
             # perform full backward pass on graph...
-            dd = torch.autograd.grad(x, (y2, y1 ) + tuple(Fm.parameters()) + tuple(Gm.parameters()), grad_output)
+            dd = torch.autograd.grad(x, (y2, y1) + tuple(Fm.parameters()) + tuple(Gm.parameters()), grad_output)
 
-            FWgrads = dd[2:2+len(FWeights)]
-            GWgrads = dd[2+len(FWeights):]
+            FWgrads = dd[2:2 + len(FWeights)]
+            GWgrads = dd[2 + len(FWeights):]
             grad_input = torch.cat([dd[0], dd[1]], dim=1)
 
             # cleanup sub-graph
@@ -343,7 +331,10 @@ class AffineBlockInverseFunction(torch.autograd.Function):
             del x1, x2
 
         # restore input
-        y.set_(torch.cat([y1, y2], dim=1).contiguous())
+        yout = torch.cat([y1, y2], dim=1).contiguous()
+        with torch.no_grad():
+            y.storage().resize_(int(np.prod(yout.shape)))
+            y.set_(yout)
 
         return (grad_input, None, None) + FWgrads + GWgrads
 
@@ -381,7 +372,7 @@ class AffineBlockFunction2(torch.autograd.Function):
 
         """
         # check if possible to partition into two equally sized partitions
-        assert(x.shape[1] % 2 == 0) # assert if possible
+        assert (x.shape[1] % 2 == 0)  # assert if possible
 
         # store partition size, Fm and Gm functions in context
         ctx.Fm = Fm
@@ -411,13 +402,12 @@ class AffineBlockFunction2(torch.autograd.Function):
             del y2
 
         # save the input and output variables
-        ctx.save_for_backward(x, output)
+        ctx.save_for_backward(x.data, output)
 
         return output
 
     @staticmethod
-    def backward(ctx, grad_output):
-
+    def backward(ctx, grad_output):  # pragma: no cover
         Fm, Gm = ctx.Fm, ctx.Gm
         # are all variable objects now
         x, output = ctx.saved_tensors
@@ -427,7 +417,7 @@ class AffineBlockFunction2(torch.autograd.Function):
             y1, y2 = y1.contiguous(), y2.contiguous()
 
             # partition output gradient also on channels
-            assert(grad_output.shape[1] % 2 == 0)
+            assert (grad_output.shape[1] % 2 == 0)
             y1_grad, y2_grad = torch.chunk(grad_output, 2, dim=1)
             y1_grad, y2_grad = y1_grad.contiguous(), y2_grad.contiguous()
 
@@ -436,20 +426,23 @@ class AffineBlockFunction2(torch.autograd.Function):
         # Also recompute inputs (x1, x2) from outputs (y1, y2)
         with set_grad_enabled(True):
             z1_stop = y1
-            z1_stop.requires_grad=True
+            z1_stop.requires_grad = True
 
             G_z11, G_z12 = Gm.forward(z1_stop)
             x2 = (y2 - G_z12) / G_z11
             x2_stop = x2.detach()
-            x2_stop.requires_grad=True
+            x2_stop.requires_grad = True
 
             F_x21, F_x22 = Fm.forward(x2_stop)
             x1 = (y1 - F_x22) / F_x21
             x1_stop = x1.detach()
-            x1_stop.requires_grad=True
+            x1_stop.requires_grad = True
 
             # restore input
-            x.set_(torch.cat([x1, x2], dim=1).contiguous())
+            xout = torch.cat([x1, x2], dim=1).contiguous()
+            with torch.no_grad():
+                x.storage().resize_(int(np.prod(xout.shape)))
+                x.set_(xout).detach()  # NOTE .detach() is very important here.
 
             # compute outputs building a sub-graph
             z1 = x1_stop * F_x21 + F_x22
@@ -457,7 +450,7 @@ class AffineBlockFunction2(torch.autograd.Function):
             y1_ = z1
 
             # calculate the final gradients for the weights and inputs
-            dd = torch.autograd.grad(y2_, (z1_stop,) + tuple(Gm.parameters()), y2_grad) #, retain_graph=False)
+            dd = torch.autograd.grad(y2_, (z1_stop,) + tuple(Gm.parameters()), y2_grad)
             z1_grad = dd[0] + y1_grad
             GWgrads = dd[1:]
 
@@ -500,7 +493,7 @@ class AffineBlockInverseFunction2(torch.autograd.Function):
 
         """
         # check if possible to partition into two equally sized partitions
-        assert(y.shape[1] % 2 == 0) # assert if possible
+        assert (y.shape[1] % 2 == 0)  # assert if possible
 
         # store partition size, Fm and Gm functions in context
         cty.Fm = Fm
@@ -530,13 +523,12 @@ class AffineBlockInverseFunction2(torch.autograd.Function):
             del x2
 
         # save the input and output variables
-        cty.save_for_backward(y, output)
+        cty.save_for_backward(y.data, output)
 
         return output
 
     @staticmethod
-    def backward(cty, grad_output):
-
+    def backward(cty, grad_output):  # pragma: no cover
         Fm, Gm = cty.Fm, cty.Gm
         # are all variable objects now
         y, output = cty.saved_tensors
@@ -546,7 +538,7 @@ class AffineBlockInverseFunction2(torch.autograd.Function):
             x1, x2 = x1.contiguous(), x2.contiguous()
 
             # partition output gradient also on channels
-            assert(grad_output.shape[1] % 2 == 0)
+            assert (grad_output.shape[1] % 2 == 0)
             x1_grad, x2_grad = torch.chunk(grad_output, 2, dim=1)
             x1_grad, x2_grad = x1_grad.contiguous(), x2_grad.contiguous()
 
@@ -555,20 +547,23 @@ class AffineBlockInverseFunction2(torch.autograd.Function):
         # Also recompute inputs (y1, y2) from outputs (x1, x2)
         with set_grad_enabled(True):
             z1_stop = x2
-            z1_stop.requires_grad=True
+            z1_stop.requires_grad = True
 
             F_z11, F_z12 = Fm.forward(z1_stop)
             y1 = x1 * F_z11 + F_z12
             y1_stop = y1.detach()
-            y1_stop.requires_grad=True
+            y1_stop.requires_grad = True
 
             G_y11, G_y12 = Gm.forward(y1_stop)
             y2 = x2 * G_y11 + G_y12
             y2_stop = y2.detach()
-            y2_stop.requires_grad=True
+            y2_stop.requires_grad = True
 
             # restore input
-            y.set_(torch.cat([y1, y2], dim=1).contiguous())
+            yout = torch.cat([y1, y2], dim=1).contiguous()
+            with torch.no_grad():
+                y.storage().resize_(int(np.prod(yout.shape)))
+                y.set_(yout).detach()  # NOTE .detach() is very important here.
 
             # compute outputs building a sub-graph
             z1 = (y2_stop - G_y12) / G_y11
@@ -576,14 +571,14 @@ class AffineBlockInverseFunction2(torch.autograd.Function):
             x2_ = z1
 
             # calculate the final gradients for the weights and inputs
-            dd = torch.autograd.grad(x1_, (z1_stop,) + tuple(Fm.parameters()), x1_grad) #, retain_graph=False)
-            z1_grad = dd[0] + x2_grad # + or - ?
+            dd = torch.autograd.grad(x1_, (z1_stop,) + tuple(Fm.parameters()), x1_grad)
+            z1_grad = dd[0] + x2_grad
             FWgrads = dd[1:]
 
             dd = torch.autograd.grad(x2_, (y2_stop, y1_stop) + tuple(Gm.parameters()), z1_grad, retain_graph=False)
 
             GWgrads = dd[2:]
-            y1_grad = dd[1] + x1_grad # + or - ?
+            y1_grad = dd[1] + x1_grad
             y2_grad = dd[0]
 
             grad_input = torch.cat([y1_grad, y2_grad], dim=1)
@@ -593,6 +588,3 @@ class AffineBlockInverseFunction2(torch.autograd.Function):
             del x1_, x2_
 
         return (grad_input, None, None) + FWgrads + GWgrads
-
-
-
