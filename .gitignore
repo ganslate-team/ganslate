@@ -1,5 +1,4 @@
 .DS_Store
-checkpoints/
 results/
 scripts/caffemodel/
 build/
