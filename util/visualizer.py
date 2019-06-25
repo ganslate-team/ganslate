@@ -4,7 +4,7 @@ import ntpath
 import time
 from . import util
 from . import html
-#from scipy.misc import imresize
+from PIL import Image
 
 
 # save image to the disk
@@ -24,10 +24,10 @@ def save_images(webpage, visuals, image_path, scale_range, aspect_ratio=1.0, wid
         h, w, _ = im.shape
         if aspect_ratio > 1.0:
             #im = imresize(im, (h, int(w * aspect_ratio)), interp='bicubic')
-            im = np.array(PIL.Image.fromarray(im).resize((h, int(w * aspect_ratio))))
+            im = np.array(Image.fromarray(im).resize(h, int(w * aspect_ratio)))
         if aspect_ratio < 1.0:
             #im = imresize(im, (int(h / aspect_ratio), w), interp='bicubic')
-            im = np.array(PIL.Image.fromarray(im).resize((int(h / aspect_ratio), w)))
+            im = np.array(Image.fromarray(im).resize(int(h / aspect_ratio), w))
         util.save_image(im, save_path)
 
         ims.append(image_name)
