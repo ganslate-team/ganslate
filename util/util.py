@@ -1,7 +1,8 @@
 from __future__ import print_function
 import torch
 import numpy as np
-from PIL import Image
+#from PIL import Image
+import matplotlib.pyplot as plt
 import os
 
 
@@ -49,8 +50,12 @@ def diagnose_network(net, name='network'):
 
 
 def save_image(image_numpy, image_path):
-    image_pil = Image.fromarray(image_numpy)
-    image_pil.save(image_path)
+    print(image_numpy.shape)
+    #image_pil = Image.fromarray(image_numpy)
+    #image_pil.save(image_path)
+    plt.imsave(image_path, image_numpy)
+    plt.imshow(image_numpy)
+    plt.show()
 
 
 def print_numpy(x, val=True, shp=False):
