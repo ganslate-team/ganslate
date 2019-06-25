@@ -23,10 +23,11 @@ def save_images(webpage, visuals, image_path, scale_range, aspect_ratio=1.0, wid
         save_path = os.path.join(image_dir, image_name)
         h, w, _ = im.shape
         if aspect_ratio > 1.0:
-            im = np.array(Image.fromarray(im).resize( (h, int(w * aspect_ratio)) ))
+            im = Image.fromarray(im).resize( (h, int(w * aspect_ratio)) )
         if aspect_ratio < 1.0:
-            im = np.array(Image.fromarray(im).resize( (int(h / aspect_ratio), w) ))
-        util.save_image(im, save_path)
+            im = Image.fromarray(im).resize( (int(h / aspect_ratio), w) )
+        im.save(save_path)
+        #util.save_image(im, save_path)
 
         ims.append(image_name)
         txts.append(label)
