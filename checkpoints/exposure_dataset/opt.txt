@@ -14,7 +14,7 @@
              display_port: 8097                          
            display_server: http://localhost              
           display_winsize: 256                           
-              epoch_count: 46                            	[default: 1]
+              epoch_count: 61                            	[default: 1]
                  fineSize: 256                           
                   gpu_ids: 0                             
                  grad_reg: 0.0                           
@@ -36,7 +36,7 @@
                      name: exposure_dataset              	[default: experiment_name]
                       ndf: 64                            
                       ngf: 64                            
-                    niter: 60                            	[default: 100]
+                    niter: 75                            	[default: 100]
               niter_decay: 0                             	[default: 100]
                   no_flip: True                          
                   no_html: False                         
