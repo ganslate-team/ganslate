@@ -14,7 +14,7 @@
              display_port: 8097                          
            display_server: http://localhost              
           display_winsize: 256                           
-              epoch_count: 140                           	[default: 1]
+              epoch_count: 156                           	[default: 1]
                  fineSize: 256                           
                   gpu_ids: 0                             
                  grad_reg: 0.0                           
