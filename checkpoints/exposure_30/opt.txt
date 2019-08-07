@@ -1,0 +1,62 @@
+----------------- Options ---------------
+                D_rollout: 1                             
+                batchSize: 1                             
+                    beta1: 0.5                           
+          checkpoints_dir: ./checkpoints                 
+           continue_train: False                         
+                 coupling: additive                      
+                 dataroot: ../input/30_paired_phantoms_npy/	[default: None]
+             dataset_mode: npy_aligned                   	[default: aligned]
+                   deconv: transposed                    
+             display_freq: 50                            
+               display_id: -1                            
+            display_ncols: 4                             
+             display_port: 8097                          
+           display_server: http://localhost              
+          display_winsize: 256                           
+              epoch_count: 1                             
+                 fineSize: 256                           
+                  gpu_ids: 0                             
+                 grad_reg: 0.0                           
+                init_gain: 0.02                          
+                init_type: normal                        
+                 input_nc: 1                             
+                  isTrain: True                          	[default: None]
+                lambda_L1: 100.0                         
+                 loadSize: 286                           
+                       lr: 0.0002                        
+           lr_decay_iters: 50                            
+                lr_policy: lambda                        
+         max_dataset_size: inf                           
+                    model: paired_revgan                 	[default: cycle_gan]
+            mute_optprint: False                         
+                 nThreads: 4                             
+           n_downsampling: 2                             
+               n_layers_D: 3                             
+                     name: exposure_30                   	[default: experiment_name]
+                      ndf: 64                            
+                      ngf: 64                            
+                    niter: 15                            	[default: 100]
+              niter_decay: 0                             	[default: 100]
+                  no_flip: True                          
+                  no_html: False                         
+                 no_lsgan: True                          
+           no_output_tanh: False                         
+                     norm: instance                      
+                output_nc: 1                             
+                    phase: train                         
+                pool_size: 0                             
+               print_freq: 50                            
+           resize_or_crop: resize_and_crop               
+          save_epoch_freq: 25                            
+         save_latest_freq: 5000                          
+           serial_batches: False                         
+                   suffix:                               
+         update_html_freq: 50                            
+                use_naive: False                         
+                  verbose: False                         
+          which_direction: AtoB                          
+              which_epoch: latest                        
+         which_model_netD: basic                         
+         which_model_netG: resnet_9blocks                
+----------------- End -------------------
