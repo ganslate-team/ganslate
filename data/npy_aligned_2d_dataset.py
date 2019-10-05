@@ -5,7 +5,7 @@ from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 
 
-class NpyAlignedDataset(BaseDataset):
+class NpyAligned2dDataset(BaseDataset):
     @staticmethod
     def modify_commandline_options(parser, is_train):
         return parser
@@ -34,4 +34,4 @@ class NpyAlignedDataset(BaseDataset):
         return len(self.AB_paths)
 
     def name(self):
-        return 'NpyAlignedDataset'
+        return 'NpyAligned2dDataset'

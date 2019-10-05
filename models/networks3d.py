@@ -296,10 +296,10 @@ class RevBlock3d(nn.Module):
         self.F = self.build_conv_block(dim // 2, True, norm_layer)
         self.G = self.build_conv_block(dim // 2, True, norm_layer)
         if use_naive:
-            self.rev_block = ReversibleBlock(F, G, 'additive',
+            self.rev_block = ReversibleBlock(self.F, self.G, 'additive',
                                              keep_input=True, implementation_fwd=2, implementation_bwd=2)
         else:
-            self.rev_block = ReversibleBlock(F, G, 'additive')
+            self.rev_block = ReversibleBlock(self.F, self.G, 'additive')
 
     def build_conv_block(self, dim, use_bias, norm_layer):
         conv_block = []
