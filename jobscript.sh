@@ -16,7 +16,7 @@
 
 ### Request the amount of memory you need for your job.
 ### You can specify this in either MB (1024M) or GB (4G).
-#SBATCH --mem-per-cpu=4G
+#SBATCH --mem-per-cpu=16G
 
 ### Request a host with a Volta GPU
 ### If you need two GPUs, change the number accordingly
