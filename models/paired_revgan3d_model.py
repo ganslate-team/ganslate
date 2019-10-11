@@ -81,11 +81,8 @@ class PairedRevGAN3dModel(BaseModel):
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
     def forward(self):
-        print('aa', self.real_A.shape)
         self.fake_B = self.netG_A(self.real_A)
-        print('bb', self.real_B.shape)
         self.fake_A = self.netG_B(self.real_B)
-        print('alright')
 
     def backward_D(self):
         # Fake AB

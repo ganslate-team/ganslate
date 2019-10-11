@@ -22,11 +22,10 @@ class NpyAligned3dDataset(BaseDataset):
         
         A, B = AB[0], AB[1]
         A = torch.Tensor(A)
-        A = A.view(1, *A.shape)
         B = torch.Tensor(B)
+        A = A.view(1, *A.shape)
         B = B.view(1, *B.shape)
 
-        print(A.shape, B.shape)
         return {'A': A, 'B': B,
                 'A_paths': AB_path, 'B_paths': AB_path}
 
