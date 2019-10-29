@@ -32,4 +32,7 @@ module load cudnn/7.4
 pip install --user -r requirements.txt
 
 ### your code goes here, the second part of the jobscript
-python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../patchified/ --model paired_revgan3d --name 3d_460 --which_model_netG srcnn_generator_3d --gpu_ids 0,1 --loadSize 256 --fineSize 256 --batchSize 2 
+
+#python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../patchified/ --model paired_revgan3d --name 3d_460 --which_model_netG srcnn_generator_3d --gpu_ids 0,1 --loadSize 256 --fineSize 256 --batchSize 2 
+
+python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../patchified/ --model paired_revgan3d --name 3d_460 --which_model_netG edsrF_generator_3d --gpu_ids 0,1 --loadSize 256 --fineSize 256 --batchSize 2 --which_model_netD n_layers --n_layers_D 3
