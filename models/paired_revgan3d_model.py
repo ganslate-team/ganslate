@@ -80,7 +80,7 @@ class PairedRevGAN3dModel(BaseModel):
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
         # in case of uneven z-axis dimension when edsrF generator is used, pad that input
-        if (self.real_A.shape[2] % 2) != 0 and self.which_model_netG.startswith('edsrF_')::
+        if (self.real_A.shape[2] % 2) != 0 and self.which_model_netG.startswith('edsrF_'):
             self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
             self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
 
