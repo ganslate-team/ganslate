@@ -80,7 +80,7 @@ class PairedRevGAN3dModel(BaseModel):
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
         if (self.real_A.shape[2] % 2) != 0:
             self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
-            self.fake_B = F.pad(input=self.fake_B, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
+            self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
     def forward(self):
