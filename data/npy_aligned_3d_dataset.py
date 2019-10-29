@@ -19,10 +19,11 @@ class NpyAligned3dDataset(BaseDataset):
     def __getitem__(self, index):
         AB_path = self.AB_paths[index]
         AB = np.load(AB_path)
-        
+        # the loaded array should be a tuple of two volumes
         A, B = AB[0], AB[1]
         A = torch.Tensor(A)
         B = torch.Tensor(B)
+        # reshape so that it contains the channel as well (1, grayscale)
         A = A.view(1, *A.shape)
         B = B.view(1, *B.shape)
 

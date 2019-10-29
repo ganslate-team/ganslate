@@ -432,7 +432,10 @@ class EdsrFGenerator3d(nn.Module):
 
     def forward(self, input, inverse=False):
         out = input
-
+        # if the z-axis dimension isn't an even number - pad it. Result is the same 
+        # volume with the last slice just being full of zeros.
+        if (out.shape[1] % 2) != 0:
+            out = F.pad(input=out, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
         if inverse:
             out = self.downconv_ba(out)
             for block in reversed(self.core):
