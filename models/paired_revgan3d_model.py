@@ -39,6 +39,7 @@ class PairedRevGAN3dModel(BaseModel):
         # load/define networks
         # The naming conversion is different from those used in the paper
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
+        self.which_model_netG = opt.which_model_netG
         self.netG = networks3d.define_G(opt.input_nc, opt.output_nc,
                                         opt.ngf, opt.which_model_netG, opt.norm, opt.use_naive,
                                         opt.init_type, opt.init_gain, self.gpu_ids,
@@ -78,9 +79,11 @@ class PairedRevGAN3dModel(BaseModel):
         AtoB = self.opt.which_direction == 'AtoB'
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
-        if (self.real_A.shape[2] % 2) != 0:
+        # in case of uneven z-axis dimension when edsrF generator is used, pad that input
+        if (self.real_A.shape[2] % 2) != 0 and self.which_model_netG.startswith('edsrF_')::
             self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
             self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
+
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
     def forward(self):
@@ -123,8 +126,6 @@ class PairedRevGAN3dModel(BaseModel):
 
     def backward_G(self):
         # G_A
-        print('real A', self.real_A.shape)
-        print('fake B', self.fake_B.shape)
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
         self.loss_G_AB = self.criterionGAN(self.netD_AB(fake_AB), True)
         if self.opt.grad_reg > 0.0:
