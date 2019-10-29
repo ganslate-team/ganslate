@@ -435,7 +435,7 @@ class EdsrFGenerator3d(nn.Module):
         print(out.shape)
         # if the z-axis dimension isn't an even number - pad it. Result is the same 
         # volume with the last slice just being full of zeros.
-        if (out.shape[1] % 2) != 0:
+        if (out.shape[2] % 2) != 0:
             out = F.pad(input=out, pad=(0, 0, 0, 0, 0, 1), mode='constant', value=0)
         print(out.shape)
         if inverse:

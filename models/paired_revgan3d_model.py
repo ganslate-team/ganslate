@@ -120,6 +120,8 @@ class PairedRevGAN3dModel(BaseModel):
 
     def backward_G(self):
         # G_A
+        print('real A', self.real_A.shape)
+        print('fake B', self.fake_B.shape)
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
         self.loss_G_AB = self.criterionGAN(self.netD_AB(fake_AB), True)
         if self.opt.grad_reg > 0.0:
