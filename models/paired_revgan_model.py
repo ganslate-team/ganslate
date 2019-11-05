@@ -87,10 +87,10 @@ class PairedRevGANModel(BaseModel):
                                                                 self.netG_core.parameters(),
                                                                 self.netG_B_enc.parameters(),
                                                                 self.netG_B_dec.parameters()),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
+                                                lr=opt.lr_G, betas=(opt.beta1, 0.999))
             self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_AB.parameters(),
                                                                 self.netD_BA.parameters()),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
+                                                lr=opt.lr_D, betas=(opt.beta1, 0.999))
             self.optimizers = []
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
