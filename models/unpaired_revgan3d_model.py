@@ -67,11 +67,11 @@ class UnpairedRevGAN3dModel(BaseModel):
             self.params_G = [self.netG.parameters()]
             self.optimizer_G = torch.optim.Adam(itertools.chain(*self.params_G
                                                 ),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
+                                                lr=opt.lr_G, betas=(opt.beta1, 0.999))
             self.params_D = [self.netD_A.parameters(),
                              self.netD_B.parameters()]
             self.optimizer_D = torch.optim.Adam(itertools.chain(*self.params_D),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
+                                                lr=opt.lr_D, betas=(opt.beta1, 0.999))
             self.optimizers = []
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
