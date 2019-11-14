@@ -16,16 +16,21 @@
 
 ### Request the amount of memory you need for your job.
 ### You can specify this in either MB (1024M) or GB (4G).
-#SBATCH --mem-per-cpu=16G
+
+#SBATCH --nodes=1
+#SBATCH --mem=40G
+#SBATCH --cpus-per-task=24
+#SBATCH --ntasks-per-node=1
 
 ### Request a host with a Volta GPU
 ### If you need two GPUs, change the number accordingly
 #SBATCH --gres=gpu:volta:2
 
 ### if needed: switch to your working directory (where you saved your program)
-#cd $HOME/a/
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 ### Load modules
+module switch intel gcc
 module load python/3.6.8
 module load cuda/100
 module load cudnn/7.4
@@ -33,4 +38,6 @@ pip install --user -r requirements.txt
 
 ### your code goes here, the second part of the jobscript
 
-python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../3D_460_patchified_norm/ --model paired_revgan3d --name 3d_460 --which_model_netG edsrF_generator_3d --gpu_ids 0,1 --batchSize 2 --which_model_netD n_layers --n_layers_D 2 --lr_G 0.0001 --lr_D 0.0004
+#python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../3D_460_patchified_norm/ --model paired_revgan3d --name 3d_460 --which_model_netG edsrF_generator_3d --gpu_ids 0,1 --batchSize 2 --which_model_netD n_layers --n_layers_D 2 --lr_G 0.0001 --lr_D 0.0004
+
+python3 train.py --niter 100 --niter_decay 100 --save_epoch_freq 10 --dataset_mode npy_aligned_2d --dataroot ../2D_460_norm/ --model paired_revgan --name 2d_460 --gpu_ids 0,1 --batchSize 32 --lr_G 0.0001 --lr_D 0.0004
