@@ -752,13 +752,13 @@ class UpTransition(nn.Module):
         if inverse:
             out = self.up_conv_ba(x)
             xcat = torch.cat((out, skipx), 1)
-            out = xcat
+            out = copy(xcat)
             for block in reversed(self.core):
                 out = block.inverse(out)
         else:
             out = self.up_conv_ab(x)
             xcat = torch.cat((out, skipx), 1)
-            out = xcat
+            out = copy(xcat)
             for block in self.core:
                 out = block(out)
 
