@@ -85,7 +85,7 @@ class PairedRevGAN3dModel(BaseModel):
             n_dimension_to_pad = self.real_A.shape[2] % 8
             self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, n_dimension_to_pad))
             self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, n_dimension_to_pad))
-        else if (self.real_A.shape[2] % 2) != 0 and self.which_model_netG.startswith('edsrF_'):
+        elif (self.real_A.shape[2] % 2) != 0 and self.which_model_netG.startswith('edsrF_'):
             self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, 1))
             self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, 1))
 
