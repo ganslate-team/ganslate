@@ -718,7 +718,6 @@ class DownTransition(nn.Module):
                              ELUCons(elu, outChans))
 
     def forward(self, x, inverse=False):
-        print('x', x.shape)
         if inverse:
             down = self.down_conv_ba(x)
             out = copy(down)
@@ -729,8 +728,6 @@ class DownTransition(nn.Module):
             out = copy(down)
             for block in self.core:
                 out = block(out)
-        print('out', out.shape)
-        print('down', down.shape)
         return self.relu(torch.add(out, down))
 
 
