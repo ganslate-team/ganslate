@@ -785,8 +785,8 @@ class OutputTransition(nn.Module):
         # print("out shape before softmax:"+str(out.shape))
 
         # flatten z, y, x
-        b, c, z, y, x = out.shape # b:batch_size, c:channels, z:depth, y:height, w:width. channels is 2? as the output channels of the last conv layer?
-        out = out.view(b, c, -1)
+        #b, c, z, y, x = out.shape # b:batch_size, c:channels, z:depth, y:height, w:width. channels is 2? as the output channels of the last conv layer?
+        #out = out.view(b, c, -1)
 
         # pdb.set_trace()
         res = self.softmax(out)#, dim = 1)
