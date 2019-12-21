@@ -17,8 +17,8 @@ class DummyDataset(BaseDataset):
         self.AB_paths = sorted(make_dataset(self.dir_AB))
 
     def __getitem__(self, index):
-        A = torch.rand(1, 16, 32, 32)
-        B = torch.rand(1, 16, 32, 32)
+        A = torch.rand(1, 32, 32, 32)
+        B = torch.rand(1, 32, 32, 32)
 
         return {'A': A, 'B': B,
 
