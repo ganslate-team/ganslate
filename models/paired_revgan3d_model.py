@@ -80,10 +80,14 @@ class PairedRevGAN3dModel(BaseModel):
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
         # in case of uneven z-axis dimension when edsrF generator is used, duplicate the last slice
-        edsrF_or_vnet = self.which_model_netG.startswith('edsrF_') or self.which_model_netG.startswith('vnet_')
-        if (self.real_A.shape[2] % 2) != 0 and edsrF_or_vnet:
-            self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, 1), mode='replicate')
-            self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, 1), mode='replicate')
+
+        if (self.real_A.shape[2] % 8) != 0 and self.which_model_netG.startswith('vnet_'):
+            n_dimension_to_pad = self.real_A.shape[2] % 8
+            self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, n_dimension_to_pad))
+            self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, n_dimension_to_pad))
+        else if (self.real_A.shape[2] % 2) != 0 and self.which_model_netG.startswith('edsrF_'):
+            self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, 1))
+            self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, 1))
 
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
