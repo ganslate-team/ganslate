@@ -9,6 +9,7 @@ from torch.nn import Parameter
 import numpy as np
 import re
 
+from copy import copy
 ###############################################################################
 # Helper Functions
 ###############################################################################
@@ -720,12 +721,12 @@ class DownTransition(nn.Module):
         print('x', x.shape)
         if inverse:
             down = self.down_conv_ba(x)
-            out = down
+            out = copy(down)
             for block in reversed(self.core):
                 out = block.inverse(out)
         else:
             down = self.down_conv_ab(x)
-            out = down
+            out = copy(down)
             for block in self.core:
                 out = block(out)
         print('out', out.shape)
