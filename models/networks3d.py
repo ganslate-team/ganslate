@@ -748,18 +748,12 @@ class UpTransition(nn.Module):
     def forward(self, x, skipx, inverse=False):
         if inverse:
             out = self.up_conv_ba(x)
-            print('inverse')
-            print('out', out.shape)
-            print('skipx', skipx.shape)
             xcat = torch.cat((out, skipx), 1)
             out = copy(xcat)
             for block in reversed(self.core):
                 out = block.inverse(out)
         else:
             out = self.up_conv_ab(x)
-            print('forward')
-            print('out', out.shape)
-            print('skipx', skipx.shape)
             xcat = torch.cat((out, skipx), 1)
             out = copy(xcat)
             for block in self.core:
