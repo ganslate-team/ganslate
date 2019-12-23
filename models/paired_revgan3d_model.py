@@ -82,9 +82,9 @@ class PairedRevGAN3dModel(BaseModel):
         # in case of uneven z-axis dimension when edsrF generator is used, duplicate the last slice
 
         if (self.real_A.shape[2] % 16) != 0 and self.which_model_netG.startswith('vnet_'):
-            n_dimension_to_pad = self.real_A.shape[2] % 16
-            self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, n_dimension_to_pad-1))
-            self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, n_dimension_to_pad-1))
+            n_dimension_to_pad = 16 - self.real_A.shape[2] % 16
+            self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, n_dimension_to_pad))
+            self.real_B = F.pad(input=self.real_B, pad=(0, 0, 0, 0, 0, n_dimension_to_pad))
 
         elif (self.real_A.shape[2] % 2) != 0 and self.which_model_netG.startswith('edsrF_'):
             self.real_A = F.pad(input=self.real_A, pad=(0, 0, 0, 0, 0, 1))
