@@ -15,26 +15,26 @@ Author: Sil van de Leemput
 """
 import torch.nn as nn
 import math
-from memcnn.models.revop import ReversibleBlock
+from memcnn.models.revop import InvertibleModuleWrapper, create_coupling
 
-__all__ = ['ResNet']
+__all__ = ['ResNet', 'BasicBlock', 'Bottleneck', 'RevBasicBlock', 'RevBottleneck', 'BasicBlockSub', 'BottleneckSub',
+           'conv3x3', 'batch_norm']
 
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+    return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
-def batch_norm(input):
+def batch_norm(x):
     """match Tensorflow batch norm settings"""
-    return nn.BatchNorm2d(input, momentum=0.99, eps=0.001)
+    return nn.BatchNorm2d(x, momentum=0.99, eps=0.001)
 
 
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, noactivation=False, *args, **kwargs):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, noactivation=False):
         super(BasicBlock, self).__init__()
         self.basicblock_sub = BasicBlockSub(inplanes, planes, stride, noactivation)
         self.downsample = downsample
@@ -52,7 +52,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, noactivation=False, *args, **kwargs):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, noactivation=False):
         super(Bottleneck, self).__init__()
         self.bottleneck_sub = BottleneckSub(inplanes, planes, stride, noactivation)
         self.downsample = downsample
@@ -73,16 +73,16 @@ class RevBasicBlock(nn.Module):
     def __init__(self, inplanes, planes, stride=1, downsample=None, noactivation=False):
         super(RevBasicBlock, self).__init__()
         if downsample is None and stride == 1:
-            Gm = BasicBlockSub(inplanes // 2, planes // 2, stride, noactivation)
-            Fm = BasicBlockSub(inplanes // 2, planes // 2, stride, noactivation)
-            self.revblock = ReversibleBlock(Gm, Fm)
+            gm = BasicBlockSub(inplanes // 2, planes // 2, stride, noactivation)
+            fm = BasicBlockSub(inplanes // 2, planes // 2, stride, noactivation)
+            coupling = create_coupling(Fm=fm, Gm=gm, coupling='additive')
+            self.revblock = InvertibleModuleWrapper(fn=coupling, keep_input=False)
         else:
             self.basicblock_sub = BasicBlockSub(inplanes, planes, stride, noactivation)
         self.downsample = downsample
         self.stride = stride
 
     def forward(self, x):
-        residual = x
         if self.downsample is not None:
             out = self.basicblock_sub(x)
             residual = self.downsample(x)
@@ -98,16 +98,16 @@ class RevBottleneck(nn.Module):
     def __init__(self, inplanes, planes, stride=1, downsample=None, noactivation=False):
         super(RevBottleneck, self).__init__()
         if downsample is None and stride == 1:
-            Gm = BottleneckSub(inplanes // 2, planes // 2, stride, noactivation)
-            Fm = BottleneckSub(inplanes // 2, planes // 2, stride, noactivation)
-            self.revblock = ReversibleBlock(Gm, Fm)
+            gm = BottleneckSub(inplanes // 2, planes // 2, stride, noactivation)
+            fm = BottleneckSub(inplanes // 2, planes // 2, stride, noactivation)
+            coupling = create_coupling(Fm=fm, Gm=gm, coupling='additive')
+            self.revblock = InvertibleModuleWrapper(fn=coupling, keep_input=False)
         else:
             self.bottleneck_sub = BottleneckSub(inplanes, planes, stride, noactivation)
         self.downsample = downsample
         self.stride = stride
 
     def forward(self, x):
-        residual = x
         if self.downsample is not None:
             out = self.bottleneck_sub(x)
             residual = self.downsample(x)
@@ -168,7 +168,8 @@ class BasicBlockSub(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, block, layers, num_classes=1000, channels_per_layer=None, strides=None, init_max_pool=False, init_kernel_size=7, batch_norm_fix=True, implementation=0):
+    def __init__(self, block, layers, num_classes=1000, channels_per_layer=None, strides=None,
+                 init_max_pool=False, init_kernel_size=7, batch_norm_fix=True, implementation=0):
         if channels_per_layer is None:
             channels_per_layer = [2 ** (i + 6) for i in range(len(layers))]
             channels_per_layer = [channels_per_layer[0]] + channels_per_layer
@@ -179,13 +180,14 @@ class ResNet(nn.Module):
         self.strides = strides
         self.init_max_pool = init_max_pool
         self.implementation = implementation
-        assert(len(self.channels_per_layer) == len(layers) + 1)
+        assert(len(self.channels_per_layer) == len(layers) + 1)  # nosec
         self.inplanes = channels_per_layer[0]  # 64 by default
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=init_kernel_size, stride=strides[0], padding=(init_kernel_size - 1) // 2,
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=init_kernel_size,
+                               stride=strides[0], padding=(init_kernel_size - 1) // 2,
                                bias=False)
         self.bn1 = batch_norm(self.inplanes)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
         if self.init_max_pool:
             self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, channels_per_layer[1], layers[0], stride=strides[1], noactivation=True)
@@ -213,7 +215,7 @@ class ResNet(nn.Module):
     def configure(self):
         """Initialization specific configuration settings"""
         for m in self.modules():
-            if isinstance(m, ReversibleBlock):
+            if isinstance(m, InvertibleModuleWrapper):
                 m.implementation = self.implementation
             elif isinstance(m, nn.BatchNorm2d):
                 if self.batch_norm_fix:
@@ -233,7 +235,7 @@ class ResNet(nn.Module):
             )
         layers = [block(self.inplanes, planes, stride, downsample, noactivation)]
         self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
+        for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes))
         return nn.Sequential(*layers)
 

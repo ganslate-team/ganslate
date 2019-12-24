@@ -638,7 +638,6 @@ class PixelDiscriminator(nn.Module):
         
 
 # ---------------- V-NET -------------------
-
 def ELUCons(elu, nchan):
     if elu:
         return nn.ELU(inplace=True)
@@ -665,9 +664,15 @@ class ContBatchNorm3d(nn.modules.batchnorm._BatchNorm):
 class RevBlock(nn.Module):
     def __init__(self, nchan, elu):
         super(RevBlock, self).__init__()
-        self.F = self.build_conv_block(nchan//2, elu)
-        self.G = self.build_conv_block(nchan//2, elu)
-        self.rev_block = ReversibleBlock(self.F, self.G, 'additive')
+        
+        invertible_module = memcnn.AdditiveCoupling(
+            Fm=self.build_conv_block(nchan//2, elu),
+            Gm=self.build_conv_block(nchan//2, elu)
+        )
+
+        self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
+                                                        keep_input=False, 
+                                                        keep_input_inverse=False)
 
     def build_conv_block(self, nchan, elu):
         block = nn.Sequential(nn.Conv3d(nchan, nchan, kernel_size=5, padding=2),

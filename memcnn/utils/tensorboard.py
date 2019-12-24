@@ -1,8 +1,11 @@
 import collections
-import tensorflow as tf
 import glob
 import json
 import os
+try:
+    from tensorflow.train import summary_iterator
+except ImportError:
+    from tensorflow.compat.v1.train import summary_iterator
 
 
 def parse_logs(dir_path, output_file = None):
@@ -10,8 +13,8 @@ def parse_logs(dir_path, output_file = None):
     log_files = glob.glob(os.path.join(dir_path, 'events.out.tfevents.*'))
     event_dict = {}
     # iterate all log_fiiles in order of creation
-    for i, log_file in enumerate(log_files):
-        for j, event in enumerate(tf.train.summary_iterator(log_file)):
+    for log_file in log_files:
+        for event in summary_iterator(log_file):
             for value in event.summary.value:
                 if not (value.tag in event_dict):
                     event_dict[value.tag] = collections.OrderedDict()

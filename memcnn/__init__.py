@@ -4,4 +4,20 @@
 
 __author__ = """Sil van de Leemput"""
 __email__ = 'silvandeleemput@gmail.com'
-__version__ = '0.2.1'
+__version__ = '1.1.0'
+
+
+from memcnn.models.revop import ReversibleBlock, InvertibleModuleWrapper, create_coupling, is_invertible_module
+from memcnn.models.additive import AdditiveCoupling
+from memcnn.models.affine import AffineCoupling, AffineAdapterNaive, AffineAdapterSigmoid
+
+__all__ = [
+    'AdditiveCoupling',
+    'AffineCoupling',
+    'AffineAdapterNaive',
+    'AffineAdapterSigmoid',
+    'InvertibleModuleWrapper',
+    'ReversibleBlock',
+    'create_coupling',
+    'is_invertible_module'
+]

@@ -4,9 +4,9 @@ from torch.nn.modules.module import Module
 
 
 def _assert_no_grad(variable):
-    assert not variable.requires_grad, \
-        "nn criterions don't compute the gradient w.r.t. targets - please " \
-        "mark these variables as not requiring gradients"
+    msg = "nn criterions don't compute the gradient w.r.t. targets - please " \
+          "mark these variables as not requiring gradients"
+    assert not variable.requires_grad, msg  # nosec
 
 
 class CrossEntropyLossTF(Module):
@@ -16,8 +16,7 @@ class CrossEntropyLossTF(Module):
     def forward(self, Ypred, Y, W=None):
         _assert_no_grad(Y)
         lsm = nn.Softmax(dim=1)
-        y_onehot = torch.FloatTensor(Ypred.shape[0], Ypred.shape[1], device=Ypred.device)
-        y_onehot.zero_()
+        y_onehot = torch.zeros(Ypred.shape[0], Ypred.shape[1], dtype=torch.float32, device=Ypred.device)
         y_onehot.scatter_(1, Y.data.view(-1, 1), 1)
         if W is not None:
             y_onehot = y_onehot * W

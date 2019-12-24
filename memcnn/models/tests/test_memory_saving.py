@@ -5,7 +5,7 @@ import math
 from collections import defaultdict
 import torch
 import torch.nn
-import memcnn.models.revop as revop
+from memcnn.models.tests.test_revop import SubModuleStack, SubModule
 
 
 def readable_size(num_bytes):
@@ -28,7 +28,6 @@ class MemReporter(object):
         of Tensors
     """
     def __init__(self, model=None):
-        import torch
         self.tensor_name = defaultdict(list)
         self.device_mapping = defaultdict(list)
         self.device_tensor_stat = {}
@@ -61,7 +60,6 @@ class MemReporter(object):
             - the gradients(.grad) of Parameters is not collected, and
             I don't know why.
         """
-        import torch
         # FIXME: make the grad tensor collected by gc
         objects = gc.get_objects()
         tensors = [obj for obj in objects if isinstance(obj, torch.Tensor)]
@@ -73,7 +71,6 @@ class MemReporter(object):
         As a memory profiler, we cannot hold the reference to any tensors, which
         causes possibly inaccurate memory usage stats, so we delete the tensors after
         getting required stats"""
-        import torch
         visited_data = {}
         self.device_tensor_stat.clear()
 
@@ -137,7 +134,6 @@ class MemReporter(object):
         self.device_mapping.clear()
 
     def print_stats(self, verbose=False):
-        import torch
         # header
         show_reuse = verbose
         template_format = '{:<40s}{:>20s}{:>10s}'
@@ -178,13 +174,10 @@ class MemReporter(object):
     def collect_stats(self):
         self.collect_tensor()
         self.get_stats()
-        for device, tensor_stats in self.device_tensor_stat.items():
+        for _, tensor_stats in self.device_tensor_stat.items():
             total_mem = 0
-            total_numel = 0
             for stat in tensor_stats:
-                name, size, numel, mem = stat
-                total_mem += mem
-                total_numel += numel
+                total_mem += stat[3]
 
             return total_mem
 
@@ -199,11 +192,10 @@ class MemReporter(object):
 
 
 @pytest.mark.parametrize('coupling', ['additive', 'affine'])
-@pytest.mark.parametrize('implementation_fwd', [0, 1])
 @pytest.mark.parametrize('keep_input', [True, False])
 @pytest.mark.parametrize('device', ['cpu', 'cuda'])
-def test_memory_saving(device, coupling, implementation_fwd, keep_input):
-    """Test memory saving of the reversible block
+def test_memory_saving_invertible_model_wrapper(device, coupling, keep_input):
+    """Test memory saving of the invertible model wrapper
 
     * tests fitting a large number of images by creating a deep network requiring large
       intermediate feature maps for training
@@ -230,64 +222,46 @@ def test_memory_saving(device, coupling, implementation_fwd, keep_input):
 
     gc.disable()
     gc.collect()
-    dims = [2, 10, 10, 10]
-    depth = 5
-    memuse = float(np.prod(dims + [depth, 4, ])) / float(1024 ** 2)
-    xx = torch.rand(*dims, device=device, dtype=torch.float32)
-    ytarget = torch.rand(*dims, device=device, dtype=torch.float32)
 
-    class SubModule(torch.nn.Module):
-        def __init__(self):
-            super(SubModule, self).__init__()
-            self.bn = torch.nn.BatchNorm2d(10 // 2)
-            self.conv = torch.nn.Conv2d(10 // 2, 10 // 2, (3, 3), padding=1)
+    with torch.set_grad_enabled(True):
+        dims = [2, 10, 10, 10]
+        depth = 5
 
-        def forward(self, x):
-            return self.bn(self.conv(x))
+        xx = torch.rand(*dims, device=device, dtype=torch.float32).requires_grad_()
+        ytarget = torch.rand(*dims, device=device, dtype=torch.float32)
 
-    class SubModuleStack(torch.nn.Module):
-        def __init__(self, gm, coupling='additive', depth=10, implementation_fwd=1,
-                     implementation_bwd=1, keep_input=False):
-            super(SubModuleStack, self).__init__()
-            self.stack = torch.nn.Sequential(
-                *[revop.ReversibleBlock(gm, gm, coupling=coupling, implementation_fwd=implementation_fwd,
-                                        implementation_bwd=implementation_bwd,
-                                        keep_input=keep_input) for _ in range(depth)]
-            )
+        # same convolution test
+        network = SubModuleStack(SubModule(in_filters=5, out_filters=5), depth=depth, keep_input=keep_input, coupling=coupling,
+                                 implementation_fwd=-1, implementation_bwd=-1)
+        network.to(device)
+        network.train()
+        network.zero_grad()
+        optim = torch.optim.RMSprop(network.parameters())
+        optim.zero_grad()
+        mem_start = 0 if not device == 'cuda' else \
+            torch.cuda.memory_allocated() / float(1024 ** 2)
 
-        def forward(self, x):
-            return self.stack(x)
+        y = network(xx)
+        gc.collect()
+        mem_after_forward = mem_reporter.collect_stats() / float(1024 ** 2) if not device == 'cuda' else \
+            torch.cuda.memory_allocated() / float(1024 ** 2)
+        loss = torch.nn.MSELoss()(y, ytarget)
+        optim.zero_grad()
+        loss.backward()
+        optim.step()
+        gc.collect()
+        # mem_after_backward = mem_reporter.collect_stats() / float(1024 ** 2) if not device == 'cuda' else \
+        #     torch.cuda.memory_allocated() / float(1024 ** 2)
+        gc.enable()
 
-    implementation_bwd = 1
-    # same convolution test
-    network = SubModuleStack(SubModule(), depth=depth, keep_input=keep_input, coupling=coupling,
-                             implementation_fwd=implementation_fwd, implementation_bwd=implementation_bwd)
-    network.to(device)
-    network.train()
-    network.zero_grad()
-    optim = torch.optim.RMSprop(network.parameters())
-    optim.zero_grad()
-    mem_start = 0 if not device == 'cuda' else \
-        torch.cuda.memory_allocated() / float(1024 ** 2)
+        if device == 'cpu':
+            memuse = 0.05
+        else:
+            memuse = float(np.prod(dims + [depth, 4, ])) / float(1024 ** 2)
 
-    y = network(xx)
-    gc.collect()
-    mem_after_forward = mem_reporter.collect_stats() / float(1024 ** 2) if not device == 'cuda' else \
-        torch.cuda.memory_allocated() / float(1024 ** 2)
-    loss = torch.nn.MSELoss()(y, ytarget)
-    optim.zero_grad()
-    loss.backward()
-    optim.step()
-    gc.collect()
-    # mem_after_backward = mem_reporter.collect_stats() / float(1024 ** 2) if not device == 'cuda' else \
-    #     torch.cuda.memory_allocated() / float(1024 ** 2)
-    gc.enable()
-
-    if device == 'cpu':
-        memuse = 0.02
-
-    if keep_input:
-        assert mem_after_forward - mem_start >= memuse
-    else:
-        assert mem_after_forward - mem_start < (1 if device == 'cuda' else memuse)
-    # assert math.floor(mem_after_backward - mem_start) >= 9
+        measured_memuse = mem_after_forward - mem_start
+        if keep_input:
+            assert measured_memuse >= memuse
+        else:
+            assert measured_memuse < (1 if device == 'cuda' else memuse)
+        # assert math.floor(mem_after_backward - mem_start) >= 9
