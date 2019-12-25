@@ -4,7 +4,7 @@ from torch.nn import init
 import torch.nn.functional as F
 import functools
 from torch.optim import lr_scheduler
-from memcnn.models.revop import ReversibleBlock
+import memcnn
 from torch.nn import Parameter
 import numpy as np
 import re
@@ -638,6 +638,7 @@ class PixelDiscriminator(nn.Module):
         
 
 # ---------------- V-NET -------------------
+
 def ELUCons(elu, nchan):
     if elu:
         return nn.ELU(inplace=True)
