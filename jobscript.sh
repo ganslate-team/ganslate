@@ -30,14 +30,17 @@
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 ### Load modules
-module switch intel gcc
-module load python/3.6.8
-module load cuda/100
-module load cudnn/7.4
-pip install --user -r requirements.txt
+#module switch intel gcc
+#module load python/3.6.8
+#module load cuda/100
+#module load cudnn/7.4
+#pip install --user -r requirements.txt
+source ../.bashrc
+conda activate maastro
 
 ### your code goes here, the second part of the jobscript
 
 #python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../3D_460_patchified_norm/ --model paired_revgan3d --name 3d_460 --which_model_netG edsrF_generator_3d --gpu_ids 0,1 --batchSize 2 --which_model_netD n_layers --n_layers_D 2 --lr_G 0.0001 --lr_D 0.0004
-
-python3 train.py --niter 100 --niter_decay 100 --save_epoch_freq 10 --dataset_mode npy_aligned_2d --dataroot ../2D_460_norm/ --model paired_revgan --name 2d_460 --gpu_ids 0,1 --batchSize 16 --lr_G 0.0001 --lr_D 0.0004
+#python3 train.py --niter 100 --niter_decay 100 --save_epoch_freq 10 --dataset_mode npy_aligned_2d --dataroot ../2D_460_norm/ --model paired_revgan --name 2d_460 --gpu_ids 0,1 --batchSize 16 --lr_G 0.0001 --lr_D 0.0004
+#python3 train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode dummy --dataroot .. --model paired_revgan3d --name 3d_460 --which_model_netG vnet_generator_3d --gpu_ids 0,1 --batchSize 2 --which_model_netD n_layers --n_layers_D 2 --lr_G 0.0001 --lr_D 0.0004
+python train.py --niter 20 --niter_decay 20 --save_epoch_freq 10 --dataset_mode npy_aligned_3d --dataroot ../3D_460_norm --model paired_revgan3d --name 3d_460 --which_model_netG vnet_generator_3d --gpu_ids 0,1 --batchSize 2 --which_model_netD n_layers --n_layers_D 2 --lr_G 0.0001 --lr_D 0.0004 --which_direction BtoA
