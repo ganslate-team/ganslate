@@ -23,7 +23,7 @@ class NpyAligned3dDataset(BaseDataset):
         A, B = AB[0], AB[1]
         A = torch.Tensor(A)
         B = torch.Tensor(B)
-        # reshape so that it contains the channel as well (1, grayscale)
+        # reshape so that it contains the channel as well (1 = grayscale)
         A = A.view(1, *A.shape)
         B = B.view(1, *B.shape)
 
