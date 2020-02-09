@@ -162,8 +162,8 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
         assert(torch.cuda.is_available())
         print(gpu_ids)
         device = torch.device('cuda:{}'.format(gpu_ids[0])) if gpu_ids else torch.device('cpu')
-        net = torch.nn.DataParallel(net)
         net.to(device)
+        net = torch.nn.DataParallel(net, gpu_ids)
     init_weights(net, init_type, gain=init_gain)
     return net
 
@@ -672,8 +672,8 @@ class RevBlock(nn.Module):
         )
 
         self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                        keep_input=False, 
-                                                        keep_input_inverse=False)
+                                                        keep_input=True, 
+                                                        keep_input_inverse=True)
 
     def build_conv_block(self, nchan, elu):
         block = nn.Sequential(nn.Conv3d(nchan, nchan, kernel_size=5, padding=2),

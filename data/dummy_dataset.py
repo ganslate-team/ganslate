@@ -26,7 +26,7 @@ class DummyDataset(BaseDataset):
                 #'A_paths': AB_path, 'B_paths': AB_path}
 
     def __len__(self):
-        return 1000 #len(self.AB_paths)
+        return 10 #len(self.AB_paths)
 
     def name(self):
         return 'DummyDataset'
