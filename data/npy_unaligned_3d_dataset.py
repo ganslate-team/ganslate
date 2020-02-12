@@ -1,7 +1,6 @@
 import os.path
 from data.base_dataset import BaseDataset, get_transform
 from data.image_folder import make_dataset
-from PIL import Image
 import random
 import torch
 import numpy as np
@@ -18,7 +17,7 @@ def normalize(image, MIN_B=-1024.0, MAX_B=3072.0):
     image = (image - MIN_B) / (MAX_B - MIN_B)
     return 2*image - 1
 
-def random_patch_3d(volume, patch_size=(64,64,64), threshold=0.6):
+def random_patch_3d(volume, min_value, patch_size=(64,64,64), threshold=0.6):
     patch_shape = np.array(patch_size)
     volume_shape = np.array(volume.shape[-3:])
     # a patch can have a starting coordinate anywhere from 
@@ -36,11 +35,11 @@ def random_patch_3d(volume, patch_size=(64,64,64), threshold=0.6):
                    y:y+patch_size[2]]
 
     # ratio: number of completely black voxels / total number of voxels 
-    # note that -1 is a black voxel in normalized volumes
-    black_voxels_ratio = np.count_nonzero(patch == -1) / patch.numel()
+    # E.g. min_value is -1024 (black)
+    black_voxels_ratio = np.count_nonzero(patch <= min_value) / patch.numel()
     # if above threshold, find another patch 
     if black_voxels_ratio > threshold:
-        return random_patch_3d(volume, patch_size)
+        return random_patch_3d(volume, min_value, patch_size)
     return patch
 
 class NpyUnaligned3dDataset(BaseDataset):
@@ -77,15 +76,20 @@ class NpyUnaligned3dDataset(BaseDataset):
         A = torch.Tensor(A)
         B = torch.Tensor(B)
 
+        # random patch extraction
+        A = random_patch_3d(A, 
+                            min_value=self.norm_A["min"], 
+                            patch_size=self.opt.patch_size, 
+                            threshold=self.opt.threshold_black_voxels)
+
+        B = random_patch_3d(B, 
+                            min_value=self.norm_B["min"], 
+                            patch_size=self.opt.patch_size, 
+                            threshold=self.opt.threshold_black_voxels)
+
         # normalization
         A = normalize(A, self.norm_A["min"], self.norm_A["max"])
         B = normalize(B, self.norm_B["min"], self.norm_B["max"])
-
-        # random patch extraction
-        patch_size = (64,64,64)
-        threshold = 0.6
-        A = random_patch_3d(A, patch_size=patch_size, threshold=threshold)
-        B = random_patch_3d(B, patch_size=patch_size, threshold=threshold)
 
         # reshape so that it contains the channel as well (1 = grayscale)
         A = A.view(1, *A.shape)
