@@ -178,10 +178,10 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive
     elif which_model_netG.startswith('edsrF_'):
         depth = int(re.findall(r'\d+', which_model_netG)[0])
         netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
-    elif which_model_netG.startswith('vnet_'):
-        #depth = int(re.findall(r'\d+', which_model_netG)[0])
-        #netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
-        netG = VNet(elu=False, nll=False, num_classes=1)
+    # elif which_model_netG.startswith('revVnet_'):
+    #     netG = RevVNet(elu=False, nll=False, num_classes=1)
+    elif which_model_netG.startswith('revResVnet_'):
+        netG = RevResVNet(elu=False, nll=False, num_classes=1)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     return init_net(netG, init_type, init_gain, gpu_ids)
@@ -682,10 +682,16 @@ class RevBlock(nn.Module):
         return block
 
     def forward(self, x):
-        return self.rev_block(x)
+        residual = x
+        out = self.rev_block(x)
+        out = torch.add(out, residual) 
+        return out
 
     def inverse(self, x):
-        return self.rev_block.inverse(x)
+        residual = x
+        out = self.rev_block.inverse(x)
+        out = torch.add(out, residual) 
+        return out
 
 
 class InputTransition(nn.Module):
@@ -801,11 +807,11 @@ class OutputTransition(nn.Module):
         return res
 
 
-class VNet(nn.Module):
+class RevResVNet(nn.Module):
     # the number of convolutions in each layer corresponds
     # to what is in the actual prototxt, not the intent
     def __init__(self, elu=True, nll=False, num_classes=2):
-        super(VNet, self).__init__()
+        super(RevResVNet, self).__init__()
 
         self.in_tr_ab = InputTransition(16, elu)
         self.in_tr_ba = InputTransition(16, elu)
