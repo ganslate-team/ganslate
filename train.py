@@ -64,6 +64,15 @@ if __name__ == '__main__':
             # get all the losses
             for k, v in losses.items():
                 epoch_log_dict['loss_%s' % k] = v
+
+            # get the inputs and outputs of the network
+            visuals = model.get_current_visuals()
+            for k, v in visuals.items():
+                # keys are e.g. real_A, fake_B and values are their corresponding volumes
+                v = v[0].permute(1,2,3,0) # take one from the batch and CxHxWxL -> HxWxLxC
+                v = v.cpu().detach().numpy()
+                epoch_log_dict[k] = [wandb.Image(_slice) for _slice in v]
+
             # log all the information of the epoch
             wandb.log(epoch_log_dict)
 
