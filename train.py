@@ -69,7 +69,7 @@ if __name__ == '__main__':
             visuals = model.get_current_visuals()
             for k, v in visuals.items():
                 # keys are e.g. real_A, fake_B and values are their corresponding volumes
-                v = v[0].permute(1,2,3,0) # take one from the batch and CxHxWxL -> HxWxLxC
+                v = v[0].permute(1,2,3,0) # take one from the batch and CxLxHxW -> LxHxWxC
                 v = v.cpu().detach().numpy()
                 epoch_log_dict[k] = [wandb.Image(_slice) for _slice in v]
 
