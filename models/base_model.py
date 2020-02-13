@@ -3,7 +3,6 @@ import torch
 from collections import OrderedDict
 from . import networks
 
-
 class BaseModel():
 
     # modify parser to add command line options,
@@ -64,6 +63,10 @@ class BaseModel():
 
     def optimize_parameters(self):
         pass
+    
+    def get_learning_rate(self):
+        lr = self.optimizers[0].param_groups[0]['lr']
+        return lr
 
     # update learning rate (called once every epoch)
     def update_learning_rate(self):

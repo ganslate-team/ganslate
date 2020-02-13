@@ -3,6 +3,7 @@ from options.train_options import TrainOptions
 from data import CreateDataLoader
 from models import create_model
 from util.visualizer import Visualizer
+import wandb
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()
@@ -53,6 +54,17 @@ if __name__ == '__main__':
         if epoch % opt.save_epoch_freq == 0:
             model.save_networks(epoch)
 
+        epoch_time = time.time() - epoch_start_time
         print('End of epoch %d / %d \t Time Taken: %d sec' %
-              (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
+              (epoch, opt.niter + opt.niter_decay, epoch_time))
+        
+        if opt.wandb:
+            epoch_log_dict = {'epoch_time': epoch_time,
+                              'learning_rate': model.get_learning_rate()}
+            # get all the losses
+            for k, v in losses.items():
+                epoch_log_dict['loss_%s' % k] = v
+            # log all the information of the epoch
+            wandb.log(epoch_log_dict)
+
         model.update_learning_rate()
