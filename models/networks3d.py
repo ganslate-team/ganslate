@@ -178,10 +178,10 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive
     elif which_model_netG.startswith('edsrF_'):
         depth = int(re.findall(r'\d+', which_model_netG)[0])
         netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
-    # elif which_model_netG.startswith('revVnet_'):
-    #     netG = RevVNet(elu=False, nll=False, num_classes=1)
-    elif which_model_netG.startswith('revResVnet_'):
-        netG = RevResVNet(elu=False, nll=False, num_classes=1)
+    elif which_model_netG.startswith('vnet_'):
+        #depth = int(re.findall(r'\d+', which_model_netG)[0])
+        #netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
+        netG = VNet(elu=False, num_classes=1)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     return init_net(netG, init_type, init_gain, gpu_ids)
@@ -682,16 +682,10 @@ class RevBlock(nn.Module):
         return block
 
     def forward(self, x):
-        residual = x
-        out = self.rev_block(x)
-        out = torch.add(out, residual) 
-        return out
+        return self.rev_block(x)
 
     def inverse(self, x):
-        residual = x
-        out = self.rev_block.inverse(x)
-        out = torch.add(out, residual) 
-        return out
+        return self.rev_block.inverse(x)
 
 
 class InputTransition(nn.Module):
@@ -775,43 +769,27 @@ class UpTransition(nn.Module):
 
 
 class OutputTransition(nn.Module):
-    def __init__(self, inChans, elu, nll, num_classes):
+    def __init__(self, inChans, elu, num_classes):
         super(OutputTransition, self).__init__()
         self.conv1 = nn.Conv3d(inChans, 2, kernel_size=5, padding=2) # should i put num_classes here as well?
         self.bn1 = ContBatchNorm3d(2)
         self.conv2 = nn.Conv3d(2, num_classes, kernel_size=1)
         self.relu1 = ELUCons(elu, num_classes)
-        # TAKE CARE OF THIS AS A GEN IT SHOULD BE TANH
-        if nll:
-            self.softmax = F.log_softmax
-        else:
-            self.softmax = nn.Tanh() #F.softmax
+        self.tanh = nn.Tanh() 
 
     def forward(self, x):
-        # convolve 32 down to 2 channels
+        # convolve 32 down to num of channels
         out = self.relu1(self.bn1(self.conv1(x)))
         out = self.conv2(out)
-        # print("out shape before softmax:"+str(out.shape))
-
-        # flatten z, y, x
-        #b, c, z, y, x = out.shape # b:batch_size, c:channels, z:depth, y:height, w:width. channels is 2? as the output channels of the last conv layer?
-        #out = out.view(b, c, -1)
-
-        # pdb.set_trace()
-        res = self.softmax(out)#, dim = 1)
-
-        # make channels the last axis
-        # out = out.permute(0, 2, 3, 4, 1).contiguous()
-        # out = out.view(out.numel() // 2, 2)
-        # out = self.softmax(out,dim=1)
+        res = self.tanh(out)
         return res
 
 
-class RevResVNet(nn.Module):
+class VNet(nn.Module):
     # the number of convolutions in each layer corresponds
     # to what is in the actual prototxt, not the intent
-    def __init__(self, elu=True, nll=False, num_classes=2):
-        super(RevResVNet, self).__init__()
+    def __init__(self, elu=True, num_classes=1):
+        super(VNet, self).__init__()
 
         self.in_tr_ab = InputTransition(16, elu)
         self.in_tr_ba = InputTransition(16, elu)
@@ -828,8 +806,8 @@ class RevResVNet(nn.Module):
         self.up_tr32 = UpTransition(64, 32, 1, elu)
         # -----------------------------------------
         
-        self.out_tr_ab = OutputTransition(32, elu, nll, num_classes)
-        self.out_tr_ba = OutputTransition(32, elu, nll, num_classes)
+        self.out_tr_ab = OutputTransition(32, elu, num_classes)
+        self.out_tr_ba = OutputTransition(32, elu, num_classes)
 
     def forward(self, x, inverse=False):
         if inverse:

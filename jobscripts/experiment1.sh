@@ -34,4 +34,4 @@ conda activate maastro
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python train.py --name experiment1 --niter 100 --niter_decay 100 --lr_G 0.0002 --lr_D 0.0002 --batchSize 4 --model unpaired_revgan3d --which_model_netG revResVnet_generator_3d  --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/ft002207/lung1_lidc_gan --gpu_ids 0,1 --save_epoch_freq 10 --nThreads 8 --wandb True
+python train.py --name experiment1 --niter 100 --niter_decay 100 --lr_G 0.0002 --lr_D 0.0002 --batchSize 4 --model unpaired_revgan3d --which_model_netG vnet_generator  --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/ft002207/lung1_lidc_gan --gpu_ids 0,1 --save_epoch_freq 10 --nThreads 8 --wandb True
