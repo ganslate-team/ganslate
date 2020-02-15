@@ -4,7 +4,7 @@ from util import util
 import torch
 import models
 import data
-import wandb
+
 
 class BaseOptions():
     def __init__(self):
@@ -105,6 +105,7 @@ class BaseOptions():
         opt.isTrain = self.isTrain   # train or test
 
         if opt.wandb:
+            import wandb
             # TODO make the wandb name passed as argument
             wandb.init(project="translation_for_segmentation")
 

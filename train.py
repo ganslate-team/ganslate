@@ -3,10 +3,12 @@ from options.train_options import TrainOptions
 from data import CreateDataLoader
 from models import create_model
 from util.visualizer import Visualizer
-import wandb
+
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()
+    if opt.wandb:
+        import wandb
     data_loader = CreateDataLoader(opt)
     dataset = data_loader.load_data()
     dataset_size = len(data_loader)
@@ -59,7 +61,7 @@ if __name__ == '__main__':
               (epoch, opt.niter + opt.niter_decay, epoch_time))
         
         if opt.wandb:
-            epoch_log_dict = {'epoch_time': epoch_time,
+            epoch_log_dict = {'epoch_time': int(epoch_time),
                               'learning_rate': model.get_learning_rate()}
             # get all the losses
             for k, v in losses.items():
