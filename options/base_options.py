@@ -107,7 +107,7 @@ class BaseOptions():
         if opt.wandb:
             import wandb
             # TODO make the wandb name passed as argument
-            wandb.init(project="translation_for_segmentation")
+            wandb.init(project="gan-translation", entity="maastro-clinic")
 
         # process opt.suffix
         if opt.suffix:

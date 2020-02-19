@@ -23,15 +23,21 @@ def focused_random_zxy(zxy, window, valid_region):
     # for each axis
     for idx in range(len(zxy)):
         # find the lowest and highest position between which to focus for this axis
-        min_position = int(zxy[idx] - window[idx])
-        max_position = int(zxy[idx] + window[idx])
+        min_position = int(zxy[idx] - window[idx]/2)
+        max_position = int(zxy[idx] + window[idx]/2)
         # if one of the boundaries of the focus is outside of the possible area to sample from, cap it
         min_position = max(0, min_position)
         max_position = min(max_position, valid_region[idx])
-        selected_zxy.append(random.randint(min_position, max_position))
+        # edge cases (no pun intended)
+        if min_position > max_position:
+            selected_zxy.append(max_position)
+        # regular
+        else:
+            selected_zxy.append(random.randint(min_position, max_position))
     return selected_zxy
 
-def random_patch_3d(volume, patch_size=(64,64,64), min_value=-1024, threshold=0.6, focus_around_zxy=None):
+def random_patch_3d(volume, patch_size=(64,64,64), min_value=-1024, 
+                    focus_around_zxy=None, focus_window_to_volume_proportion=None):
     '''
      volume:           whole CT scan (numpy array)
      patch_size:       size of the 3D volume to be extracted from the original volume
@@ -52,23 +58,22 @@ def random_patch_3d(volume, patch_size=(64,64,64), min_value=-1024, threshold=0.
 
     else: # take a relative neighbor of patch A in patch B
         # 3D window/neighborhood of focus_around_zxy from which will be randomly selected a new start zxy for B
-        # TODO: focus window, define 0.2 through base_option
-        focus_window = np.multiply(volume_shape, 0.2).astype(np.int64)
+        focus_window = np.multiply(volume_shape, focus_window_to_volume_proportion).astype(np.int64)
         # the starting position from A is given in relative form (A_start_zxy / A_shape)
         zxy = np.array(focus_around_zxy) * volume_shape  # find start position of A translated in B
         z, x, y = focused_random_zxy(zxy, focus_window, valid_starting_region)
         
-
     # extract the patch from the volume
     patch = volume[z:z+patch_size[0],
                    x:x+patch_size[1],
                    y:y+patch_size[2]]
 
-    # ratio: number of completely black voxels / total number of voxels, e.g. min_value is -1024 (black)
-    black_voxels_ratio = np.count_nonzero(patch <= min_value) / patch.numel()
-    if black_voxels_ratio > threshold:
-        # if above threshold, find another patch 
-        return random_patch_3d(volume, patch_size, min_value, threshold, focus_around_zxy)
+    # # ratio: number of completely black voxels / total number of voxels, e.g. min_value is -1024 (black)
+    # black_voxels_ratio = np.count_nonzero(patch <= min_value) / patch.numel()
+    # if black_voxels_ratio > threshold:
+    #     # if above threshold, find another patch 
+    #     return random_patch_3d(volume, patch_size, min_value, threshold, 
+    #                            focus_around_zxy, focus_window_to_volume_proportion)
     
     # used only for focus_around_zxy
     relative_zxy = (np.array([z,x,y]) / volume_shape).tolist()
@@ -111,14 +116,13 @@ class NpyUnaligned3dDataset(BaseDataset):
         # random patch extraction
         A, A_zxy = random_patch_3d(A, 
                                   patch_size=self.opt.patch_size,
-                                  min_value=self.norm_A["min"],  
-                                  threshold=self.opt.threshold_black_voxels)
+                                  min_value=self.norm_A["min"])
 
         B, _ = random_patch_3d(B, 
                                patch_size=self.opt.patch_size,
-                               min_value=self.norm_B["min"],  
-                               threshold=self.opt.threshold_black_voxels,
-                               focus_around_zxy=A_zxy)
+                               min_value=self.norm_B["min"],
+                               focus_around_zxy=A_zxy, 
+                               focus_window_to_volume_proportion=self.opt.focus_window)
 
         # normalization
         A = normalize(A, self.norm_A["min"], self.norm_A["max"])

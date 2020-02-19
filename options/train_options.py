@@ -23,12 +23,13 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--pool_size', type=int, default=50, help='the size of image buffer that stores previously generated images')
         parser.add_argument('--no_html', action='store_true', help='do not save intermediate training results to [opt.checkpoints_dir]/[opt.name]/web/')
         parser.add_argument('--lr_policy', type=str, default='lambda', help='learning rate policy: lambda|step|plateau')
-        parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
+        parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gammr of voxels. Defines how many completely black voxels are allowed. Default 1, no threshold is happening.a every lr_decay_iters iterations')
         parser.add_argument('--grad_reg', type=float, default=0.0, help='Use consensus optimization (test)')
         parser.add_argument('--D_rollout', type=int, default=1, help='Discriminator rollout (test)')
 
         parser.add_argument('--patch_size', required=True, nargs='+', type=int, help='Size of patches extracted from volumes (z,x,y). Input example: 64 64 64')
-        parser.add_argument('--threshold_black_voxels', type=float, default=1.0, help='Threshold ratio: number of completely black voxels / total number of voxels. Defines how many completely black voxels are allowed. Default 1, no threshold is happening.')
+        #parser.add_argument('--threshold_black_voxels', type=float, default=1.0, help='Threshold ratio: number of completely black voxels / total number of voxels. Defines how many completely black voxels are allowed. Default 1, no threshold is happening.')
+        parser.add_argument('--focus_window', type=float, default=0.2, help='Proportion of the volume size which will be the size of the focus window.')
         parser.add_argument("--wandb", help="Use Weights&Biases (wandb.com) to track the experiment", default=False, type=bool)
         self.isTrain = True
         return parser
