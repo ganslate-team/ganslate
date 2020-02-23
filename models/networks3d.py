@@ -676,8 +676,8 @@ class RevBlock(nn.Module):
         )
 
         self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                        keep_input=True, 
-                                                        keep_input_inverse=True)
+                                                        keep_input=False, 
+                                                        keep_input_inverse=False)
 
     def build_conv_block(self, nchan, elu):
         block = nn.Sequential(nn.Conv3d(nchan, nchan, kernel_size=5, padding=2),
@@ -685,11 +685,11 @@ class RevBlock(nn.Module):
                               ELUCons(elu, nchan))
         return block
 
-    def forward(self, x):
-        return self.rev_block(x)
-
-    def inverse(self, x):
-        return self.rev_block.inverse(x)
+    def forward(self, x, inverse=False):
+        if inverse:
+            return self.rev_block.inverse(x)
+        else:
+            return self.rev_block(x)
 
 
 class InputTransition(nn.Module):
@@ -729,15 +729,17 @@ class DownTransition(nn.Module):
 
     def forward(self, x, inverse=False):
         if inverse:
-            down = self.down_conv_ba(x)
-            out = copy(down)
-            for block in reversed(self.core):
-                out = block.inverse(out)
+            down_conv = self.down_conv_ba
+            core = reversed(self.core)
         else:
-            down = self.down_conv_ab(x)
-            out = copy(down)
-            for block in self.core:
-                out = block(out)
+            down_conv = self.down_conv_ab
+            core = self.core
+
+        down = down_conv(x)
+        out = copy(down)
+        for block in core:
+            out = block(out, inverse=inverse)
+            
         return self.relu(torch.add(out, down))
 
 
@@ -757,17 +759,17 @@ class UpTransition(nn.Module):
 
     def forward(self, x, skipx, inverse=False):
         if inverse:
-            out = self.up_conv_ba(x)
-            xcat = torch.cat((out, skipx), 1)
-            out = copy(xcat)
-            for block in reversed(self.core):
-                out = block.inverse(out)
+            up_conv = self.up_conv_ba
+            core = reversed(self.core)
         else:
-            out = self.up_conv_ab(x)
-            xcat = torch.cat((out, skipx), 1)
-            out = copy(xcat)
-            for block in self.core:
-                out = block(out)
+            up_conv = self.up_conv_ab
+            core = self.core
+
+        up = up_conv(x)
+        xcat = torch.cat((up, skipx), 1)
+        out = copy(xcat)
+        for block in core:
+            out = block(out, inverse)
 
         return self.relu(torch.add(out, xcat))
 
