@@ -21,6 +21,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+ignore_this/
 eggs/
 .eggs/
 lib/
