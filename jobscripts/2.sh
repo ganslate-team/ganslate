@@ -3,7 +3,7 @@
 ### #SBATCH directives need to be in the first part of the jobscript
 
 ### Job name
-#SBATCH --job-name=smalltest
+#SBATCH --job-name=exp2
 
 ### Output path for stdout and stderr
 ### %J is the job ID, %I is the array ID
@@ -28,10 +28,10 @@
 
 ### if needed: switch to your working directory (where you saved your program)
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
-   
+
 source $HOME/.bashrc
 conda activate maastro
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python train.py --name smalltest --batchSize 4 --nThread 4 --niter 20 --niter_decay 20 --lr_G 0.0002 --lr_D 0.0002 --model unpaired_revgan3d --which_model_netG vnet_generator  --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/ft002207/lung1_lidc_gan --gpu_ids 0,1 --save_epoch_freq 10 --nThreads 8 --wandb True
+python train.py --name exp2 --proportion_SSIM 0.84 --focus_window 0.2 --lambda_identity 0.1 --lambda_A 10.0 --lambda_B 10.0 --niter 500 --niter_decay 100 --lr_G 0.0002 --lr_D 0.0002 --batchSize 8  --patch_size 64 64 64 --model unpaired_revgan3d --which_model_netG vnet_generator --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/jv341625/ASensation16_BLightSpeed16/ --gpu_ids 0,1 --save_epoch_freq 10 --nThreads 8 --wandb True

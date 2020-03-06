@@ -5,11 +5,8 @@ import torch.nn.functional as F
 import functools
 from torch.optim import lr_scheduler
 import memcnn
-from torch.nn import Parameter
-import numpy as np
 import re
 
-from copy import copy
 ###############################################################################
 # Helper Functions
 ###############################################################################
@@ -662,7 +659,7 @@ class VnetRevBlock(nn.Module):
             Fm=self.build_conv_block(nchan//2),
             Gm=self.build_conv_block(nchan//2)
         )
-
+        # TODO: keep_input option
         self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
                                                         keep_input=True, 
                                                         keep_input_inverse=True)
@@ -786,15 +783,27 @@ class VNet(nn.Module):
         self.in_tr_ba = InputTransition(16)
 
         # ----- partially reversible layers ------
-        self.down_tr32 = DownTransition(16, 2)
-        self.down_tr64 = DownTransition(32, 3)
-        self.down_tr128 = DownTransition(64, 3)
-        self.down_tr256 = DownTransition(128, 3)
 
-        self.up_tr256 = UpTransition(256, 256, 3)
-        self.up_tr128 = UpTransition(256, 128, 3)
-        self.up_tr64 = UpTransition(128, 64, 2)
+        # self.down_tr32 = DownTransition(16, 2)
+        # self.down_tr64 = DownTransition(32, 3)
+        # self.down_tr128 = DownTransition(64, 3)
+        # self.down_tr256 = DownTransition(128, 3)
+
+        # self.up_tr256 = UpTransition(256, 256, 3)
+        # self.up_tr128 = UpTransition(256, 128, 3)
+        # self.up_tr64 = UpTransition(128, 64, 2)
+        # self.up_tr32 = UpTransition(64, 32, 1)
+
+        self.down_tr32 = DownTransition(16, 1)
+        self.down_tr64 = DownTransition(32, 2)
+        self.down_tr128 = DownTransition(64, 3)
+        self.down_tr256 = DownTransition(128, 2)
+
+        self.up_tr256 = UpTransition(256, 256, 2)
+        self.up_tr128 = UpTransition(256, 128, 2)
+        self.up_tr64 = UpTransition(128, 64, 1)
         self.up_tr32 = UpTransition(64, 32, 1)
+        
         # -----------------------------------------
         
         self.out_tr_ab = OutputTransition(32, num_classes)
@@ -823,26 +832,26 @@ class VNet(nn.Module):
 # class BigVNet(nn.Module):
 #     # the number of convolutions in each layer corresponds
 #     # to what is in the actual prototxt, not the intent
-#     def __init__(self, elu=True, num_classes=1):
+#     def __init__(self, num_classes=1):
 #         super(BigVNet, self).__init__()
 
-#         self.in_tr_ab = InputTransition(16, elu)
-#         self.in_tr_ba = InputTransition(16, elu)
+#         self.in_tr_ab = InputTransition(16)
+#         self.in_tr_ba = InputTransition(16)
 
 #         # ----- partially reversible layers ------
-#         self.down_tr32 = DownTransition(16, 3, elu)
-#         self.down_tr64 = DownTransition(32, 5, elu)
-#         self.down_tr128 = DownTransition(64, 5, elu)
-#         self.down_tr256 = DownTransition(128, 5, elu)
+#         self.down_tr32 = DownTransition(16, 3)
+#         self.down_tr64 = DownTransition(32, 5)
+#         self.down_tr128 = DownTransition(64, 5)
+#         self.down_tr256 = DownTransition(128, 5)
 
-#         self.up_tr256 = UpTransition(256, 256, 5, elu)
-#         self.up_tr128 = UpTransition(256, 128, 5, elu)
-#         self.up_tr64 = UpTransition(128, 64, 3, elu)
-#         self.up_tr32 = UpTransition(64, 32, 2, elu)
+#         self.up_tr256 = UpTransition(256, 256, 5)
+#         self.up_tr128 = UpTransition(256, 128, 5)
+#         self.up_tr64 = UpTransition(128, 64, 3)
+#         self.up_tr32 = UpTransition(64, 32, 2)
 #         # -----------------------------------------
         
-#         self.out_tr_ab = OutputTransition(32, elu, num_classes)
-#         self.out_tr_ba = OutputTransition(32, elu, num_classes)
+#         self.out_tr_ab = OutputTransition(32, num_classes)
+#         self.out_tr_ba = OutputTransition(32, num_classes)
 
 #     def forward(self, x, inverse=False):
 #         if inverse:
@@ -865,71 +874,71 @@ class VNet(nn.Module):
 #         return out
 
 
-# class SmallVNet(nn.Module):
-#     # the number of convolutions in each layer corresponds
-#     # to what is in the actual prototxt, not the intent
-#     def __init__(self, elu=True, num_classes=1):
-#         super(SmallVNet, self).__init__()
+class SmallVNet(nn.Module):
+    # the number of convolutions in each layer corresponds
+    # to what is in the actual prototxt, not the intent
+    def __init__(self, num_classes=1):
+        super(SmallVNet, self).__init__()
 
-#         self.in_tr_ab = InputTransition(16, elu)
-#         self.in_tr_ba = InputTransition(16, elu)
+        self.in_tr_ab = InputTransition(16)
+        self.in_tr_ba = InputTransition(16)
 
-#         # ----- partially reversible layers ------
-#         self.down_tr32 = DownTransition(16, 2, elu)
-#         self.down_tr64 = DownTransition(32, 3, elu)
-#         self.down_tr128 = DownTransition(64, 3, elu)
+        # ----- partially reversible layers ------
+        self.down_tr32 = DownTransition(16, 2)
+        self.down_tr64 = DownTransition(32, 3)
+        self.down_tr128 = DownTransition(64, 3)
         
-#         self.up_tr128 = UpTransition(128, 128, 3, elu)
-#         self.up_tr64 = UpTransition(128, 64, 2, elu)
-#         self.up_tr32 = UpTransition(64, 32, 1, elu)
-#         # -----------------------------------------
+        self.up_tr128 = UpTransition(128, 128, 3)
+        self.up_tr64 = UpTransition(128, 64, 2)
+        self.up_tr32 = UpTransition(64, 32, 1)
+        # -----------------------------------------
         
-#         self.out_tr_ab = OutputTransition(32, elu, num_classes)
-#         self.out_tr_ba = OutputTransition(32, elu, num_classes)
+        self.out_tr_ab = OutputTransition(32, num_classes)
+        self.out_tr_ba = OutputTransition(32, num_classes)
 
-#     def forward(self, x, inverse=False):
-#         if inverse:
-#             in_tr  = self.in_tr_ba
-#             out_tr = self.out_tr_ba
-#         else:
-#             in_tr  = self.in_tr_ab
-#             out_tr = self.out_tr_ab
+    def forward(self, x, inverse=False):
+        if inverse:
+            in_tr  = self.in_tr_ba
+            out_tr = self.out_tr_ba
+        else:
+            in_tr  = self.in_tr_ab
+            out_tr = self.out_tr_ab
         
-#         out16 = in_tr(x)
-#         out32 = self.down_tr32(out16, inverse)
-#         out64 = self.down_tr64(out32, inverse)
-#         out128 = self.down_tr128(out64, inverse)
-#         out = self.up_tr128(out128, out64, inverse)
-#         out = self.up_tr64(out, out32, inverse)
-#         out = self.up_tr32(out, out16, inverse)
-#         out = out_tr(out)
-#         return out
+        out16 = in_tr(x)
+        out32 = self.down_tr32(out16, inverse)
+        out64 = self.down_tr64(out32, inverse)
+        out128 = self.down_tr128(out64, inverse)
+        out = self.up_tr128(out128, out64, inverse)
+        out = self.up_tr64(out, out32, inverse)
+        out = self.up_tr32(out, out16, inverse)
+        out = out_tr(out)
+        return out
 
 
 
 # class OldVNet(nn.Module):
 #     # the number of convolutions in each layer corresponds
 #     # to what is in the actual prototxt, not the intent
-#     def __init__(self, elu=True, num_classes=1):
+#     def __init__(self, num_classes=1):
 #         super(OldVNet, self).__init__()
 
-#         self.in_tr_ab = InputTransition(16, elu)
-#         self.in_tr_ba = InputTransition(16, elu)
+#         self.in_tr_ab = InputTransition(16)
+#         self.in_tr_ba = InputTransition(16)
 
 #         # ----- partially reversible layers ------
-#         self.down_tr32 = DownTransition(16, 1, elu)
-#         self.down_tr64 = DownTransition(32, 2, elu)
-#         self.down_tr128 = DownTransition(64, 3, elu)
-#         self.down_tr256 = DownTransition(128, 2, elu)
+#         self.down_tr32 = DownTransition(16, 1)
+#         self.down_tr64 = DownTransition(32, 2)
+#         self.down_tr128 = DownTransition(64, 3)
+#         self.down_tr256 = DownTransition(128, 2)
 
-#         self.up_tr256 = UpTransition(256, 256, 2, elu)
-#         self.up_tr128 = UpTransition(256, 128, 2, elu)
-#         self.up_tr64 = UpTransition(128, 64, 1, elu)
-#         self.up_tr32 = UpTransition(64, 32, 1, elu)
+#         self.up_tr256 = UpTransition(256, 256, 2)
+#         self.up_tr128 = UpTransition(256, 128, 2)
+#         self.up_tr64 = UpTransition(128, 64, 1)
+#         self.up_tr32 = UpTransition(64, 32, 1)
 #         # -----------------------------------------
         
-#         self.out_tr_ab = OutputTransition(32, elu, num_classes)
-#         self.out_tr_ba = OutputTransition(32, elu, num_classes)
+#         self.out_tr_ab = OutputTransition(32, num_classes)
+#         self.out_tr_ba = OutputTransition(32, num_classes)
 
 #     def forward(self, x, inverse=False):
 #         if inverse:

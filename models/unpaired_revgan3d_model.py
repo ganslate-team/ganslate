@@ -4,7 +4,7 @@ from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks3d
 import torch.nn.functional as F
-
+from pytorch_msssim.ssim import SSIM, MS_SSIM
 
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''
@@ -17,6 +17,7 @@ class UnpairedRevGAN3dModel(BaseModel):
             parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')
             parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
             parser.add_argument('--lambda_identity', type=float, default=0.0, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
+            parser.add_argument('--proportion_SSIM', type=float, default=0.0, help='TODO')
         return parser
 
     def initialize(self, opt):
@@ -62,6 +63,7 @@ class UnpairedRevGAN3dModel(BaseModel):
             # define loss functions
             self.criterionGAN = networks3d.GANLoss(use_lsgan=not opt.no_lsgan).to(self.device)
             self.criterionCycle = torch.nn.L1Loss()
+            self.criterionSSIM = SSIM(data_range=(-1,1), channel=opt.patch_size[0])
             self.criterionIdt = torch.nn.L1Loss()
             # initialize optimizers
             self.params_G = [self.netG.parameters()]
@@ -120,6 +122,7 @@ class UnpairedRevGAN3dModel(BaseModel):
 
     def backward_G(self):
         lambda_idt = self.opt.lambda_identity
+        proportion_SSIM = self.opt.proportion_SSIM
         lambda_A = self.opt.lambda_A
         lambda_B = self.opt.lambda_B
         # Identity loss
@@ -140,11 +143,27 @@ class UnpairedRevGAN3dModel(BaseModel):
         # GAN loss D_B(G_B(B))
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A), True)
 
-        # Forward cycle loss
-        self.loss_cycle_A = self.criterionCycle(self.rec_A, self.real_A) * lambda_A
-        # Backward cycle loss
-        self.loss_cycle_B = self.criterionCycle(self.rec_B, self.real_B) * lambda_B
+        
+        if proportion_SSIM > 0:
+            alpha = proportion_SSIM
+            beta  = 1 - proportion_SSIM
+            ssim_loss_A  = (1-self.criterionSSIM(self.rec_A, self.real_A))
+            ssim_loss_B  = (1-self.criterionSSIM(self.rec_B, self.real_B))
+            cycle_loss_A = self.criterionSSIM(self.rec_A, self.real_A)
+            cycle_loss_B = self.criterionSSIM(self.rec_B, self.real_B)
 
+            self.loss_cycle_A = alpha*ssim_loss_A + beta*cycle_loss_A
+            self.loss_cycle_B = alpha*ssim_loss_B + beta*cycle_loss_B
+        else:
+            # Forward cycle loss
+            self.loss_cycle_A = self.criterionCycle(self.rec_A, self.real_A)
+            # Backward cycle loss
+            self.loss_cycle_B = self.criterionCycle(self.rec_B, self.real_B)
+        
+        self.loss_cycle_A = self.loss_cycle_A * lambda_A 
+        self.loss_cycle_B = self.loss_cycle_B * lambda_B
+
+        
         # combined loss
         self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
