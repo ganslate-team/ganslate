@@ -3,7 +3,7 @@
 ### #SBATCH directives need to be in the first part of the jobscript
 
 ### Job name
-#SBATCH --job-name=exp1
+#SBATCH --job-name=new1
 
 ### Output path for stdout and stderr
 ### %J is the job ID, %I is the array ID
@@ -34,6 +34,4 @@ conda activate maastro
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python train.py --name exp1 --proportion_SSIM 0.84 --focus_window 0.2  --lambda_A 10.0 --lambda_B 10.0 --niter 200 --niter_decay 50 --lr_G 0.0002 --lr_D 0.0002 --batchSize 2  --patch_size 128 128 128 --model unpaired_revgan3d --which_model_netG vnet_generator --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/jv341625/ASensation16_BLightSpeed16/ --gpu_ids 0,1 --save_epoch_freq 10 --nThreads 8 --wandb True
-
-#--lambda_identity 0.1
+python train.py --name new1 --lambda_inverse 0.1 --proportion_SSIM 0.84 --focus_window 0.2  --lambda_A 10.0 --lambda_B 10.0 --niter 450 --niter_decay 50 --lr_G 0.0002 --lr_D 0.0002 --batchSize 2  --patch_size 128 128 128 --model unpaired_revgan3d --which_model_netG vnet_generator --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/jv341625/ASensation16_BLightSpeed16/ --gpu_ids 0,1 --save_epoch_freq 10 --nThreads 8 --wandb True

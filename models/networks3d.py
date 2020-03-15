@@ -89,6 +89,8 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive
         #depth = int(re.findall(r'\d+', which_model_netG)[0])
         #netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
         netG = VNet(num_classes=1, keep_input=use_naive)
+    if which_model_netG.startswith('deeper_vnet_'):
+        netG = DeeperVNet(num_classes=1, keep_input=use_naive)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     return init_net(netG, init_type, init_gain, gpu_ids)
@@ -407,3 +409,51 @@ class VNet(nn.Module):
         out = self.up_tr32(out, out16, inverse)
         out = out_tr(out)
         return out
+
+
+class DeeperVNet(nn.Module):
+    # the number of convolutions in each layer corresponds
+    # to what is in the actual prototxt, not the intent
+    def __init__(self, num_classes=1, keep_input=False):
+        super(DeeperVNet, self).__init__()
+        print('keep_input', keep_input)
+        self.in_tr_ab = InputTransition(16)
+        self.in_tr_ba = InputTransition(16)
+
+        # ----- partially reversible layers ------
+
+        self.down_tr32 = DownTransition(16, 2, keep_input)
+        self.down_tr64 = DownTransition(32, 3, keep_input)
+        self.down_tr128 = DownTransition(64, 3, keep_input)
+        self.down_tr256 = DownTransition(128, 3, keep_input)
+
+        self.up_tr256 = UpTransition(256, 256, 3, keep_input)
+        self.up_tr128 = UpTransition(256, 128, 3, keep_input)
+        self.up_tr64 = UpTransition(128, 64, 2, keep_input)
+        self.up_tr32 = UpTransition(64, 32, 1, keep_input)
+        
+        # -----------------------------------------
+        
+        self.out_tr_ab = OutputTransition(32, num_classes)
+        self.out_tr_ba = OutputTransition(32, num_classes)
+
+    def forward(self, x, inverse=False):
+        if inverse:
+            in_tr  = self.in_tr_ba
+            out_tr = self.out_tr_ba
+        else:
+            in_tr  = self.in_tr_ab
+            out_tr = self.out_tr_ab
+        
+        out16 = in_tr(x)
+        out32 = self.down_tr32(out16, inverse)
+        out64 = self.down_tr64(out32, inverse)
+        out128 = self.down_tr128(out64, inverse)
+        out256 = self.down_tr256(out128, inverse)
+        out = self.up_tr256(out256, out128, inverse)
+        out = self.up_tr128(out, out64, inverse)
+        out = self.up_tr64(out, out32, inverse)
+        out = self.up_tr32(out, out16, inverse)
+        out = out_tr(out)
+        return out
+

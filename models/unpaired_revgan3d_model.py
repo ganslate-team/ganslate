@@ -17,6 +17,7 @@ class UnpairedRevGAN3dModel(BaseModel):
             parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')
             parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
             parser.add_argument('--lambda_identity', type=float, default=0.0, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
+            parser.add_argument('--lambda_inverse', type=float, default=0.0, help='use inverse mapping. Setting lambda_inverse other than 0 has an effect of scaling the weight of the inverse mapping loss. For example, if the weight of the inverse loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_inverse = 0.1')
             parser.add_argument('--proportion_SSIM', type=float, default=0.0, help='TODO')
         return parser
 
@@ -24,7 +25,7 @@ class UnpairedRevGAN3dModel(BaseModel):
         BaseModel.initialize(self, opt)
 
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
-        self.loss_names = ['D_A', 'G_A', 'cycle_A', 'idt_A', 'D_B', 'G_B', 'cycle_B', 'idt_B']
+        self.loss_names = ['D_A', 'G_A', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_B', 'cycle_B', 'idt_B', 'inv_B']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
         visual_names_A = ['real_A', 'fake_B', 'rec_A']
         visual_names_B = ['real_B', 'fake_A', 'rec_B']
@@ -65,6 +66,7 @@ class UnpairedRevGAN3dModel(BaseModel):
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionSSIM = SSIM(data_range=(-1,1), channel=opt.patch_size[0])
             self.criterionIdt = torch.nn.L1Loss()
+            self.criterionInv = torch.nn.L1Loss()
             # initialize optimizers
             self.params_G = [self.netG.parameters()]
             self.optimizer_G = torch.optim.Adam(itertools.chain(*self.params_G
@@ -122,6 +124,7 @@ class UnpairedRevGAN3dModel(BaseModel):
 
     def backward_G(self):
         lambda_idt = self.opt.lambda_identity
+        lambda_inv = self.opt.lambda_inverse
         proportion_SSIM = self.opt.proportion_SSIM
         lambda_A = self.opt.lambda_A
         lambda_B = self.opt.lambda_B
@@ -136,6 +139,13 @@ class UnpairedRevGAN3dModel(BaseModel):
         else:
             self.loss_idt_A = 0
             self.loss_idt_B = 0
+        
+        if lambda_inv > 0:
+            self.loss_inv_A = self.criterionInv(self.real_A, self.fake_B) * lambda_inv
+            self.loss_inv_B = self.criterionInv(self.real_B, self.fake_A) * lambda_inv  
+        else:
+            self.loss_inv_A = 0
+            self.loss_inv_B = 0
 
         # GAN loss D_A(G_A(A))
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_B), True)
@@ -165,7 +175,7 @@ class UnpairedRevGAN3dModel(BaseModel):
 
         
         # combined loss
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
+        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.loss_inv_A + self.loss_inv_B
         self.loss_G.backward()
 
     def optimize_parameters(self):
