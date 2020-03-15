@@ -11,98 +11,7 @@ import re
 # Helper Functions
 ###############################################################################
 
-class Layer(nn.Module):
-    def __init__(self):
-        super(Layer, self).__init__()
-
-    def forward(self, x):
-        raise NotImplementedError
-
-    def inverse(self, y):
-        raise NotImplementedError
-
-class Squeeze(Layer):
-    def __init__(self, factor=2):
-        super(Squeeze, self).__init__()
-        assert factor > 1 and isinstance(factor, int), 'no point of using this if factor <= 1'
-        self.factor = factor
-
-    def squeeze_bchw(self, x):
-        bs, c, h, w = x.size()
-        assert h % self.factor == 0 and w % self.factor == 0, pdb.set_trace()
-        
-        # taken from https://github.com/chaiyujin/glow-pytorch/blob/master/glow/modules.py
-        x = x.view(bs, c, h // self.factor, self.factor, w // self.factor, self.factor)
-        x = x.permute(0, 1, 3, 5, 2, 4).contiguous()
-        x = x.view(bs, c * self.factor * self.factor, h // self.factor, w // self.factor)
-
-        return x
- 
-    def unsqueeze_bchw(self, x):
-        bs, c, h, w = x.size()
-        assert c >= 4 and c % 4 == 0
-
-        # taken from https://github.com/chaiyujin/glow-pytorch/blob/master/glow/modules.py
-        x = x.view(bs, c // self.factor ** 2, self.factor, self.factor, h, w)
-        x = x.permute(0, 1, 4, 2, 5, 3).contiguous()
-        x = x.view(bs, c // self.factor ** 2, h * self.factor, w * self.factor)
-        return x
-    
-    def forward(self, x):
-        if len(x.size()) != 4: 
-            raise NotImplementedError # Maybe ValueError would be more appropriate
-
-        return self.squeeze_bchw(x)
-        
-    def inverse(self, x):
-        if len(x.size()) != 4: 
-            raise NotImplementedError
-
-        return self.unsqueeze_bchw(x)
-
-
-class Unsqueeze(Layer):
-    def __init__(self, factor=2):
-        super(Unsqueeze, self).__init__()
-        assert factor > 1 and isinstance(factor, int), 'no point of using this if factor <= 1'
-        self.factor = factor
-
-    def squeeze_bchw(self, x):
-        bs, c, h, w = x.size()
-        assert h % self.factor == 0 and w % self.factor == 0, pdb.set_trace()
-        
-        # taken from https://github.com/chaiyujin/glow-pytorch/blob/master/glow/modules.py
-        x = x.view(bs, c, h // self.factor, self.factor, w // self.factor, self.factor)
-        x = x.permute(0, 1, 3, 5, 2, 4).contiguous()
-        x = x.view(bs, c * self.factor * self.factor, h // self.factor, w // self.factor)
-
-        return x
- 
-    def unsqueeze_bchw(self, x):
-        bs, c, h, w = x.size()
-        assert c >= 4 and c % 4 == 0
-
-        # taken from https://github.com/chaiyujin/glow-pytorch/blob/master/glow/modules.py
-        x = x.view(bs, c // self.factor ** 2, self.factor, self.factor, h, w)
-        x = x.permute(0, 1, 4, 2, 5, 3).contiguous()
-        x = x.view(bs, c // self.factor ** 2, h * self.factor, w * self.factor)
-        return x
-
-    def forward(self, x):
-        if len(x.size()) != 4: 
-            raise NotImplementedError # Maybe ValueError would be more appropriate
-
-        return self.unsqueeze_bchw(x)
-        
-    def inverse(self, x):
-        if len(x.size()) != 4: 
-            raise NotImplementedError
-
-        return self.squeeze_bchw(x)
-
-
-
-
+# TODO: implement into VNet
 def get_norm_layer(norm_type='instance'):
     if norm_type == 'batch':
         norm_layer = functools.partial(nn.BatchNorm3d, affine=True)
@@ -169,20 +78,17 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive
     netG = None
     norm_layer = get_norm_layer(norm_type=norm)
 
-    if which_model_netG.startswith('srcnn_'):
-        depth = int(re.findall(r'\d+', which_model_netG)[0])
-        netG = SrcnnGenerator3d(input_nc, output_nc, depth, ngf)
-    elif which_model_netG.startswith('edsrF_'):
-        depth = int(re.findall(r'\d+', which_model_netG)[0])
-        netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
-    elif which_model_netG.startswith('vnet_'):
+    # if which_model_netG.startswith('srcnn_'):
+    #     depth = int(re.findall(r'\d+', which_model_netG)[0])
+    #     netG = SrcnnGenerator3d(input_nc, output_nc, depth, ngf)
+    # elif which_model_netG.startswith('edsrF_'):
+    #     depth = int(re.findall(r'\d+', which_model_netG)[0])
+    #     netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
+    # el
+    if which_model_netG.startswith('vnet_'):
         #depth = int(re.findall(r'\d+', which_model_netG)[0])
         #netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
-        netG = VNet(num_classes=1)
-    elif which_model_netG.startswith('big_vnet_'):
-        netG = BigVNet(num_classes=1)
-    elif which_model_netG.startswith('small_vnet_'):
-        netG = SmallVNet(num_classes=1)
+        netG = VNet(num_classes=1, keep_input=use_naive)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     return init_net(netG, init_type, init_gain, gpu_ids)
@@ -234,345 +140,6 @@ class GANLoss(nn.Module):
     def __call__(self, input, target_is_real):
         target_tensor = self.get_target_tensor(input, target_is_real)
         return self.loss(input, target_tensor)
-
-
-class ZeroInit(nn.Conv3d):
-    def reset_parameters(self):
-        self.weight.data.zero_()
-        self.bias.data.zero_()
-
-class ThickBlocknaive3d(nn.Module):
-    def __init__(self, dim, use_bias):
-        super(ThickBlocknaive3d, self).__init__()
-        self.F = self.build_conv_block(dim, True)
-
-    def build_conv_block(self, dim, use_bias):
-        conv_block = []
-        conv_block += [nn.InstanceNorm3d(dim)]
-        conv_block += [nn.ReplicationPad3d(1)]
-        conv_block += [nn.Conv3d(dim, dim, kernel_size=3, padding=0, bias=use_bias)]
-        conv_block += [nn.InstanceNorm3d(dim)]
-        conv_block += [nn.ReLU()]
-        conv_block += [nn.ReplicationPad3d(1)]
-        conv_block += [ZeroInit(dim, dim, kernel_size=3, padding=0, bias=use_bias)]
-
-
-        return nn.Sequential(*conv_block)
-
-    def forward(self, input):
-        return self.F(input) + input
-
-
-class ThickBlock3d(nn.Module):
-    def __init__(self, dim, use_bias, use_naive=False):
-        super(ThickBlock3d, self).__init__()
-
-        invertible_module = memcnn.AdditiveCoupling(
-            Fm=self.build_conv_block(dim // 2, True),
-            Gm=self.build_conv_block(dim // 2, True)
-        )
-
-        keep = False
-        if use_naive:
-            keep = True
-            
-        self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                        keep_input=keep, 
-                                                        keep_input_inverse=keep)
-
-    def build_conv_block(self, dim, use_bias):
-        conv_block = []
-        conv_block += [nn.InstanceNorm3d(dim)]
-        conv_block += [nn.ReplicationPad3d(1)]
-        conv_block += [nn.Conv3d(dim, dim, kernel_size=3, padding=0, bias=use_bias)]
-        conv_block += [nn.InstanceNorm3d(dim)]
-        conv_block += [nn.ReLU()]
-        conv_block += [nn.ReplicationPad3d(1)]
-        conv_block += [ZeroInit(dim, dim, kernel_size=3, padding=0, bias=use_bias)]
-
-
-        return nn.Sequential(*conv_block)
-
-    def forward(self, x):
-        return self.rev_block(x)
-
-    def inverse(self, x):
-        return self.rev_block.inverse(x)
-
-
-
-class RevBlock3d(nn.Module):
-    def __init__(self, dim, use_bias, norm_layer, use_naive):
-        super(RevBlock3d, self).__init__()
-        
-        invertible_module = memcnn.AdditiveCoupling(
-            Fm=self.build_conv_block(dim // 2, True, norm_layer),
-            Gm=self.build_conv_block(dim // 2, True, norm_layer)
-        )
-
-        keep = False
-        if use_naive:
-            keep = True
-            
-        self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                        keep_input=keep, 
-                                                        keep_input_inverse=keep)
-
-    def build_conv_block(self, dim, use_bias, norm_layer):
-        conv_block = []
-        conv_block += [nn.ReplicationPad3d(1)]
-        conv_block += [nn.Conv3d(dim, dim, kernel_size=3, padding=0, bias=use_bias)]
-        conv_block += [norm_layer(dim)]
-        conv_block += [nn.ReLU()]
-        conv_block += [nn.ReplicationPad3d(1)]
-        conv_block += [ZeroInit(dim, dim, kernel_size=3, padding=0, bias=use_bias)]
-
-
-        return nn.Sequential(*conv_block)
-
-    def forward(self, x):
-        return self.rev_block(x)
-
-    def inverse(self, x):
-        return self.rev_block.inverse(x)
-
-
-
-class PixelUnshuffle3D(nn.Module):
-    def __init__(self, upscale_factor):
-        super(PixelUnshuffle3D, self).__init__()
-        self.upscale_factor = upscale_factor
-
-    def forward(self, input):
-        return pixel_unshuffle_3d(input, self.upscale_factor)
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(upscale_factor=' + str(self.upscale_factor) + ')'
-
-
-def pixel_unshuffle_3d(input, upscale_factor):
-    batch_size, channels, in_height, in_width, in_depth = input.size()
-
-    out_channels = channels * upscale_factor ** 3
-    out_height = in_height // upscale_factor
-    out_width = in_width // upscale_factor
-    out_depth = in_depth // upscale_factor
-
-    fm_view = input.view(batch_size, channels, out_height, upscale_factor, out_width, upscale_factor, out_depth, upscale_factor)
-    fm_perm = fm_view.permute(0, 1, 3, 5, 7, 2, 4, 6).contiguous()
-    return fm_perm.view(batch_size, out_channels, out_height, out_width, out_depth)
-
-
-
-
-
-class PixelShuffle3D(nn.Module):
-    def __init__(self, upscale_factor):
-        super(PixelShuffle3D, self).__init__()
-        self.upscale_factor = upscale_factor
-
-    def forward(self, input):
-        return pixel_shuffle_3d(input, self.upscale_factor)
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(upscale_factor=' + str(self.upscale_factor) + ')'
-
-
-def pixel_shuffle_3d(input, upscale_factor):
-    batch_size, channels, in_height, in_width, in_depth = input.size()
-    channels //= upscale_factor ** 3
-
-    out_height = in_height * upscale_factor
-    out_width = in_width * upscale_factor
-    out_depth = in_depth * upscale_factor
-
-    input_view = input.contiguous().view(
-        batch_size, channels, upscale_factor, upscale_factor, upscale_factor,
-        in_height, in_width, in_depth)
-
-    shuffle_out = input_view.permute(0, 1, 5, 2, 6, 3, 7, 4).contiguous()
-    return shuffle_out.view(batch_size, channels, out_height, out_width, out_depth)
-
-
-class EdsrFGenerator3d(nn.Module):
-    def __init__(self, input_nc, output_nc, depth, ngf=64, use_naive=False):
-        super(EdsrFGenerator3d, self).__init__()
-
-        use_bias = True
-        downconv_ab = [nn.ReplicationPad3d(2),
-                       nn.Conv3d(input_nc, ngf, kernel_size=5,
-                                 stride=1, padding=0, bias=use_bias),
-                       nn.InstanceNorm3d(ngf),
-                       nn.ReLU(),
-                       nn.Conv3d(ngf, ngf * 2, kernel_size=3,
-                                 stride=2, padding=1, bias=use_bias),
-                       nn.InstanceNorm3d(ngf * 2),
-                       nn.ReLU()]
-        downconv_ba = [nn.ReplicationPad3d(2),
-                       nn.Conv3d(input_nc, ngf, kernel_size=5,
-                                 stride=1, padding=0, bias=use_bias),
-                       nn.InstanceNorm3d(ngf),
-                       nn.ReLU(),
-                       nn.Conv3d(ngf, ngf * 2, kernel_size=3,
-                                 stride=2, padding=1, bias=use_bias),
-                       nn.InstanceNorm3d(ngf * 2),
-                       nn.ReLU()]
-
-        core = []
-        for _ in range(depth):
-            core += [ThickBlock3d(ngf * 2, use_bias, use_naive)]
-
-        upconv_ab = [nn.ConvTranspose3d(ngf * 2, ngf,
-                                        kernel_size=3, stride=2,
-                                        padding=1, output_padding=1,
-                                       bias=use_bias),
-                     nn.InstanceNorm3d(ngf),
-                     nn.ReLU(),
-                     nn.ReplicationPad3d(2),
-                     nn.Conv3d(ngf, output_nc, kernel_size=5, padding=0),
-                     nn.Tanh()]
-        upconv_ba = [nn.ConvTranspose3d(ngf * 2, ngf,
-                                        kernel_size=3, stride=2,
-                                        padding=1, output_padding=1,
-                                       bias=use_bias),
-                     nn.InstanceNorm3d(ngf),
-                     nn.ReLU(),
-                     nn.ReplicationPad3d(2),
-                     nn.Conv3d(ngf, output_nc, kernel_size=5, padding=0),
-                     nn.Tanh()]
-
-        self.downconv_ab = nn.Sequential(*downconv_ab)
-        self.downconv_ba = nn.Sequential(*downconv_ba)
-        self.core = nn.ModuleList(core)
-        self.upconv_ab = nn.Sequential(*upconv_ab)
-        self.upconv_ba = nn.Sequential(*upconv_ba)
-
-    def forward(self, input, inverse=False):
-        out = input
-        if inverse:
-            out = self.downconv_ba(out)
-            for block in reversed(self.core):
-                out = block.inverse(out)
-            return self.upconv_ba(out)
-        else:
-            out = self.downconv_ab(out)
-            for block in self.core:
-                out = block(out)
-            return self.upconv_ab(out)
-
-
-
-class SrcnnGenerator3d(nn.Module):
-    def __init__(self, input_nc, output_nc, depth, ngf=64, norm_layer=nn.BatchNorm3d, use_naive=False):
-        super(SrcnnGenerator3d, self).__init__()
-
-        use_bias = True
-        downconv_ab = [nn.ReplicationPad3d(1),
-                    nn.Conv3d(input_nc, ngf, kernel_size=3,
-                              stride=1, padding=0, bias=use_bias)]
-        downconv_ba = [nn.ReplicationPad3d(1),
-                    nn.Conv3d(input_nc, ngf, kernel_size=3,
-                              stride=1, padding=0, bias=use_bias)]
-
-        core = []
-        for _ in range(depth):
-            core += [RevBlock3d(ngf, use_bias, norm_layer, use_naive)]
-
-        upconv_ab = [nn.Conv3d(ngf, output_nc, kernel_size=1,
-                            stride=1, padding=0, bias=use_bias)]
-        upconv_ba = [nn.Conv3d(ngf, output_nc, kernel_size=1,
-                            stride=1, padding=0, bias=use_bias)]
-
-        self.downconv_ab = nn.Sequential(*downconv_ab)
-        self.downconv_ba = nn.Sequential(*downconv_ba)
-        self.core = nn.ModuleList(core)
-        self.upconv_ab = nn.Sequential(*upconv_ab)
-        self.upconv_ba = nn.Sequential(*upconv_ba)
-
-    def forward(self, input, inverse=False):
-        orig_shape = input.shape[2:]
-        out = input
-
-        if inverse:
-            out = self.downconv_ab(out)
-            for block in reversed(self.core):
-                out = block.inverse(out)
-            out = self.upconv_ab(out)
-        else:
-            out = self.downconv_ba(out)
-            for block in self.core:
-                out = block(out)
-            out = self.upconv_ba(out)
-        return out
-
-
-class UnetGenerator(nn.Module):
-    def __init__(self, input_nc, output_nc, num_downs, ngf=64,
-                 norm_layer=nn.BatchNorm3d, use_dropout=False):
-        super(UnetGenerator, self).__init__()
-
-        # construct unet structure
-        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 4, input_nc=None, submodule=None, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, input_nc=None, submodule=unet_block, norm_layer=norm_layer)
-        unet_block = UnetSkipConnectionBlock(output_nc, ngf, input_nc=input_nc, submodule=unet_block, outermost=True, norm_layer=norm_layer)
-
-        self.model = unet_block
-
-    def forward(self, input):
-        return self.model(input)
-
-
-class UnetSkipConnectionBlock(nn.Module):
-    def __init__(self, outer_nc, inner_nc, input_nc=None,
-                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm3d, use_dropout=False):
-        super(UnetSkipConnectionBlock, self).__init__()
-        self.outermost = outermost
-        if type(norm_layer) == functools.partial:
-            use_bias = norm_layer.func == nn.InstanceNorm3d
-        else:
-            use_bias = norm_layer == nn.InstanceNorm3d
-        if input_nc is None:
-            input_nc = outer_nc
-        downconv = nn.Conv3d(input_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=1, bias=use_bias)
-        downrelu = nn.LeakyReLU(0.2, True)
-        downnorm = norm_layer(inner_nc)
-        uprelu = nn.ReLU(True)
-        upnorm = norm_layer(outer_nc)
-
-        if outermost:
-            upconv = nn.ConvTranspose3d(inner_nc * 2, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1)
-            down = [downconv]
-            up = [uprelu, upconv, nn.Tanh()]
-            model = down + [submodule] + up
-        elif innermost:
-            upconv = nn.ConvTranspose3d(inner_nc, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1, bias=use_bias)
-            down = [downrelu, downconv]
-            up = [uprelu, upconv, upnorm]
-            model = down + up
-        else:
-            upconv = nn.ConvTranspose3d(inner_nc * 2, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1, bias=use_bias)
-            down = [downrelu, downconv, downnorm]
-            up = [uprelu, upconv, upnorm]
-            
-            model = down + [submodule] + up
-
-        self.model = nn.Sequential(*model)
-
-    def forward(self, x):
-        if self.outermost:
-            return self.model(x)
-        else:
-            return torch.cat([x, self.model(x)], 1)
-
-
 
 
 # Defines the PatchGAN discriminator with the specified arguments.
@@ -652,7 +219,7 @@ class PixelDiscriminator(nn.Module):
 # ---------------- V-NET -------------------
 
 class VnetRevBlock(nn.Module):
-    def __init__(self, nchan):
+    def __init__(self, nchan, keep_input):
         super(VnetRevBlock, self).__init__()
         
         invertible_module = memcnn.AdditiveCoupling(
@@ -661,8 +228,8 @@ class VnetRevBlock(nn.Module):
         )
         # TODO: keep_input option
         self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                        keep_input=True, 
-                                                        keep_input_inverse=True)
+                                                        keep_input=keep_input, 
+                                                        keep_input_inverse=keep_input)
 
     def build_conv_block(self, nchan):
         block = nn.Sequential(nn.Conv3d(nchan, nchan, kernel_size=5, padding=2),
@@ -694,12 +261,12 @@ class InputTransition(nn.Module):
 
 
 class DownTransition(nn.Module):
-    def __init__(self, inChans, nConvs):
+    def __init__(self, inChans, nConvs, keep_input):
         super(DownTransition, self).__init__()
         outChans = 2*inChans
         self.down_conv_ab = self.build_down_conv(inChans, outChans)
         self.down_conv_ba = self.build_down_conv(inChans, outChans)
-        self.core = nn.Sequential(*[VnetRevBlock(outChans) for _ in range(nConvs)])
+        self.core = nn.Sequential(*[VnetRevBlock(outChans, keep_input) for _ in range(nConvs)])
         self.relu = nn.PReLU(outChans)
 
     def build_down_conv(self, inChans, outChans):
@@ -717,7 +284,13 @@ class DownTransition(nn.Module):
 
         down = down_conv(x)
         out = down
-        for block in core:
+        for i, block in enumerate(core):
+            if i == 0:
+                #https://github.com/silvandeleemput/memcnn/issues/39#issuecomment-599199122
+                if inverse:
+                    block.rev_block.keep_input_inverse = True
+                else:
+                    block.rev_block.keep_input = True
             out = block(out, inverse=inverse)
         
         out = out + down
@@ -725,12 +298,12 @@ class DownTransition(nn.Module):
 
 
 class UpTransition(nn.Module):
-    def __init__(self, inChans, outChans, nConvs):
+    def __init__(self, inChans, outChans, nConvs, keep_input):
         super(UpTransition, self).__init__()
         self.up_conv_ab = self.build_up_conv(inChans, outChans)
         self.up_conv_ba = self.build_up_conv(inChans, outChans)
 
-        self.core = nn.Sequential(*[VnetRevBlock(outChans) for _ in range(nConvs)])
+        self.core = nn.Sequential(*[VnetRevBlock(outChans, keep_input) for _ in range(nConvs)])
         self.relu = nn.PReLU(outChans)
     
     def build_up_conv(self, inChans, outChans):
@@ -749,7 +322,13 @@ class UpTransition(nn.Module):
         up = up_conv(x)
         xcat = torch.cat((up, skipx), 1)
         out = xcat
-        for block in core:
+        for i, block in enumerate(core):
+            if i == 0:
+                #https://github.com/silvandeleemput/memcnn/issues/39#issuecomment-599199122
+                if inverse:
+                    block.rev_block.keep_input_inverse = True
+                else:
+                    block.rev_block.keep_input = True
             out = block(out, inverse)
 
         out = out + xcat
@@ -776,33 +355,33 @@ class OutputTransition(nn.Module):
 class VNet(nn.Module):
     # the number of convolutions in each layer corresponds
     # to what is in the actual prototxt, not the intent
-    def __init__(self, num_classes=1):
+    def __init__(self, num_classes=1, keep_input=False):
         super(VNet, self).__init__()
-
+        print('keep_input', keep_input)
         self.in_tr_ab = InputTransition(16)
         self.in_tr_ba = InputTransition(16)
 
         # ----- partially reversible layers ------
 
-        # self.down_tr32 = DownTransition(16, 2)
-        # self.down_tr64 = DownTransition(32, 3)
-        # self.down_tr128 = DownTransition(64, 3)
-        # self.down_tr256 = DownTransition(128, 3)
+        # self.down_tr32 = DownTransition(16, 2, keep_input)
+        # self.down_tr64 = DownTransition(32, 3, keep_input)
+        # self.down_tr128 = DownTransition(64, 3, keep_input)
+        # self.down_tr256 = DownTransition(128, 3, keep_input)
 
-        # self.up_tr256 = UpTransition(256, 256, 3)
-        # self.up_tr128 = UpTransition(256, 128, 3)
-        # self.up_tr64 = UpTransition(128, 64, 2)
-        # self.up_tr32 = UpTransition(64, 32, 1)
+        # self.up_tr256 = UpTransition(256, 256, 3, keep_input)
+        # self.up_tr128 = UpTransition(256, 128, 3, keep_input)
+        # self.up_tr64 = UpTransition(128, 64, 2, keep_input)
+        # self.up_tr32 = UpTransition(64, 32, 1, keep_input)
 
-        self.down_tr32 = DownTransition(16, 1)
-        self.down_tr64 = DownTransition(32, 2)
-        self.down_tr128 = DownTransition(64, 3)
-        self.down_tr256 = DownTransition(128, 2)
+        self.down_tr32 = DownTransition(16, 1, keep_input)
+        self.down_tr64 = DownTransition(32, 2, keep_input)
+        self.down_tr128 = DownTransition(64, 3, keep_input)
+        self.down_tr256 = DownTransition(128, 2, keep_input)
 
-        self.up_tr256 = UpTransition(256, 256, 2)
-        self.up_tr128 = UpTransition(256, 128, 2)
-        self.up_tr64 = UpTransition(128, 64, 1)
-        self.up_tr32 = UpTransition(64, 32, 1)
+        self.up_tr256 = UpTransition(256, 256, 2, keep_input)
+        self.up_tr128 = UpTransition(256, 128, 2, keep_input)
+        self.up_tr64 = UpTransition(128, 64, 1, keep_input)
+        self.up_tr32 = UpTransition(64, 32, 1, keep_input)
         
         # -----------------------------------------
         
@@ -828,134 +407,3 @@ class VNet(nn.Module):
         out = self.up_tr32(out, out16, inverse)
         out = out_tr(out)
         return out
-
-# class BigVNet(nn.Module):
-#     # the number of convolutions in each layer corresponds
-#     # to what is in the actual prototxt, not the intent
-#     def __init__(self, num_classes=1):
-#         super(BigVNet, self).__init__()
-
-#         self.in_tr_ab = InputTransition(16)
-#         self.in_tr_ba = InputTransition(16)
-
-#         # ----- partially reversible layers ------
-#         self.down_tr32 = DownTransition(16, 3)
-#         self.down_tr64 = DownTransition(32, 5)
-#         self.down_tr128 = DownTransition(64, 5)
-#         self.down_tr256 = DownTransition(128, 5)
-
-#         self.up_tr256 = UpTransition(256, 256, 5)
-#         self.up_tr128 = UpTransition(256, 128, 5)
-#         self.up_tr64 = UpTransition(128, 64, 3)
-#         self.up_tr32 = UpTransition(64, 32, 2)
-#         # -----------------------------------------
-        
-#         self.out_tr_ab = OutputTransition(32, num_classes)
-#         self.out_tr_ba = OutputTransition(32, num_classes)
-
-#     def forward(self, x, inverse=False):
-#         if inverse:
-#             in_tr  = self.in_tr_ba
-#             out_tr = self.out_tr_ba
-#         else:
-#             in_tr  = self.in_tr_ab
-#             out_tr = self.out_tr_ab
-        
-#         out16 = in_tr(x)
-#         out32 = self.down_tr32(out16, inverse)
-#         out64 = self.down_tr64(out32, inverse)
-#         out128 = self.down_tr128(out64, inverse)
-#         out256 = self.down_tr256(out128, inverse)
-#         out = self.up_tr256(out256, out128, inverse)
-#         out = self.up_tr128(out, out64, inverse)
-#         out = self.up_tr64(out, out32, inverse)
-#         out = self.up_tr32(out, out16, inverse)
-#         out = out_tr(out)
-#         return out
-
-
-class SmallVNet(nn.Module):
-    # the number of convolutions in each layer corresponds
-    # to what is in the actual prototxt, not the intent
-    def __init__(self, num_classes=1):
-        super(SmallVNet, self).__init__()
-
-        self.in_tr_ab = InputTransition(16)
-        self.in_tr_ba = InputTransition(16)
-
-        # ----- partially reversible layers ------
-        self.down_tr32 = DownTransition(16, 2)
-        self.down_tr64 = DownTransition(32, 3)
-        self.down_tr128 = DownTransition(64, 3)
-        
-        self.up_tr128 = UpTransition(128, 128, 3)
-        self.up_tr64 = UpTransition(128, 64, 2)
-        self.up_tr32 = UpTransition(64, 32, 1)
-        # -----------------------------------------
-        
-        self.out_tr_ab = OutputTransition(32, num_classes)
-        self.out_tr_ba = OutputTransition(32, num_classes)
-
-    def forward(self, x, inverse=False):
-        if inverse:
-            in_tr  = self.in_tr_ba
-            out_tr = self.out_tr_ba
-        else:
-            in_tr  = self.in_tr_ab
-            out_tr = self.out_tr_ab
-        
-        out16 = in_tr(x)
-        out32 = self.down_tr32(out16, inverse)
-        out64 = self.down_tr64(out32, inverse)
-        out128 = self.down_tr128(out64, inverse)
-        out = self.up_tr128(out128, out64, inverse)
-        out = self.up_tr64(out, out32, inverse)
-        out = self.up_tr32(out, out16, inverse)
-        out = out_tr(out)
-        return out
-
-
-
-# class OldVNet(nn.Module):
-#     # the number of convolutions in each layer corresponds
-#     # to what is in the actual prototxt, not the intent
-#     def __init__(self, num_classes=1):
-#         super(OldVNet, self).__init__()
-
-#         self.in_tr_ab = InputTransition(16)
-#         self.in_tr_ba = InputTransition(16)
-
-#         # ----- partially reversible layers ------
-#         self.down_tr32 = DownTransition(16, 1)
-#         self.down_tr64 = DownTransition(32, 2)
-#         self.down_tr128 = DownTransition(64, 3)
-#         self.down_tr256 = DownTransition(128, 2)
-
-#         self.up_tr256 = UpTransition(256, 256, 2)
-#         self.up_tr128 = UpTransition(256, 128, 2)
-#         self.up_tr64 = UpTransition(128, 64, 1)
-#         self.up_tr32 = UpTransition(64, 32, 1)
-#         # -----------------------------------------
-        
-#         self.out_tr_ab = OutputTransition(32, num_classes)
-#         self.out_tr_ba = OutputTransition(32, num_classes)
-
-#     def forward(self, x, inverse=False):
-#         if inverse:
-#             in_tr  = self.in_tr_ba
-#             out_tr = self.out_tr_ba
-#         else:
-#             in_tr  = self.in_tr_ab
-#             out_tr = self.out_tr_ab
-        
-#         out16 = in_tr(x)
-#         out32 = self.down_tr32(out16, inverse)
-#         out64 = self.down_tr64(out32, inverse)
-#         out128 = self.down_tr128(out64, inverse)
-#         out256 = self.down_tr256(out128, inverse)
-#         out = self.up_tr256(out256, out128, inverse)
-#         out = self.up_tr128(out, out64, inverse)
-#         out = self.up_tr64(out, out32, inverse)
-#         out = self.up_tr32(out, out16, inverse)
-#         out = out_tr(out)
-#         return out
