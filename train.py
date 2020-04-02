@@ -19,9 +19,7 @@ if __name__ == '__main__':
     # Setup distributed computing
     # This is set by the parallel computation script (launch.py)
     if opt.distributed:
-        print('Before', opt.gpu_ids)
         opt.gpu_ids = [opt.local_rank]
-        print('After', opt.gpu_ids)
         num_gpu = int(os.environ.get('WORLD_SIZE', 1))
         if num_gpu > 1:
             torch.cuda.set_device(opt.local_rank)
