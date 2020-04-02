@@ -105,11 +105,8 @@ class BaseModel():
                 net = getattr(self, 'net' + name)
 
                 if len(self.gpu_ids) > 0 and torch.cuda.is_available():
-                    # TODO: this is ugly
-                    device = next(net.parameters()).device  # https://discuss.pytorch.org/t/which-device-is-model-tensor-stored-on/4908/15?u=ibro45
                     torch.save(net.module.cpu().state_dict(), save_path)
-                    #net.cuda(self.gpu_ids[0])
-                    net.to(device)
+                    net.cuda(self.gpu_ids[0])
                 else:
                     torch.save(net.cpu().state_dict(), save_path)
 
