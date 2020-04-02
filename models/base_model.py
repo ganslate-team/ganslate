@@ -2,6 +2,7 @@ import os
 import torch
 from collections import OrderedDict
 from . import networks
+from apex.parallel import DistributedDataParallel
 
 class BaseModel():
 
@@ -128,7 +129,7 @@ class BaseModel():
                 load_filename = '%s_net_%s.pth' % (which_epoch, name)
                 load_path = os.path.join(self.save_dir, load_filename)
                 net = getattr(self, 'net' + name)
-                if isinstance(net, torch.nn.DataParallel):
+                if isinstance(net, torch.nn.DataParallel) or isinstance(net, DistributedDataParallel):
                     net = net.module
                 print('loading the model from %s' % load_path)
                 # if you are using PyTorch newer than 0.4 (e.g., built from

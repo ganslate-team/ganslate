@@ -45,7 +45,7 @@ class UnpairedRevGAN3dModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
         self.netG = networks3d.define_G(opt.input_nc, opt.output_nc,
                                         opt.ngf, opt.which_model_netG, opt.norm, opt.use_naive,
-                                        opt.init_type, opt.init_gain, self.gpu_ids,
+                                        opt.init_type, opt.init_gain, self.gpu_ids, opt.distributed,
                                         n_downsampling=opt.n_downsampling)
 
         self.netG_A = lambda x: self.netG(x)
@@ -54,9 +54,9 @@ class UnpairedRevGAN3dModel(BaseModel):
         if self.isTrain:
             use_sigmoid = opt.no_lsgan
             self.netD_A = networks3d.define_D(opt.output_nc, opt.ndf, opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids)
+                                            opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids, opt.distributed)
             self.netD_B = networks3d.define_D(opt.input_nc, opt.ndf, opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids)
+                                            opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids, opt.distributed)
 
         if self.isTrain:
             self.fake_A_pool = ImagePool(opt.pool_size)

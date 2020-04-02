@@ -6,6 +6,7 @@ import functools
 from torch.optim import lr_scheduler
 import memcnn
 import re
+from apex.parallel import DistributedDataParallel
 
 ###############################################################################
 # Helper Functions
@@ -63,18 +64,21 @@ def init_weights(net, init_type='normal', gain=0.02):
     net.apply(init_func)
 
 
-def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[]):
+def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed=False):
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
         print(gpu_ids)
         device = torch.device('cuda:{}'.format(gpu_ids[0])) if gpu_ids else torch.device('cpu')
         net.to(device)
-        net = torch.nn.DataParallel(net, gpu_ids)
+        if is_distributed:
+            net = DistributedDataParallel(net)
+        else:
+            net = torch.nn.DataParallel(net, gpu_ids)
     init_weights(net, init_type, gain=init_gain)
     return net
 
 
-def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive=False, init_type='normal', init_gain=0.02, gpu_ids=[], n_downsampling=2):
+def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive=False, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed=False, n_downsampling=2):
     netG = None
     norm_layer = get_norm_layer(norm_type=norm)
 
@@ -93,11 +97,11 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive
         netG = DeeperVNet(num_classes=1, keep_input=use_naive)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
-    return init_net(netG, init_type, init_gain, gpu_ids)
+    return init_net(netG, init_type, init_gain, gpu_ids, is_distributed)
 
 
-def define_D(input_nc, ndf, which_model_netD,
-             n_layers_D=3, norm='batch', use_sigmoid=False, init_type='normal', init_gain=0.02, gpu_ids=[]):
+def define_D(input_nc, ndf, which_model_netD, n_layers_D=3, norm='batch', 
+             use_sigmoid=False, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed=False):
     netD = None
     norm_layer = get_norm_layer(norm_type=norm)
 
@@ -110,7 +114,7 @@ def define_D(input_nc, ndf, which_model_netD,
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
                                   which_model_netD)
-    return init_net(netD, init_type, init_gain, gpu_ids)
+    return init_net(netD, init_type, init_gain, gpu_ids, is_distributed)
 
 
 ##############################################################################

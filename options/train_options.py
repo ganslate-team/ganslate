@@ -30,6 +30,7 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--patch_size', required=True, nargs='+', type=int, help='Size of patches extracted from volumes (z,x,y). Input example: 64 64 64')
         #parser.add_argument('--threshold_black_voxels', type=float, default=1.0, help='Threshold ratio: number of completely black voxels / total number of voxels. Defines how many completely black voxels are allowed. Default 1, no threshold is happening.')
         parser.add_argument('--focus_window', type=float, default=0.2, help='Proportion of the volume size which will be the size of the focus window.')
-        parser.add_argument("--wandb", help="Use Weights&Biases (wandb.com) to track the experiment", default=False, type=bool)
+        parser.add_argument("--wandb", help="Use Weights&Biases (wandb.com) to track the experiment", action='store_true')
+        parser.add_argument("--distributed", help="Distributed training mode", action='store_true')
         self.isTrain = True
         return parser
