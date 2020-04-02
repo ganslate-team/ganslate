@@ -89,7 +89,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive
         #depth = int(re.findall(r'\d+', which_model_netG)[0])
         #netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
         netG = VNet(num_classes=1, keep_input=use_naive)
-    if which_model_netG.startswith('deeper_vnet_'):
+    elif which_model_netG.startswith('deeper_vnet_'):
         netG = DeeperVNet(num_classes=1, keep_input=use_naive)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
