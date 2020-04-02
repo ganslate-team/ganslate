@@ -60,14 +60,14 @@ def init_weights(net, init_type='normal', gain=0.02):
             init.normal_(m.weight.data, 1.0, gain)
             init.constant_(m.bias.data, 0.0)
 
-    print('initialize network with %s' % init_type)
+    #print('initialize network with %s' % init_type)
     net.apply(init_func)
 
 
 def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed=False):
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
-        print(gpu_ids)
+        #print(gpu_ids)
         device = torch.device('cuda:{}'.format(gpu_ids[0])) if gpu_ids else torch.device('cpu')
         net.to(device)
         if is_distributed:
@@ -363,7 +363,6 @@ class VNet(nn.Module):
     # to what is in the actual prototxt, not the intent
     def __init__(self, num_classes=1, keep_input=False):
         super(VNet, self).__init__()
-        print('keep_input', keep_input)
         self.in_tr_ab = InputTransition(16)
         self.in_tr_ba = InputTransition(16)
 

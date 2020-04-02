@@ -97,7 +97,7 @@ class NpyUnaligned3dDataset(BaseDataset):
         self.norm_A = load_json(os.path.join(opt.dataroot, 'normalize_A.json'))
         self.norm_B = load_json(os.path.join(opt.dataroot, 'normalize_B.json'))
 
-        print('len(A),len(B)=', self.A_size, self.B_size)
+        #print('len(A),len(B)=', self.A_size, self.B_size)
 
     def __getitem__(self, index):
         index_A = index % self.A_size

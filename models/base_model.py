@@ -43,7 +43,7 @@ class BaseModel():
         if not self.isTrain or opt.continue_train:
             self.load_networks(opt.which_epoch)
 
-        self.print_networks(opt.verbose)
+        #self.print_networks(opt.verbose)
         torch.cuda.empty_cache()
 
     # make models eval mode during test time
