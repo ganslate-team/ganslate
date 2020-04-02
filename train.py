@@ -4,11 +4,52 @@ from data import CreateDataLoader
 from models import create_model
 from util.visualizer import Visualizer
 
+import os
+import torch
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def synchronize():
+    """
+    Synchronize processes between GPUs. Wait until all devices are available
+
+    """
+    if not torch.distributed.is_available():
+        logger.info('torch.distributed: not available.')
+        return
+
+    if not torch.distributed.is_initialized():
+        logger.info('torch.distributed: not initialized.')
+        return
+
+    if torch.distributed.get_world_size() == 1:
+        logger.info('torch distributed: world size is 1')
+        return
+
+    torch.distributed.barrier()
 
 if __name__ == '__main__':
     opt = TrainOptions().parse()
     if opt.wandb:
         import wandb
+
+    # Setup distributed computing
+    # This is set by the parallel computation script
+    num_gpu = int(os.environ.get('WORLD_SIZE', 1))
+    print('aaaaaaa',num_gpu)
+    if num_gpu > 1:
+        torch.cuda.set_device(opt.local_rank)
+        torch.distributed.init_process_group(
+            backend='nccl', init_method='env://'
+        )
+        #multi_gpu.
+        synchronize()
+    logger.info(f'Number of GPUs available in world: {num_gpu}.')
+    print(f'Number of GPUs available in world: {num_gpu}.')
+
+
     data_loader = CreateDataLoader(opt)
     dataset = data_loader.load_data()
     dataset_size = len(data_loader)

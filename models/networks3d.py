@@ -69,6 +69,7 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed
         assert(torch.cuda.is_available())
         print(gpu_ids)
         device = torch.device('cuda:{}'.format(gpu_ids[0])) if gpu_ids else torch.device('cpu')
+        device = torch.device('cuda') if is_distributed else device
         net.to(device)
         if is_distributed:
             net = DistributedDataParallel(net)

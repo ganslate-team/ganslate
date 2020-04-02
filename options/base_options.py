@@ -49,6 +49,8 @@ class BaseOptions():
         parser.add_argument('--mute_optprint', action='store_true', help='Mute logging of options')
         parser.add_argument('--coupling', type=str, default='additive', help='Type of coupling: additive|affine')
         parser.add_argument('--deconv', type=str, default='transposed', help='Type of upsampling: [transposed|nearest|nearest_mem].')
+        parser.add_argument("--distributed", help="Distributed mode", action='store_true')
+        parser.add_argument('--local_rank', type=int, default=0, help='Local rank of the process in distributed mode')
         self.initialized = True
         return parser
 

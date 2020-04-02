@@ -20,6 +20,7 @@ class BaseModel():
         self.gpu_ids = opt.gpu_ids
         self.isTrain = opt.isTrain
         self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
+        self.device = torch.device('cuda') if self.opt.distributed else self.device
         self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
         if opt.resize_or_crop != 'scale_width':
             torch.backends.cudnn.benchmark = True
@@ -104,8 +105,11 @@ class BaseModel():
                 net = getattr(self, 'net' + name)
 
                 if len(self.gpu_ids) > 0 and torch.cuda.is_available():
+                    # TODO: this is ugly
+                    device = next(net.parameters()).device  # https://discuss.pytorch.org/t/which-device-is-model-tensor-stored-on/4908/15?u=ibro45
                     torch.save(net.module.cpu().state_dict(), save_path)
-                    net.cuda(self.gpu_ids[0])
+                    #net.cuda(self.gpu_ids[0])
+                    net.to(device)
                 else:
                     torch.save(net.cpu().state_dict(), save_path)
 
