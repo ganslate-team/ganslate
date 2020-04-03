@@ -70,9 +70,10 @@ def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed
         #print(gpu_ids)
         device = torch.device('cuda:{}'.format(gpu_ids[0])) if gpu_ids else torch.device('cpu')
         net.to(device)
-        if is_distributed:
+        if is_distributed: 
             net = DistributedDataParallel(net)
-        else:
+        # use DataParallel only if it's not distributed and there are multiple GPUs
+        elif len(gpu_ids) > 1:
             net = torch.nn.DataParallel(net, gpu_ids)
     init_weights(net, init_type, gain=init_gain)
     return net

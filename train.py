@@ -10,8 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-if __name__ == '__main__':
+def main():
     options = TrainOptions()
     opt = options.parse()
     is_main_process = True
@@ -48,6 +47,7 @@ if __name__ == '__main__':
         model.print_networks(opt.verbose)
         print('Invertible layers memory saving: {}'.format('ON' if not opt.use_naive else 'OFF'))
         print('Distributed data parallel training: {}'.format('ON' if opt.distributed else 'OFF'))
+        print('Batch size per GPU: {}'.format(opt.batchSize // len(opt.gpu_ids)))
         # ------------------------------------
 
         if opt.wandb:
@@ -121,3 +121,6 @@ if __name__ == '__main__':
                 wandb.log(epoch_log_dict)
 
         model.update_learning_rate()
+
+if __name__ == '__main__':
+    main()
