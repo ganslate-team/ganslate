@@ -1,3 +1,4 @@
+# TODO: refactor the whole code
 import torch
 import torch.nn.functional as F
 
@@ -117,7 +118,11 @@ def ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=(0,255), size_av
         raise ValueError('Input images must be 4-d tensors.')
 
     if not X.type() == Y.type():
-        raise ValueError('Input images must have the same dtype.')
+        half_or_float = lambda tensor: True if isinstance(tensor, torch.cuda.FloatTensor ) \
+                                            or isinstance(tensor, torch.cuda.HalfTensor) \
+                                            else False
+        if not ( half_or_float(X) and half_or_float(Y) ):
+            raise ValueError('Input images must have the same dtype.')
 
     if not X.shape == Y.shape:
         raise ValueError('Input images must have the same dimensions.')
@@ -168,7 +173,11 @@ def ms_ssim(X, Y, win_size=11, win_sigma=1.5, win=None, data_range=(0,255), size
         raise ValueError('Input images must be 4-d tensors.')
 
     if not X.type() == Y.type():
-        raise ValueError('Input images must have the same dtype.')
+        half_or_float = lambda tensor: True if isinstance(tensor, torch.cuda.FloatTensor ) \
+                                            or isinstance(tensor, torch.cuda.HalfTensor) \
+                                            else False
+        if not ( half_or_float(X) and half_or_float(Y) ):
+            raise ValueError('Input images must have the same dtype.')
 
     if not X.shape == Y.shape:
         raise ValueError('Input images must have the same dimensions.')

@@ -67,13 +67,6 @@ def random_patch_3d(volume, patch_size=(64,64,64), min_value=-1024,
                    x:x+patch_size[1],
                    y:y+patch_size[2]]
 
-    # # ratio: number of completely black voxels / total number of voxels, e.g. min_value is -1024 (black)
-    # black_voxels_ratio = np.count_nonzero(patch <= min_value) / patch.numel()
-    # if black_voxels_ratio > threshold:
-    #     # if above threshold, find another patch 
-    #     return random_patch_3d(volume, patch_size, min_value, threshold, 
-    #                            focus_around_zxy, focus_window_to_volume_proportion)
-    
     # used only for focus_around_zxy
     relative_zxy = (np.array([z,x,y]) / volume_shape).tolist()
     return patch, relative_zxy
@@ -94,10 +87,9 @@ class NpyUnaligned3dDataset(BaseDataset):
         self.B_size = len(self.B_paths)
 
         # dataset range of values information for normalization
+        # TODO: make it elegant
         self.norm_A = load_json(os.path.join(opt.dataroot, 'normalize_A.json'))
         self.norm_B = load_json(os.path.join(opt.dataroot, 'normalize_B.json'))
-
-        #print('len(A),len(B)=', self.A_size, self.B_size)
 
     def __getitem__(self, index):
         index_A = index % self.A_size

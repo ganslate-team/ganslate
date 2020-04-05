@@ -59,50 +59,43 @@ def init_weights(net, init_type='normal', gain=0.02):
         elif classname.find('BatchNorm3d') != -1:
             init.normal_(m.weight.data, 1.0, gain)
             init.constant_(m.bias.data, 0.0)
-
-    #print('initialize network with %s' % init_type)
     net.apply(init_func)
 
 
-def init_net(net, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed=False):
+def init_device(net, gpu_ids=[]):
     if len(gpu_ids) > 0:
         assert(torch.cuda.is_available())
-        #print(gpu_ids)
         device = torch.device('cuda:{}'.format(gpu_ids[0])) if gpu_ids else torch.device('cpu')
         net.to(device)
-        if is_distributed: 
+
+def network_parallelization(net, gpu_ids, is_distributed):
+    if len(gpu_ids) > 1:
+        if is_distributed:
             net = DistributedDataParallel(net)
-        # use DataParallel only if it's not distributed and there are multiple GPUs
-        elif len(gpu_ids) > 1:
+        else:
             net = torch.nn.DataParallel(net, gpu_ids)
-    init_weights(net, init_type, gain=init_gain)
     return net
 
 
-def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive=False, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed=False, n_downsampling=2):
+def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive=False, 
+             init_type='normal', init_gain=0.02, gpu_ids=[]):
     netG = None
     norm_layer = get_norm_layer(norm_type=norm)
 
-    # if which_model_netG.startswith('srcnn_'):
-    #     depth = int(re.findall(r'\d+', which_model_netG)[0])
-    #     netG = SrcnnGenerator3d(input_nc, output_nc, depth, ngf)
-    # elif which_model_netG.startswith('edsrF_'):
-    #     depth = int(re.findall(r'\d+', which_model_netG)[0])
-    #     netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
-    # el
     if which_model_netG.startswith('vnet_'):
-        #depth = int(re.findall(r'\d+', which_model_netG)[0])
-        #netG = EdsrFGenerator3d(input_nc, output_nc, depth, ngf, use_naive)
         netG = VNet(num_classes=1, keep_input=use_naive)
     elif which_model_netG.startswith('deeper_vnet_'):
         netG = DeeperVNet(num_classes=1, keep_input=use_naive)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
-    return init_net(netG, init_type, init_gain, gpu_ids, is_distributed)
+
+    init_weights(netG, init_type, gain=init_gain)
+    init_device(netG, gpu_ids)
+    return netG
 
 
-def define_D(input_nc, ndf, which_model_netD, n_layers_D=3, norm='batch', 
-             use_sigmoid=False, init_type='normal', init_gain=0.02, gpu_ids=[], is_distributed=False):
+def define_D(input_nc, ndf, which_model_netD, n_layers_D=3, norm='batch', use_sigmoid=False, 
+             init_type='normal', init_gain=0.02, gpu_ids=[]):
     netD = None
     norm_layer = get_norm_layer(norm_type=norm)
 
@@ -115,7 +108,9 @@ def define_D(input_nc, ndf, which_model_netD, n_layers_D=3, norm='batch',
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
                                   which_model_netD)
-    return init_net(netD, init_type, init_gain, gpu_ids, is_distributed)
+    init_weights(netD, init_type, gain=init_gain)
+    init_device(netD, gpu_ids)
+    return netD
 
 
 ##############################################################################
@@ -221,7 +216,6 @@ class PixelDiscriminator(nn.Module):
     def forward(self, input):
         return self.net(input)
 
-        
 
 # ---------------- V-NET -------------------
 
@@ -233,7 +227,6 @@ class VnetRevBlock(nn.Module):
             Fm=self.build_conv_block(nchan//2),
             Gm=self.build_conv_block(nchan//2)
         )
-        # TODO: keep_input option
         self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
                                                         keep_input=keep_input, 
                                                         keep_input_inverse=keep_input)

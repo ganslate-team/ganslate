@@ -51,6 +51,7 @@ class BaseOptions():
         parser.add_argument('--deconv', type=str, default='transposed', help='Type of upsampling: [transposed|nearest|nearest_mem].')
         parser.add_argument("--distributed", help="Distributed mode", action='store_true')
         parser.add_argument('--local_rank', type=int, default=0, help='Local rank of the process in distributed mode')
+        parser.add_argument('--mixed_precision', help="Use Nvidia Apex's AMP for mixed precision", action='store_true')
         self.initialized = True
         return parser
 

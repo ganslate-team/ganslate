@@ -1,11 +1,13 @@
 import os.path
 import torch
 import numpy as np
-from data.base_dataset import BaseDataset
-from data.image_folder import make_dataset
+from data.base_dataset import BaseDataset, make_dataset
 
 
 class DummyDataset(BaseDataset):
+    '''
+    Dummy dataset for quick testing purposes 
+    '''
     @staticmethod
     def modify_commandline_options(parser, is_train):
         return parser
@@ -15,18 +17,20 @@ class DummyDataset(BaseDataset):
         self.root = opt.dataroot
         self.dir_AB = os.path.join(opt.dataroot, opt.phase)
         self.AB_paths = sorted(make_dataset(self.dir_AB))
+        self.A_size = 50
+        self.B_size = self.A_size
 
     def __getitem__(self, index):
-        A = torch.rand(1, 32, 32, 32)
-        B = torch.rand(1, 32, 32, 32)
+        shape = (1, 128, 128, 128)
+        A = torch.rand(*shape)
+        B = torch.rand(*shape)
 
         return {'A': A, 'B': B,
 
                 'A_paths': True, 'B_paths': False}
-                #'A_paths': AB_path, 'B_paths': AB_path}
 
     def __len__(self):
-        return 10 #len(self.AB_paths)
+        return self.A_size + self.B_size
 
     def name(self):
         return 'DummyDataset'

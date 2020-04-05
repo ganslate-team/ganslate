@@ -4,6 +4,17 @@ from collections import OrderedDict
 from . import networks
 from apex.parallel import DistributedDataParallel
 
+# TODO: put it in some utils 
+def remove_module_from_ordered_dict(ordered_dict):
+    new_ordered_dict = OrderedDict()
+    for k, v in ordered_dict.items():
+        if k.startswith('module.'):
+            name = k[7:]
+            new_ordered_dict[name] = v
+        else:
+            new_ordered_dict[k] = v
+    return new_ordered_dict
+
 class BaseModel():
 
     # modify parser to add command line options,
@@ -103,12 +114,12 @@ class BaseModel():
                 save_filename = '%s_net_%s.pth' % (which_epoch, name)
                 save_path = os.path.join(self.save_dir, save_filename)
                 net = getattr(self, 'net' + name)
+                
+                state_dict = net.state_dict()
+                new_state_dict = remove_module_from_ordered_dict(state_dict)
+                torch.save(new_state_dict, save_path)
 
-                if len(self.gpu_ids) > 0 and torch.cuda.is_available():
-                    torch.save(net.module.cpu().state_dict(), save_path)
-                    net.cuda(self.gpu_ids[0])
-                else:
-                    torch.save(net.cpu().state_dict(), save_path)
+                
 
     def __patch_instance_norm_state_dict(self, state_dict, module, keys, i=0):
         key = keys[i]
