@@ -17,7 +17,7 @@ class UnpairedRevGANModel(BaseModel):
         return parser
 
     def __init__(self, opt):
-        super(SEBE, self).__init__(opt)
+        super(UnpairedRevGANModel, self).__init__(opt)
 
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
         self.loss_names = ['D_A', 'G_A', 'cycle_A', 'idt_A', 'D_B', 'G_B', 'cycle_B', 'idt_B']
