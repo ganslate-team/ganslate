@@ -62,6 +62,10 @@ def main():
         iter_data_time = time.time()
         epoch_iter = 0
 
+        if is_main_process:
+            lr_G, lr_D = model.get_learning_rate()
+            print('\nlearning rates: lr_G = %.7f lr_D = %.7f' % (lr_G, lr_D))
+
         for i, data in enumerate(dataset):
             iter_start_time = time.time()
             if total_steps % opt.print_freq == 0:
@@ -104,7 +108,8 @@ def main():
             
             if opt.wandb:
                 epoch_log_dict = {'epoch_time': int(epoch_time),
-                                'learning_rate': model.get_learning_rate()}
+                                  'lr_G': lr_G,
+                                  'lr_D': lr_D}
                 # get all the losses
                 for k, v in losses.items():
                     epoch_log_dict['loss_%s' % k] = v

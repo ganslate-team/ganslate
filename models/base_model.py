@@ -78,15 +78,14 @@ class BaseModel():
         pass
     
     def get_learning_rate(self):
-        lr = self.optimizers[0].param_groups[0]['lr']
-        return lr
+        lr_G = self.optimizers[0].param_groups[0]['lr']
+        lr_D = self.optimizers[1].param_groups[0]['lr']
+        return lr_G, lr_D
 
     # update learning rate (called once every epoch)
     def update_learning_rate(self):
         for scheduler in self.schedulers:
             scheduler.step()
-        lr = self.optimizers[0].param_groups[0]['lr']
-        print('learning rate = %.7f' % lr)
 
     # return visualization images. train.py will display these images, and save the images to a html
     def get_current_visuals(self):
