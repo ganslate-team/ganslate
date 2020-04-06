@@ -2,7 +2,7 @@ import os
 import time
 import torch
 from options.train_options import TrainOptions
-from data import CreateDataLoader
+from data import CustomDataLoader
 from models import create_model
 from util.visualizer import Visualizer
 from util.distributed import multi_gpu
@@ -31,8 +31,7 @@ def main():
         else:
             opt.distributed = False
 
-    data_loader = CreateDataLoader(opt)
-    dataset = data_loader.load_data()
+    data_loader = CustomDataLoader(opt)
 
     model = create_model(opt)
     model.setup(opt)
@@ -65,8 +64,10 @@ def main():
         if is_main_process:
             lr_G, lr_D = model.get_learning_rate()
             print('\nlearning rates: lr_G = %.7f lr_D = %.7f' % (lr_G, lr_D))
+        if opt.distributed:
+            data_loader.sampler.set_epoch(epoch) # so that DistributedSampler shuffles properly
 
-        for i, data in enumerate(dataset):
+        for i, data in enumerate(data_loader):
             iter_start_time = time.time()
             if total_steps % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
@@ -86,8 +87,6 @@ def main():
                     losses = model.get_current_losses()
                     t = (time.time() - iter_start_time) / opt.batchSize
                     visualizer.print_current_losses(epoch, epoch_iter, losses, t, t_data)
-                    if opt.display_id > 0:
-                        visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, opt, losses)
 
                 if total_steps % opt.save_latest_freq == 0:
                     print('saving the latest model (epoch %d, total_steps %d)' %

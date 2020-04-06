@@ -1,6 +1,6 @@
 import os
 from options.test_options import TestOptions
-from data import CreateDataLoader
+from data import CustomDataLoader
 from models import create_model
 from util.visualizer import save_images
 from util import html
@@ -16,15 +16,14 @@ if __name__ == '__main__':
     opt.no_flip = True  # no flip
     opt.display_id = -1  # no visdom display
     opt.nThreads = 1
-    data_loader = CreateDataLoader(opt)
-    dataset = data_loader.load_data()
+    data_loader = CustomDataLoader(opt)
     model = create_model(opt)
     model.setup(opt)
     # create website
     web_dir = os.path.join(opt.results_dir, opt.name, '%s_%s' % (opt.phase, opt.which_epoch))
     webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.which_epoch))
     # test
-    for i, data in enumerate(dataset):
+    for i, data in enumerate(data_loader):
         if i >= opt.how_many:
             break
         if opt.phase == 'testcube':

@@ -1,6 +1,6 @@
 import importlib
 import torch.utils.data
-from data.base_data_loader import BaseDataLoader
+#from data.base_data_loader import BaseDataLoader
 from data.base_dataset import BaseDataset
 
 def find_dataset_using_name(dataset_name):
@@ -39,28 +39,25 @@ def create_dataset(opt):
     return instance
 
 
-def CreateDataLoader(opt):
-    data_loader = CustomDatasetDataLoader()
-    data_loader.initialize(opt)
-    return data_loader
-
-
-## Wrapper class of Dataset class that performs
-## multi-threaded data loading
-class CustomDatasetDataLoader(BaseDataLoader):
+class CustomDataLoader:
+    '''
+    Wraps an instance of Dataset class as either a regular Dataloader
+    or as a DistributedSampler in case of distributed setup and 
+    performs multi-threaded data loading.
+    '''
     def name(self):
-        return 'CustomDatasetDataLoader'
+        return 'CustomDataLoader'
 
-    def initialize(self, opt):
-        BaseDataLoader.initialize(self, opt)
+    def __init__(self, opt):
+        self.opt = opt
         self.dataset = create_dataset(opt)
         if opt.distributed:
-            sampler = torch.utils.data.distributed.DistributedSampler(self.dataset, shuffle=not opt.serial_batches)
+            self.sampler = torch.utils.data.distributed.DistributedSampler(self.dataset, shuffle=not opt.serial_batches)
             self.dataloader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=opt.batchSize,
                 shuffle=False,  # shuffling (or not) is done by DistributedSampler
-                sampler=sampler,
+                sampler=self.sampler,
                 num_workers=int(opt.nThreads))
 
         else:
@@ -69,9 +66,6 @@ class CustomDatasetDataLoader(BaseDataLoader):
                 batch_size=opt.batchSize,
                 shuffle=not opt.serial_batches,
                 num_workers=int(opt.nThreads))
-
-    def load_data(self):
-        return self
 
     def __len__(self):
         return min(len(self.dataset), self.opt.max_dataset_size)
