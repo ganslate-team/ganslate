@@ -24,19 +24,19 @@ class AlignedDataset(BaseDataset):
         AB = Image.open(AB_path).convert('RGB')
         w, h = AB.size
         w2 = int(w / 2)
-        A = AB.crop((0, 0, w2, h)).resize((self.opt.loadSize, self.opt.loadSize), Image.BICUBIC)
-        B = AB.crop((w2, 0, w, h)).resize((self.opt.loadSize, self.opt.loadSize), Image.BICUBIC)
+        A = AB.crop((0, 0, w2, h)).resize((self.opt.load_size, self.opt.load_size), Image.BICUBIC)
+        B = AB.crop((w2, 0, w, h)).resize((self.opt.load_size, self.opt.load_size), Image.BICUBIC)
         A = transforms.ToTensor()(A)
         B = transforms.ToTensor()(B)
         if self.opt.no_flip:
-            w_offset = int(max(0, self.opt.loadSize - self.opt.fineSize - 1) / 2)
-            h_offset = int(max(0, self.opt.loadSize - self.opt.fineSize - 1) / 2)
+            w_offset = int(max(0, self.opt.load_size - self.opt.fine_size - 1) / 2)
+            h_offset = int(max(0, self.opt.load_size - self.opt.fine_size - 1) / 2)
         else:
-            w_offset = random.randint(0, max(0, self.opt.loadSize - self.opt.fineSize - 1))
-            h_offset = random.randint(0, max(0, self.opt.loadSize - self.opt.fineSize - 1))
+            w_offset = random.randint(0, max(0, self.opt.load_size - self.opt.fine_size - 1))
+            h_offset = random.randint(0, max(0, self.opt.load_size - self.opt.fine_size - 1))
 
-        A = A[:, h_offset:h_offset + self.opt.fineSize, w_offset:w_offset + self.opt.fineSize]
-        B = B[:, h_offset:h_offset + self.opt.fineSize, w_offset:w_offset + self.opt.fineSize]
+        A = A[:, h_offset:h_offset + self.opt.fine_size, w_offset:w_offset + self.opt.fine_size]
+        B = B[:, h_offset:h_offset + self.opt.fine_size, w_offset:w_offset + self.opt.fine_size]
 
         A = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))(A)
         B = transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))(B)
@@ -67,6 +67,3 @@ class AlignedDataset(BaseDataset):
 
     def __len__(self):
         return len(self.AB_paths)
-
-    def name(self):
-        return 'AlignedDataset'

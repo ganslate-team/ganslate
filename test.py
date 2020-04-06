@@ -10,12 +10,11 @@ from skimage.transform import resize
 
 if __name__ == '__main__':
     opt = TestOptions().parse()
-    opt.nThreads = 1   # test code only supports nThreads = 1
-    opt.batchSize = 1  # test code only supports batchSize = 1
+    opt.num_workers = 1   # test code only supports num_workers = 1
+    opt.batch_size = 1  # test code only supports batch_size = 1
     opt.serial_batches = True  # no shuffle
     opt.no_flip = True  # no flip
     opt.display_id = -1  # no visdom display
-    opt.nThreads = 1
     data_loader = CustomDataLoader(opt)
     model = create_model(opt)
     model.setup(opt)

@@ -37,6 +37,3 @@ class SingleDataset(BaseDataset):
 
     def __len__(self):
         return len(self.A_paths)
-
-    def name(self):
-        return 'SingleImageDataset'

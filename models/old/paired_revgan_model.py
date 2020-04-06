@@ -8,9 +8,6 @@ import torch.nn.functional as F
 
 class PairedRevGANModel(BaseModel):
     ''' Paired 2D-RevGAN model '''
-    def name(self):
-        return 'PairedRevGANModel'
-
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         parser.set_defaults(pool_size=0, no_lsgan=True, norm='instance')
@@ -20,8 +17,8 @@ class PairedRevGANModel(BaseModel):
 
         return parser
 
-    def initialize(self, opt):
-        BaseModel.initialize(self, opt)
+    def __init__(self, opt):
+        super(PairedRevGANModel, self).__init__(opt)
 
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
         self.loss_names = ['D_AB', 'G_AB', 'D_BA', 'G_BA']
@@ -31,7 +28,7 @@ class PairedRevGANModel(BaseModel):
 
         self.visual_names = visual_names_A + visual_names_B
         # specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks
-        if self.isTrain:
+        if self.is_train:
             self.model_names = ['G_A_enc', 'G_B_enc', 'G_core', 'G_A_dec', 'G_B_dec', 'D_AB', 'D_BA']
         else:  # during test time, only load Gs
             self.model_names = ['G_A_enc', 'G_B_enc', 'G_core', 'G_A_dec', 'G_B_dec']
@@ -65,7 +62,7 @@ class PairedRevGANModel(BaseModel):
         self.netG_B = lambda x: self.netG_B_dec(self.netG_core(self.netG_B_enc(x), inverse=True))
         
 
-        if self.isTrain:
+        if self.is_train:
             use_sigmoid = opt.no_lsgan
             self.netD_AB = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf,
                                             opt.which_model_netD,
@@ -74,7 +71,7 @@ class PairedRevGANModel(BaseModel):
                                             opt.which_model_netD,
                                             opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids)
 
-        if self.isTrain:
+        if self.is_train:
             self.fake_AB_pool = ImagePool(opt.pool_size)
             self.fake_BA_pool = ImagePool(opt.pool_size)
             # define loss functions

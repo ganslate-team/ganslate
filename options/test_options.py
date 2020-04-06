@@ -12,10 +12,10 @@ class TestOptions(BaseOptions):
         parser.add_argument('--how_many', type=int, default=50, help='how many test images to run')
 
         parser.set_defaults(model='test')
-        # To avoid cropping, the loadSize should be the same as fineSize
-        parser.set_defaults(loadSize=parser.get_default('fineSize'))
+        # To avoid cropping, the load_size should be the same as fine_size
+        parser.set_defaults(load_size=parser.get_default('fine_size'))
         
-        self.isTrain = False
+        self.is_train = False
         return parser
 
 

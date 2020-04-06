@@ -105,7 +105,6 @@ class Unsqueeze(Layer):
 
 
 
-
 def get_norm_layer(norm_type='instance'):
     if norm_type == 'batch':
         norm_layer = functools.partial(nn.BatchNorm2d, affine=True)

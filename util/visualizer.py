@@ -37,7 +37,7 @@ def save_images(webpage, visuals, image_path, scale_range, aspect_ratio=1.0, wid
 class Visualizer():
     def __init__(self, opt):
         self.display_id = opt.display_id
-        self.use_html = opt.isTrain and not opt.no_html
+        self.use_html = opt.is_train and not opt.no_html
         self.win_size = opt.display_winsize
         self.name = opt.name
         self.opt = opt

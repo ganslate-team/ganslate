@@ -32,6 +32,3 @@ class NpyAligned2dDataset(BaseDataset):
 
     def __len__(self):
         return len(self.AB_paths)
-
-    def name(self):
-        return 'NpyAligned2dDataset'

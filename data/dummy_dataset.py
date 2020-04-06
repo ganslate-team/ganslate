@@ -12,7 +12,7 @@ class DummyDataset(BaseDataset):
     def modify_commandline_options(parser, is_train):
         return parser
 
-    def initialize(self, opt):
+    def __init__(self, opt):
         self.opt = opt
         self.root = opt.dataroot
         self.dir_AB = os.path.join(opt.dataroot, opt.phase)
@@ -21,7 +21,8 @@ class DummyDataset(BaseDataset):
         self.B_size = self.A_size
 
     def __getitem__(self, index):
-        shape = (1, 128, 128, 128)
+        #shape = (1, 128, 128, 128)
+        shape = (1, 32, 32, 32)
         A = torch.rand(*shape)
         B = torch.rand(*shape)
 
@@ -31,6 +32,3 @@ class DummyDataset(BaseDataset):
 
     def __len__(self):
         return self.A_size + self.B_size
-
-    def name(self):
-        return 'DummyDataset'

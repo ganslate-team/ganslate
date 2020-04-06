@@ -8,8 +8,6 @@ from . import networks
 
 class Pix2PixModel(BaseModel):
     def name(self):
-        return 'Pix2PixModel'
-
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         parser.set_defaults(pool_size=0, no_lsgan=True, norm='instance')
@@ -20,15 +18,15 @@ class Pix2PixModel(BaseModel):
 
         return parser
 
-    def initialize(self, opt):
-        BaseModel.initialize(self, opt)
-        self.isTrain = opt.isTrain
+    def __init__(self, opt):
+        super(Pix2PixModel, self).__init__(opt)
+        self.is_train = opt.is_train
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
         self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
         self.visual_names = ['real_A', 'fake_B', 'real_B']
         # specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks
-        if self.isTrain:
+        if self.is_train:
             self.model_names = ['G', 'D']
         else:  # during test time, only load Gs
             self.model_names = ['G']
@@ -36,13 +34,13 @@ class Pix2PixModel(BaseModel):
         self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf,
                                       opt.which_model_netG, opt.norm, not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids, not opt.no_output_tanh)
 
-        if self.isTrain:
+        if self.is_train:
             use_sigmoid = opt.no_lsgan
             self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf,
                                           opt.which_model_netD,
                                           opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids)
 
-        if self.isTrain:
+        if self.is_train:
             self.fake_AB_pool = ImagePool(opt.pool_size)
             # define loss functions
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan).to(self.device)

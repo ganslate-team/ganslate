@@ -8,9 +8,6 @@ import torch.nn.functional as F
 
 class UnpairedRevGANModel(BaseModel):
     ''' Unpaired 2D-RevGAN model '''
-    def name(self):
-        return 'UnpairedRevGANModel'
-
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         if is_train:
@@ -19,21 +16,21 @@ class UnpairedRevGANModel(BaseModel):
             parser.add_argument('--lambda_identity', type=float, default=0.5, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
         return parser
 
-    def initialize(self, opt):
-        BaseModel.initialize(self, opt)
+    def __init__(self, opt):
+        super(SEBE, self).__init__(opt)
 
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
         self.loss_names = ['D_A', 'G_A', 'cycle_A', 'idt_A', 'D_B', 'G_B', 'cycle_B', 'idt_B']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
         visual_names_A = ['real_A', 'fake_B', 'rec_A']
         visual_names_B = ['real_B', 'fake_A', 'rec_B']
-        if self.isTrain and self.opt.lambda_identity > 0.0:
+        if self.is_train and self.opt.lambda_identity > 0.0:
             visual_names_A.append('idt_A')
             visual_names_B.append('idt_B')
 
         self.visual_names = visual_names_A + visual_names_B
         # specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks
-        if self.isTrain:
+        if self.is_train:
             self.model_names = ['G_A_enc', 'G_core', 'G_A_dec', 'G_B_enc', 'G_B_dec', 'D_A', 'D_B']
         else:  # during test time, only load Gs
             self.model_names = ['G_A_enc', 'G_core', 'G_A_dec', 'G_B_enc', 'G_B_dec']
@@ -62,14 +59,14 @@ class UnpairedRevGANModel(BaseModel):
                                                 opt.ngf, opt.which_model_netG, opt.norm, 
                                                 opt.init_type, opt.init_gain, self.gpu_ids, not opt.no_output_tanh, n_downsampling=opt.n_downsampling)
 
-        if self.isTrain:
+        if self.is_train:
             use_sigmoid = opt.no_lsgan
             self.netD_A = networks.define_D(opt.output_nc, opt.ndf, opt.which_model_netD,
                                             opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids)
             self.netD_B = networks.define_D(opt.input_nc, opt.ndf, opt.which_model_netD,
                                             opt.n_layers_D, opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids)
 
-        if self.isTrain:
+        if self.is_train:
             self.fake_A_pool = ImagePool(opt.pool_size)
             self.fake_B_pool = ImagePool(opt.pool_size)
             # define loss functions

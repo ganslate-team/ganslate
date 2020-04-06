@@ -76,7 +76,7 @@ class NpyUnaligned3dDataset(BaseDataset):
     def modify_commandline_options(parser, is_train):
         return parser
 
-    def initialize(self, opt):
+    def __init__(self, opt):
         self.opt = opt
         #self.root = opt.dataroot
         self.dir_A = os.path.join(opt.dataroot, 'A')
@@ -128,6 +128,3 @@ class NpyUnaligned3dDataset(BaseDataset):
 
     def __len__(self):
         return max(self.A_size, self.B_size)
-
-    def name(self):
-        return 'NpyUnaligned3dDataset'

@@ -12,9 +12,9 @@ class BaseOptions():
 
     def initialize(self, parser):
         parser.add_argument('--dataroot', required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
-        parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
-        parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
-        parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
+        parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
+        parser.add_argument('--load_size', type=int, default=286, help='scale images to this size')
+        parser.add_argument('--fine_size', type=int, default=256, help='then crop to this size')
         parser.add_argument('--input_nc', type=int, default=1, help='# of input image channels')
         parser.add_argument('--n_downsampling', type=int, default=2, help='# downsampling layers')
         parser.add_argument('--output_nc', type=int, default=1, help='# of output image channels')
@@ -29,7 +29,7 @@ class BaseOptions():
         parser.add_argument('--model', type=str, default='cycle_gan',
                             help='chooses which model to use. cycle_gan, pix2pix, test')
         parser.add_argument('--which_direction', type=str, default='AtoB', help='AtoB or BtoA')
-        parser.add_argument('--nThreads', default=4, type=int, help='# threads for loading data')
+        parser.add_argument('--num_workers', default=4, type=int, help='# threads for loading data')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
@@ -44,7 +44,7 @@ class BaseOptions():
         parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal|xavier|kaiming|orthogonal]')
         parser.add_argument('--init_gain', type=float, default=0.02, help='scaling factor for normal, xavier and orthogonal.')
         parser.add_argument('--verbose', action='store_true', help='if specified, print more debugging information')
-        parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{which_model_netG}_size{loadSize}')
+        parser.add_argument('--suffix', default='', type=str, help='customized suffix: opt.name = opt.name + suffix: e.g., {model}_{which_model_netG}_size{load_size}')
         parser.add_argument('--no_output_tanh', action='store_true', help='end models with tanh activation function')
         parser.add_argument('--mute_optprint', action='store_true', help='Mute logging of options')
         parser.add_argument('--coupling', type=str, default='additive', help='Type of coupling: additive|affine')
@@ -68,13 +68,13 @@ class BaseOptions():
         # modify model-related parser options
         model_name = opt.model
         model_option_setter = models.get_option_setter(model_name)
-        parser = model_option_setter(parser, self.isTrain)
+        parser = model_option_setter(parser, self.is_train)
         opt, _ = parser.parse_known_args()  # parse again with the new defaults
 
         # modify dataset-related parser options
         dataset_name = opt.dataset_mode
         dataset_option_setter = data.get_option_setter(dataset_name)
-        parser = dataset_option_setter(parser, self.isTrain)
+        parser = dataset_option_setter(parser, self.is_train)
 
         self.parser = parser
 
@@ -105,14 +105,12 @@ class BaseOptions():
     def parse(self):
 
         opt = self.gather_options()
-        opt.isTrain = self.isTrain   # train or test
+        opt.is_train = self.is_train   # train or test
 
         # process opt.suffix
         if opt.suffix:
             suffix = ('_' + opt.suffix.format(**vars(opt))) if opt.suffix != '' else ''
             opt.name = opt.name + suffix
-
-        #self.print_options(opt)
 
         # set gpu ids
         str_ids = opt.gpu_ids.split(',')

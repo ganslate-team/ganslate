@@ -2,11 +2,53 @@ import os
 import torch.utils.data as data
 from PIL import Image
 import torchvision.transforms as transforms
+from abc import ABC, abstractmethod
 
-IMG_EXTENSIONS = ['.npy']
+class BaseDataset(data.Dataset, ABC):
+    """This class is an abstract base class (ABC) for datasets.
+    To create a subclass, you need to implement the following four functions:
+    -- <__init__>:                      initialize the class, first call BaseDataset.__init__(self, opt).
+    -- <__len__>:                       return the size of dataset.
+    -- <__getitem__>:                   get a data point.
+    -- <modify_commandline_options>:    (optionally) add dataset-specific options and set default options.
+    """
 
-def is_image_file(filename):
-    return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+    def __init__(self, opt):
+        """Initialize the class; save the options in the class
+        Parameters:
+            opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
+        """
+        self.opt = opt
+        self.root = opt.dataroot
+
+    @staticmethod
+    def modify_commandline_options(parser, is_train):
+        """Add new dataset-specific options, and rewrite default values for existing options.
+        Parameters:
+            parser          -- original option parser
+            is_train (bool) -- whether training phase or test phase. You can use this flag to add training-specific or test-specific options.
+        Returns:
+            the modified parser.
+        """
+        return parser
+
+    @abstractmethod
+    def __len__(self):
+        """Return the total number of images in the dataset."""
+        return 0
+
+    @abstractmethod
+    def __getitem__(self, index):
+        """Return a data point and its metadata information.
+        Parameters:
+            index - - a random integer for data indexing
+        Returns:
+            a dictionary of data with their names. It ususally contains the data itself and its metadata information.
+        """
+        pass
+
+def is_image_file(filename, allowed_extensions=['.npy']):
+    return any(filename.endswith(extension) for extension in allowed_extensions)
 
 def make_dataset(dir):
     images = []
@@ -20,46 +62,28 @@ def make_dataset(dir):
 
     return images
 
-class BaseDataset(data.Dataset):
-    def __init__(self):
-        super(BaseDataset, self).__init__()
-
-    def name(self):
-        return 'BaseDataset'
-
-    @staticmethod
-    def modify_commandline_options(parser, is_train):
-        return parser
-
-    def initialize(self, opt):
-        pass
-
-    def __len__(self):
-        return 0
-
-
 def get_transform(opt):
     transform_list = []
     if opt.resize_or_crop == 'resize_and_crop':
-        osize = [opt.loadSize, opt.loadSize]
+        osize = [opt.load_size, opt.load_size]
         transform_list.append(transforms.Resize(osize, Image.BICUBIC))
-        transform_list.append(transforms.RandomCrop(opt.fineSize))
+        transform_list.append(transforms.RandomCrop(opt.fine_size))
     elif opt.resize_or_crop == 'crop':
-        transform_list.append(transforms.RandomCrop(opt.fineSize))
+        transform_list.append(transforms.RandomCrop(opt.fine_size))
     elif opt.resize_or_crop == 'scale_width':
         transform_list.append(transforms.Lambda(
-            lambda img: __scale_width(img, opt.fineSize)))
+            lambda img: __scale_width(img, opt.fine_size)))
     elif opt.resize_or_crop == 'scale_width_and_crop':
         transform_list.append(transforms.Lambda(
-            lambda img: __scale_width(img, opt.loadSize)))
-        transform_list.append(transforms.RandomCrop(opt.fineSize))
+            lambda img: __scale_width(img, opt.load_size)))
+        transform_list.append(transforms.RandomCrop(opt.fine_size))
     elif opt.resize_or_crop == 'none':
         transform_list.append(transforms.Lambda(
             lambda img: __adjust(img)))
     else:
         raise ValueError('--resize_or_crop %s is not a valid option.' % opt.resize_or_crop)
 
-    if opt.isTrain and not opt.no_flip:
+    if opt.is_train and not opt.no_flip:
         transform_list.append(transforms.RandomHorizontalFlip())
 
     transform_list += [transforms.ToTensor(),

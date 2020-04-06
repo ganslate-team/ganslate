@@ -10,8 +10,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def print_info(opt, options, model, data_loader):
+    options.print_options(opt)
+    print("dataset [%s] was created" % (type(data_loader.dataset).__name__))
+    print('len(A),len(B)=', data_loader.dataset.A_size, data_loader.dataset.B_size)
+    print('# of training pairs = %d' % len(data_loader))
+    print("model [%s] was created" % (type(model).__name__))
+    model.print_networks(opt.verbose)
+    print('Invertible layers memory saving: {}'.format('ON' if not opt.use_naive else 'OFF'))
+    print('Distributed data parallel training: {}'.format('ON' if opt.distributed else 'OFF'))
+    print('Batch size per GPU: {}'.format(opt.batch_size // len(opt.gpu_ids)))
+
 def main():
-    options = TrainOptions()
+    options = TrainOptions() # TODO: this is ugly as hell, used only for printing, make it nicer
     opt = options.parse()
     is_main_process = True
 
@@ -37,22 +48,10 @@ def main():
     model.setup(opt)
     
     if is_main_process:
-        # ------------ Print info ------------
-        options.print_options(opt)
-        print("dataset [%s] was created" % (data_loader.dataset.name()))
-        print('len(A),len(B)=', data_loader.dataset.A_size, data_loader.dataset.B_size)
-        print('# of training pairs = %d' % len(data_loader))
-        print("model [%s] was created" % (model.name()))
-        model.print_networks(opt.verbose)
-        print('Invertible layers memory saving: {}'.format('ON' if not opt.use_naive else 'OFF'))
-        print('Distributed data parallel training: {}'.format('ON' if opt.distributed else 'OFF'))
-        print('Batch size per GPU: {}'.format(opt.batchSize // len(opt.gpu_ids)))
-        # ------------------------------------
-
+        print_info(opt, options, model, data_loader) 
         if opt.wandb:
             import wandb
             wandb.init(project="gan-translation", entity="maastro-clinic")
-    
         visualizer = Visualizer(opt)
 
     total_steps = 0
@@ -64,6 +63,7 @@ def main():
         if is_main_process:
             lr_G, lr_D = model.get_learning_rate()
             print('\nlearning rates: lr_G = %.7f lr_D = %.7f' % (lr_G, lr_D))
+
         if opt.distributed:
             data_loader.sampler.set_epoch(epoch) # so that DistributedSampler shuffles properly
 
@@ -72,8 +72,8 @@ def main():
             if total_steps % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
             
-            total_steps += opt.batchSize
-            epoch_iter += opt.batchSize
+            total_steps += opt.batch_size
+            epoch_iter += opt.batch_size
             model.set_input(data)
             model.optimize_parameters()
 
@@ -85,7 +85,7 @@ def main():
 
                 if total_steps % opt.print_freq == 0:
                     losses = model.get_current_losses()
-                    t = (time.time() - iter_start_time) / opt.batchSize
+                    t = (time.time() - iter_start_time) / opt.batch_size
                     visualizer.print_current_losses(epoch, epoch_iter, losses, t, t_data)
 
                 if total_steps % opt.save_latest_freq == 0:
