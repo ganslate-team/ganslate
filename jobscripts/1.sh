@@ -3,7 +3,7 @@
 ### #SBATCH directives need to be in the first part of the jobscript
 
 ### Job name
-#SBATCH --job-name=new1
+#SBATCH --job-name=distmp1
 
 ### Output path for stdout and stderr
 ### %J is the job ID, %I is the array ID
@@ -34,4 +34,4 @@ conda activate maastro
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python train.py --name new1 --lambda_inverse 0.1 --proportion_ssim 0.84 --focus_window 0.2  --lambda_A 10.0 --lambda_B 10.0 --niter 450 --niter_decay 50 --lr_G 0.0002 --lr_D 0.0002 --batch_size 2  --patch_size 128 128 128 --model unpaired_revgan3d --which_model_netG vnet_generator --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/jv341625/ASensation16_BLightSpeed16/ --gpu_ids 0,1 --save_epoch_freq 10 --num_workers 8 --wandb True
+python launch.py --nproc_per_node 2 train.py --name distmp1 --lambda_inverse 0.05 --proportion_ssim 0.84 --focus_window 0.2  --lambda_A 10.0 --lambda_B 10.0 --niter 450 --niter_decay 50 --lr_G 0.0002 --lr_D 0.0002 --batch_size 2  --patch_size 128 128 128 --model unpaired_revgan3d --which_model_netG vnet_generator --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataroot /hpcwork/ft002207/ASensation16_BLightSpeed16/ --save_epoch_freq 10 --num_workers 8 --distributed --mixed_precision --wandb

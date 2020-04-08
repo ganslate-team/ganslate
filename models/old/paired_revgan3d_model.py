@@ -73,7 +73,7 @@ class PairedRevGAN3dModel(BaseModel):
             self.optimizers.append(self.optimizer_D)
 
     def set_input(self, input):
-        AtoB = self.opt.which_direction == 'AtoB'
+        AtoB = self.opt.direction == 'AtoB'
         self.real_A = input['A' if AtoB else 'B'].to(self.device)
         self.real_B = input['B' if AtoB else 'A'].to(self.device)
         # in case of uneven z-axis dimension when edsrF generator is used, duplicate the last slice
@@ -163,7 +163,6 @@ class PairedRevGAN3dModel(BaseModel):
         self.optimizer_G.step()
         # D_A and D_B
         self.set_requires_grad([self.netD_AB, self.netD_BA], True)
-        for _ in range(self.opt.D_rollout):
-            self.optimizer_D.zero_grad()
-            self.backward_D()
-            self.optimizer_D.step()
+        self.optimizer_D.zero_grad()
+        self.backward_D()
+        self.optimizer_D.step()

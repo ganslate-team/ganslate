@@ -92,10 +92,10 @@ class BaseModel(ABC):
             self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers]
 
         if self.opt.mixed_precision:
-            self.convert_to_mixed_precision() # TODO: set opt_level from args
+            self.convert_to_mixed_precision(self.opt.opt_level)
 
         if not self.is_train or self.opt.continue_train:
-            self.load_networks()
+            self.load_networks(self.opt.epoch)
 
         if len(self.gpu_ids) > 1:
             self.parallelize_networks()
@@ -129,28 +129,28 @@ class BaseModel(ABC):
     def convert_to_mixed_precision(self, opt_level='O1'):
         """Initializes Nvidia Apex Mixed Precision
         Parameters:
-            opt_level - specifies the AMP's optimization level. Accepted values are
-                        "O0", "O1", "O2", and "O3". Check Apex documentation.
+            opt_level (str) -- specifies the AMP's optimization level. Accepted values are
+                               "O0", "O1", "O2", and "O3". Check Apex documentation.
         """
+        # fetch the networks
         networks = []
         for name in self.model_names:
             if isinstance(name, str):
                 net = getattr(self, 'net' + name)
                 networks.append(net)
 
-        if self.opt.mixed_precision:
-            if self.is_train:
-                networks, [self.optimizer_G, self.optimizer_D] = amp.initialize(
-                            networks, [self.optimizer_G, self.optimizer_D], opt_level=opt_level)
-                self.optimizers = [self.optimizer_G, self.optimizer_D]
-            else:
-                networks = amp.initialize(networks, opt_level=opt_level)
+        # initialize mixed precision on networks and, if training, on optimizers
+        if self.is_train:
+            networks, [self.optimizer_G, self.optimizer_D] = amp.initialize(
+                        networks, [self.optimizer_G, self.optimizer_D], opt_level=opt_level)
+            self.optimizers = [self.optimizer_G, self.optimizer_D]
+        else:
+            networks = amp.initialize(networks, opt_level=opt_level)
 
-            # I think this might be unnecessary since amp.initialize() seems to do everyhing inplace,
-            # but since the documentation always assigns back the returned values, decided to do the same
-            for i, name in enumerate(self.model_names):
-                if isinstance(name, str):
-                    setattr(self, 'net' + name, networks[i])
+        # assigns back the returned mixed-precision networks
+        for i, name in enumerate(self.model_names):
+            if isinstance(name, str):
+                setattr(self, 'net' + name, networks[i])
 
     def get_image_paths(self):
         """ Return image paths that are used to load current data"""
@@ -211,10 +211,12 @@ class BaseModel(ABC):
             torch.save(amp.state_dict(), amp_path)
                 
     
-    def load_networks(self):
-        """Load all the networks, optimizers and, if used, apex mixed precision's state_dict from the disk."""
-        epoch = self.opt.which_epoch
-        # load all networks
+    def load_networks(self, epoch):
+        """Load all the networks, optimizers and, if used, apex mixed precision's state_dict from the disk.
+        Parameters:
+            epoch (int) -- current epoch; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
+        """
+        # load networks
         for name in self.model_names:
             if isinstance(name, str):
                 model_path = os.path.join(self.save_dir, '%s_net_%s.pth' % (epoch, name))

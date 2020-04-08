@@ -28,7 +28,7 @@ class BaseOptions():
         parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded. [unaligned | aligned | single]')
         parser.add_argument('--model', type=str, default='cycle_gan',
                             help='chooses which model to use. cycle_gan, pix2pix, test')
-        parser.add_argument('--which_direction', type=str, default='AtoB', help='AtoB or BtoA')
+        parser.add_argument('--direction', type=str, default='AtoB', help='AtoB or BtoA')
         parser.add_argument('--num_workers', default=4, type=int, help='# threads for loading data')
         parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='models are saved here')
         parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
@@ -52,6 +52,7 @@ class BaseOptions():
         parser.add_argument("--distributed", help="Distributed mode", action='store_true')
         parser.add_argument('--local_rank', type=int, default=0, help='Local rank of the process in distributed mode')
         parser.add_argument('--mixed_precision', help="Use Nvidia Apex's AMP for mixed precision", action='store_true')
+        parser.add_argument('--opt_level', default='O1', type=str, help="Optimization level mixed precision: [O0|O1|O2|03]")
         self.initialized = True
         return parser
 
