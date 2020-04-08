@@ -67,15 +67,7 @@ def init_device(net, gpu_ids=[]):
         assert(torch.cuda.is_available())
         device = torch.device('cuda:{}'.format(gpu_ids[0])) if gpu_ids else torch.device('cpu')
         net.to(device)
-
-def network_parallelization(net, gpu_ids, is_distributed):
-    if len(gpu_ids) > 1:
-        if is_distributed:
-            net = DistributedDataParallel(net)
-        else:
-            net = torch.nn.DataParallel(net, gpu_ids)
-    return net
-
+        
 
 def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive=False, 
              init_type='normal', init_gain=0.02, gpu_ids=[]):

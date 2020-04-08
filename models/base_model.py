@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from . import networks
 from apex.parallel import DistributedDataParallel
+from apex import amp
 
 # TODO: put it in some utils 
 def remove_module_from_ordered_dict(ordered_dict):
@@ -48,6 +49,7 @@ class BaseModel(ABC):
         self.loss_names = []
         self.model_names = []
         self.visual_names = []
+        self.optimizers = []
         self.image_paths = []
 
     @staticmethod
@@ -79,17 +81,24 @@ class BaseModel(ABC):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         pass
 
-    def setup(self, opt):
-        """Load and print networks; create schedulers
-        Parameters:
-            opt (Option class) -- stores all the experiment flags; needs to be a subclass of BaseOptions
+    def setup(self):
+        """Final step of initializing a GAN model. Does following:
+            (1) Sets up schedulers 
+            (2) Converts the model to mixed precision, if specified
+            (3) Loads a checkpoint for continuing training or inference
+            (4) Applies parallelization to the model if possible
         """
         if self.is_train:
-            self.schedulers = [networks.get_scheduler(optimizer, opt) for optimizer in self.optimizers]
-        
-        if not self.is_train or opt.continue_train:
-            self.load_networks(opt.which_epoch)
-        torch.cuda.empty_cache()
+            self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers]
+
+        if self.opt.mixed_precision:
+            self.convert_to_mixed_precision() # TODO: set opt_level from args
+
+        if not self.is_train or self.opt.continue_train:
+            self.load_networks()
+
+        if len(self.gpu_ids) > 1:
+            self.parallelize_networks()
 
     def eval(self):
         """Make models eval mode during test time"""
@@ -104,6 +113,44 @@ class BaseModel(ABC):
         """
         with torch.no_grad():
             self.forward()
+
+    def parallelize_networks(self):
+        """Wrap networks in DataParallel in case of multi-GPU setup, or in DistributedDataParallel if
+        using a distributed setup. No parallelization is done in case of single-GPU setup.
+        """
+        for name in self.model_names:
+            if isinstance(name, str):
+                net = getattr(self, 'net' + name)
+                if self.opt.distributed:
+                    net = DistributedDataParallel(net)
+                else:
+                    net = torch.nn.DataParallel(net, self.gpu_ids)
+
+    def convert_to_mixed_precision(self, opt_level='O1'):
+        """Initializes Nvidia Apex Mixed Precision
+        Parameters:
+            opt_level - specifies the AMP's optimization level. Accepted values are
+                        "O0", "O1", "O2", and "O3". Check Apex documentation.
+        """
+        networks = []
+        for name in self.model_names:
+            if isinstance(name, str):
+                net = getattr(self, 'net' + name)
+                networks.append(net)
+
+        if self.opt.mixed_precision:
+            if self.is_train:
+                networks, [self.optimizer_G, self.optimizer_D] = amp.initialize(
+                            networks, [self.optimizer_G, self.optimizer_D], opt_level=opt_level)
+                self.optimizers = [self.optimizer_G, self.optimizer_D]
+            else:
+                networks = amp.initialize(networks, opt_level=opt_level)
+
+            # I think this might be unnecessary since amp.initialize() seems to do everyhing inplace,
+            # but since the documentation always assigns back the returned values, decided to do the same
+            for i, name in enumerate(self.model_names):
+                if isinstance(name, str):
+                    setattr(self, 'net' + name, networks[i])
 
     def get_image_paths(self):
         """ Return image paths that are used to load current data"""
@@ -138,57 +185,58 @@ class BaseModel(ABC):
         return errors_ret
 
     def save_networks(self, epoch):
-        """Save all the networks to the disk.
+        """Save all the networks, optimizers and, if used, apex mixed precision's state_dict to the disk.
+
         Parameters:
-            epoch (int) -- current epoch; used in the file name '%s_net_%s.pth' % (epoch, name)
+            epoch (int) -- current epoch; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
+
+        # save all networks
         for name in self.model_names:
             if isinstance(name, str):
-                save_filename = '%s_net_%s.pth' % (epoch, name)
-                save_path = os.path.join(self.save_dir, save_filename)
-                net = getattr(self, 'net' + name)
+                model_path = os.path.join(self.save_dir, '%s_net_%s.pth' % (epoch, name))
+                model = getattr(self, 'net' + name)
+                model_checkpoint = model.state_dict()
+                model_checkpoint = remove_module_from_ordered_dict(model_checkpoint)
+                torch.save(model_checkpoint, model_path)
+
+        # save optimizers
+        optimizers_path = os.path.join(self.save_dir, '%s_optimizers.pth' % (epoch))
+        optimizers_checkpoint = [optimizer.state_dict() for optimizer in self.optimizers]
+        torch.save(optimizers_checkpoint, optimizers_path)
+
+        # save apex mixed precision
+        if self.opt.mixed_precision:
+            amp_path = os.path.join(self.save_dir, '%s_amp.pth' % (epoch))
+            torch.save(amp.state_dict(), amp_path)
                 
-                state_dict = remove_module_from_ordered_dict( net.state_dict() )
-                torch.save(state_dict, save_path)
-
-    def __patch_instance_norm_state_dict(self, state_dict, module, keys, i=0):
-        """Fix InstanceNorm checkpoints incompatibility (prior to 0.4)"""
-        key = keys[i]
-        if i + 1 == len(keys):  # at the end, pointing to a parameter/buffer
-            if module.__class__.__name__.startswith('InstanceNorm') and \
-                    (key == 'running_mean' or key == 'running_var'):
-                if getattr(module, key) is None:
-                    state_dict.pop('.'.join(keys))
-            if module.__class__.__name__.startswith('InstanceNorm') and \
-               (key == 'num_batches_tracked'):
-                state_dict.pop('.'.join(keys))
-        else:
-            self.__patch_instance_norm_state_dict(state_dict, getattr(module, key), keys, i + 1)
-
-    def load_networks(self, epoch):
-        """Load all the networks from the disk.
-        Parameters:
-            epoch (int) -- current epoch; used in the file name '%s_net_%s.pth' % (epoch, name)
-        """
+    
+    def load_networks(self):
+        """Load all the networks, optimizers and, if used, apex mixed precision's state_dict from the disk."""
+        epoch = self.opt.which_epoch
+        # load all networks
         for name in self.model_names:
             if isinstance(name, str):
-                load_filename = '%s_net_%s.pth' % (epoch, name)
-                load_path = os.path.join(self.save_dir, load_filename)
+                model_path = os.path.join(self.save_dir, '%s_net_%s.pth' % (epoch, name))
                 net = getattr(self, 'net' + name)
-                # TODO: see how to do this with current model saving and with AMP
-                if isinstance(net, torch.nn.DataParallel) or isinstance(net, DistributedDataParallel):
-                    net = net.module
-                print('loading the model from %s' % load_path)
-                # if you are using PyTorch newer than 0.4 (e.g., built from
-                # GitHub source), you can remove str() on self.device
-                state_dict = torch.load(load_path, map_location=str(self.device))
-                if hasattr(state_dict, '_metadata'):
-                    del state_dict._metadata
+                print('loading the model from %s' % model_path)
+                model_state_dict = torch.load(model_path, map_location=self.device)
+                if hasattr(model_state_dict, '_metadata'):
+                    del model_state_dict._metadata
+                net.load_state_dict(model_state_dict)
 
-                # patch InstanceNorm checkpoints prior to 0.4
-                for key in list(state_dict.keys()):  # need to copy keys here because we mutate in loop
-                    self.__patch_instance_norm_state_dict(state_dict, net, key.split('.'))
-                net.load_state_dict(state_dict)
+        # load amp state
+        if self.opt.mixed_precision:
+            amp_path = os.path.join(self.save_dir, '%s_amp.pth' % (epoch))
+            amp.load_state_dict(torch.load(amp_path))
+
+        # load optimizers
+        if self.is_train:
+            optimizers_path = os.path.join(self.save_dir, '%s_optimizers.pth' % (epoch))
+            optimizers_state_dict = torch.load(optimizers_path) # list with state_dict of each optimizer
+            for i in range(len(self.optimizers)):
+                self.optimizers[i].load_state_dict(optimizers_state_dict[i]) # lists preserve order so this is alright
+
 
     def print_networks(self, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture
@@ -208,7 +256,7 @@ class BaseModel(ABC):
         print('-----------------------------------------------')
 
     def set_requires_grad(self, nets, requires_grad=False):
-        """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
+        """Set requies_grad=False for all the networks to avoid unnecessary computations
         Parameters:
             nets (network list)   -- a list of networks
             requires_grad (bool)  -- whether the networks require gradients or not

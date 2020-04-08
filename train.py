@@ -43,9 +43,7 @@ def main():
             opt.distributed = False
 
     data_loader = CustomDataLoader(opt)
-
     model = create_model(opt)
-    model.setup(opt)
     
     if is_main_process:
         print_info(opt, options, model, data_loader) 
@@ -95,7 +93,9 @@ def main():
 
             iter_data_time = time.time()
 
-        if is_main_process:    
+        model.update_learning_rate()  # perform a scheduler step 
+
+        if is_main_process:
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
             model.save_networks('latest')
             if epoch % opt.save_epoch_freq == 0:
@@ -123,8 +123,6 @@ def main():
 
                 # log all the information of the epoch
                 wandb.log(epoch_log_dict)
-
-        model.update_learning_rate()
 
 if __name__ == '__main__':
     main()

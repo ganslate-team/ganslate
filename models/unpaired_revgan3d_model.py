@@ -9,7 +9,7 @@ from apex import amp
 
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''
-    
+
     @staticmethod
     def modify_commandline_options(parser, is_train=True):
         if is_train:
@@ -17,7 +17,7 @@ class UnpairedRevGAN3dModel(BaseModel):
             parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
             parser.add_argument('--lambda_identity', type=float, default=0.0, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
             parser.add_argument('--lambda_inverse', type=float, default=0.0, help='use inverse mapping. Setting lambda_inverse other than 0 has an effect of scaling the weight of the inverse mapping loss. For example, if the weight of the inverse loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_inverse = 0.1')
-            parser.add_argument('--proportion_SSIM', type=float, default=0.0, help='TODO')
+            parser.add_argument('--proportion_ssim', type=float, default=0.0, help='TODO')
         return parser
 
     def __init__(self, opt):
@@ -29,11 +29,11 @@ class UnpairedRevGAN3dModel(BaseModel):
         visual_names_A = ['real_A', 'fake_B', 'rec_A']
         visual_names_B = ['real_B', 'fake_A', 'rec_B']
         if self.is_train and self.opt.lambda_identity > 0.0:
-            visual_names_A.append('idt_A')
-            visual_names_B.append('idt_B')
+            visual_names_A.append('idt_B')
+            visual_names_B.append('idt_A')
 
         self.visual_names = visual_names_A + visual_names_B
-        # specify the models you want to save to the disk. The program will call base_model.save_networks3d and base_model.load_networks3d
+        # specify the models you want to save to the disk. The program will call base_model.save_networks and base_model.load_networks
         if self.is_train:
             self.model_names = ['G', 'D_A', 'D_B']
         else:  # during test time, only load Gs
@@ -47,6 +47,8 @@ class UnpairedRevGAN3dModel(BaseModel):
         self.netG = networks3d.define_G(opt.input_nc, opt.output_nc,
                                         opt.ngf, opt.which_model_netG, opt.norm, opt.use_naive,
                                         opt.init_type, opt.init_gain, self.gpu_ids)
+        self.netG_A = lambda x: self.netG(x)
+        self.netG_B = lambda x: self.netG(x, inverse=True)
 
         if self.is_train:
             use_sigmoid = opt.no_lsgan
@@ -67,40 +69,15 @@ class UnpairedRevGAN3dModel(BaseModel):
             self.criterionIdt = torch.nn.L1Loss()
             self.criterionInv = torch.nn.L1Loss()
             # initialize optimizers
-            self.params_G = [self.netG.parameters()]
-            self.optimizer_G = torch.optim.Adam(itertools.chain(*self.params_G
-                                                ),
+            self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
                                                 lr=opt.lr_G, betas=(opt.beta1, 0.999))
-            self.params_D = [self.netD_A.parameters(),
-                             self.netD_B.parameters()]
-            self.optimizer_D = torch.optim.Adam(itertools.chain(*self.params_D),
+            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()),
                                                 lr=opt.lr_D, betas=(opt.beta1, 0.999))
-        # ----------------------------------------------------------------------------
-
-        # --------------- Mixed precision and network parallelization ----------------
-        if self.is_train:
-            networks = [self.netG, self.netD_A, self.netD_B]
-            if opt.mixed_precision:
-                opt_level='O1' # TODO option to set opt_level from options
-                networks, [self.optimizer_G, self.optimizer_D] = amp.initialize(
-                        networks, [self.optimizer_G, self.optimizer_D], opt_level=opt_level)
-            # apply network (data) parallelization
-            networks = [networks3d.network_parallelization(net, self.gpu_ids, opt.distributed) for net in networks]
-            self.netG, self.netD_A, self.netD_B = networks
-        else:
-            if opt.mixed_precision:
-                self.netG = amp.initialize(self.netG, opt_level=opt_level)
-            self.netG = networks3d.network_parallelization(self.netG, self.gpu_ids, opt.distributed)
-        # ----------------------------------------------------------------------------
-
-        # --------------------------- Finalize the setup -----------------------------
-        self.netG_A = lambda x: self.netG(x)
-        self.netG_B = lambda x: self.netG(x, inverse=True)
-        if self.is_train:
-            self.optimizers = []
             self.optimizers.append(self.optimizer_G)
             self.optimizers.append(self.optimizer_D)
         # ----------------------------------------------------------------------------
+
+        self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
 
     def set_input(self, input):
         AtoB = self.opt.which_direction == 'AtoB'
@@ -123,7 +100,6 @@ class UnpairedRevGAN3dModel(BaseModel):
                 loss_scaled.backward(retain_graph=retain_graph)
         else:
             loss.backward(retain_graph=retain_graph)
-
 
     def backward_D_basic(self, netD, real, fake):
         # Real
@@ -155,9 +131,10 @@ class UnpairedRevGAN3dModel(BaseModel):
     def backward_G(self):
         lambda_idt = self.opt.lambda_identity
         lambda_inv = self.opt.lambda_inverse
-        proportion_SSIM = self.opt.proportion_SSIM
         lambda_A = self.opt.lambda_A
         lambda_B = self.opt.lambda_B
+        proportion_SSIM = self.opt.proportion_ssim
+
         # Identity loss
         if lambda_idt > 0:
             # G_A should be identity if real_B is fed.
@@ -170,30 +147,29 @@ class UnpairedRevGAN3dModel(BaseModel):
             self.loss_idt_A = 0
             self.loss_idt_B = 0
         
+        # "Inverse" loss # TODO: Find a better name
         if lambda_inv > 0:
-            self.loss_inv_A = self.criterionInv(self.real_A, self.fake_B) * lambda_inv
-            self.loss_inv_B = self.criterionInv(self.real_B, self.fake_A) * lambda_inv  
+            self.loss_inv_A = self.criterionInv(self.real_A, self.fake_B) * lambda_A * lambda_inv
+            self.loss_inv_B = self.criterionInv(self.real_B, self.fake_A) * lambda_B * lambda_inv  
         else:
             self.loss_inv_A = 0
             self.loss_inv_B = 0
 
         # GAN loss D_A(G_A(A))
         self.loss_G_A = self.criterionGAN(self.netD_A(self.fake_B), True)
-
         # GAN loss D_B(G_B(B))
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A), True)
-
         
         if proportion_SSIM > 0:
             alpha = proportion_SSIM
             beta  = 1 - proportion_SSIM
             # Forward cycle loss
-            ssim_loss_A  = (1-self.criterionSSIM(self.rec_A, self.real_A))
-            cycle_loss_A = self.criterionCycle(self.rec_A, self.real_A)
+            ssim_loss_A       = (1 - self.criterionSSIM(self.rec_A, self.real_A))
+            cycle_loss_A      = self.criterionCycle(self.rec_A, self.real_A)
             self.loss_cycle_A = alpha*ssim_loss_A + beta*cycle_loss_A
             # Backward cycle loss
-            ssim_loss_B  = (1-self.criterionSSIM(self.rec_B, self.real_B))
-            cycle_loss_B = self.criterionCycle(self.rec_B, self.real_B)
+            ssim_loss_B       = (1 - self.criterionSSIM(self.rec_B, self.real_B))
+            cycle_loss_B      = self.criterionCycle(self.rec_B, self.real_B)
             self.loss_cycle_B = alpha*ssim_loss_B + beta*cycle_loss_B
         else:
             # Forward cycle loss
@@ -204,15 +180,13 @@ class UnpairedRevGAN3dModel(BaseModel):
         self.loss_cycle_A = self.loss_cycle_A * lambda_A 
         self.loss_cycle_B = self.loss_cycle_B * lambda_B
 
-        
         # combined loss
         self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.loss_inv_A + self.loss_inv_B
         self.backward(self.loss_G, self.optimizer_G)
 
     def optimize_parameters(self):
-        # forward
-        self.forward()
         # G_A and G_B
+        self.forward()
         self.set_requires_grad([self.netD_A, self.netD_B], False)
         self.optimizer_G.zero_grad()
         self.backward_G()
