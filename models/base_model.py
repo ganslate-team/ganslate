@@ -195,8 +195,8 @@ class BaseModel(ABC):
         for name in self.model_names:
             if isinstance(name, str):
                 model_path = os.path.join(self.save_dir, '%s_net_%s.pth' % (epoch, name))
-                model = getattr(self, 'net' + name)
-                model_checkpoint = model.state_dict()
+                net = getattr(self, 'net' + name)
+                model_checkpoint = net.state_dict()
                 model_checkpoint = remove_module_from_ordered_dict(model_checkpoint)
                 torch.save(model_checkpoint, model_path)
 
@@ -230,12 +230,13 @@ class BaseModel(ABC):
         # load amp state
         if self.opt.mixed_precision:
             amp_path = os.path.join(self.save_dir, '%s_amp.pth' % (epoch))
-            amp.load_state_dict(torch.load(amp_path))
+            amp_state_dict = torch.load(amp_path, map_location=self.device)
+            amp.load_state_dict(amp_state_dict)
 
         # load optimizers
         if self.is_train:
             optimizers_path = os.path.join(self.save_dir, '%s_optimizers.pth' % (epoch))
-            optimizers_state_dict = torch.load(optimizers_path) # list with state_dict of each optimizer
+            optimizers_state_dict = torch.load(optimizers_path, map_location=self.device) # list with state_dict of each optimizer
             for i in range(len(self.optimizers)):
                 self.optimizers[i].load_state_dict(optimizers_state_dict[i]) # lists preserve order so this is alright
 
