@@ -83,8 +83,8 @@ def main():
 
                 if total_steps % opt.print_freq == 0:
                     losses = model.get_current_losses()
-                    t = (time.time() - iter_start_time) / opt.batch_size
-                    visualizer.print_current_losses(epoch, epoch_iter, losses, t, t_data)
+                    t_comp = (time.time() - iter_start_time) / opt.batch_size
+                    visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)
 
                 if total_steps % opt.save_latest_freq == 0:
                     print('saving the latest model (epoch %d, total_steps %d)' %

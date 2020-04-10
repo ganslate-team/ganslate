@@ -17,7 +17,7 @@ class DummyDataset(BaseDataset):
         self.root = opt.dataroot
         self.dir_AB = os.path.join(opt.dataroot, opt.phase)
         self.AB_paths = sorted(make_dataset(self.dir_AB))
-        self.A_size = 50
+        self.A_size = 100
         self.B_size = self.A_size
 
     def __getitem__(self, index):
@@ -31,4 +31,4 @@ class DummyDataset(BaseDataset):
                 'A_paths': True, 'B_paths': False}
 
     def __len__(self):
-        return self.A_size + self.B_size
+        return max(self.A_size, self.B_size)
