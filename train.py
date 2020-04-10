@@ -5,7 +5,7 @@ from options.train_options import TrainOptions
 from data import CustomDataLoader
 from models import create_model
 from util.visualizer import Visualizer
-from util.distributed import multi_gpu
+from util.distributed import multi_gpu, comm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,9 +44,10 @@ def main():
 
     data_loader = CustomDataLoader(opt)
     model = create_model(opt)
-    
+    device = model.device
+
     if is_main_process:
-        print_info(opt, options, model, data_loader) 
+        print_info(opt, options, model, data_loader)
         if opt.wandb:
             import wandb
             wandb.init(project="gan-translation", entity="maastro-clinic")
@@ -70,26 +71,37 @@ def main():
             if total_steps % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
             
-            total_steps += opt.batch_size
-            epoch_iter += opt.batch_size
             model.set_input(data)
             model.optimize_parameters()
 
+            # at each step, every process goes through `batch_size` number of steps (data samples)
+            steps_done = opt.batch_size
+            # at each iteration, provide each process with their cumulative number of steps
+            steps_done = comm.reduce(steps_done, average=False, all_reduce=True, device=device)
+            total_steps += steps_done
+            epoch_iter += steps_done
+            
             if is_main_process:
                 visualizer.reset()
-                if total_steps % opt.display_freq == 0:
-                    save_result = total_steps % opt.update_html_freq == 0
-                    visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
+                
+            if total_steps % opt.print_freq == 0:
+                losses = model.get_current_losses()
+                t_comp = (time.time() - iter_start_time) / opt.batch_size
 
-                if total_steps % opt.print_freq == 0:
-                    losses = model.get_current_losses()
-                    t_comp = (time.time() - iter_start_time) / opt.batch_size
+                # obtain on rank 0 the reduced and averaged losses, computational time and data loading time
+                losses = comm.reduce(losses, average=True, all_reduce=False, device=device)
+                t_comp = comm.reduce(t_comp, average=True, all_reduce=False, device=device)
+                t_data = comm.reduce(t_data, average=True, all_reduce=False, device=device)
+
+                if is_main_process:
                     visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)
 
-                if total_steps % opt.save_latest_freq == 0:
-                    print('saving the latest model (epoch %d, total_steps %d)' %
-                        (epoch, total_steps))
-                    model.save_networks('latest')
+            if is_main_process and total_steps % opt.update_html_freq == 0:
+                visualizer.display_current_results(model.get_current_visuals(), epoch)
+
+            if is_main_process and total_steps % opt.save_latest_freq == 0:
+                print('saving the latest model (epoch %d, total_steps %d)' % (epoch, total_steps))
+                model.save_networks('latest')
 
             iter_data_time = time.time()
 
@@ -106,6 +118,7 @@ def main():
                 (epoch, opt.niter + opt.niter_decay, epoch_time))
             
             if opt.wandb:
+                # TODO: do this properly and in a separate function
                 epoch_log_dict = {'epoch_time': int(epoch_time),
                                   'lr_G': lr_G,
                                   'lr_D': lr_D}

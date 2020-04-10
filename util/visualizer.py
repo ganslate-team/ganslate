@@ -89,8 +89,8 @@ class Visualizer():
         self.saved = False
 
     # |visuals|: dictionary of images to display or save
-    def display_current_results(self, visuals, epoch, save_result):
-        if self.use_html and (save_result or not self.saved):  # save images to a html file
+    def display_current_results(self, visuals, epoch):
+        if self.use_html and not self.saved:  # save images to a html file
             self.saved = True
             for label, image in visuals.items():
                 image_numpy = tensor2im(image, self.scale_range)
