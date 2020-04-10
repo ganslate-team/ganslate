@@ -1,11 +1,40 @@
-import numpy as np
 import os
 import ntpath
 import time
+import numpy as np
+import torch
 from . import util
 from . import html
 from PIL import Image
 
+# Converts a Tensor into an image array (numpy)
+# |imtype|: the desired type of the converted numpy array
+def tensor2im(input_image, scale_range, imtype=np.uint8):
+    if isinstance(input_image, torch.Tensor):
+        image_tensor = input_image.data
+    else:
+        return input_image
+    image_numpy = image_tensor[0].cpu().float().numpy()
+
+    if image_numpy.shape[0] == 1:
+        # Stack first dimension so greyscale (e.g. HU) becomes greyscale rgb
+        if len(image_numpy.shape) == 3:
+            image_numpy = np.tile(image_numpy, (3, 1, 1))
+        if len(image_numpy.shape) == 4:
+            image_numpy = np.tile(image_numpy, (3, 1, 1, 1))
+
+    if len(image_numpy.shape) == 4:
+        # slice 3d volume in the middle to visualize 2d slice
+        image_numpy = image_numpy[:3, image_numpy.shape[1] // 2, :, :]
+        # image_numpy = image_numpy[:3, :, image_numpy.shape[2] // 2, :]
+
+    image_numpy = (np.transpose(image_numpy, (1, 2, 0)) - scale_range[0]) / (scale_range[1] - scale_range[0]) * 255.0
+
+    # Limit image range (can happen without output tanh)
+    image_numpy[image_numpy < 0] = 0
+    image_numpy[image_numpy > 255] = 255
+
+    return image_numpy.astype(imtype)
 
 # save image to the disk
 def save_images(webpage, visuals, image_path, scale_range, aspect_ratio=1.0, width=256):
@@ -17,7 +46,7 @@ def save_images(webpage, visuals, image_path, scale_range, aspect_ratio=1.0, wid
     ims, txts, links = [], [], []
 
     for label, im_data in visuals.items():
-        im = util.tensor2im(im_data, scale_range=scale_range)
+        im = tensor2im(im_data, scale_range=scale_range)
         parsname = name.replace('/', '_')
         image_name = '%s_%s.png' % (parsname, label)
         save_path = os.path.join(image_dir, image_name)
@@ -64,7 +93,7 @@ class Visualizer():
         if self.use_html and (save_result or not self.saved):  # save images to a html file
             self.saved = True
             for label, image in visuals.items():
-                image_numpy = util.tensor2im(image, self.scale_range)
+                image_numpy = tensor2im(image, self.scale_range)
                 img_path = os.path.join(self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
                 im = Image.fromarray(image_numpy)
                 im.save(img_path)
@@ -75,7 +104,7 @@ class Visualizer():
                 ims, txts, links = [], [], []
 
                 for label, image_numpy in visuals.items():
-                    image_numpy = util.tensor2im(image, self.scale_range)
+                    image_numpy = tensor2im(image, self.scale_range)
                     img_path = 'epoch%.3d_%s.png' % (n, label)
                     ims.append(img_path)
                     txts.append(label)

@@ -3,19 +3,10 @@ import torch
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from . import networks
+from util.util import remove_module_from_ordered_dict
 from apex.parallel import DistributedDataParallel
 from apex import amp
 
-# TODO: put it in some utils 
-def remove_module_from_ordered_dict(ordered_dict):
-    new_ordered_dict = OrderedDict()
-    for k, v in ordered_dict.items():
-        if k.startswith('module.'):
-            name = k[7:]
-            new_ordered_dict[name] = v
-        else:
-            new_ordered_dict[k] = v
-    return new_ordered_dict
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
