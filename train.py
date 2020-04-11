@@ -76,7 +76,7 @@ def main():
 
             # at each step, every process goes through `batch_size` number of steps (data samples)
             steps_done = opt.batch_size
-            # at each iteration, provide each process with their cumulative number of steps
+            # at each iteration, provide each process with sum of number of steps done by each process
             steps_done = comm.reduce(steps_done, average=False, all_reduce=True, device=device)
             total_steps += steps_done
             epoch_iter += steps_done
@@ -88,10 +88,11 @@ def main():
                 losses = model.get_current_losses()
                 t_comp = (time.time() - iter_start_time) / opt.batch_size
 
-                # obtain on rank 0 the reduced and averaged losses, computational time and data loading time
+                # get the reduced (avg) losses on process of rank 0 
                 losses = comm.reduce(losses, average=True, all_reduce=False, device=device)
-                t_comp = comm.reduce(t_comp, average=True, all_reduce=False, device=device)
-                t_data = comm.reduce(t_data, average=True, all_reduce=False, device=device)
+                # get the reduced (sum) computational time and data loading time on process of rank 0 
+                t_comp = comm.reduce(t_comp, average=False, all_reduce=False, device=device)
+                t_data = comm.reduce(t_data, average=False, all_reduce=False, device=device)
 
                 if is_main_process:
                     visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)

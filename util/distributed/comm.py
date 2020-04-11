@@ -64,15 +64,8 @@ def reduce_int_float(input_value, average, all_reduce, device):
     performing reduction and, finally, casting it back to the initial type. 
     """
     data_type = type(input_value)  # save the original data type
-    tensor = torch.Tensor([input_value]).to(device)
-    if all_reduce:
-        torch.distributed.all_reduce(tensor)
-    else:
-        torch.distributed.reduce(tensor, dst=0)
-
-    if average and (multi_gpu.get_rank() == 0 or all_reduce):
-        tensor /= multi_gpu.get_world_size()
-    
+    tensor = torch.Tensor([input_value])  # convert to tensor
+    tensor = reduce_tensor(tensor, average, all_reduce, device)
     reduced_value = data_type(tensor.item())  # cast back to int or float
     return reduced_value
 
@@ -97,6 +90,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
                 raise NotImplementedError("Dictionary reduction supported only if \
                                            its values are tensors, floats or integers.")
         values.append(value)
+        
     # convert the list of tensors to a single tensor 
     values = torch.stack(values, dim=0).to(device)
 
