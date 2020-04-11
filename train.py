@@ -88,11 +88,11 @@ def main():
                 losses = model.get_current_losses()
                 t_comp = (time.time() - iter_start_time) / opt.batch_size
 
-                # get the reduced (avg) losses on process of rank 0 
+                # reduce losses (avg) and send to the process of rank 0
                 losses = comm.reduce(losses, average=True, all_reduce=False, device=device)
-                # get the reduced (sum) computational time and data loading time on process of rank 0 
-                t_comp = comm.reduce(t_comp, average=False, all_reduce=False, device=device)
-                t_data = comm.reduce(t_data, average=False, all_reduce=False, device=device)
+                # reduce computational time and data loading per data point (avg) and send to the process of rank 0
+                t_comp = comm.reduce(t_comp, average=True, all_reduce=False, device=device)
+                t_data = comm.reduce(t_data, average=True, all_reduce=False, device=device)
 
                 if is_main_process:
                     visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)
