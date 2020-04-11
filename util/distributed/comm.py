@@ -9,7 +9,7 @@ def reduce(input_data, average=False, all_reduce=False, device=torch.device('cpu
     (1) rank 0 reduce (torch.distributed.reduce)  - communicates the sum or average of 
                                                     all processes to the process of rank 0 only
     (2) all reduce (torch.distributed.all_reduce) - communicates the sum or average of 
-                                                    all processes on each process
+                                                    all processes to each process
     
     Parameters:
         input_dict (int, float, tensor, dict, list, tuple) -- data for reduction
@@ -90,7 +90,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
                 raise NotImplementedError("Dictionary reduction supported only if \
                                            its values are tensors, floats or integers.")
         values.append(value)
-        
+
     # convert the list of tensors to a single tensor 
     values = torch.stack(values, dim=0).to(device)
 
@@ -118,8 +118,8 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
             if is_float_or_int(value): 
                 input_data[i] = torch.Tensor([value])
             else:
-                raise NotImplementedError("List and tuple reduction supported only if \
-                                            their values are tensors, floats or integers.")
+                raise NotImplementedError("List/tuple reduction supported only if \
+                                            its values are tensors, floats or integers.")
     # convert list/tuple of tensors to a single tensor
     values = torch.stack(input_data, dim=0).to(device) 
     if all_reduce:

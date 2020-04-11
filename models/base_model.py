@@ -76,7 +76,7 @@ class BaseModel(ABC):
         """Final step of initializing a GAN model. Does following:
             (1) Sets up schedulers 
             (2) Converts the model to mixed precision, if specified
-            (3) Loads a checkpoint for continuing training or inference
+            (3) Loads a checkpoint if continuing training or inferencing            
             (4) Applies parallelization to the model if possible
         """
         if self.is_train:
@@ -90,6 +90,8 @@ class BaseModel(ABC):
 
         if len(self.gpu_ids) > 1:
             self.parallelize_networks()
+        
+        torch.cuda.empty_cache()
 
     def eval(self):
         """Make models eval mode during test time"""
@@ -181,7 +183,6 @@ class BaseModel(ABC):
         Parameters:
             epoch (int) -- current epoch; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-
         # save all networks
         for name in self.model_names:
             if isinstance(name, str):
@@ -217,12 +218,14 @@ class BaseModel(ABC):
                 if hasattr(model_state_dict, '_metadata'):
                     del model_state_dict._metadata
                 net.load_state_dict(model_state_dict)
+                del model_state_dict  # otherwise might go out of CUDA memory
 
         # load amp state
         if self.opt.mixed_precision:
             amp_path = os.path.join(self.save_dir, '%s_amp.pth' % (epoch))
             amp_state_dict = torch.load(amp_path, map_location=self.device)
             amp.load_state_dict(amp_state_dict)
+            del amp_state_dict  # otherwise might go out of CUDA memory
 
         # load optimizers
         if self.is_train:
@@ -230,7 +233,8 @@ class BaseModel(ABC):
             optimizers_state_dict = torch.load(optimizers_path, map_location=self.device) # list with state_dict of each optimizer
             for i in range(len(self.optimizers)):
                 self.optimizers[i].load_state_dict(optimizers_state_dict[i]) # lists preserve order so this is alright
-
+            del optimizers_state_dict  # otherwise might go out of CUDA memory
+    
 
     def print_networks(self, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture
@@ -248,6 +252,7 @@ class BaseModel(ABC):
                     print(net)
                 print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
         print('-----------------------------------------------')
+
 
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=False for all the networks to avoid unnecessary computations

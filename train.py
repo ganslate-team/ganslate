@@ -75,7 +75,7 @@ def main():
             model.optimize_parameters()
 
             # at each step, every process goes through `batch_size` number of steps (data samples)
-            steps_done = opt.batch_size
+            steps_done = opt.batch_size # TODO: this is not the most accurate when data size is not a factor of batch size
             # at each iteration, provide each process with sum of number of steps done by each process
             steps_done = comm.reduce(steps_done, average=False, all_reduce=True, device=device)
             total_steps += steps_done
@@ -84,7 +84,7 @@ def main():
             if is_main_process:
                 visualizer.reset()
                 
-            if total_steps % opt.print_freq == 0:
+            if epoch_iter % opt.print_freq == 0: # TODO: change so that it does N number of times per epoch
                 losses = model.get_current_losses()
                 t_comp = (time.time() - iter_start_time) / opt.batch_size
 
