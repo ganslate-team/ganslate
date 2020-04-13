@@ -91,8 +91,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
                                            its values are tensors, floats or integers.")
         values.append(value)
 
-    # convert the list of tensors to a single tensor 
-    values = torch.stack(values, dim=0).to(device)
+    values = torch.stack(values, dim=0).to(device) # convert the list of tensors to a single tensor 
 
     if all_reduce:
         torch.distributed.all_reduce(values)
@@ -107,8 +106,8 @@ def reduce_dict(input_dict, average, all_reduce, device):
 
 
 def reduce_list_tuple(input_data, average, all_reduce, device):
-    """ Reduce a list or tuple. Returns the list/tuple with 
-    its reduced values as tensors if they are floats or integers.
+    """ Reduce a list or tuple whose elements are either tensors, floats or integers. 
+    Returns reduced list/tuple with its elements as tensors.
     """
     data_type = type(input_data)  # save the original data type
     # convert tuple/list values to tensors if they are floats or integers

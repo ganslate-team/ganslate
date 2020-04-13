@@ -97,8 +97,6 @@ class UnpairedRevGANModel(BaseModel):
         self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
     def forward(self):
-        torch.cuda.empty_cache()
-
         # Forward cycle (A to B)
         self.fake_B = self.netG_A_dec(self.netG_core(self.netG_A_enc(self.real_A)))
         self.rec_A = self.netG_B_dec(self.netG_core(self.netG_B_enc(self.fake_B), inverse=True))
