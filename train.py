@@ -84,7 +84,7 @@ def main():
             if is_main_process:
                 visualizer.reset()
                 
-            if epoch_iter % opt.print_freq == 0: # TODO: change so that it does N number of times per epoch
+            if epoch_iter % opt.print_freq == 0: # TODO: change so that it does it N number of times per epoch
                 losses = model.get_current_losses()
                 t_comp = (time.time() - iter_start_time) / opt.batch_size
 

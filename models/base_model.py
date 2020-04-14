@@ -140,7 +140,7 @@ class BaseModel(ABC):
         else:
             networks = amp.initialize(networks, opt_level=opt_level)
 
-        # assigns back the returned mixed-precision networks
+        # assigns back the returned mixed-precision networks # TODO: say why
         for i, name in enumerate(self.model_names):
             if isinstance(name, str):
                 setattr(self, 'net' + name, networks[i])
@@ -183,24 +183,27 @@ class BaseModel(ABC):
         Parameters:
             epoch (int) -- current epoch; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        # save all networks
+        checkpoint = {}
+        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % epoch)
+
+        # add all networks to checkpoint
         for name in self.model_names:
             if isinstance(name, str):
-                model_path = os.path.join(self.save_dir, '%s_net_%s.pth' % (epoch, name))
                 net = getattr(self, 'net' + name)
-                model_checkpoint = net.state_dict()
-                model_checkpoint = remove_module_from_ordered_dict(model_checkpoint)
-                torch.save(model_checkpoint, model_path)
+                if isinstance(net, torch.nn.DataParallel) or isinstance(net, DistributedDataParallel):
+                    checkpoint[name] = net.module.state_dict()  # e.g. checkpoint["D_A"]
+                else:
+                    checkpoint[name] = net.state_dict()
 
-        # save optimizers
-        optimizers_path = os.path.join(self.save_dir, '%s_optimizers.pth' % (epoch))
-        optimizers_checkpoint = [optimizer.state_dict() for optimizer in self.optimizers]
-        torch.save(optimizers_checkpoint, optimizers_path)
+        # add optimizers to checkpoint
+        checkpoint["optimizer_G"] = self.optimizer_G.state_dict()
+        checkpoint["optimizer_D"] = self.optimizer_D.state_dict()
 
         # save apex mixed precision
         if self.opt.mixed_precision:
-            amp_path = os.path.join(self.save_dir, '%s_amp.pth' % (epoch))
-            torch.save(amp.state_dict(), amp_path)
+            checkpoint["amp"] = amp.state_dict()
+
+        torch.save(checkpoint, checkpoint_path)
                 
     
     def load_networks(self, epoch):
@@ -208,32 +211,30 @@ class BaseModel(ABC):
         Parameters:
             epoch (int) -- current epoch; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
+        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % epoch)
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
+        print('loaded the checkpoint from %s' % checkpoint_path) # TODO: make nice logging
+
         # load networks
         for name in self.model_names:
             if isinstance(name, str):
-                model_path = os.path.join(self.save_dir, '%s_net_%s.pth' % (epoch, name))
                 net = getattr(self, 'net' + name)
-                print('loading the model from %s' % model_path)
-                model_state_dict = torch.load(model_path, map_location=self.device)
-                if hasattr(model_state_dict, '_metadata'):
-                    del model_state_dict._metadata
-                net.load_state_dict(model_state_dict)
-                del model_state_dict  # otherwise might go out of CUDA memory
+                net.load_state_dict(checkpoint[name])
 
-        # load amp state
+        # load amp state    # TODO: what about opt_level, does it matter if it's different from before?
         if self.opt.mixed_precision:
-            amp_path = os.path.join(self.save_dir, '%s_amp.pth' % (epoch))
-            amp_state_dict = torch.load(amp_path, map_location=self.device)
-            amp.load_state_dict(amp_state_dict)
-            del amp_state_dict  # otherwise might go out of CUDA memory
+            if "amp" not in checkpoint:
+                print("This checkpoint was not trained using mixed precision.")  # set as logger warning
+            else:
+                amp.load_state_dict(checkpoint["amp"])
+        else:
+            if "amp" in checkpoint:
+                print("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
 
         # load optimizers
         if self.is_train:
-            optimizers_path = os.path.join(self.save_dir, '%s_optimizers.pth' % (epoch))
-            optimizers_state_dict = torch.load(optimizers_path, map_location=self.device) # list with state_dict of each optimizer
-            for i in range(len(self.optimizers)):
-                self.optimizers[i].load_state_dict(optimizers_state_dict[i]) # lists preserve order so this is alright
-            del optimizers_state_dict  # otherwise might go out of CUDA memory
+            self.optimizer_G.load_state_dict(checkpoint["optimizer_G"]) 
+            self.optimizer_D.load_state_dict(checkpoint["optimizer_D"]) 
     
 
     def print_networks(self, verbose):

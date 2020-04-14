@@ -54,14 +54,16 @@ class CustomDataLoader:
                 batch_size=opt.batch_size,
                 shuffle=False,  # shuffling (or not) is done by DistributedSampler
                 sampler=self.sampler,
-                num_workers=int(opt.num_workers))
+                num_workers=int(opt.num_workers),
+                pin_memory=True)
 
         else:
             self.dataloader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=opt.batch_size,
                 shuffle=not opt.serial_batches,
-                num_workers=int(opt.num_workers))
+                num_workers=int(opt.num_workers),
+                pin_memory=True)
 
     def __len__(self):
         return min(len(self.dataset), self.opt.max_dataset_size)

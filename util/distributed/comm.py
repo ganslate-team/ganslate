@@ -119,8 +119,8 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
             else:
                 raise NotImplementedError("List/tuple reduction supported only if \
                                             its values are tensors, floats or integers.")
-    # convert list/tuple of tensors to a single tensor
-    values = torch.stack(input_data, dim=0).to(device) 
+    values = torch.stack(input_data, dim=0).to(device) # convert list/tuple of tensors to a single tensor
+    
     if all_reduce:
         torch.distributed.all_reduce(values)
     else:
