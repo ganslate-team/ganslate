@@ -29,5 +29,6 @@ class TrainOptions(BaseOptions):
         parser.add_argument('--patch_size', required=True, nargs='+', type=int, help='Size of patches extracted from volumes (DxHxW), space-separated. Input example: 64 64 64')
         parser.add_argument('--focus_window', type=float, default=0.2, help='Proportion of the volume size which will be the size of the focus window.')
         parser.add_argument("--wandb", help="Use Weights&Biases (wandb.com) to track the experiment", action='store_true')
+        parser.add_argument("--per_loss_scale", help="When using Apex mixed precision, losses can be scaled either using a global loss-scaler or with per-loss scalers. Setting this option will use per-loss scalers.", action='store_true')
         self.is_train = True
         return parser

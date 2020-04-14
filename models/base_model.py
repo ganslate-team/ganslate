@@ -42,6 +42,9 @@ class BaseModel(ABC):
         self.visual_names = []
         self.optimizers = []
         self.image_paths = []
+        # number of losses on which backward is performed, G_A, G_B, D_A, D_B (4);
+        # in case of partially invertible, it is G, D_A, D_B (3).
+        self.num_losses = 4  
 
     @staticmethod
     def modify_commandline_options(parser, is_train):
@@ -83,7 +86,7 @@ class BaseModel(ABC):
             self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers]
 
         if self.opt.mixed_precision:
-            self.convert_to_mixed_precision(self.opt.opt_level)
+            self.convert_to_mixed_precision(self.opt.opt_level, self.opt.per_loss_scale)
 
         if not self.is_train or self.opt.continue_train:
             self.load_networks(self.opt.epoch)
@@ -107,6 +110,23 @@ class BaseModel(ABC):
         with torch.no_grad():
             self.forward()
 
+    def backward(self, loss, optimizer, retain_graph=False, loss_id=0):
+        """Run backward pass in a regular or mixed precision mode; called by methods <backward_D_basic> and <backward_G>.
+        Parameters:
+            loss (loss class) -- loss on which to perform backward pass
+            optimizer (optimizer class) -- mixed precision scales the loss with its optimizer
+            retain_graph (bool) -- specify if the backward pass should retain the graph
+            loss_id (int) -- when used in conjunction with the `num_losses` argument to amp.initialize, 
+                             enables Amp to use a different loss scale per loss. 
+                             By initializing Amp with `num_losses=1` and setting `loss_id=0` for each loss, 
+                             it will use a global scaler for all losses.
+        """
+        if self.opt.mixed_precision:
+            with amp.scale_loss(loss, optimizer, loss_id) as loss_scaled:
+                loss_scaled.backward(retain_graph=retain_graph)
+        else:
+            loss.backward(retain_graph=retain_graph)
+
     def parallelize_networks(self):
         """Wrap networks in DataParallel in case of multi-GPU setup, or in DistributedDataParallel if
         using a distributed setup. No parallelization is done in case of single-GPU setup.
@@ -119,11 +139,16 @@ class BaseModel(ABC):
                 else:
                     net = torch.nn.DataParallel(net, self.gpu_ids)
 
-    def convert_to_mixed_precision(self, opt_level='O1'):
+    def convert_to_mixed_precision(self, opt_level='O1', per_loss_scale=False):
         """Initializes Nvidia Apex Mixed Precision
         Parameters:
             opt_level (str) -- specifies the AMP's optimization level. Accepted values are
                                "O0", "O1", "O2", and "O3". Check Apex documentation.
+            num_losses -- Option to tell Amp in advance how many losses/backward passes you plan to use. 
+                          When used in conjunction with the `loss_id` argument to amp.scale_loss, enables Amp to use 
+                          a different loss scale per loss/backward pass, which can improve stability.
+                          If `num_losses=1`, Amp will still support multiple losses/backward passes, 
+                          but use a single global loss scale for all of them.
         """
         # fetch the networks
         networks = []
@@ -132,10 +157,19 @@ class BaseModel(ABC):
                 net = getattr(self, 'net' + name)
                 networks.append(net)
 
+        if per_loss_scale:
+            num_losses = self.num_losses
+        else:
+            num_losses = 1
+
         # initialize mixed precision on networks and, if training, on optimizers
         if self.is_train:
             networks, [self.optimizer_G, self.optimizer_D] = amp.initialize(
-                        networks, [self.optimizer_G, self.optimizer_D], opt_level=opt_level)
+                                                                networks, 
+                                                                [self.optimizer_G, self.optimizer_D], 
+                                                                opt_level=opt_level, 
+                                                                num_losses=num_losses
+                                                             )
             self.optimizers = [self.optimizer_G, self.optimizer_D]
         else:
             networks = amp.initialize(networks, opt_level=opt_level)
@@ -221,7 +255,9 @@ class BaseModel(ABC):
                 net = getattr(self, 'net' + name)
                 net.load_state_dict(checkpoint[name])
 
-        # load amp state    # TODO: what about opt_level, does it matter if it's different from before?
+        # load amp state    
+        # TODO: what about opt_level, does it matter if it's different from before?
+        # TODO: what if trained per-loss loss-scale and now using global or vice versa? Just reset it, i.e. ignore the amp state_dict?
         if self.opt.mixed_precision:
             if "amp" not in checkpoint:
                 print("This checkpoint was not trained using mixed precision.")  # set as logger warning
@@ -230,12 +266,12 @@ class BaseModel(ABC):
         else:
             if "amp" in checkpoint:
                 print("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
-
+        
         # load optimizers
         if self.is_train:
             self.optimizer_G.load_state_dict(checkpoint["optimizer_G"]) 
             self.optimizer_D.load_state_dict(checkpoint["optimizer_D"]) 
-    
+
 
     def print_networks(self, verbose):
         """Print the total number of parameters in the network and (if verbose) network architecture

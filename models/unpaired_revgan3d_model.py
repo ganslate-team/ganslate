@@ -22,7 +22,8 @@ class UnpairedRevGAN3dModel(BaseModel):
 
     def __init__(self, opt):
         super(UnpairedRevGAN3dModel, self).__init__(opt)
-
+        # number of losses on which backward is performed, G, D_A, D_B (3).
+        self.num_losses = 3
         # specify the training losses you want to print out. The program will call base_model.get_current_losses
         self.loss_names = ['D_A', 'G_A', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_B', 'cycle_B', 'idt_B', 'inv_B']
         # specify the images you want to save/display. The program will call base_model.get_current_visuals
@@ -102,20 +103,8 @@ class UnpairedRevGAN3dModel(BaseModel):
         self.fake_A = self.netG_B(self.real_B)
         self.rec_B  = self.netG_A(self.fake_A)
 
-    def backward(self, loss, optimizer, retain_graph=False):
-        """Run backward pass in a regular or mixed precision mode; called by methods <backward_D_basic> and <backward_G>.
-        Parameters:
-            loss (loss class) -- loss on which to perform backward pass
-            optimizer (optimizer class) -- mixed precision scales the loss with its optimizer
-            retrain_graph (bool) -- specify if the backward pass should retain the graph
-        """
-        if self.opt.mixed_precision:
-            with amp.scale_loss(loss, optimizer) as loss_scaled:
-                loss_scaled.backward(retain_graph=retain_graph)
-        else:
-            loss.backward(retain_graph=retain_graph)
 
-    def backward_D_basic(self, netD, real, fake):
+    def backward_D_basic(self, netD, real, fake, loss_id=0):
         """Calculate GAN loss for the discriminator
 
         Parameters:
@@ -136,26 +125,37 @@ class UnpairedRevGAN3dModel(BaseModel):
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         # backward
         if self.opt.grad_reg > 0.0:
-            self.backward(loss_D, self.optimizer_D, retain_graph=True)
+            self.backward(loss_D, self.optimizer_D, retain_graph=True, loss_id=loss_id)
             Lgrad = torch.cat([x.grad.view(-1) for x in netD.parameters()])
             loss_D = loss_D - self.opt.grad_reg * (0.5 * torch.norm(Lgrad) / len(Lgrad))
         else:
-            self.backward(loss_D, self.optimizer_D, retain_graph=True)
+            self.backward(loss_D, self.optimizer_D, retain_graph=True, loss_id=loss_id)
         return loss_D
 
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
+        if self.opt.per_loss_scale: 
+            loss_id = 1  # D_A is 1, D_B is 2, G is 0
+        else:
+            loss_id = 0
+
         fake_B = self.fake_B_pool.query(self.fake_B)
-        self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B)
+        self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B, loss_id)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
+        if self.opt.per_loss_scale:
+            loss_id = 2  # D_A is 1, D_B is 2, G is 0
+        else:
+            loss_id = 0
+            
         fake_A = self.fake_A_pool.query(self.fake_A)
-        self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A)
+        self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A, loss_id)
         
 
     def backward_G(self):
         """Calculate the loss for generators G_A and G_B using all specified losses"""
+        loss_id = 0  # D_A is 1, D_B is 2, G is 0
         lambda_idt = self.opt.lambda_identity
         lambda_inv = self.opt.lambda_inverse
         lambda_A = self.opt.lambda_A
@@ -211,7 +211,8 @@ class UnpairedRevGAN3dModel(BaseModel):
         # combine losses and calculate gradients
         self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B \
                       + self.loss_idt_A + self.loss_idt_B + self.loss_inv_A + self.loss_inv_B
-        self.backward(self.loss_G, self.optimizer_G)
+        
+        self.backward(self.loss_G, self.optimizer_G, loss_id)
 
     def optimize_parameters(self):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
