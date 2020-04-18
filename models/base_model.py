@@ -3,8 +3,6 @@ import torch
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from . import networks
-from util.util import remove_module_from_ordered_dict
-from apex.parallel import DistributedDataParallel
 from apex import amp
 
 
@@ -135,14 +133,16 @@ class BaseModel(ABC):
             if isinstance(name, str):
                 net = getattr(self, 'net' + name)
                 if self.opt.distributed:
-                    net = DistributedDataParallel(net)
+                    net = torch.nn.parallel.DistributedDataParallel(net, 
+                                                                    device_ids=[self.device], 
+                                                                    output_device=self.device)
                 else:
                     net = torch.nn.DataParallel(net, self.gpu_ids)
 
     def convert_to_mixed_precision(self, opt_level='O1', per_loss_scale=False):
         """Initializes Nvidia Apex Mixed Precision
         Parameters:
-            opt_level (str) -- specifies the AMP's optimization level. Accepted values are
+            opt_level (str) -- specifies Amp's optimization level. Accepted values are
                                "O0", "O1", "O2", and "O3". Check Apex documentation.
             num_losses -- Option to tell Amp in advance how many losses/backward passes you plan to use. 
                           When used in conjunction with the `loss_id` argument to amp.scale_loss, enables Amp to use 
@@ -224,7 +224,7 @@ class BaseModel(ABC):
         for name in self.model_names:
             if isinstance(name, str):
                 net = getattr(self, 'net' + name)
-                if isinstance(net, torch.nn.DataParallel) or isinstance(net, DistributedDataParallel):
+                if isinstance(net, torch.nn.DataParallel) or isinstance(net, torch.nn.parallel.DistributedDataParallel):
                     checkpoint[name] = net.module.state_dict()  # e.g. checkpoint["D_A"]
                 else:
                     checkpoint[name] = net.state_dict()
