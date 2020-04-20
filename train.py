@@ -19,7 +19,8 @@ def print_info(opt, options, model, data_loader):
     model.print_networks(opt.verbose)
     print('Invertible layers memory saving: {}'.format('ON' if not opt.use_naive else 'OFF'))
     print('Distributed data parallel training: {}'.format('ON' if opt.distributed else 'OFF'))
-    print('Batch size per GPU: {}'.format(opt.batch_size // len(opt.gpu_ids)))
+    num_devices = len(opt.gpu_ids) if len(opt.gpu_ids) > 0 else 1
+    print('Batch size per GPU: {}'.format(opt.batch_size // num_devices))
 
 def main():
     options = TrainOptions() # TODO: this is ugly as hell, used only for printing, make it nicer

@@ -2,7 +2,7 @@ import os
 import torch
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from . import networks
+from . import networks3d as networks
 from apex import amp
 
 

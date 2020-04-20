@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from pytorch_msssim.ssim import SSIM, MS_SSIM
 from apex import amp
 
+
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''
 
