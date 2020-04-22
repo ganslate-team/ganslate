@@ -5,14 +5,8 @@ import functools
 from torch.optim import lr_scheduler
 import re
 
-
 from models.generators.vnet import VNet, DeeperVNet
 from models.discriminators.patchGAN_discriminator import NLayerDiscriminator
-from models.losses.GAN_loss import GANLoss
-
-###############################################################################
-# Helper Functions
-###############################################################################
 
 # TODO: implement into VNet
 def get_norm_layer(norm_type='instance'):

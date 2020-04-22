@@ -1,13 +1,17 @@
-import importlib
+from importlib import import_module
 from models.base_model import BaseModel
 
+
+def create_model(opt):
+    model = find_model_using_name(opt.model)
+    return model(opt)
 
 def find_model_using_name(model_name):
     # Given the option --model [modelname],
     # the file "models/modelname_model.py"
     # will be imported.
     model_filename = "models." + model_name + "_model"
-    modellib = importlib.import_module(model_filename)
+    modellib = import_module(model_filename)
 
     # In the file, the class called ModelNameModel() will
     # be instantiated. It has to be a subclass of BaseModel,
@@ -25,12 +29,10 @@ def find_model_using_name(model_name):
 
     return model
 
-
+# TODO: soon to be removed
 def get_option_setter(model_name):
     model_class = find_model_using_name(model_name)
     return model_class.modify_commandline_options
 
 
-def create_model(opt):
-    model = find_model_using_name(opt.model)
-    return model(opt)
+

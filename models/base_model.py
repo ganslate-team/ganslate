@@ -1,9 +1,13 @@
 import os
-import torch
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from . import networks3d as networks
+
+import torch
+from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 from apex import amp
+
+from . import networks3d as networks
 
 
 class BaseModel(ABC):
@@ -35,6 +39,8 @@ class BaseModel(ABC):
         self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
         if opt.resize_or_crop != 'scale_width':
             torch.backends.cudnn.benchmark = True
+
+        # TODO: Update these
         self.loss_names = []
         self.model_names = []
         self.visual_names = []
@@ -81,7 +87,7 @@ class BaseModel(ABC):
             (4) Applies parallelization to the model if possible
         """
         if self.is_train:
-            self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers]
+            self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers.values()]
 
         if self.opt.mixed_precision:
             self.convert_to_mixed_precision(self.opt.opt_level, self.opt.per_loss_scale)
@@ -96,10 +102,8 @@ class BaseModel(ABC):
 
     def eval(self):
         """Make models eval mode during test time"""
-        for name in self.model_names:
-            if isinstance(name, str):
-                net = getattr(self, 'net' + name)
-                net.eval()
+        for name in self.networks.keys():
+            self.networks[name].eval()
 
     def test(self):
         """Forward function used in test time.
@@ -129,15 +133,13 @@ class BaseModel(ABC):
         """Wrap networks in DataParallel in case of multi-GPU setup, or in DistributedDataParallel if
         using a distributed setup. No parallelization is done in case of single-GPU setup.
         """
-        for name in self.model_names:
-            if isinstance(name, str):
-                net = getattr(self, 'net' + name)
-                if self.opt.distributed:
-                    net = torch.nn.parallel.DistributedDataParallel(net, 
-                                                                    device_ids=[self.device], 
-                                                                    output_device=self.device)
-                else:
-                    net = torch.nn.DataParallel(net, self.gpu_ids)
+        for name in self.networks.keys():
+            if self.opt.distributed:
+                self.networks[name] = DistributedDataParallel(self.networks[name],
+                                                              device_ids=[self.device], 
+                                                              output_device=self.device)
+            else:
+                self.networks[name] = DataParallel(self.networks[name], self.gpu_ids)
 
     def convert_to_mixed_precision(self, opt_level='O1', per_loss_scale=False):
         """Initializes Nvidia Apex Mixed Precision
@@ -150,34 +152,22 @@ class BaseModel(ABC):
                           If `num_losses=1`, Amp will still support multiple losses/backward passes, 
                           but use a single global loss scale for all of them.
         """
-        # fetch the networks
-        networks = []
-        for name in self.model_names:
-            if isinstance(name, str):
-                net = getattr(self, 'net' + name)
-                networks.append(net)
-
-        if per_loss_scale:
-            num_losses = self.num_losses
-        else:
-            num_losses = 1
+        networks = list(self.networks.values())
 
         # initialize mixed precision on networks and, if training, on optimizers
         if self.is_train:
-            networks, [self.optimizer_G, self.optimizer_D] = amp.initialize(
-                                                                networks, 
-                                                                [self.optimizer_G, self.optimizer_D], 
-                                                                opt_level=opt_level, 
-                                                                num_losses=num_losses
-                                                             )
-            self.optimizers = [self.optimizer_G, self.optimizer_D]
+            # there is always one loss/backward pass per network  # TODO: good enough?
+            num_losses = len(self.networks) if per_loss_scale else 1 
+            optimizers = list(self.optimizers.values())
+            networks, optimizers = amp.initialize(networks, optimizers, 
+                                                  opt_level=opt_level, num_losses=num_losses)
         else:
             networks = amp.initialize(networks, opt_level=opt_level)
 
-        # assigns back the returned mixed-precision networks # TODO: say why
-        for i, name in enumerate(self.model_names):
-            if isinstance(name, str):
-                setattr(self, 'net' + name, networks[i])
+        # assigns back the returned mixed-precision networks and optimizers # TODO: say why
+        self.networks = dict(zip(self.networks, networks))
+        if self.is_train:
+            self.optimizers = dict(zip(self.optimizers, optimizers))
 
     def get_image_paths(self):
         """ Return image paths that are used to load current data"""
@@ -190,8 +180,8 @@ class BaseModel(ABC):
 
     def get_learning_rate(self):
         """ Return current learning rates of both generator and discriminator"""
-        lr_G = self.optimizers[0].param_groups[0]['lr']
-        lr_D = self.optimizers[1].param_groups[0]['lr']
+        lr_G = self.optimizers['G'].param_groups[0]['lr']
+        lr_D = self.optimizers['D'].param_groups[0]['lr']
         return lr_G, lr_D    
 
     def get_current_visuals(self):
@@ -221,21 +211,19 @@ class BaseModel(ABC):
         checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % epoch)
 
         # add all networks to checkpoint
-        for name in self.model_names:
-            if isinstance(name, str):
-                net = getattr(self, 'net' + name)
-                if isinstance(net, torch.nn.DataParallel) or isinstance(net, torch.nn.parallel.DistributedDataParallel):
-                    checkpoint[name] = net.module.state_dict()  # e.g. checkpoint["D_A"]
-                else:
-                    checkpoint[name] = net.state_dict()
+        for name, net in self.networks.items():
+            if isinstance(net, DataParallel) or isinstance(net, DistributedDataParallel):
+                checkpoint[name] = net.module.state_dict()  # e.g. checkpoint["D_A"]
+            else:
+                checkpoint[name] = net.state_dict()
 
         # add optimizers to checkpoint
-        checkpoint["optimizer_G"] = self.optimizer_G.state_dict()
-        checkpoint["optimizer_D"] = self.optimizer_D.state_dict()
+        checkpoint['optimizer_G'] = self.optimizers['G'].state_dict()
+        checkpoint['optimizer_D'] = self.optimizers['D'].state_dict()
 
         # save apex mixed precision
         if self.opt.mixed_precision:
-            checkpoint["amp"] = amp.state_dict()
+            checkpoint['amp'] = amp.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
                 
@@ -250,10 +238,8 @@ class BaseModel(ABC):
         print('loaded the checkpoint from %s' % checkpoint_path) # TODO: make nice logging
 
         # load networks
-        for name in self.model_names:
-            if isinstance(name, str):
-                net = getattr(self, 'net' + name)
-                net.load_state_dict(checkpoint[name])
+        for name in self.networks.keys():
+            self.networks[name].load_state_dict(checkpoint[name])
 
         # load amp state    
         # TODO: what about opt_level, does it matter if it's different from before?
@@ -262,15 +248,16 @@ class BaseModel(ABC):
             if "amp" not in checkpoint:
                 print("This checkpoint was not trained using mixed precision.")  # set as logger warning
             else:
-                amp.load_state_dict(checkpoint["amp"])
+                amp.load_state_dict(checkpoint['amp'])
         else:
             if "amp" in checkpoint:
                 print("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
         
-        # load optimizers
+        # load optimizers   
+        # TODO: option not to load the optimizers. Useful if a training was completed or if scheduler brought optimizers' LR lower than wanted
         if self.is_train:
-            self.optimizer_G.load_state_dict(checkpoint["optimizer_G"]) 
-            self.optimizer_D.load_state_dict(checkpoint["optimizer_D"]) 
+            self.optimizers['G'].load_state_dict(checkpoint['optimizer_G']) 
+            self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
 
 
     def print_networks(self, verbose):
@@ -279,27 +266,25 @@ class BaseModel(ABC):
             verbose (bool) -- if verbose: print the network architecture
         """
         print('---------- Networks initialized -------------')
-        for name in self.model_names:
-            if isinstance(name, str):
-                net = getattr(self, 'net' + name)
-                num_params = 0
-                for param in net.parameters():
-                    num_params += param.numel()
-                if verbose:
-                    print(net)
-                print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
+        for name in self.networks.keys():
+            num_params = 0
+            for param in self.networks[name].parameters():
+                num_params += param.numel()
+            if verbose:
+                print(self.networks[name])
+            print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
         print('-----------------------------------------------')
 
 
-    def set_requires_grad(self, nets, requires_grad=False):
+    def set_requires_grad(self, networks, requires_grad=False):
         """Set requies_grad=False for all the networks to avoid unnecessary computations
         Parameters:
-            nets (network list)   -- a list of networks
-            requires_grad (bool)  -- whether the networks require gradients or not
+            networks (network list) -- a list of networks
+            requires_grad (bool)    -- whether the networks require gradients or not
         """
-        if not isinstance(nets, list):
-            nets = [nets]
-        for net in nets:
+        if not isinstance(networks, list):
+            networks = [networks]
+        for net in networks:
             if net is not None:
                 for param in net.parameters():
                     param.requires_grad = requires_grad

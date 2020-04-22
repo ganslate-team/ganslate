@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 class GANLoss(nn.Module):
+    # TODO: update it
     def __init__(self, use_lsgan=True, target_real_label=1.0, target_fake_label=0.0):
         super(GANLoss, self).__init__()
         self.register_buffer('real_label', torch.tensor(target_real_label))
