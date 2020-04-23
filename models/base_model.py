@@ -36,19 +36,14 @@ class BaseModel(ABC):
         self.gpu_ids = opt.gpu_ids
         self.is_train = opt.is_train
         self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
-        self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
-        if opt.resize_or_crop != 'scale_width':
-            torch.backends.cudnn.benchmark = True
+        self.save_dir = os.path.join(opt.checkpoints_dir, opt.name) # TODO: conf in folder out
+        
+        torch.backends.cudnn.benchmark = True
 
-        # TODO: Update these
-        self.loss_names = []
-        self.model_names = []
-        self.visual_names = []
-        self.optimizers = []
-        self.image_paths = []
-        # number of losses on which backward is performed, G_A, G_B, D_A, D_B (4);
-        # in case of partially invertible, it is G, D_A, D_B (3).
-        self.num_losses = 4  
+        self.visuals = {}
+        self.losses = {}
+        self.optimizers = {}
+        self.networks = {}
 
     @staticmethod
     def modify_commandline_options(parser, is_train):
@@ -63,9 +58,9 @@ class BaseModel(ABC):
     
     @abstractmethod
     def set_input(self, input):
-        """Unpack input data from the dataloader and perform necessary pre-processing steps.
+       """Unpack input data from the dataloader.
         Parameters:
-            input (dict): includes the data itself and its metadata information.
+            input (dict) -- a pair of data samples from domain A and domain B.
         """
         pass
 
@@ -169,10 +164,6 @@ class BaseModel(ABC):
         if self.is_train:
             self.optimizers = dict(zip(self.optimizers, optimizers))
 
-    def get_image_paths(self):
-        """ Return image paths that are used to load current data"""
-        return self.image_paths
-
     def update_learning_rate(self):
         """Update learning rates for all the networks; called at the end of every epoch"""
         for scheduler in self.schedulers:
@@ -226,7 +217,6 @@ class BaseModel(ABC):
             checkpoint['amp'] = amp.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
-                
     
     def load_networks(self, epoch):
         """Load all the networks, optimizers and, if used, apex mixed precision's state_dict from the disk.

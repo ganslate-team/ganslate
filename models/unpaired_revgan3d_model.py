@@ -82,20 +82,18 @@ class UnpairedRevGAN3dModel(BaseModel):
 
 
     def init_optimizers(self, opt):
+        params_G = self.networks['G'].parameters()
         params_D = itertools.chain(self.networks['D_A'].parameters(), 
                                     self.networks['D_B'].parameters())         
 
-        self.optimizers['D'] = torch.optim.Adam(params_D, lr=opt.lr_D, 
-                                                betas=(opt.beta1, 0.999))
-
-        self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(),
-                                            lr=opt.lr_G, betas=(opt.beta1, 0.999))                             
+        self.optimizers['D'] = torch.optim.Adam(params_D, lr=opt.lr_D, betas=(opt.beta1, 0.999))
+        self.optimizers['G'] = torch.optim.Adam(params_G, lr=opt.lr_G, betas=(opt.beta1, 0.999))                             
 
 
     def set_input(self, input):
-        """Unpack input data from the dataloader and perform necessary pre-processing steps.
+        """Unpack input data from the dataloader.
         Parameters:
-            input (dict) -- include the data itself and its metadata information.
+            input (dict) -- a pair of data samples from domain A and domain B.
 
         The option 'direction' can be used to swap domain A and domain B.
         """
@@ -141,17 +139,19 @@ class UnpairedRevGAN3dModel(BaseModel):
             real = self.visuals['real_A']
             fake = self.visuals['fake_A']
             fake = self.fake_B_pool.query(fake)
+        else:
+            raise ValueError('The discriminator has to be either "D_A" or "D_B".')
 
         pred_real = self.networks[discriminator](real)
         pred_fake = self.networks[discriminator](fake.detach())
 
-        loss_D_real = self.criterion_GAN(pred_real, target_is_real=True)
-        loss_D_fake = self.criterion_GAN(pred_fake, target_is_real=False)
-        loss_D = (loss_D_real + loss_D_fake) * 0.5  # combined loss
+        loss_real = self.criterion_GAN(pred_real, target_is_real=True)
+        loss_fake = self.criterion_GAN(pred_fake, target_is_real=False)
+        self.losses[discriminator] = (loss_real + loss_fake) * 0.5  # combined loss
 
         # backprop
-        self.backward(loss_D, self.optimizers['D'], retain_graph=True, loss_id=loss_id)
-        return loss_D
+        self.backward(loss=self.losses[discriminator], optimizer=self.optimizers['D'], 
+                      retain_graph=True, loss_id=loss_id)
 
 
     def backward_G(self, loss_id=0):
@@ -179,7 +179,7 @@ class UnpairedRevGAN3dModel(BaseModel):
 
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
-        self.backward(combined_loss_G, self.optimizers['G'], loss_id)
+        self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=loss_id)
 
 
     def optimize_parameters(self):
@@ -197,7 +197,7 @@ class UnpairedRevGAN3dModel(BaseModel):
         # ------------------------ D_A and D_B ----------------------------------------------------
         self.set_requires_grad(discriminators, True)
         self.optimizers['D'].zero_grad()                #set D_A and D_B's gradients to zero
-        self.backward_D('D_A', loss_id=1) # calculate gradients for D_A
-        self.backward_D('D_B', loss_id=2) # calculate graidents for D_B
+        self.backward_D('D_A', loss_id=1)               # calculate gradients for D_A
+        self.backward_D('D_B', loss_id=2)               # calculate graidents for D_B
         self.optimizers['D'].step()                     # update D_A and D_B's weights
         # -----------------------------------------------------------------------------------------
