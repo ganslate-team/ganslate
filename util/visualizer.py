@@ -70,10 +70,7 @@ class Visualizer():
         self.name = opt.name
         self.opt = opt
         self.saved = False
-        if self.opt.no_output_tanh:
-            self.scale_range = (-1, 0.2)
-        else:
-            self.scale_range = (-1, 1)
+        self.scale_range = (-1, 1)
 
         if self.use_html:
             self.web_dir = os.path.join(opt.checkpoints_dir, opt.name, 'web')

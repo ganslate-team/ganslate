@@ -6,11 +6,16 @@ from data import CustomDataLoader
 from models import create_model
 from util.distributed import multi_gpu, comm
 
+from omegaconf import OmegaConf
+from conf.config import BaseConfig
+
 def main():
-    options = TrainOptions() # TODO: this is ugly as hell, used only for printing, make it nicer
+    # options = TrainOptions() # TODO: this is ugly as hell, used only for printing, make it nicer
     
-    opt = options.parse()
-    options.print_options(opt)
+    # opt = options.parse()
+    # options.print_options(opt)
+    opt = OmegaConf.structured(BaseConfig)
+    print(opt.pretty())
     is_main_process = True
 
 

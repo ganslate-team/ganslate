@@ -58,7 +58,7 @@ class BaseModel(ABC):
     
     @abstractmethod
     def set_input(self, input):
-       """Unpack input data from the dataloader.
+        """Unpack input data from the dataloader.
         Parameters:
             input (dict) -- a pair of data samples from domain A and domain B.
         """
@@ -250,18 +250,13 @@ class BaseModel(ABC):
             self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
 
 
-    def print_networks(self, verbose):
-        """Print the total number of parameters in the network and (if verbose) network architecture
-        Parameters:
-            verbose (bool) -- if verbose: print the network architecture
-        """
+    def print_networks(self):
+        """Print the total number of parameters in the network and network architecture"""
         print('---------- Networks initialized -------------')
         for name in self.networks.keys():
             num_params = 0
             for param in self.networks[name].parameters():
                 num_params += param.numel()
-            if verbose:
-                print(self.networks[name])
             print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
         print('-----------------------------------------------')
 

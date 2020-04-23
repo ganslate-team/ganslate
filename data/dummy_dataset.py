@@ -17,7 +17,7 @@ class DummyDataset(BaseDataset):
         self.root = opt.dataroot
         self.dir_AB = os.path.join(opt.dataroot, opt.phase)
         self.AB_paths = sorted(make_dataset(self.dir_AB))
-        self.A_size = 101
+        self.A_size = 4
         self.B_size = self.A_size
 
     def __getitem__(self, index):

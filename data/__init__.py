@@ -48,7 +48,7 @@ class CustomDataLoader:
         self.opt = opt
         self.dataset = create_dataset(opt)
         if opt.distributed:
-            self.sampler = torch.utils.data.distributed.DistributedSampler(self.dataset, shuffle=not opt.serial_batches)
+            self.sampler = torch.utils.data.distributed.DistributedSampler(self.dataset, shuffle=opt.shuffle)
             self.dataloader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=opt.batch_size,
@@ -61,15 +61,14 @@ class CustomDataLoader:
             self.dataloader = torch.utils.data.DataLoader(
                 self.dataset,
                 batch_size=opt.batch_size,
-                shuffle=not opt.serial_batches,
+                shuffle=opt.shuffle,
                 num_workers=int(opt.num_workers),
                 pin_memory=True)
 
     def __len__(self):
-        return min(len(self.dataset), self.opt.max_dataset_size)
+        return len(self.dataset)
 
     def __iter__(self):
+        # TODO: check if 
         for i, data in enumerate(self.dataloader):
-            if i * self.opt.batch_size >= self.opt.max_dataset_size:
-                break
             yield data

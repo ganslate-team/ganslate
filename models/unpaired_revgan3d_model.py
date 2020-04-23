@@ -63,11 +63,11 @@ class UnpairedRevGAN3dModel(BaseModel):
                 # TODO: make define_G and _D nicer
                 # TODO: move it to base_model 
                 self.networks[name] = networks3d.define_G(opt.input_nc, opt.output_nc,
-                                                opt.ngf, opt.which_model_netG, opt.norm, opt.use_naive,
+                                                opt.ngf, opt.generator_model, opt.norm, opt.use_naive,
                                                 opt.init_type, opt.init_gain, self.gpu_ids)
             elif name.startswith('D'):
                 use_sigmoid = opt.no_lsgan
-                self.networks[name] = networks3d.define_D(opt.output_nc, opt.ndf, opt.which_model_netD, opt.n_layers_D, 
+                self.networks[name] = networks3d.define_D(opt.output_nc, opt.ndf, opt.discriminator_model, opt.n_layers_D, 
                                               opt.norm, use_sigmoid, opt.init_type, opt.init_gain, self.gpu_ids)
             else:
                 raise ValueError('Network\'s name has to begin with either "G" if it is a generator, \

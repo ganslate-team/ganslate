@@ -12,7 +12,7 @@ if __name__ == '__main__':
     opt = TestOptions().parse()
     opt.num_workers = 1   # test code only supports num_workers = 1
     opt.batch_size = 1  # test code only supports batch_size = 1
-    opt.serial_batches = True  # no shuffle
+    opt.shuffle = False  # no shuffle
     opt.no_flip = True  # no flip
     opt.display_id = -1  # no visdom display
     data_loader = CustomDataLoader(opt)
@@ -56,10 +56,7 @@ if __name__ == '__main__':
                 img_path = model.get_image_paths()
                 print('processing (%04d)-th image... %s' % (i, img_path))
 
-                if opt.no_output_tanh:
-                    scale_range = (-1, 0.2)
-                else:
-                    scale_range = (-1, 1)
+                scale_range = (-1, 1)
                 save_images(webpage, visuals, img_path, scale_range, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
                 for visual_name in model.visual_names:
                     path = os.path.join(web_dir, '%s_%s_%s' % (i, opt.name.replace('/', '_'), visual_name))
@@ -127,10 +124,7 @@ if __name__ == '__main__':
                 img_path = model.get_image_paths()
                 print('processing (%04d)-th image... %s' % (i, img_path))
 
-                if opt.no_output_tanh:
-                    scale_range = (-1, 0.2)
-                else:
-                    scale_range = (-1, 1)
+                scale_range = (-1, 1)
                 save_images(webpage, visuals, img_path, scale_range, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
                 for visual_name in model.visual_names:
                     path = os.path.join(web_dir, '%s_%s_%s' % (i, opt.name.replace('/', '_'), visual_name))
@@ -146,10 +140,7 @@ if __name__ == '__main__':
             if i % 5 == 0:
                 print('processing (%04d)-th image... %s' % (i, img_path))
 
-            if opt.no_output_tanh:
-                scale_range = (-1, 0.2)
-            else:
-                scale_range = (-1, 1)
+            scale_range = (-1, 1)
             save_images(webpage, visuals, img_path, scale_range, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
 
     webpage.save()

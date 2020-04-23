@@ -65,37 +65,37 @@ def init_device(net, gpu_ids=[]):
         net.to(device)
         
 
-def define_G(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_naive=False, 
+def define_G(input_nc, output_nc, ngf, generator_model, norm='batch', use_naive=False, 
              init_type='normal', init_gain=0.02, gpu_ids=[]):
     netG = None
     norm_layer = get_norm_layer(norm_type=norm)
 
-    if which_model_netG.startswith('vnet_'):
+    if generator_model.startswith('vnet_'):
         netG = VNet(num_classes=1, keep_input=use_naive)
-    elif which_model_netG.startswith('deeper_vnet_'):
+    elif generator_model.startswith('deeper_vnet_'):
         netG = DeeperVNet(num_classes=1, keep_input=use_naive)
     else:
-        raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
+        raise NotImplementedError('Generator model name [%s] is not recognized' % generator_model)
 
     init_weights(netG, init_type, gain=init_gain)
     init_device(netG, gpu_ids)
     return netG
 
 
-def define_D(input_nc, ndf, which_model_netD, n_layers_D=3, norm='batch', use_sigmoid=False, 
+def define_D(input_nc, ndf, discriminator_model, n_layers_D=3, norm='batch', use_sigmoid=False, 
              init_type='normal', init_gain=0.02, gpu_ids=[]):
     netD = None
     norm_layer = get_norm_layer(norm_type=norm)
 
-    if which_model_netD == 'basic':
+    if discriminator_model == 'basic':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers=2, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
-    elif which_model_netD == 'n_layers':
+    elif discriminator_model == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
-    elif which_model_netD == 'pixel':
+    elif discriminator_model == 'pixel':
         netD = PixelDiscriminator(input_nc, ndf, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
-                                  which_model_netD)
+                                  discriminator_model)
     init_weights(netD, init_type, gain=init_gain)
     init_device(netD, gpu_ids)
     return netD
