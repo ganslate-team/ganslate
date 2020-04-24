@@ -17,7 +17,6 @@ class BaseModel(ABC):
         -- <set_input>:                     unpack data from dataset and apply preprocessing.
         -- <forward>:                       produce intermediate results.
         -- <optimize_parameters>:           calculate losses, gradients, and update network weights.
-        -- <modify_commandline_options>:    (optionally) add model-specific options and set default options.
     """
 
     def __init__(self, opt):
@@ -44,17 +43,6 @@ class BaseModel(ABC):
         self.losses = {}
         self.optimizers = {}
         self.networks = {}
-
-    @staticmethod
-    def modify_commandline_options(parser, is_train):
-        """Add new model-specific options, and rewrite default values for existing options.
-        Parameters:
-            parser          -- original option parser
-            is_train (bool) -- whether training phase or test phase. You can use this flag to add training-specific or test-specific options.
-        Returns:
-            the modified parser.
-        """
-        return parser
     
     @abstractmethod
     def set_input(self, input):

@@ -3,6 +3,7 @@ import torch.nn as nn
 import memcnn
 
 class VnetRevBlock(nn.Module):
+    # TODO: make an Invertible class that can wrap any block and modify it's forward func
     def __init__(self, nchan, keep_input):
         super(VnetRevBlock, self).__init__()
         
@@ -49,6 +50,7 @@ class DownTransition(nn.Module):
         outChans = 2*inChans
         self.down_conv_ab = self.build_down_conv(inChans, outChans)
         self.down_conv_ba = self.build_down_conv(inChans, outChans)
+        # TODO: Make an Inverse sequence that does this and what's been done in line 74
         self.core = nn.Sequential(*[VnetRevBlock(outChans, keep_input) for _ in range(nConvs)])
         self.relu = nn.PReLU(outChans)
 

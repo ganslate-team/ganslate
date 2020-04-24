@@ -16,7 +16,7 @@ def print_info(opt, options, model, data_loader):
     print('len(A),len(B)=', data_loader.dataset.A_size, data_loader.dataset.B_size)
     print('# of training pairs = %d' % len(data_loader))
     print("model [%s] was created" % (type(model).__name__))
-    model.print_networks(opt.verbose)
+    model.print_networks()
     print('Invertible layers memory saving: {}'.format('ON' if not opt.use_naive else 'OFF'))
     print('Distributed data parallel training: {}'.format('ON' if opt.distributed else 'OFF'))
     num_devices = len(opt.gpu_ids) if len(opt.gpu_ids) > 0 else 1

@@ -29,10 +29,4 @@ def find_model_using_name(model_name):
 
     return model
 
-# TODO: soon to be removed
-def get_option_setter(model_name):
-    model_class = find_model_using_name(model_name)
-    return model_class.modify_commandline_options
-
-
 

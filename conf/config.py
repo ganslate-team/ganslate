@@ -9,31 +9,30 @@ class BaseConfig:
     continue_train: bool = True
     epoch:          str = "latest"
     epoch_count:    int = 1
-    niter:          int = 4
+    niter:          int = 4 # TODO: they're epochs not iters
     niter_decay:    int = 0
-    phase:          str = "train" # TODO: remove
+    phase:          str = "train" # TODO: remove, same as is_train?
     name:           str = "distmp1"
-    gpu_ids:        List[int] = field(default_factory=lambda: []) # replace for is_multigpu
+    gpu_ids:        List[int] = field(default_factory=lambda: []) # replace for use_multigpu
     pool_size:      int = 50
 
     # DATASET
     dataroot:     str = "../"
     dataset_mode: str = "dummy"
-    direction:    str = "AtoB"
+    direction:    str = "AtoB"      # remove
     focus_window: float = 0.2
     shuffle:      bool = True
     num_workers:  int = 4
     patch_size:   List[int] = field(default_factory=lambda: [32, 32, 32])
 
     # MODEL
-    model: str = "unpaired_revgan3d"
-     
+    model:               str = "unpaired_revgan3d"
     init_gain:           float = 0.02
     init_type:           str = "normal"
     input_nc:            int = 1
     output_nc:           int = 1
     is_train:            bool = True
-    generator_model:     str = "vnet_generator" # TODO: change name to generator_model
+    generator_model:     str = "vnet_generator"
     discriminator_model: str = "basic" # TODO: basic unnecessary
     n_layers_D:          int = 3
     use_naive:           bool = False # TODO: rename

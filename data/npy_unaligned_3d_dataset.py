@@ -1,15 +1,12 @@
-import os.path
-from data.base_dataset import BaseDataset, get_transform, make_dataset
+import os
 import random
-import torch
 import numpy as np
-import json
-import random
+import torch
+from torch.utils.data import Dataset
+from util.util import make_dataset, load_json
 
+EXTENSIONS = ['.npy']
 
-def load_json(file):
-    with open(file, 'r') as f:
-        return json.load(f)
 
 def normalize(image, MIN_B=-1024.0, MAX_B=3072.0):
     # https://stats.stackexchange.com/questions/178626/how-to-normalize-data-between-1-and-1
@@ -35,13 +32,12 @@ def focused_random_zxy(zxy, window, valid_region):
             selected_zxy.append(random.randint(min_position, max_position))
     return selected_zxy
 
-def random_patch_3d(volume, patch_size=(64,64,64), min_value=-1024, 
+
+def random_patch_3d(volume, patch_size=[64,64,64], 
                     focus_around_zxy=None, focus_window_to_volume_proportion=None):
     '''
      volume:           whole CT scan (numpy array)
      patch_size:       size of the 3D volume to be extracted from the original volume
-     min_value:        used for prevent taking patches that contain too many voxels of that value or lower
-     threshold:        defines allowed proportion of voxels in a volume with values lower or equal to min_value
      focus_around_zxy: enables taking a patch from B that is in a similar location to the patch from A
     '''
     patch_shape = np.array(patch_size)
@@ -71,18 +67,15 @@ def random_patch_3d(volume, patch_size=(64,64,64), min_value=-1024,
     relative_zxy = (np.array([z,x,y]) / volume_shape).tolist()
     return patch, relative_zxy
 
-class NpyUnaligned3dDataset(BaseDataset):
-    @staticmethod
-    def modify_commandline_options(parser, is_train):
-        return parser
 
+class NpyUnaligned3dDataset(Dataset):
     def __init__(self, opt):
         self.opt = opt
         #self.root = opt.dataroot
-        self.dir_A = os.path.join(opt.dataroot, 'A')
-        self.dir_B = os.path.join(opt.dataroot, 'B')
-        self.A_paths = sorted(make_dataset(self.dir_A))
-        self.B_paths = sorted(make_dataset(self.dir_B))
+        dir_A = os.path.join(opt.dataroot, 'A')
+        dir_B = os.path.join(opt.dataroot, 'B')
+        self.A_paths = sorted( make_dataset(self.dir_A, EXTENSIONS) )
+        self.B_paths = sorted( make_dataset(self.dir_B, EXTENSIONS) )
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 
@@ -105,13 +98,11 @@ class NpyUnaligned3dDataset(BaseDataset):
         B = torch.Tensor(B)
 
         # random patch extraction
-        A, A_zxy = random_patch_3d(A, 
-                                  patch_size=self.opt.patch_size,
-                                  min_value=self.norm_A["min"])
+        A, A_zxy = random_patch_3d(volume=A, 
+                                   patch_size=self.opt.patch_size)
 
-        B, _ = random_patch_3d(B, 
+        B, _ = random_patch_3d(volume=B, 
                                patch_size=self.opt.patch_size,
-                               min_value=self.norm_B["min"],
                                focus_around_zxy=A_zxy, 
                                focus_window_to_volume_proportion=self.opt.focus_window)
 
@@ -123,8 +114,7 @@ class NpyUnaligned3dDataset(BaseDataset):
         A = A.view(1, *A.shape)
         B = B.view(1, *B.shape)
 
-        return {'A': A, 'B': B,
-                'A_paths': A_path, 'B_paths': B_path}
+        return {'A': A, 'B': B}
 
     def __len__(self):
         return max(self.A_size, self.B_size)

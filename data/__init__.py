@@ -1,9 +1,10 @@
 import importlib
-import torch.utils.data
-#from data.base_data_loader import BaseDataLoader
-from data.base_dataset import BaseDataset
+from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.distributed import DistributedSampler
+
 
 def find_dataset_using_name(dataset_name):
+    # TODO: nicer
     # Given the option --dataset_mode [datasetname],
     # the file "data/datasetname_dataset.py"
     # will be imported.
@@ -11,25 +12,20 @@ def find_dataset_using_name(dataset_name):
     datasetlib = importlib.import_module(dataset_filename)
 
     # In the file, the class called DatasetNameDataset() will
-    # be instantiated. It has to be a subclass of BaseDataset,
+    # be instantiated. It has to be a subclass of Dataset,
     # and it is case-insensitive.
     dataset = None
     target_dataset_name = dataset_name.replace('_', '') + 'dataset'
     for name, cls in datasetlib.__dict__.items():
         if name.lower() == target_dataset_name.lower() \
-           and issubclass(cls, BaseDataset):
+           and issubclass(cls, Dataset):
             dataset = cls
             
     if dataset is None:
-        print("In %s.py, there should be a subclass of BaseDataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
+        print("In %s.py, there should be a subclass of torch.utils.data.Dataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
         exit(0)
 
     return dataset
-
-
-def get_option_setter(dataset_name):    
-    dataset_class = find_dataset_using_name(dataset_name)
-    return dataset_class.modify_commandline_options
 
 
 def create_dataset(opt):
@@ -47,28 +43,23 @@ class CustomDataLoader:
     def __init__(self, opt):
         self.opt = opt
         self.dataset = create_dataset(opt)
-        if opt.distributed:
-            self.sampler = torch.utils.data.distributed.DistributedSampler(self.dataset, shuffle=opt.shuffle)
-            self.dataloader = torch.utils.data.DataLoader(
-                self.dataset,
-                batch_size=opt.batch_size,
-                shuffle=False,  # shuffling (or not) is done by DistributedSampler
-                sampler=self.sampler,
-                num_workers=int(opt.num_workers),
-                pin_memory=True)
+        self.sampler = None
+        shuffle = opt.shuffle
 
-        else:
-            self.dataloader = torch.utils.data.DataLoader(
-                self.dataset,
-                batch_size=opt.batch_size,
-                shuffle=opt.shuffle,
-                num_workers=int(opt.num_workers),
-                pin_memory=True)
+        if opt.distributed:
+            self.sampler = DistributedSampler(self.dataset, shuffle=shuffle)
+            shuffle = False # no need to shufle Dataloader when DistributedSampler is shuffled
+        
+        self.dataloader = DataLoader(self.dataset,
+                                    batch_size=opt.batch_size,
+                                    shuffle=shuffle,
+                                    sampler=self.sampler,
+                                    num_workers=int(opt.num_workers),
+                                    pin_memory=True)
 
     def __len__(self):
         return len(self.dataset)
 
     def __iter__(self):
-        # TODO: check if 
         for i, data in enumerate(self.dataloader):
             yield data

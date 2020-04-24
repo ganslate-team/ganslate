@@ -1,17 +1,12 @@
 import os.path
 import torch
 import numpy as np
-from data.base_dataset import BaseDataset, make_dataset
+from torch.utils.data import Dataset
+from util.util import make_dataset
 
 
-class DummyDataset(BaseDataset):
-    '''
-    Dummy dataset for quick testing purposes 
-    '''
-    @staticmethod
-    def modify_commandline_options(parser, is_train):
-        return parser
-
+class DummyDataset(Dataset):
+    """Dummy dataset for quick testing purposes"""
     def __init__(self, opt):
         self.opt = opt
         self.root = opt.dataroot
@@ -26,9 +21,7 @@ class DummyDataset(BaseDataset):
         A = torch.rand(*shape)
         B = torch.rand(*shape)
 
-        return {'A': A, 'B': B,
-
-                'A_paths': True, 'B_paths': False}
+        return {'A': A, 'B': B}
 
     def __len__(self):
         return max(self.A_size, self.B_size)

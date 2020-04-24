@@ -13,16 +13,6 @@ from models.losses.GAN_loss import GANLoss
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''
 
-    @staticmethod
-    def modify_commandline_options(parser, is_train=True):
-        if is_train:
-            parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')
-            parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
-            parser.add_argument('--lambda_identity', type=float, default=0.0, help='use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1')
-            parser.add_argument('--lambda_inverse', type=float, default=0.0, help='use inverse mapping. Setting lambda_inverse other than 0 has an effect of scaling the weight of the inverse mapping loss. For example, if the weight of the inverse loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_inverse = 0.1')
-            parser.add_argument('--proportion_ssim', type=float, default=0.0, help='TODO')
-        return parser
-
     def __init__(self, opt):
         super(UnpairedRevGAN3dModel, self).__init__(opt)
         
