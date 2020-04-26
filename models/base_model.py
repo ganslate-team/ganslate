@@ -32,10 +32,10 @@ class BaseModel(ABC):
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
         self.opt = opt
-        self.gpu_ids = opt.gpu_ids
         self.is_train = opt.is_train
-        self.device = torch.device('cuda:{}'.format(self.gpu_ids[0])) if self.gpu_ids else torch.device('cpu')
-        self.save_dir = os.path.join(opt.checkpoints_dir, opt.name) # TODO: conf in folder out
+        self.device = torch.device('cuda:0') if opt.use_cuda else torch.device('cpu')
+        self.num_devices = torch.cuda.device_count()
+        self.save_dir = os.path.join(opt.checkpoints_dir, opt.experiment_name) # TODO: conf in folder out
         
         torch.backends.cudnn.benchmark = True
 
@@ -76,9 +76,9 @@ class BaseModel(ABC):
             self.convert_to_mixed_precision(self.opt.opt_level, self.opt.per_loss_scale)
 
         if not self.is_train or self.opt.continue_train:
-            self.load_networks(self.opt.epoch)
+            self.load_networks(self.opt.load_epoch)
 
-        if len(self.gpu_ids) > 1:
+        if self.num_devices > 1:
             self.parallelize_networks()
         
         torch.cuda.empty_cache()
@@ -122,7 +122,7 @@ class BaseModel(ABC):
                                                               device_ids=[self.device], 
                                                               output_device=self.device)
             else:
-                self.networks[name] = DataParallel(self.networks[name], self.gpu_ids)
+                self.networks[name] = DataParallel(self.networks[name])
 
     def convert_to_mixed_precision(self, opt_level='O1', per_loss_scale=False):
         """Initializes Nvidia Apex Mixed Precision

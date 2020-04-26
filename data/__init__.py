@@ -2,37 +2,6 @@ import importlib
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-
-def find_dataset_using_name(dataset_name):
-    # TODO: nicer
-    # Given the option --dataset_mode [datasetname],
-    # the file "data/datasetname_dataset.py"
-    # will be imported.
-    dataset_filename = "data." + dataset_name + "_dataset"
-    datasetlib = importlib.import_module(dataset_filename)
-
-    # In the file, the class called DatasetNameDataset() will
-    # be instantiated. It has to be a subclass of Dataset,
-    # and it is case-insensitive.
-    dataset = None
-    target_dataset_name = dataset_name.replace('_', '') + 'dataset'
-    for name, cls in datasetlib.__dict__.items():
-        if name.lower() == target_dataset_name.lower() \
-           and issubclass(cls, Dataset):
-            dataset = cls
-            
-    if dataset is None:
-        print("In %s.py, there should be a subclass of torch.utils.data.Dataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
-        exit(0)
-
-    return dataset
-
-
-def create_dataset(opt):
-    dataset = find_dataset_using_name(opt.dataset_mode)
-    return dataset(opt)
-
-
 class CustomDataLoader:
     '''
     Wraps an instance of Dataset class as either a regular Dataloader
@@ -63,3 +32,35 @@ class CustomDataLoader:
     def __iter__(self):
         for i, data in enumerate(self.dataloader):
             yield data
+
+
+def create_dataset(opt):
+    dataset = find_dataset_using_name(opt.dataset_mode)
+    return dataset(opt)
+
+def find_dataset_using_name(dataset_name):
+    # TODO: nicer
+    # Given the option --dataset_mode [datasetname],
+    # the file "data/datasetname_dataset.py"
+    # will be imported.
+    dataset_filename = "data." + dataset_name + "_dataset"
+    datasetlib = importlib.import_module(dataset_filename)
+
+    # In the file, the class called DatasetNameDataset() will
+    # be instantiated. It has to be a subclass of Dataset,
+    # and it is case-insensitive.
+    dataset = None
+    target_dataset_name = dataset_name.replace('_', '') + 'dataset'
+    for name, cls in datasetlib.__dict__.items():
+        if name.lower() == target_dataset_name.lower() \
+           and issubclass(cls, Dataset):
+            dataset = cls
+            
+    if dataset is None:
+        print("In %s.py, there should be a subclass of torch.utils.data.Dataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
+        exit(0)
+
+    return dataset
+
+
+

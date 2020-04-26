@@ -7,14 +7,17 @@ from models import create_model
 from util.distributed import multi_gpu, comm
 
 from omegaconf import OmegaConf
-from conf.config import BaseConfig
+from conf.config import BaseConfig, ModelConfig, DatasetConfig, OptimizerConfig, LoggingConfig, ApexConfig
 
 def main():
-    # options = TrainOptions() # TODO: this is ugly as hell, used only for printing, make it nicer
-    
-    # opt = options.parse()
-    # options.print_options(opt)
-    opt = OmegaConf.structured(BaseConfig)
+    cfg = OmegaConf.structured(BaseConfig(n_epochs_decay=135))
+    cli = OmegaConf.from_cli()
+    cfg = OmegaConf.merge(cfg, cli)
+
+    opt = cfg
+    print(opt.pretty())    
+    #print(conf.pretty())
+    return
     print(opt.pretty())
     is_main_process = True
 
@@ -24,7 +27,7 @@ def main():
     device = model.device
 
     total_steps = 0
-    for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
+    for epoch in range(opt.continue_epoch, opt.n_epochs + opt.n_epochs_decay + 1):
         epoch_start_time = time.time()
         iter_data_time = time.time()
         epoch_iter = 0
@@ -59,11 +62,6 @@ def main():
                 t_comp = comm.reduce(t_comp, average=True, all_reduce=False, device=device)
                 t_data = comm.reduce(t_data, average=True, all_reduce=False, device=device)
 
-
-            if is_main_process and total_steps % opt.save_latest_freq == 0:
-                print('saving the latest model (epoch %d, total_steps %d)' % (epoch, total_steps))
-                model.save_networks('latest')
-
             iter_data_time = time.time()
 
         model.update_learning_rate()  # perform a scheduler step 
@@ -76,7 +74,7 @@ def main():
 
             epoch_time = time.time() - epoch_start_time
             print('End of epoch %d / %d \t Time Taken: %d sec' %
-                (epoch, opt.niter + opt.niter_decay, epoch_time))
+                (epoch, opt.n_epochs + opt.n_epochs_decay, epoch_time))
             
 
 if __name__ == '__main__':

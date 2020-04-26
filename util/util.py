@@ -1,6 +1,9 @@
 import os
 import json
+from datetime import datetime
 
+def now():
+    return datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 
 def mkdirs(paths):
     if isinstance(paths, list) and not isinstance(paths, str):

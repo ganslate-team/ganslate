@@ -4,21 +4,21 @@ import memcnn
 
 class VnetRevBlock(nn.Module):
     # TODO: make an Invertible class that can wrap any block and modify it's forward func
-    def __init__(self, nchan, keep_input):
+    def __init__(self, n_channels, keep_input):
         super(VnetRevBlock, self).__init__()
         
         invertible_module = memcnn.AdditiveCoupling(
-            Fm=self.build_conv_block(nchan//2),
-            Gm=self.build_conv_block(nchan//2)
+            Fm=self.build_conv_block(n_channels//2),
+            Gm=self.build_conv_block(n_channels//2)
         )
         self.rev_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
                                                         keep_input=keep_input, 
                                                         keep_input_inverse=keep_input)
 
-    def build_conv_block(self, nchan):
-        block = nn.Sequential(nn.Conv3d(nchan, nchan, kernel_size=5, padding=2),
-                              nn.BatchNorm3d(nchan),
-                              nn.PReLU(nchan))
+    def build_conv_block(self, n_channels):
+        block = nn.Sequential(nn.Conv3d(n_channels, n_channels, kernel_size=5, padding=2),
+                              nn.BatchNorm3d(n_channels),
+                              nn.PReLU(n_channels))
         return block
 
     def forward(self, x, inverse=False):
@@ -29,35 +29,34 @@ class VnetRevBlock(nn.Module):
 
 
 class InputTransition(nn.Module):
-    def __init__(self, outChans):
+    def __init__(self, out_channels=16):
         super(InputTransition, self).__init__()
-        self.conv1 = nn.Conv3d(1, 16, kernel_size=5, padding=2)
-        self.bn1 = nn.BatchNorm3d(16)
-        self.relu = nn.PReLU(16)
+        self.conv1 = nn.Conv3d(1, out_channels, kernel_size=5, padding=2)
+        self.bn1 = nn.BatchNorm3d(out_channels)
+        self.relu = nn.PReLU(out_channels)
 
     def forward(self, x):
         out = self.bn1(self.conv1(x))
-        # split input in to 16 channels (or is it right to say duplicate the input for 16 times to operate "torch.add()"?? By Chao) 
-        x16 = torch.cat((x, x, x, x, x, x, x, x,
-                         x, x, x, x, x, x, x, x), 1) # changed dim = 0 to 1 to operate on channels, and have "x16" the same size as "out" to operate "torch.add()". By Chao.
-        out = self.relu(torch.add(out, x16))
+        # repeat to match channel dimension in order to perform residual connection
+        x_repeated = torch.repeat(1, out_channels, 1, 1, 1) 
+        out = self.relu(torch.add(out, x_repeated))
         return out
 
 
 class DownTransition(nn.Module):
-    def __init__(self, inChans, nConvs, keep_input):
+    def __init__(self, in_channels, n_conv_blocks, keep_input):
         super(DownTransition, self).__init__()
-        outChans = 2*inChans
-        self.down_conv_ab = self.build_down_conv(inChans, outChans)
-        self.down_conv_ba = self.build_down_conv(inChans, outChans)
+        out_channels = 2*in_channels
+        self.down_conv_ab = self.build_down_conv(in_channels, out_channels)
+        self.down_conv_ba = self.build_down_conv(in_channels, out_channels)
         # TODO: Make an Inverse sequence that does this and what's been done in line 74
-        self.core = nn.Sequential(*[VnetRevBlock(outChans, keep_input) for _ in range(nConvs)])
-        self.relu = nn.PReLU(outChans)
+        self.core = nn.Sequential(*[VnetRevBlock(out_channels, keep_input) for _ in range(n_conv_blocks)])
+        self.relu = nn.PReLU(out_channels)
 
-    def build_down_conv(self, inChans, outChans):
-        return nn.Sequential(nn.Conv3d(inChans, outChans, kernel_size=2, stride=2),
-                             nn.BatchNorm3d(outChans),
-                             nn.PReLU(outChans))
+    def build_down_conv(self, in_channels, out_channels):
+        return nn.Sequential(nn.Conv3d(in_channels, out_channels, kernel_size=2, stride=2),
+                             nn.BatchNorm3d(out_channels),
+                             nn.PReLU(out_channels))
 
     def forward(self, x, inverse=False):
         if inverse:
@@ -83,18 +82,18 @@ class DownTransition(nn.Module):
 
 
 class UpTransition(nn.Module):
-    def __init__(self, inChans, outChans, nConvs, keep_input):
+    def __init__(self, in_channels, out_channels, n_conv_blocks, keep_input):
         super(UpTransition, self).__init__()
-        self.up_conv_ab = self.build_up_conv(inChans, outChans)
-        self.up_conv_ba = self.build_up_conv(inChans, outChans)
+        self.up_conv_ab = self.build_up_conv(in_channels, out_channels)
+        self.up_conv_ba = self.build_up_conv(in_channels, out_channels)
 
-        self.core = nn.Sequential(*[VnetRevBlock(outChans, keep_input) for _ in range(nConvs)])
-        self.relu = nn.PReLU(outChans)
+        self.core = nn.Sequential(*[VnetRevBlock(out_channels, keep_input) for _ in range(n_conv_blocks)])
+        self.relu = nn.PReLU(out_channels)
     
-    def build_up_conv(self, inChans, outChans):
-        return nn.Sequential(nn.ConvTranspose3d(inChans, outChans // 2, kernel_size=2, stride=2),
-                             nn.BatchNorm3d(outChans // 2),
-                             nn.PReLU(outChans // 2))
+    def build_up_conv(self, in_channels, out_channels):
+        return nn.Sequential(nn.ConvTranspose3d(in_channels, out_channels // 2, kernel_size=2, stride=2),
+                             nn.BatchNorm3d(out_channels // 2),
+                             nn.PReLU(out_channels // 2))
 
     def forward(self, x, skipx, inverse=False):
         if inverse:
@@ -121,9 +120,9 @@ class UpTransition(nn.Module):
 
 
 class OutputTransition(nn.Module):
-    def __init__(self, inChans, num_classes):
+    def __init__(self, in_channels, num_classes):
         super(OutputTransition, self).__init__()
-        self.conv1 = nn.Conv3d(inChans, 2, kernel_size=5, padding=2) # should i put num_classes here as well?
+        self.conv1 = nn.Conv3d(in_channels, 2, kernel_size=5, padding=2) # should i put num_classes here as well?
         self.bn1 = nn.BatchNorm3d(2)
         self.conv2 = nn.Conv3d(2, num_classes, kernel_size=1)
         self.relu1 = nn.PReLU(num_classes)

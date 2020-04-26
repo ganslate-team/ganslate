@@ -5,7 +5,7 @@ from options.train_options import TrainOptions
 from data import CustomDataLoader
 from models import create_model
 from util.visualizer import Visualizer
-from util.distributed import multi_gpu, comm
+from util.distributed import multi_gpu, comm, init_distributed
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,9 +17,9 @@ def print_info(opt, options, model, data_loader):
     print('# of training pairs = %d' % len(data_loader))
     print("model [%s] was created" % (type(model).__name__))
     model.print_networks()
-    print('Invertible layers memory saving: {}'.format('ON' if not opt.use_naive else 'OFF'))
+    print('Invertible layers memory saving: {}'.format('ON' if opt.use_memory_saving else 'OFF'))
     print('Distributed data parallel training: {}'.format('ON' if opt.distributed else 'OFF'))
-    num_devices = len(opt.gpu_ids) if len(opt.gpu_ids) > 0 else 1
+    num_devices = torch.cuda.device_count() if torch.cuda.device_count() > 0 else 1
     print('Batch size per GPU: {}'.format(opt.batch_size // num_devices))
 
 def main():
@@ -27,21 +27,9 @@ def main():
     opt = options.parse()
     is_main_process = True
 
-    # Setup distributed computing
-    # This is set by the parallel computation script (launch.py)
     if opt.distributed:
-        num_gpu = int(os.environ.get('WORLD_SIZE', 1))
-        if num_gpu > 1:
-            torch.cuda.set_device(opt.local_rank)
-            torch.distributed.init_process_group(
-                backend='nccl', init_method='env://'
-            )
-            multi_gpu.synchronize()
-            logger.info(f'Number of GPUs available in world: {num_gpu}.')
-            is_main_process = multi_gpu.get_rank() == 0
-            opt.gpu_ids = [opt.local_rank]
-        else:
-            opt.distributed = False
+        init_distributed(opt.local_rank)
+        is_main_process = multi_gpu.get_rank() == 0
 
     data_loader = CustomDataLoader(opt)
     model = create_model(opt)
@@ -55,7 +43,7 @@ def main():
         visualizer = Visualizer(opt)
 
     total_steps = 0
-    for epoch in range(opt.epoch_count, opt.niter + opt.niter_decay + 1):
+    for epoch in range(opt.continue_epoch, opt.n_epochs + opt.n_epochs_decay + 1):
         epoch_start_time = time.time()
         iter_data_time = time.time()
         epoch_iter = 0
@@ -117,7 +105,7 @@ def main():
 
             epoch_time = time.time() - epoch_start_time
             print('End of epoch %d / %d \t Time Taken: %d sec' %
-                (epoch, opt.niter + opt.niter_decay, epoch_time))
+                (epoch, opt.n_epochs + opt.n_epochs_decay, epoch_time))
             
             if opt.wandb:
                 # TODO: do this properly and in a separate function

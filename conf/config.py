@@ -1,51 +1,47 @@
 from typing import List
 from dataclasses import dataclass, field
+from omegaconf import MISSING
+from util.util import now
 
 @dataclass
-class BaseConfig:
+class ModelConfig:
+    is_train:          bool = True
+    use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
 
-    # BASE
-    batch_size:     int = 1
-    continue_train: bool = True
-    epoch:          str = "latest"
-    epoch_count:    int = 1
-    niter:          int = 4 # TODO: they're epochs not iters
-    niter_decay:    int = 0
-    phase:          str = "train" # TODO: remove, same as is_train?
-    name:           str = "distmp1"
-    gpu_ids:        List[int] = field(default_factory=lambda: []) # replace for use_multigpu
-    pool_size:      int = 50
+    model_GAN:         str = "unpaired_revgan3d"
+    model_G:           str = "vnet"
+    model_D:           str = "basic" # TODO: basic unnecessary
+    n_layers_D:        int = 3
+    n_first_filters_G: int = 16  # num of filters in first conv layer of generator TODO: what with this? implement in vnet?
+    n_first_filters_D: int = 64  # num of filters in first conv layer of discriminator
+    norm_layer:        str = "instance" # TODO" implement
 
+    weight_init_type:  str = "normal"
+    weight_init_gain:  float = 0.02
+
+    n_channels_input:  int = 1 # TODO: think if necessary, probably not
+    n_channels_output: int = 1
+
+@dataclass
+class DatasetConfig:
     # DATASET
     dataroot:     str = "../"
     dataset_mode: str = "dummy"
     direction:    str = "AtoB"      # remove
-    focus_window: float = 0.2
+    
+    pool_size:    int = 50
+    patch_size:   List[int] = field(default_factory=lambda: [32, 32, 32])
+    focal_region_proportion: float = 0.2 # Proportion of focal region size compared to original volume size
+
     shuffle:      bool = True
     num_workers:  int = 4
-    patch_size:   List[int] = field(default_factory=lambda: [32, 32, 32])
 
-    # MODEL
-    model:               str = "unpaired_revgan3d"
-    init_gain:           float = 0.02
-    init_type:           str = "normal"
-    input_nc:            int = 1
-    output_nc:           int = 1
-    is_train:            bool = True
-    generator_model:     str = "vnet_generator"
-    discriminator_model: str = "basic" # TODO: basic unnecessary
-    n_layers_D:          int = 3
-    use_naive:           bool = False # TODO: rename
-    norm:                str = "instance" # TODO" implement
-    ndf:                 int = 64
-    ngf:                 int = 64
-
+@dataclass
+class OptimizerConfig:
     # OPTIMIZER/SOLVER
     beta1:           float = 0.5
     lr_D:            float = 0.0002
     lr_G:            float = 0.0002
-    lr_policy:       str = "lambda"
-    lr_decay_iters:  int = 50
     lambda_A:        float = 10.0
     lambda_B:        float = 10.0
     lambda_identity: float = 0.1
@@ -53,23 +49,37 @@ class BaseConfig:
     proportion_ssim: float = 0.84
     no_lsgan:        bool = False
 
+
+@dataclass
+class LoggingConfig:
     # LOGGING
+    experiment_name: str = now()     # Name of the experiment. [Default: current date and time]
     checkpoints_dir:  str = "./checkpoints"
-    no_html:          bool = False
-    display_freq:     int = 50
-    display_id:       int = -1
-    display_ncols:    int = 4
-    display_winsize:  int = 256
     print_freq:       int = 50
     save_epoch_freq:  int = 25
-    save_latest_freq: int = 5000
-    update_html_freq: int = 50
     wandb:            bool = False
+
+
+@dataclass
+class BaseConfig:
+    batch_size:      int = 1
+    n_epochs:        int = 200       # Number of epochs without linear decay of learning rates. [Default: 200]
+    n_epochs_decay:  int = 50        # Number of last epoch in which the learning rates are linearly decayed. [Default: 50]
+    use_cuda:        bool = True     # Use CUDA i.e. GPU(s). [Default: True]
     
-    distributed: bool = False
-    local_rank: int = 0
+    # Continuing training
+    continue_train:  bool = False    # Continue training by loading a checkpoint. [Default: False]
+    load_epoch:      str = "latest"  # Which epoch's checkpoint to load. [Default: "latest"]
+    continue_epoch:  int = 1         # Continue the count of epochs from this value. [Default: 1]
+
+    # Distributed and mixed precision
+    distributed:     bool = False
+    local_rank:      int = 0
     mixed_precision: bool = False
-    opt_level: str = "O1"
-    per_loss_scale: bool = False
-    
-    
+    opt_level:       str = "O1"
+    per_loss_scale:  bool = True
+
+    logging:         LoggingConfig = LoggingConfig()
+    model:           ModelConfig = ModelConfig()
+    dataset:         DatasetConfig = DatasetConfig()
+    optimizer:       OptimizerConfig = OptimizerConfig()

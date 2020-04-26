@@ -3,7 +3,7 @@ from models.base_model import BaseModel
 
 
 def create_model(opt):
-    model = find_model_using_name(opt.model)
+    model = find_model_using_name(opt.model_GAN)
     return model(opt)
 
 def find_model_using_name(model_name):

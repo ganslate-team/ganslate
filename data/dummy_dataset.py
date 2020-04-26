@@ -10,7 +10,7 @@ class DummyDataset(Dataset):
     def __init__(self, opt):
         self.opt = opt
         self.root = opt.dataroot
-        self.dir_AB = os.path.join(opt.dataroot, opt.phase)
+        self.dir_AB = os.path.join(opt.dataroot)
         self.AB_paths = sorted(make_dataset(self.dir_AB))
         self.A_size = 4
         self.B_size = self.A_size

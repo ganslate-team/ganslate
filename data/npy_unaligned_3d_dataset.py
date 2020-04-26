@@ -4,68 +4,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from util.util import make_dataset, load_json
-
+from util.preprocessing import normalize_from_hu
+from data.focal_random_patch import focal_random_patch
 EXTENSIONS = ['.npy']
-
-
-def normalize(image, MIN_B=-1024.0, MAX_B=3072.0):
-    # https://stats.stackexchange.com/questions/178626/how-to-normalize-data-between-1-and-1
-    image = (image - MIN_B) / (MAX_B - MIN_B)
-    return 2*image - 1
-
-
-def focused_random_zxy(zxy, window, valid_region):
-    selected_zxy = []
-    # for each axis
-    for idx in range(len(zxy)):
-        # find the lowest and highest position between which to focus for this axis
-        min_position = int(zxy[idx] - window[idx]/2)
-        max_position = int(zxy[idx] + window[idx]/2)
-        # if one of the boundaries of the focus is outside of the possible area to sample from, cap it
-        min_position = max(0, min_position)
-        max_position = min(max_position, valid_region[idx])
-        # edge cases (no pun intended)
-        if min_position > max_position:
-            selected_zxy.append(max_position)
-        # regular
-        else:
-            selected_zxy.append(random.randint(min_position, max_position))
-    return selected_zxy
-
-
-def random_patch_3d(volume, patch_size=[64,64,64], 
-                    focus_around_zxy=None, focus_window_to_volume_proportion=None):
-    '''
-     volume:           whole CT scan (numpy array)
-     patch_size:       size of the 3D volume to be extracted from the original volume
-     focus_around_zxy: enables taking a patch from B that is in a similar location to the patch from A
-    '''
-    patch_shape = np.array(patch_size)
-    volume_shape = np.array(volume.shape[-3:])
-    # a patch can have a starting coordinate anywhere from where it can fit with the defined patch size
-    valid_starting_region = volume_shape - patch_shape
-
-    if focus_around_zxy is None:
-        # pick a random starting point in valid region of volume
-        z = random.randint(0, valid_starting_region[0])
-        x = random.randint(0, valid_starting_region[1])
-        y = random.randint(0, valid_starting_region[2])
-
-    else: # take a relative neighbor of patch A in patch B
-        # 3D window/neighborhood of focus_around_zxy from which will be randomly selected a new start zxy for B
-        focus_window = np.multiply(volume_shape, focus_window_to_volume_proportion).astype(np.int64)
-        # the starting position from A is given in relative form (A_start_zxy / A_shape)
-        zxy = np.array(focus_around_zxy) * volume_shape  # find start position of A translated in B
-        z, x, y = focused_random_zxy(zxy, focus_window, valid_starting_region)
-        
-    # extract the patch from the volume
-    patch = volume[z:z+patch_size[0],
-                   x:x+patch_size[1],
-                   y:y+patch_size[2]]
-
-    # used only for focus_around_zxy
-    relative_zxy = (np.array([z,x,y]) / volume_shape).tolist()
-    return patch, relative_zxy
 
 
 class NpyUnaligned3dDataset(Dataset):
@@ -98,17 +39,17 @@ class NpyUnaligned3dDataset(Dataset):
         B = torch.Tensor(B)
 
         # random patch extraction
-        A, A_zxy = random_patch_3d(volume=A, 
-                                   patch_size=self.opt.patch_size)
+        A, A_zxy = focal_random_patch(volume=A, 
+                                      patch_size=self.opt.patch_size)
 
-        B, _ = random_patch_3d(volume=B, 
-                               patch_size=self.opt.patch_size,
-                               focus_around_zxy=A_zxy, 
-                               focus_window_to_volume_proportion=self.opt.focus_window)
+        B, _ = focal_random_patch(volume=B, 
+                                  patch_size=self.opt.patch_size,
+                                  focus_around_zxy=A_zxy, 
+                                  focus_window_to_volume_proportion=self.opt.focus_window)
 
-        # normalization
-        A = normalize(A, self.norm_A["min"], self.norm_A["max"])
-        B = normalize(B, self.norm_B["min"], self.norm_B["max"])
+        # normalize Hounsfield units to range [-1,1]
+        A = normalize_from_hu(A, self.norm_A["min"], self.norm_A["max"])
+        B = normalize_from_hu(B, self.norm_B["min"], self.norm_B["max"])
 
         # reshape so that it contains the channel as well (1 = grayscale)
         A = A.view(1, *A.shape)
@@ -118,3 +59,7 @@ class NpyUnaligned3dDataset(Dataset):
 
     def __len__(self):
         return max(self.A_size, self.B_size)
+
+
+
+

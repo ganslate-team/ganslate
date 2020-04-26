@@ -18,8 +18,8 @@ if __name__ == '__main__':
     data_loader = CustomDataLoader(opt)
     model = create_model(opt)
     # create website
-    web_dir = os.path.join(opt.results_dir, opt.name, '%s_%s' % (opt.phase, opt.epoch))
-    webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.epoch))
+    web_dir = os.path.join(opt.results_dir, opt.name, '%s_%s' % (opt.phase, opt.load_epoch))
+    webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.load_epoch))
     # test
     for i, data in enumerate(data_loader):
         if i >= opt.how_many:
