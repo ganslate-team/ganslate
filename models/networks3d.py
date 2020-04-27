@@ -57,7 +57,7 @@ def init_weights(net, weight_init_type='normal', gain=0.02):
         
 
 def define_G(conf, device=torch.device('cuda:0')):
-            #  n_channels_input, n_channels_output, n_first_filters_G, model_G, norm_layer='batch', use_memory_saving=True, 
+            #  n_channels_input, n_channels_output, start_n_filters_G, model_G, norm_layer='batch', use_memory_saving=True, 
             #  weight_init_type='normal', weight_init_gain=0.02, device=torch.device('cuda:0')
 
     netG = None
@@ -78,7 +78,7 @@ def define_G(conf, device=torch.device('cuda:0')):
 
 
 def define_D(conf, device=torch.device('cuda:0')):
-            # n_channels_input, n_first_filters_D, model_D, n_layers_D=3, norm_layer='batch', use_sigmoid=False, 
+            # n_channels_input, start_n_filters_D, model_D, n_layers_D=3, norm_layer='batch', use_sigmoid=False, 
             #  weight_init_type='normal', weight_init_gain=0.02, device=torch.device('cuda:0')):
     netD = None
     norm_layer = get_norm_layer(norm_type=conf.norm_layer)
@@ -86,10 +86,10 @@ def define_D(conf, device=torch.device('cuda:0')):
 
     name_D = conf.model_D
     if name_D == 'n_layers':
-        netD = NLayerDiscriminator(conf.n_channels_input, conf.n_first_filters_D, conf.n_layers_D, 
+        netD = NLayerDiscriminator(conf.n_channels_input, conf.start_n_filters_D, conf.n_layers_D, 
                                    norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     elif name_D == 'pixel':
-        netD = PixelDiscriminator(conf.n_channels_input, conf.n_first_filters_D, 
+        netD = PixelDiscriminator(conf.n_channels_input, conf.start_n_filters_D, 
                                   norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' % name_D)

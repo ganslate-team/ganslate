@@ -20,9 +20,9 @@ def has_extension(file, extensions):
     return any(file.endswith(ext) for ext in extensions)
 
 def make_dataset(root, extensions=['.npy']):
-    assert os.path.isdir(root), '%s is not a valid directory' % dir
+    assert os.path.isdir(root), '%s is not a valid directory' % root
     paths = [os.path.join(root, file) for file in os.listdir(root) if has_extension(file, extensions)]
-    return paths
+    return sorted(paths)
 
 def load_json(file):
     with open(file, 'r') as f:

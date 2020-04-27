@@ -9,13 +9,13 @@ class ModelConfig:
     is_train:          bool = True
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
 
-    model_GAN:         str = "unpaired_revgan3d"
+    model_GAN:         str = "unpaired_revgan3d"   #
     model_G:           str = "vnet"
-    model_D:           str = "n_layers" # TODO: basic unnecessary
+    model_D:           str = "n_layers"
     n_layers_D:        int = 3
-    n_first_filters_G: int = 16  # num of filters in first conv layer of generator TODO: what with this? implement in vnet?
-    n_first_filters_D: int = 64  # num of filters in first conv layer of discriminator
-    norm_layer:        str = "instance" # TODO" implement
+    start_n_filters_G: int = 16                    # Number of filters in first conv layer of generator TODO: what with this? implement in vnet?
+    start_n_filters_D: int = 64                    # Number of filters in first conv layer of discriminator
+    norm_layer:        str = "instance"            # TODO" implement
 
     weight_init_type:  str = "normal"
     weight_init_gain:  float = 0.02
@@ -27,21 +27,19 @@ class ModelConfig:
 
 @dataclass
 class DatasetConfig:
-    # DATASET
     root:         str = "../"
     mode:         str = "dummy"
     direction:    str = "AtoB"      # remove
     
     pool_size:    int = 50
     patch_size:   Tuple[int] = field(default_factory=lambda: (32, 32, 32))
-    focal_region_proportion: float = 0.2 # Proportion of focal region size compared to original volume size
+    focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
 
     shuffle:      bool = True
     num_workers:  int = 4
 
 @dataclass
 class OptimizerConfig:
-    # OPTIMIZER/SOLVER
     beta1:           float = 0.5
     lr_D:            float = 0.0002
     lr_G:            float = 0.0002
@@ -54,13 +52,11 @@ class OptimizerConfig:
 
 @dataclass
 class LoggingConfig:
-    # LOGGING
-    experiment_name: str = now()     # Name of the experiment. [Default: current date and time]
+    experiment_name:  str = now()     # Name of the experiment. [Default: current date and time] TODO: not working in distributed mode
     checkpoints_dir:  str = "./checkpoints"
     print_freq:       int = 50
     save_epoch_freq:  int = 25
     wandb:            bool = False
-
 
 @dataclass
 class Config:

@@ -40,7 +40,7 @@ class UnpairedRevGAN3dModel(BaseModel):
             self.init_criterions(conf)
             self.init_optimizers(conf)
 
-            # create image buffer to store previously generated images
+            # Create image buffer to store previously generated images
             self.fake_A_pool = ImagePool(conf.dataset.pool_size)
             self.fake_B_pool = ImagePool(conf.dataset.pool_size)
 
@@ -48,10 +48,9 @@ class UnpairedRevGAN3dModel(BaseModel):
 
 
     def init_networks(self, conf):
+        # TODO: make define_G and _D nicer TODO: move it to base_model 
         for name in self.networks.keys():
             if name.startswith('G'):
-                # TODO: make define_G and _D nicer
-                # TODO: move it to base_model 
                 self.networks[name] = networks3d.define_G(conf.model, self.device)
             elif name.startswith('D'):
                 #use_sigmoid = conf.no_lsgan
@@ -91,6 +90,27 @@ class UnpairedRevGAN3dModel(BaseModel):
         AtoB = self.conf.dataset.direction == 'AtoB' # TODO: more pythonic name
         self.visuals['real_A'] = input['A' if AtoB else 'B'].to(self.device)
         self.visuals['real_B'] = input['B' if AtoB else 'A'].to(self.device)
+
+
+    def optimize_parameters(self):
+        """Calculate losses, gradients, and update network weights. 
+        Called in every training iteration.
+        """
+        self.forward()  # compute fake images and reconstruction images.
+
+        discriminators = [ self.networks['D_A'], self.networks['D_B'] ]
+        # ------------------------ G (A and B) ----------------------------------------------------
+        self.set_requires_grad(discriminators, False)   # Ds require no gradients when optimizing Gs
+        self.optimizers['G'].zero_grad()                # set G's gradients to zero
+        self.backward_G(loss_id=0)                      # calculate gradients for G
+        self.optimizers['G'].step()                     # update G's weights
+        # ------------------------ D_A and D_B ----------------------------------------------------
+        self.set_requires_grad(discriminators, True)
+        self.optimizers['D'].zero_grad()                #set D_A and D_B's gradients to zero
+        self.backward_D('D_A', loss_id=1)               # calculate gradients for D_A
+        self.backward_D('D_B', loss_id=2)               # calculate graidents for D_B
+        self.optimizers['D'].step()                     # update D_A and D_B's weights
+        # -----------------------------------------------------------------------------------------
 
     
     def forward(self):
@@ -171,24 +191,3 @@ class UnpairedRevGAN3dModel(BaseModel):
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=loss_id)
-
-
-    def optimize_parameters(self):
-        """Calculate losses, gradients, and update network weights. 
-        Called in every training iteration.
-        """
-        self.forward()  # compute fake images and reconstruction images.
-
-        discriminators = [ self.networks['D_A'], self.networks['D_B'] ]
-        # ------------------------ G (A and B) ----------------------------------------------------
-        self.set_requires_grad(discriminators, False)   # Ds require no gradients when optimizing Gs
-        self.optimizers['G'].zero_grad()                # set G's gradients to zero
-        self.backward_G(loss_id=0)                      # calculate gradients for G
-        self.optimizers['G'].step()                     # update G's weights
-        # ------------------------ D_A and D_B ----------------------------------------------------
-        self.set_requires_grad(discriminators, True)
-        self.optimizers['D'].zero_grad()                #set D_A and D_B's gradients to zero
-        self.backward_D('D_A', loss_id=1)               # calculate gradients for D_A
-        self.backward_D('D_B', loss_id=2)               # calculate graidents for D_B
-        self.optimizers['D'].step()                     # update D_A and D_B's weights
-        # -----------------------------------------------------------------------------------------

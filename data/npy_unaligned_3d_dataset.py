@@ -5,25 +5,29 @@ import torch
 from torch.utils.data import Dataset
 from util.util import make_dataset, load_json
 from util.preprocessing import normalize_from_hu
-from data.focal_random_patch import focal_random_patch
-EXTENSIONS = ['.npy']
+from data.stochastic_focal_patching import StochasticFocalPatchSampler
 
+
+EXTENSIONS = ['.npy']
 
 class NpyUnaligned3dDataset(Dataset):
     def __init__(self, conf):
-        self.conf = conf
-        #self.root = conf.dataset.root
         dir_A = os.path.join(conf.dataset.root, 'A')
         dir_B = os.path.join(conf.dataset.root, 'B')
-        self.A_paths = sorted( make_dataset(self.dir_A, EXTENSIONS) )
-        self.B_paths = sorted( make_dataset(self.dir_B, EXTENSIONS) )
+        self.A_paths = make_dataset(dir_A, EXTENSIONS)
+        self.B_paths = make_dataset(dir_B, EXTENSIONS)
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 
-        # dataset range of values information for normalization
-        # TODO: make it elegant
-        self.norm_A = load_json(os.path.join(conf.dataset.root, 'normalize_A.json'))
-        self.norm_B = load_json(os.path.join(conf.dataset.root, 'normalize_B.json'))
+        # Dataset range of values information for normalization TODO: make it elegant
+        norm_A = os.path.join(conf.dataset.root, 'normalize_A.json')
+        norm_B = os.path.join(conf.dataset.root, 'normalize_B.json')
+        self.norm_A = load_json(norm_A)
+        self.norm_B = load_json(norm_B)
+
+        patch_size = conf.dataset.patch_size
+        focal_region_proportion = conf.dataset.focal_region_proportion
+        self.patch_sampler = StochasticFocalPatchSampler(patch_size, focal_region_proportion)
 
     def __getitem__(self, index):
         index_A = index % self.A_size
@@ -32,26 +36,23 @@ class NpyUnaligned3dDataset(Dataset):
         A_path = self.A_paths[index_A]
         B_path = self.B_paths[index_B]
         
-        A = np.load(A_path)
-        B = np.load(B_path)
+        A = torch.Tensor(np.load(A_path))
+        B = torch.Tensor(np.load(B_path))
+        
+        A, B = self.patch_sampler.get_patch_pair(A, B) # Extract patches
 
-        A = torch.Tensor(A)
-        B = torch.Tensor(B)
-
-        # random patch extraction
-        A, A_zxy = focal_random_patch(volume=A, 
-                                      patch_size=self.conf.patch_size)
-
-        B, _ = focal_random_patch(volume=B, 
-                                  patch_size=self.conf.patch_size,
-                                  focus_around_zxy=A_zxy, 
-                                  focus_window_to_volume_proportion=self.conf.focus_window)
-
-        # normalize Hounsfield units to range [-1,1]
+        # Normalize Hounsfield units to range [-1,1]
         A = normalize_from_hu(A, self.norm_A["min"], self.norm_A["max"])
         B = normalize_from_hu(B, self.norm_B["min"], self.norm_B["max"])
 
-        # reshape so that it contains the channel as well (1 = grayscale)
+        import matplotlib.pyplot as plt
+        for i, slajs in enumerate(A):
+            plt.imsave('./IGNORE/imgz/A_%d.png' % i, slajs.numpy(), cmap='gray')
+        for i, slajs in enumerate(B):
+            plt.imsave('./IGNORE/imgz/B_%d.png' % i, slajs.numpy(), cmap='gray')
+        return
+
+        # Reshape so that it contains the channel as well (1 = grayscale)
         A = A.view(1, *A.shape)
         B = B.view(1, *B.shape)
 
