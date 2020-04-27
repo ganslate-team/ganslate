@@ -13,29 +13,29 @@ from . import networks3d as networks
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
     To create a subclass, you need to implement the following five functions:
-        -- <__init__>:                      initialize the class; first call BaseModel.__init__(self, opt).
+        -- <__init__>:                      initialize the class; first call BaseModel.__init__(self, conf).
         -- <set_input>:                     unpack data from dataset and apply preprocessing.
         -- <forward>:                       produce intermediate results.
         -- <optimize_parameters>:           calculate losses, gradients, and update network weights.
     """
 
-    def __init__(self, opt):
+    def __init__(self, conf):
         """Initialize the BaseModel class.
         Parameters:
-            opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
+            conf -- TODO
         When creating your custom class, you need to implement your own initialization.
-        In this function, you should first call <BaseModel.__init__(self, opt)>
+        In this function, you should first call <BaseModel.__init__(self, conf)>
         Then, you need to define four lists:
             -- self.loss_names (str list):          specify the training losses that you want to plot and save.
             -- self.model_names (str list):         define networks used in our training.
             -- self.visual_names (str list):        specify the images that you want to display and save.
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
-        self.opt = opt
-        self.is_train = opt.is_train
-        self.device = torch.device('cuda:0') if opt.use_cuda else torch.device('cpu')
+        self.conf = conf
+        self.is_train = conf.model.is_train
+        self.device = torch.device('cuda:0') if conf.use_cuda else torch.device('cpu')
         self.num_devices = torch.cuda.device_count()
-        self.save_dir = os.path.join(opt.checkpoints_dir, opt.experiment_name) # TODO: conf in folder out
+        self.save_dir = os.path.join(conf.logging.checkpoints_dir, conf.logging.experiment_name) # TODO: conf in folder out
         
         torch.backends.cudnn.benchmark = True
 
@@ -70,13 +70,13 @@ class BaseModel(ABC):
             (4) Applies parallelization to the model if possible
         """
         if self.is_train:
-            self.schedulers = [networks.get_scheduler(optimizer, self.opt) for optimizer in self.optimizers.values()]
+            self.schedulers = [networks.get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
 
-        if self.opt.mixed_precision:
-            self.convert_to_mixed_precision(self.opt.opt_level, self.opt.per_loss_scale)
+        if self.conf.mixed_precision:
+            self.convert_to_mixed_precision(self.conf.opt_level, self.conf.per_loss_scale)
 
-        if not self.is_train or self.opt.continue_train:
-            self.load_networks(self.opt.load_epoch)
+        if not self.is_train or self.conf.continue_train:
+            self.load_networks(self.conf.load_epoch)
 
         if self.num_devices > 1:
             self.parallelize_networks()
@@ -106,7 +106,7 @@ class BaseModel(ABC):
                              By initializing Amp with `num_losses=1` and setting `loss_id=0` for each loss, 
                              it will use a global scaler for all losses.
         """
-        if self.opt.mixed_precision:
+        if self.conf.mixed_precision:
             with amp.scale_loss(loss, optimizer, loss_id) as loss_scaled:
                 loss_scaled.backward(retain_graph=retain_graph)
         else:
@@ -117,7 +117,7 @@ class BaseModel(ABC):
         using a distributed setup. No parallelization is done in case of single-GPU setup.
         """
         for name in self.networks.keys():
-            if self.opt.distributed:
+            if self.conf.distributed:
                 self.networks[name] = DistributedDataParallel(self.networks[name],
                                                               device_ids=[self.device], 
                                                               output_device=self.device)
@@ -201,7 +201,7 @@ class BaseModel(ABC):
         checkpoint['optimizer_D'] = self.optimizers['D'].state_dict()
 
         # save apex mixed precision
-        if self.opt.mixed_precision:
+        if self.conf.mixed_precision:
             checkpoint['amp'] = amp.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
@@ -222,7 +222,7 @@ class BaseModel(ABC):
         # load amp state    
         # TODO: what about opt_level, does it matter if it's different from before?
         # TODO: what if trained per-loss loss-scale and now using global or vice versa? Just reset it, i.e. ignore the amp state_dict?
-        if self.opt.mixed_precision:
+        if self.conf.mixed_precision:
             if "amp" not in checkpoint:
                 print("This checkpoint was not trained using mixed precision.")  # set as logger warning
             else:

@@ -13,8 +13,8 @@ from models.losses.GAN_loss import GANLoss
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''
 
-    def __init__(self, opt):
-        super(UnpairedRevGAN3dModel, self).__init__(opt)
+    def __init__(self, conf):
+        super(UnpairedRevGAN3dModel, self).__init__(conf)
         
         # Inputs and Outputs of the model
         visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_A', 'real_B', 'fake_A', 'rec_B', 'idt_B']
@@ -33,51 +33,52 @@ class UnpairedRevGAN3dModel(BaseModel):
         self.networks = {name: None for name in network_names}
 
         # Initialize Generators and Discriminators
-        self.init_networks(opt)
+        self.init_networks(conf)
 
         if self.is_train:
             # Intialize loss functions (criterions) and optimizers
-            self.init_criterions(opt)
-            self.init_optimizers(opt)
+            self.init_criterions(conf)
+            self.init_optimizers(conf)
 
             # create image buffer to store previously generated images
-            self.fake_A_pool = ImagePool(opt.pool_size)
-            self.fake_B_pool = ImagePool(opt.pool_size)
+            self.fake_A_pool = ImagePool(conf.dataset.pool_size)
+            self.fake_B_pool = ImagePool(conf.dataset.pool_size)
 
         self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
 
 
-    def init_networks(self, opt):
+    def init_networks(self, conf):
         for name in self.networks.keys():
             if name.startswith('G'):
                 # TODO: make define_G and _D nicer
                 # TODO: move it to base_model 
-                self.networks[name] = networks3d.define_G(opt.n_channels_input, opt.n_channels_output,
-                                                opt.n_first_filters_G, opt.model_G, opt.norm_layer, opt.use_memory_saving,
-                                                opt.weight_init_type, opt.weight_init_gain, self.device)
+                self.networks[name] = networks3d.define_G(conf.model, self.device)
             elif name.startswith('D'):
-                use_sigmoid = opt.no_lsgan
-                self.networks[name] = networks3d.define_D(opt.n_channels_output, opt.n_first_filters_D, opt.model_D, opt.n_layers_D, 
-                                              opt.norm_layer, use_sigmoid, opt.weight_init_type, opt.weight_init_gain, self.device)
+                #use_sigmoid = conf.no_lsgan
+                self.networks[name] = networks3d.define_D(conf.model, self.device)
             else:
                 raise ValueError('Network\'s name has to begin with either "G" if it is a generator, \
                                   or "D" if it is a discriminator.')
 
 
-    def init_criterions(self, opt):
+    def init_criterions(self, conf):
         # Standard GAN loss
-        self.criterion_GAN = GANLoss(use_lsgan=not opt.no_lsgan).to(self.device)
+        self.criterion_GAN = GANLoss(use_lsgan=not conf.model.no_lsgan).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterions_G = GeneratorLosses(opt)
+        self.criterions_G = GeneratorLosses(conf)
 
 
-    def init_optimizers(self, opt):
+    def init_optimizers(self, conf):
+        lr_G = conf.optimizer.lr_G
+        lr_D = conf.optimizer.lr_D
+        beta1 = conf.optimizer.beta1
+
         params_G = self.networks['G'].parameters()
         params_D = itertools.chain(self.networks['D_A'].parameters(), 
                                     self.networks['D_B'].parameters())         
 
-        self.optimizers['D'] = torch.optim.Adam(params_D, lr=opt.lr_D, betas=(opt.beta1, 0.999))
-        self.optimizers['G'] = torch.optim.Adam(params_G, lr=opt.lr_G, betas=(opt.beta1, 0.999))                             
+        self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, 0.999))
+        self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, 0.999))                             
 
 
     def set_input(self, input):
@@ -87,7 +88,7 @@ class UnpairedRevGAN3dModel(BaseModel):
 
         The option 'direction' can be used to swap domain A and domain B.
         """
-        AtoB = self.opt.direction == 'AtoB' # TODO: more pythonic name
+        AtoB = self.conf.dataset.direction == 'AtoB' # TODO: more pythonic name
         self.visuals['real_A'] = input['A' if AtoB else 'B'].to(self.device)
         self.visuals['real_B'] = input['B' if AtoB else 'A'].to(self.device)
 

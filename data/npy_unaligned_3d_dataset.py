@@ -10,11 +10,11 @@ EXTENSIONS = ['.npy']
 
 
 class NpyUnaligned3dDataset(Dataset):
-    def __init__(self, opt):
-        self.opt = opt
-        #self.root = opt.dataroot
-        dir_A = os.path.join(opt.dataroot, 'A')
-        dir_B = os.path.join(opt.dataroot, 'B')
+    def __init__(self, conf):
+        self.conf = conf
+        #self.root = conf.dataset.root
+        dir_A = os.path.join(conf.dataset.root, 'A')
+        dir_B = os.path.join(conf.dataset.root, 'B')
         self.A_paths = sorted( make_dataset(self.dir_A, EXTENSIONS) )
         self.B_paths = sorted( make_dataset(self.dir_B, EXTENSIONS) )
         self.A_size = len(self.A_paths)
@@ -22,8 +22,8 @@ class NpyUnaligned3dDataset(Dataset):
 
         # dataset range of values information for normalization
         # TODO: make it elegant
-        self.norm_A = load_json(os.path.join(opt.dataroot, 'normalize_A.json'))
-        self.norm_B = load_json(os.path.join(opt.dataroot, 'normalize_B.json'))
+        self.norm_A = load_json(os.path.join(conf.dataset.root, 'normalize_A.json'))
+        self.norm_B = load_json(os.path.join(conf.dataset.root, 'normalize_B.json'))
 
     def __getitem__(self, index):
         index_A = index % self.A_size
@@ -40,12 +40,12 @@ class NpyUnaligned3dDataset(Dataset):
 
         # random patch extraction
         A, A_zxy = focal_random_patch(volume=A, 
-                                      patch_size=self.opt.patch_size)
+                                      patch_size=self.conf.patch_size)
 
         B, _ = focal_random_patch(volume=B, 
-                                  patch_size=self.opt.patch_size,
+                                  patch_size=self.conf.patch_size,
                                   focus_around_zxy=A_zxy, 
-                                  focus_window_to_volume_proportion=self.opt.focus_window)
+                                  focus_window_to_volume_proportion=self.conf.focus_window)
 
         # normalize Hounsfield units to range [-1,1]
         A = normalize_from_hu(A, self.norm_A["min"], self.norm_A["max"])

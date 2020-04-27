@@ -7,10 +7,10 @@ from util.util import make_dataset
 
 class DummyDataset(Dataset):
     """Dummy dataset for quick testing purposes"""
-    def __init__(self, opt):
-        self.opt = opt
-        self.root = opt.dataroot
-        self.dir_AB = os.path.join(opt.dataroot)
+    def __init__(self, conf):
+        self.conf = conf
+        self.root = conf.dataset.root
+        self.dir_AB = os.path.join(conf.dataset.root)
         self.AB_paths = sorted(make_dataset(self.dir_AB))
         self.A_size = 4
         self.B_size = self.A_size

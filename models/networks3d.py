@@ -21,15 +21,15 @@ def get_norm_layer(norm_type='instance'):
     return norm_layer
 
 
-def get_scheduler(optimizer, n_epochs, n_epochs_decay, epoch_count):
-    """Return a scheduler that keeps the same learning rate for the first <opt.n_epochs> epochs
-    and linearly decays the rate to zero over the next <opt.n_epochs_decay> epochs.
+def get_scheduler(optimizer, conf):
+    """Return a scheduler that keeps the same learning rate for the first <conf.n_epochs> epochs
+    and linearly decays the rate to zero over the next <conf.n_epochs_decay> epochs.
     Parameters:
         optimizer          -- the optimizer of the network
         TODO
     """
     def lambda_rule(epoch):
-        lr_l = 1.0 - max(0, epoch + epoch_count - n_epochs) / float(n_epochs_decay + 1)
+        lr_l = 1.0 - max(0, epoch + conf.continue_epoch - conf.n_epochs) / float(conf.n_epochs_decay + 1)
         return lr_l
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
 
@@ -56,38 +56,43 @@ def init_weights(net, weight_init_type='normal', gain=0.02):
     net.apply(init_func)
         
 
-def define_G(n_channels_input, n_channels_output, n_first_filters_G, model_G, norm_layer='batch', use_memory_saving=True, 
-             weight_init_type='normal', weight_init_gain=0.02, device=torch.device('cuda:0')):
-    netG = None
-    norm_layer = get_norm_layer(norm_type=norm_layer)
-    keep_input = not use_memory_saving
+def define_G(conf, device=torch.device('cuda:0')):
+            #  n_channels_input, n_channels_output, n_first_filters_G, model_G, norm_layer='batch', use_memory_saving=True, 
+            #  weight_init_type='normal', weight_init_gain=0.02, device=torch.device('cuda:0')
 
-    if model_G.startswith('vnet_'):
+    netG = None
+    norm_layer = get_norm_layer(norm_type=conf.norm_layer)
+    keep_input = not conf.use_memory_saving
+
+    name_G = conf.model_G
+    if name_G.startswith('vnet'):
         netG = VNet(num_classes=1, keep_input=keep_input)
-    elif model_G.startswith('deeper_vnet_'):
+    elif name_G.startswith('deeper_vnet'):
         netG = DeeperVNet(num_classes=1, keep_input=keep_input)
     else:
-        raise NotImplementedError('Generator model name [%s] is not recognized' % model_G)
+        raise NotImplementedError('Generator model name [%s] is not recognized' % name_G)
 
-    init_weights(netG, weight_init_type, gain=weight_init_gain)
+    init_weights(netG, conf.weight_init_type, conf.weight_init_gain)
     netG.to(device)
     return netG
 
 
-def define_D(n_channels_input, n_first_filters_D, model_D, n_layers_D=3, norm_layer='batch', use_sigmoid=False, 
-             weight_init_type='normal', weight_init_gain=0.02, device=torch.device('cuda:0')):
+def define_D(conf, device=torch.device('cuda:0')):
+            # n_channels_input, n_first_filters_D, model_D, n_layers_D=3, norm_layer='batch', use_sigmoid=False, 
+            #  weight_init_type='normal', weight_init_gain=0.02, device=torch.device('cuda:0')):
     netD = None
-    norm_layer = get_norm_layer(norm_type=norm_layer)
+    norm_layer = get_norm_layer(norm_type=conf.norm_layer)
+    use_sigmoid = conf.no_lsgan
 
-    if model_D == 'basic':
-        netD = NLayerDiscriminator(n_channels_input, n_first_filters_D, n_layers=2, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
-    elif model_D == 'n_layers':
-        netD = NLayerDiscriminator(n_channels_input, n_first_filters_D, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
-    elif model_D == 'pixel':
-        netD = PixelDiscriminator(n_channels_input, n_first_filters_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid)
+    name_D = conf.model_D
+    if name_D == 'n_layers':
+        netD = NLayerDiscriminator(conf.n_channels_input, conf.n_first_filters_D, conf.n_layers_D, 
+                                   norm_layer=norm_layer, use_sigmoid=use_sigmoid)
+    elif name_D == 'pixel':
+        netD = PixelDiscriminator(conf.n_channels_input, conf.n_first_filters_D, 
+                                  norm_layer=norm_layer, use_sigmoid=use_sigmoid)
     else:
-        raise NotImplementedError('Discriminator model name [%s] is not recognized' %
-                                  model_D)
-    init_weights(netD, weight_init_type, gain=weight_init_gain)
+        raise NotImplementedError('Discriminator model name [%s] is not recognized' % name_D)
+    init_weights(netD, conf.weight_init_type, conf.weight_init_gain)
     netD.to(device)
     return netD

@@ -9,21 +9,23 @@ class CustomDataLoader:
     performs multi-threaded data loading.
     '''
 
-    def __init__(self, opt):
-        self.opt = opt
-        self.dataset = create_dataset(opt)
+    def __init__(self, conf):
+        self.dataset = create_dataset(conf)
         self.sampler = None
-        shuffle = opt.shuffle
 
-        if opt.distributed:
+        batch_size = conf.batch_size
+        shuffle = conf.dataset.shuffle
+        num_workers = conf.dataset.num_workers
+
+        if conf.distributed:
             self.sampler = DistributedSampler(self.dataset, shuffle=shuffle)
             shuffle = False # no need to shufle Dataloader when DistributedSampler is shuffled
         
         self.dataloader = DataLoader(self.dataset,
-                                    batch_size=opt.batch_size,
+                                    batch_size=batch_size,
                                     shuffle=shuffle,
                                     sampler=self.sampler,
-                                    num_workers=int(opt.num_workers),
+                                    num_workers=num_workers,
                                     pin_memory=True)
 
     def __len__(self):
@@ -34,9 +36,9 @@ class CustomDataLoader:
             yield data
 
 
-def create_dataset(opt):
-    dataset = find_dataset_using_name(opt.dataset_mode)
-    return dataset(opt)
+def create_dataset(conf):
+    dataset = find_dataset_using_name(conf.dataset.mode)
+    return dataset(conf)
 
 def find_dataset_using_name(dataset_name):
     # TODO: nicer

@@ -2,7 +2,7 @@ import random
 import numpy as np
 
 # TODO: class?
-def focal_random_patch(volume, patch_size=[64,64,64], 
+def focal_random_patch(volume, patch_size=(64,64,64), 
                     focus_around_zxy=None, focus_window_to_volume_proportion=None):
     '''
      volume:           whole CT scan (numpy array)

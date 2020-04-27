@@ -31,6 +31,7 @@ class VnetRevBlock(nn.Module):
 class InputTransition(nn.Module):
     def __init__(self, out_channels=16):
         super(InputTransition, self).__init__()
+        self.out_channels = out_channels
         self.conv1 = nn.Conv3d(1, out_channels, kernel_size=5, padding=2)
         self.bn1 = nn.BatchNorm3d(out_channels)
         self.relu = nn.PReLU(out_channels)
@@ -38,7 +39,7 @@ class InputTransition(nn.Module):
     def forward(self, x):
         out = self.bn1(self.conv1(x))
         # repeat to match channel dimension in order to perform residual connection
-        x_repeated = torch.repeat(1, out_channels, 1, 1, 1) 
+        x_repeated = x.repeat(1, self.out_channels, 1, 1, 1) 
         out = self.relu(torch.add(out, x_repeated))
         return out
 

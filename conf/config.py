@@ -1,7 +1,8 @@
-from typing import List
+from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from util.util import now
+
 
 @dataclass
 class ModelConfig:
@@ -10,7 +11,7 @@ class ModelConfig:
 
     model_GAN:         str = "unpaired_revgan3d"
     model_G:           str = "vnet"
-    model_D:           str = "basic" # TODO: basic unnecessary
+    model_D:           str = "n_layers" # TODO: basic unnecessary
     n_layers_D:        int = 3
     n_first_filters_G: int = 16  # num of filters in first conv layer of generator TODO: what with this? implement in vnet?
     n_first_filters_D: int = 64  # num of filters in first conv layer of discriminator
@@ -22,15 +23,17 @@ class ModelConfig:
     n_channels_input:  int = 1 # TODO: think if necessary, probably not
     n_channels_output: int = 1
 
+    no_lsgan:          bool = False
+
 @dataclass
 class DatasetConfig:
     # DATASET
-    dataroot:     str = "../"
-    dataset_mode: str = "dummy"
+    root:         str = "../"
+    mode:         str = "dummy"
     direction:    str = "AtoB"      # remove
     
     pool_size:    int = 50
-    patch_size:   List[int] = field(default_factory=lambda: [32, 32, 32])
+    patch_size:   Tuple[int] = field(default_factory=lambda: (32, 32, 32))
     focal_region_proportion: float = 0.2 # Proportion of focal region size compared to original volume size
 
     shuffle:      bool = True
@@ -47,7 +50,6 @@ class OptimizerConfig:
     lambda_identity: float = 0.1
     lambda_inverse:  float = 0.05
     proportion_ssim: float = 0.84
-    no_lsgan:        bool = False
 
 
 @dataclass
@@ -61,16 +63,11 @@ class LoggingConfig:
 
 
 @dataclass
-class BaseConfig:
+class Config:
     batch_size:      int = 1
     n_epochs:        int = 200       # Number of epochs without linear decay of learning rates. [Default: 200]
     n_epochs_decay:  int = 50        # Number of last epoch in which the learning rates are linearly decayed. [Default: 50]
     use_cuda:        bool = True     # Use CUDA i.e. GPU(s). [Default: True]
-    
-    # Continuing training
-    continue_train:  bool = False    # Continue training by loading a checkpoint. [Default: False]
-    load_epoch:      str = "latest"  # Which epoch's checkpoint to load. [Default: "latest"]
-    continue_epoch:  int = 1         # Continue the count of epochs from this value. [Default: 1]
 
     # Distributed and mixed precision
     distributed:     bool = False
@@ -79,7 +76,12 @@ class BaseConfig:
     opt_level:       str = "O1"
     per_loss_scale:  bool = True
 
-    logging:         LoggingConfig = LoggingConfig()
-    model:           ModelConfig = ModelConfig()
+    # Continuing training
+    continue_train:  bool = False    # Continue training by loading a checkpoint. [Default: False]
+    load_epoch:      str = "latest"  # Which epoch's checkpoint to load. [Default: "latest"]
+    continue_epoch:  int = 1         # Continue the count of epochs from this value. [Default: 1] 
+
     dataset:         DatasetConfig = DatasetConfig()
+    model:           ModelConfig = ModelConfig()
     optimizer:       OptimizerConfig = OptimizerConfig()
+    logging:         LoggingConfig = LoggingConfig()
