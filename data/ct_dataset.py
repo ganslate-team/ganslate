@@ -10,7 +10,7 @@ from data.stochastic_focal_patching import StochasticFocalPatchSampler
 
 EXTENSIONS = ['.npy']
 
-class NpyUnaligned3dDataset(Dataset):
+class CTDataset(Dataset):
     def __init__(self, conf):
         dir_A = os.path.join(conf.dataset.root, 'A')
         dir_B = os.path.join(conf.dataset.root, 'B')
@@ -19,7 +19,7 @@ class NpyUnaligned3dDataset(Dataset):
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 
-        # Dataset range of values information for normalization TODO: make it elegant
+        # Dataset range of values information for normalization
         norm_A = os.path.join(conf.dataset.root, 'normalize_A.json')
         norm_B = os.path.join(conf.dataset.root, 'normalize_B.json')
         self.norm_A = load_json(norm_A)
@@ -45,18 +45,12 @@ class NpyUnaligned3dDataset(Dataset):
         A = normalize_from_hu(A, self.norm_A["min"], self.norm_A["max"])
         B = normalize_from_hu(B, self.norm_B["min"], self.norm_B["max"])
 
-        import matplotlib.pyplot as plt
-        for i, slajs in enumerate(A):
-            plt.imsave('./IGNORE/imgz/A_%d.png' % i, slajs.numpy(), cmap='gray')
-        for i, slajs in enumerate(B):
-            plt.imsave('./IGNORE/imgz/B_%d.png' % i, slajs.numpy(), cmap='gray')
-        return
-
         # Reshape so that it contains the channel as well (1 = grayscale)
         A = A.view(1, *A.shape)
         B = B.view(1, *B.shape)
 
         return {'A': A, 'B': B}
+
 
     def __len__(self):
         return max(self.A_size, self.B_size)

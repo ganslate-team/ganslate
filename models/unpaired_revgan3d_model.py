@@ -1,8 +1,8 @@
 import torch
 import itertools
 from util.image_pool import ImagePool
-from .base_model import BaseModel
-from . import networks3d
+from models.base_model import BaseModel
+from models.menu import define_D, define_G
 import torch.nn.functional as F
 from pytorch_msssim.ssim import SSIM, MS_SSIM
 from apex import amp
@@ -48,23 +48,23 @@ class UnpairedRevGAN3dModel(BaseModel):
 
 
     def init_networks(self, conf):
-        # TODO: make define_G and _D nicer TODO: move it to base_model 
+        # TODO: move it to base_model 
         for name in self.networks.keys():
             if name.startswith('G'):
-                self.networks[name] = networks3d.define_G(conf.model, self.device)
+                self.networks[name] = define_G(conf, self.device)
             elif name.startswith('D'):
-                #use_sigmoid = conf.no_lsgan
-                self.networks[name] = networks3d.define_D(conf.model, self.device)
+                self.networks[name] = define_D(conf, self.device)
             else:
                 raise ValueError('Network\'s name has to begin with either "G" if it is a generator, \
                                   or "D" if it is a discriminator.')
 
 
     def init_criterions(self, conf):
-        # Standard GAN loss
-        self.criterion_GAN = GANLoss(use_lsgan=not conf.model.no_lsgan).to(self.device)
+        # TODO: move it to base_model
+        # Standard GAN loss 
+        self.criterion_GAN = GANLoss(use_lsgan=not conf.model.no_lsgan).to(self.device) # TODO: Update it
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterions_G = GeneratorLosses(conf)
+        self.criterions_G = GeneratorLosses(**conf.optimizer)
 
 
     def init_optimizers(self, conf):

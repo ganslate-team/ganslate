@@ -3,23 +3,17 @@ import torch.nn as nn
 from pytorch_msssim.ssim import SSIM
 
 class GeneratorLosses:
-    def __init__(self, conf):
+    def __init__(self, lambda_A, lambda_B, lambda_identity, lambda_inverse, proportion_ssim, **_kwargs):
 
-        lambda_A = conf.optimizer.lambda_A
-        lambda_B = conf.optimizer.lambda_B
-        lambda_idt = conf.optimizer.lambda_identity
-        lambda_inv = conf.optimizer.lambda_inverse
-        proportion_ssim = conf.optimizer.proportion_ssim
-        
         self.criterion_cycle = CycleLoss(lambda_A, lambda_B, proportion_ssim)
 
-        if lambda_idt > 0:
-            self.criterion_idt = IdentityLoss(lambda_idt, lambda_A, lambda_B)
+        if lambda_identity > 0:
+            self.criterion_idt = IdentityLoss(lambda_identity, lambda_A, lambda_B)
         else:
             self.criterion_idt = None
 
-        if lambda_inv > 0:
-            self.criterion_inv = InverseLoss(lambda_inv, lambda_A, lambda_B)
+        if lambda_inverse > 0:
+            self.criterion_inv = InverseLoss(lambda_inverse, lambda_A, lambda_B)
         else:
             self.criterion_inv = None
 
@@ -57,8 +51,8 @@ class GeneratorLosses:
 # TODO: Idenity and Inverse are basically the same thing,
 # just different args. Make it the same or keep separated for readability?
 class IdentityLoss:
-    def __init__(self, lambda_idt, lambda_A, lambda_B):
-        self.lambda_idt = lambda_idt
+    def __init__(self, lambda_identity, lambda_A, lambda_B):
+        self.lambda_identity = lambda_identity
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B
         self.criterion = torch.nn.L1Loss()
@@ -67,15 +61,15 @@ class IdentityLoss:
         loss_idt_A = self.criterion(idt_A, real_B)  # || G_A(real_B) - real_B ||
         loss_idt_B = self.criterion(idt_B, real_A)  # || G_B(real_A) - real_A ||
 
-        loss_idt_A = loss_idt_A * self.lambda_B * self.lambda_idt
-        loss_idt_B = loss_idt_B * self.lambda_A * self.lambda_idt
+        loss_idt_A = loss_idt_A * self.lambda_B * self.lambda_identity
+        loss_idt_B = loss_idt_B * self.lambda_A * self.lambda_identity
         
         return loss_idt_A, loss_idt_B
 
 
 class InverseLoss:
-    def __init__(self, lambda_inv, lambda_A, lambda_B):
-        self.lambda_inv = lambda_inv
+    def __init__(self, lambda_inverse, lambda_A, lambda_B):
+        self.lambda_inverse = lambda_inverse
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B
         self.criterion = torch.nn.L1Loss()
@@ -84,8 +78,8 @@ class InverseLoss:
         loss_inv_A = self.criterion(fake_B, real_A)  # || G_A(real_A) - real_A ||
         loss_inv_B = self.criterion(fake_A, real_B)  # || G_B(real_B) - real_B ||
 
-        loss_inv_A = loss_inv_A * self.lambda_A * self.lambda_inv
-        loss_inv_B = loss_inv_B * self.lambda_B * self.lambda_inv
+        loss_inv_A = loss_inv_A * self.lambda_A * self.lambda_inverse
+        loss_inv_B = loss_inv_B * self.lambda_B * self.lambda_inverse
         
         return loss_inv_A, loss_inv_B
 

@@ -7,7 +7,7 @@ from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from apex import amp
 
-from . import networks3d as networks
+from models.util import get_scheduler
 
 
 class BaseModel(ABC):
@@ -70,7 +70,7 @@ class BaseModel(ABC):
             (4) Applies parallelization to the model if possible
         """
         if self.is_train:
-            self.schedulers = [networks.get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
+            self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
 
         if self.conf.mixed_precision:
             self.convert_to_mixed_precision(self.conf.opt_level, self.conf.per_loss_scale)
@@ -139,7 +139,7 @@ class BaseModel(ABC):
 
         # initialize mixed precision on networks and, if training, on optimizers
         if self.is_train:
-            # there is always one loss/backward pass per network  # TODO: good enough?
+            # there is always one loss/backward pass per network  # TODO: test with and without per loss scale
             num_losses = len(self.networks) if per_loss_scale else 1 
             optimizers = list(self.optimizers.values())
             networks, optimizers = amp.initialize(networks, optimizers, 

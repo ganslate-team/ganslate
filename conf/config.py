@@ -15,7 +15,7 @@ class ModelConfig:
     n_layers_D:        int = 3
     start_n_filters_G: int = 16                    # Number of filters in first conv layer of generator TODO: what with this? implement in vnet?
     start_n_filters_D: int = 64                    # Number of filters in first conv layer of discriminator
-    norm_layer:        str = "instance"            # TODO" implement
+    norm_layer_type:   str = "instance"            # TODO" implement
 
     weight_init_type:  str = "normal"
     weight_init_gain:  float = 0.02

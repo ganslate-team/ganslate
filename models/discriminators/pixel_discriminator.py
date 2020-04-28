@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
-import functools
+from models.util import get_norm_layer, is_bias_before_norm
+
 
 class PixelDiscriminator(nn.Module):
-    def __init__(self, n_channels_input, start_n_filters_D=64, norm_layer=nn.BatchNorm3d, use_sigmoid=False):
+    def __init__(self, n_channels_input, start_n_filters_D, norm_layer_type, use_sigmoid, **_kwargs):
         super(PixelDiscriminator, self).__init__()
-        if type(norm_layer) == functools.partial:
-            use_bias = norm_layer.func == nn.InstanceNorm3d
-        else:
-            use_bias = norm_layer == nn.InstanceNorm3d
+        
+        norm_layer = get_norm_layer(norm_layer_type)
+        use_bias = is_bias_before_norm(norm_layer_type)
 
         self.net = [
             nn.Conv3d(n_channels_input, start_n_filters_D, kernel_size=1, stride=1, padding=0),

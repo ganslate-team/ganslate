@@ -49,7 +49,7 @@ class StochasticFocalPatchSampler:
     def pick_stochastic_focal_start(self, volume, relative_focal_point):
         """Pick a starting point of a patch with regards to the focal point neighborhood. Used for patch_B."""
         volume_size = self.get_size(volume)
-        focal_region = self.focal_region_proportion * volume_size # TODO: should the focal region be based on patch size instead of volume size?
+        focal_region = self.focal_region_proportion * volume_size
         focal_region = focal_region.astype(np.int64)
 
         focal_point = relative_focal_point * volume_size  # map relative point to corresponding point in this volume
