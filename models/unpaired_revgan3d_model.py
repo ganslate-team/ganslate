@@ -62,9 +62,10 @@ class UnpairedRevGAN3dModel(BaseModel):
     def init_criterions(self, conf):
         # TODO: move it to base_model
         # Standard GAN loss 
-        self.criterion_GAN = GANLoss(use_lsgan=not conf.model.no_lsgan).to(self.device) # TODO: Update it
+        self.criterion_GAN = GANLoss(conf.gan.loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterions_G = GeneratorLosses(**conf.optimizer)
+        
+        self.criterions_G = GeneratorLosses(conf)
 
 
     def init_optimizers(self, conf):

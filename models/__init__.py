@@ -2,9 +2,9 @@ from importlib import import_module
 from models.base_model import BaseModel
 
 
-def create_model(opt):
-    model = find_model_using_name(opt.model.model_GAN)
-    return model(opt)
+def create_model(conf):
+    model = find_model_using_name(conf.gan.model)
+    return model(conf)
 
 def find_model_using_name(model_name):
     # Given the option --model [modelname],

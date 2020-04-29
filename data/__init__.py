@@ -37,7 +37,7 @@ class CustomDataLoader:
 
 
 def create_dataset(conf):
-    dataset = find_dataset_using_name(conf.dataset.mode)
+    dataset = find_dataset_using_name(conf.dataset.name)
     return dataset(conf)
 
 def find_dataset_using_name(dataset_name):

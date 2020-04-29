@@ -6,10 +6,20 @@ from models import create_model
 from util.distributed import multi_gpu, comm
 
 from omegaconf import OmegaConf
-from conf.config import Config
+from conf.base.config import Config
+from conf.base.gans import Cycle3DGANConfig
+from conf.base.datasets import CTDatasetConfig
+from conf.base.discriminators import PatchGANDiscriminatorConfig
+from conf.base.generators import PiVnetGeneratorConfig
+
+
 
 def main():
     conf = OmegaConf.structured(Config)
+    conf.dataset = CTDatasetConfig
+    conf.gan = Cycle3DGANConfig
+    conf.gan.generator = PiVnetGeneratorConfig
+    conf.gan.discriminator = PatchGANDiscriminatorConfig
     cli = OmegaConf.from_cli()
     conf = OmegaConf.merge(conf, cli)
 

@@ -3,7 +3,12 @@ import torch.nn as nn
 from pytorch_msssim.ssim import SSIM
 
 class GeneratorLosses:
-    def __init__(self, lambda_A, lambda_B, lambda_identity, lambda_inverse, proportion_ssim, **_kwargs):
+    def __init__(self, conf):
+        lambda_A = conf.optimizer.lambda_A
+        lambda_B = conf.optimizer.lambda_B
+        lambda_identity = conf.optimizer.lambda_identity
+        lambda_inverse = conf.optimizer.lambda_inverse
+        proportion_ssim = conf.optimizer.proportion_ssim
 
         self.criterion_cycle = CycleLoss(lambda_A, lambda_B, proportion_ssim)
 
