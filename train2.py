@@ -6,23 +6,13 @@ from models import create_model
 from util.distributed import multi_gpu, comm
 
 from omegaconf import OmegaConf
-from conf.base.config import Config
-from conf.base.gans import Cycle3DGANConfig
-from conf.base.datasets import CTDatasetConfig
-from conf.base.discriminators import PatchGANDiscriminatorConfig
-from conf.base.generators import PiVnetGeneratorConfig
 
-
+from conf.initializer import init_config
 
 def main():
-    conf = OmegaConf.structured(Config)
-    conf.dataset = CTDatasetConfig
-    conf.gan = Cycle3DGANConfig
-    conf.gan.generator = PiVnetGeneratorConfig
-    conf.gan.discriminator = PatchGANDiscriminatorConfig
+    conf = init_config('./conf/experiment1.yaml')
     cli = OmegaConf.from_cli()
     conf = OmegaConf.merge(conf, cli)
-
     print(conf.pretty())
     
     is_main_process = True
