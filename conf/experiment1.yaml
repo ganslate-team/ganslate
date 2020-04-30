@@ -11,7 +11,7 @@ gan:
     class_name: "Cycle3DGANConfig"
 
     generator:  
-        class_name: "PiVnetGeneratorConfig"
+        class_name: "VnetGeneratorConfig"
 
     discriminator:  
         class_name: "PatchGANDiscriminatorConfig"

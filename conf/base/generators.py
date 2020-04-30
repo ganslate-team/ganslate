@@ -7,8 +7,8 @@ class BaseGeneratorConfig:
     start_n_filters:   int = MISSING
     
 @dataclass
-class PiVnetGeneratorConfig(BaseGeneratorConfig):
+class VnetGeneratorConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
-    model:             str = "pi_vnet"
+    model:             str = "vnet"
     start_n_filters:   int = 16
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]

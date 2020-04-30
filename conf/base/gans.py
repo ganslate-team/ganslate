@@ -24,5 +24,3 @@ class BaseGANConfig:
 @dataclass
 class Cycle3DGANConfig(BaseGANConfig):
     model:            str = "unpaired_revgan3d"
-    generator:         BaseGeneratorConfig = MISSING
-    discriminator:     BaseDiscriminatorConfig = MISSING

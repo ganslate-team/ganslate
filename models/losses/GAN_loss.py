@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 
 class GANLoss(nn.Module):
-    # TODO: update it
     def __init__(self, gan_mode, target_real_label=1.0, target_fake_label=0.0):
         """ Initialize the GANLoss class.
 

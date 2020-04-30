@@ -2,18 +2,19 @@ import torch
 import re
 
 from models.util import init_weights
-from models.generators.vnet import VNet, DeeperVNet
-from models.discriminators.patchGAN_discriminator import PatchGANDiscriminator
+from models.generators.vnet import VNet
+from models.discriminators.patchgan_discriminator import PatchGANDiscriminator
 
 
 def define_G(conf, device=torch.device('cuda:0')):
-    keep_input = not conf.gan.generator.use_memory_saving
     name = conf.gan.generator.model
+    norm_type = conf.gan.norm_type
+    
+    generator_args = dict(conf.gan.generator)
+    generator_args.pop("model") # used only to select the model
 
-    if name.startswith('pi_vnet'):
-        generator = VNet(num_classes=1, keep_input=keep_input)
-    elif name.startswith('deeper_vnet'):
-        generator = DeeperVNet(num_classes=1, keep_input=keep_input)
+    if name.startswith('vnet'):
+        generator = VNet(**generator_args, norm_type=norm_type)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % name)
     
@@ -26,10 +27,13 @@ def define_G(conf, device=torch.device('cuda:0')):
 
 def define_D(conf, device=torch.device('cuda:0')):
     name = conf.gan.discriminator.model
+    norm_type = conf.gan.norm_type
+
+    discriminator_args = dict(conf.gan.discriminator)
+    discriminator_args.pop("model") # used only to select the model
 
     if name == 'patch_gan':
-        #TODO: these args bro
-        discriminator = PatchGANDiscriminator(**conf.gan.discriminator, norm_type=conf.gan.norm_type, n_channels_input=conf.gan.n_channels_input)
+        discriminator = PatchGANDiscriminator(**discriminator_args, norm_type=norm_type)
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' % name_D)
 
