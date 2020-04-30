@@ -23,4 +23,4 @@ class BaseGANConfig:
 
 @dataclass
 class Cycle3DGANConfig(BaseGANConfig):
-    model:            str = "unpaired_revgan3d"
+    model: str = "unpaired_revgan3d"

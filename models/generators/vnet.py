@@ -48,7 +48,7 @@ class VNet(nn.Module):
         return out
 
 class InvertibleBlock(nn.Module):
-    # TODO: make an Invertible class that can wrap any block and modify it's forward func
+    # TODO: is it possible to pass in a constructed block and make it invertible? The class could be reusable for other architectures
     def __init__(self, n_channels, keep_input):
         super(InvertibleBlock, self).__init__()
         
@@ -73,6 +73,27 @@ class InvertibleBlock(nn.Module):
             return self.rev_block(x)
 
 
+class InvertibleSequence(nn.Module):
+    def __init__(self, n_channels, n_blocks, keep_input):
+        super(InvertibleSequence, self).__init__()
+        self.sequence = nn.Sequential(*[InvertibleBlock(n_channels, keep_input) for _ in range(n_blocks)])
+    
+    def forward(self, x, inverse=False):
+        if inverse:
+            sequence = reversed(self.sequence)
+        else:
+            sequence = self.sequence
+
+        for i, block in enumerate(sequence):
+            if i == 0:    #https://github.com/silvandeleemput/memcnn/issues/39#issuecomment-599199122
+                if inverse:
+                    block.rev_block.keep_input_inverse = True
+                else:
+                    block.rev_block.keep_input = True
+            x = block(x, inverse=inverse)
+        return x        
+
+
 class InputBlock(nn.Module):
     def __init__(self, out_channels):
         super(InputBlock, self).__init__()
@@ -94,8 +115,7 @@ class DownBlock(nn.Module):
         out_channels = 2*in_channels
         self.down_conv_ab = self.build_down_conv(in_channels, out_channels)
         self.down_conv_ba = self.build_down_conv(in_channels, out_channels)
-        # TODO: Make an Inverse sequence that does this
-        self.core = nn.Sequential(*[InvertibleBlock(out_channels, keep_input) for _ in range(n_conv_blocks)])
+        self.core = InvertibleSequence(out_channels, n_conv_blocks, keep_input)
         self.relu = nn.PReLU(out_channels)
 
     def build_down_conv(self, in_channels, out_channels):
@@ -106,23 +126,10 @@ class DownBlock(nn.Module):
     def forward(self, x, inverse=False):
         if inverse:
             down_conv = self.down_conv_ba
-            core = reversed(self.core)
         else:
             down_conv = self.down_conv_ab
-            core = self.core
-
         down = down_conv(x)
-        out = down
-        # TODO: Make an Inverse sequence that does this
-        for i, block in enumerate(core):
-            if i == 0:
-                #https://github.com/silvandeleemput/memcnn/issues/39#issuecomment-599199122
-                if inverse:
-                    block.rev_block.keep_input_inverse = True
-                else:
-                    block.rev_block.keep_input = True
-            out = block(out, inverse=inverse)
-        
+        out = self.core(down, inverse)
         out = out + down
         return self.relu(out)
 
@@ -133,7 +140,7 @@ class UpBlock(nn.Module):
         self.up_conv_ab = self.build_up_conv(in_channels, out_channels)
         self.up_conv_ba = self.build_up_conv(in_channels, out_channels)
 
-        self.core = nn.Sequential(*[InvertibleBlock(out_channels, keep_input) for _ in range(n_conv_blocks)])
+        self.core = InvertibleSequence(out_channels, n_conv_blocks, keep_input)
         self.relu = nn.PReLU(out_channels)
     
     def build_up_conv(self, in_channels, out_channels):
@@ -144,23 +151,11 @@ class UpBlock(nn.Module):
     def forward(self, x, skipx, inverse=False):
         if inverse:
             up_conv = self.up_conv_ba
-            core = reversed(self.core)
         else:
             up_conv = self.up_conv_ab
-            core = self.core
-
         up = up_conv(x)
         xcat = torch.cat((up, skipx), 1)
-        out = xcat
-        for i, block in enumerate(core):
-            if i == 0:
-                #https://github.com/silvandeleemput/memcnn/issues/39#issuecomment-599199122
-                if inverse:
-                    block.rev_block.keep_input_inverse = True
-                else:
-                    block.rev_block.keep_input = True
-            out = block(out, inverse)
-
+        out = self.core(xcat, inverse)
         out = out + xcat
         return self.relu(out)
 
