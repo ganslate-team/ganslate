@@ -5,11 +5,11 @@ from torch.optim import lr_scheduler
 
 
 def get_norm_layer(norm_type='instance'):
-    if norm_type is 'batch':
+    if norm_type == 'batch':
         return functools.partial(nn.BatchNorm3d, affine=True) # TODO: check sync version https://pytorch.org/docs/stable/nn.html#torch.nn.SyncBatchNorm
-    elif norm_type is 'instance':
+    elif norm_type == 'instance':
         return functools.partial(nn.InstanceNorm3d, affine=False, track_running_stats=True)
-    elif norm_type is 'none':
+    elif norm_type == 'none':
         return None
     else:
         raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
@@ -18,12 +18,12 @@ def is_bias_before_norm(norm_type='instance'):
     """When using BatchNorm, the preceding Conv layer does not use bias, 
     but it does if using InstanceNorm.
     """
-    if norm_type is 'instance' or norm_type is 'none':
+    if norm_type == 'instance' or norm_type == 'none':
         return True
-    elif norm_type is 'batch':
+    elif norm_type == 'batch':
         return False
     else:
-        raise NotImplementedError('Normalization layer [%s] not supported' % nnorm_typeorm_type)
+        raise NotImplementedError('Normalization layer [%s] not supported' % norm_typeorm_type)
 
 def get_scheduler(optimizer, conf):
     """Return a scheduler that keeps the same learning rate for the first <conf.n_epochs> epochs
