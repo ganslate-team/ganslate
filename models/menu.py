@@ -1,12 +1,9 @@
-import torch
-import re
-
 from models.util import init_weights
 from models.generators.vnet import VNet
 from models.discriminators.patchgan_discriminator import PatchGANDiscriminator
 
 
-def define_G(conf, device=torch.device('cuda:0')):
+def define_G(conf, device):
     name = conf.gan.generator.model
     norm_type = conf.gan.norm_type
     
@@ -25,7 +22,7 @@ def define_G(conf, device=torch.device('cuda:0')):
     return generator.to(device)
 
 
-def define_D(conf, device=torch.device('cuda:0')):
+def define_D(conf, device):
     name = conf.gan.discriminator.model
     norm_type = conf.gan.norm_type
 

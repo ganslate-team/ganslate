@@ -14,15 +14,15 @@ class VNet(nn.Module):
         self.in_ab = InputBlock(start_n_filters, norm_layer, use_bias) 
         self.in_ba = InputBlock(start_n_filters, norm_layer, use_bias)
 
-        self.down1 = DownBlock(start_n_filters, 1, keep_input, norm_layer, use_bias)
-        self.down2 = DownBlock(start_n_filters*2, 2, keep_input, norm_layer, use_bias) 
-        self.down3 = DownBlock(start_n_filters*4, 3, keep_input, norm_layer, use_bias) 
-        self.down4 = DownBlock(start_n_filters*8, 2, keep_input, norm_layer, use_bias) 
+        self.down1 = DownBlock(start_n_filters, 1, norm_layer, use_bias, keep_input)
+        self.down2 = DownBlock(start_n_filters*2, 2, norm_layer, use_bias, keep_input) 
+        self.down3 = DownBlock(start_n_filters*4, 3, norm_layer, use_bias, keep_input) 
+        self.down4 = DownBlock(start_n_filters*8, 2, norm_layer, use_bias, keep_input) 
 
-        self.up4 = UpBlock(start_n_filters*16, start_n_filters*16, 2, keep_input, norm_layer, use_bias) 
-        self.up3 = UpBlock(start_n_filters*16, start_n_filters*8, 2, keep_input, norm_layer, use_bias) 
-        self.up2 = UpBlock(start_n_filters*8, start_n_filters*4, 1, keep_input, norm_layer, use_bias) 
-        self.up1 = UpBlock(start_n_filters*4, start_n_filters*2, 1, keep_input, norm_layer, use_bias) 
+        self.up4 = UpBlock(start_n_filters*16, start_n_filters*16, 2, norm_layer, use_bias, keep_input) 
+        self.up3 = UpBlock(start_n_filters*16, start_n_filters*8, 2, norm_layer, use_bias, keep_input) 
+        self.up2 = UpBlock(start_n_filters*8, start_n_filters*4, 1, norm_layer, use_bias, keep_input) 
+        self.up1 = UpBlock(start_n_filters*4, start_n_filters*2, 1, norm_layer, use_bias, keep_input) 
         
         self.out_ab = OutBlock(start_n_filters*2, norm_layer, use_bias) 
         self.out_ba = OutBlock(start_n_filters*2, norm_layer, use_bias)
@@ -49,7 +49,7 @@ class VNet(nn.Module):
 
 class InvertibleBlock(nn.Module):
     # TODO: is it possible to pass in a constructed block and make it invertible? The class could be reusable for other architectures
-    def __init__(self, n_channels, keep_input, norm_layer, use_bias):
+    def __init__(self, n_channels, norm_layer, use_bias, keep_input):
         super(InvertibleBlock, self).__init__()
         
         invertible_module = memcnn.AdditiveCoupling(
@@ -74,9 +74,9 @@ class InvertibleBlock(nn.Module):
 
 
 class InvertibleSequence(nn.Module):
-    def __init__(self, n_channels, n_blocks, keep_input, norm_layer, use_bias):
+    def __init__(self, n_channels, n_blocks, norm_layer, use_bias, keep_input):
         super(InvertibleSequence, self).__init__()
-        self.sequence = nn.Sequential(*[InvertibleBlock(n_channels, keep_input, norm_layer, use_bias) for _ in range(n_blocks)])
+        self.sequence = nn.Sequential(*[InvertibleBlock(n_channels, norm_layer, use_bias, keep_input) for _ in range(n_blocks)])
     
     def forward(self, x, inverse=False):
         if inverse:
@@ -110,12 +110,12 @@ class InputBlock(nn.Module):
 
 
 class DownBlock(nn.Module):
-    def __init__(self, in_channels, n_conv_blocks, keep_input, norm_layer, use_bias):
+    def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input):
         super(DownBlock, self).__init__()
         out_channels = 2*in_channels
         self.down_conv_ab = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
         self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
-        self.core = InvertibleSequence(out_channels, n_conv_blocks, keep_input, norm_layer, use_bias)
+        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input)
         self.relu = nn.PReLU(out_channels)
 
     def build_down_conv(self, in_channels, out_channels, norm_layer, use_bias):
@@ -135,12 +135,12 @@ class DownBlock(nn.Module):
 
 
 class UpBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, n_conv_blocks, keep_input, norm_layer, use_bias):
+    def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input):
         super(UpBlock, self).__init__()
         self.up_conv_ab = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
         self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
 
-        self.core = InvertibleSequence(out_channels, n_conv_blocks, keep_input, norm_layer, use_bias)
+        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input)
         self.relu = nn.PReLU(out_channels)
     
     def build_up_conv(self, in_channels, out_channels, norm_layer, use_bias):

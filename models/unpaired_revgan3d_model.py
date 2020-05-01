@@ -64,7 +64,6 @@ class UnpairedRevGAN3dModel(BaseModel):
         # Standard GAN loss 
         self.criterion_GAN = GANLoss(conf.gan.loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        
         self.criterions_G = GeneratorLosses(conf)
 
 
