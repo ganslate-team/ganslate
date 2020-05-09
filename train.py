@@ -49,11 +49,11 @@ def main():
         epoch_iter = 0
 
         if is_main_process:
-            lr_G, lr_D = model.get_learning_rate()
+            lr_G, lr_D = model.get_learning_rates()
             print('\nlearning rates: lr_G = %.7f lr_D = %.7f' % (lr_G, lr_D))
 
-        if opt.distributed:
-            data_loader.sampler.set_epoch(epoch) # so that DistributedSampler shuffles properly
+        #if opt.distributed:
+        #    data_loader.sampler.set_epoch(epoch) # so that DistributedSampler shuffles properly
 
         for i, data in enumerate(data_loader):
             iter_start_time = time.time()
@@ -66,7 +66,7 @@ def main():
             # at each step, every process goes through `batch_size` number of steps (data samples)
             steps_done = opt.batch_size # TODO: this is not the most accurate when data size is not a factor of batch size
             # at each iteration, provide each process with sum of number of steps done by each process
-            steps_done = comm.reduce(steps_done, average=False, all_reduce=True, device=device)
+            steps_done = comm.reduce(steps_done, average=False, all_reduce=True)
             total_steps += steps_done
             epoch_iter += steps_done
             
@@ -78,10 +78,10 @@ def main():
                 t_comp = (time.time() - iter_start_time) / opt.batch_size
 
                 # reduce losses (avg) and send to the process of rank 0
-                losses = comm.reduce(losses, average=True, all_reduce=False, device=device)
+                losses = comm.reduce(losses, average=True, all_reduce=False)
                 # reduce computational time and data loading per data point (avg) and send to the process of rank 0
-                t_comp = comm.reduce(t_comp, average=True, all_reduce=False, device=device)
-                t_data = comm.reduce(t_data, average=True, all_reduce=False, device=device)
+                t_comp = comm.reduce(t_comp, average=True, all_reduce=False)
+                t_data = comm.reduce(t_data, average=True, all_reduce=False)
 
                 if is_main_process:
                     visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)

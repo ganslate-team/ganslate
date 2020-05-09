@@ -2,7 +2,7 @@ import os.path
 import torch
 import numpy as np
 from torch.utils.data import Dataset
-from util.util import make_dataset
+from util.file_utils import make_dataset
 
 
 class DummyDataset(Dataset):

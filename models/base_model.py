@@ -35,7 +35,7 @@ class BaseModel(ABC):
         self.is_train = conf.gan.is_train
         self.device = torch.device('cuda:0') if conf.use_cuda else torch.device('cpu')
         self.num_devices = torch.cuda.device_count()
-        self.save_dir = os.path.join(conf.logging.checkpoints_dir, conf.logging.experiment_name) # TODO: conf in folder out
+        self.save_dir = conf.logging.output_dir #os.path.join(conf.logging.checkpoints_dir, conf.logging.experiment_name) # TODO: conf in folder out
         
         torch.backends.cudnn.benchmark = True
 
@@ -73,7 +73,7 @@ class BaseModel(ABC):
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
 
         if self.conf.mixed_precision:
-            self.convert_to_mixed_precision(self.conf.opt_level, self.conf.per_loss_scale)
+            self.convert_to_mixed_precision()
 
         if not self.is_train or self.conf.continue_train:
             self.load_networks(self.conf.load_epoch)
@@ -82,18 +82,6 @@ class BaseModel(ABC):
             self.parallelize_networks()
         
         torch.cuda.empty_cache()
-
-    def eval(self):
-        """Make models eval mode during test time"""
-        for name in self.networks.keys():
-            self.networks[name].eval()
-
-    def test(self):
-        """Forward function used in test time.
-        This function wraps <forward> function in no_grad() so we don't save intermediate steps for backprop
-        """
-        with torch.no_grad():
-            self.forward()
 
     def backward(self, loss, optimizer, retain_graph=False, loss_id=0):
         """Run backward pass in a regular or mixed precision mode; called by methods <backward_D_basic> and <backward_G>.
@@ -124,7 +112,7 @@ class BaseModel(ABC):
             else:
                 self.networks[name] = DataParallel(self.networks[name])
 
-    def convert_to_mixed_precision(self, opt_level='O1', per_loss_scale=False):
+    def convert_to_mixed_precision(self):
         """Initializes Nvidia Apex Mixed Precision
         Parameters:
             opt_level (str) -- specifies Amp's optimization level. Accepted values are
@@ -135,7 +123,10 @@ class BaseModel(ABC):
                           If `num_losses=1`, Amp will still support multiple losses/backward passes, 
                           but use a single global loss scale for all of them.
         """
-        networks = list(self.networks.values())
+        opt_level = self.conf.opt_level
+        per_loss_scale = self.conf.per_loss_scale
+
+        networks = list(self.networks.values()) # fetch the networks
 
         # initialize mixed precision on networks and, if training, on optimizers
         if self.is_train:
@@ -156,29 +147,6 @@ class BaseModel(ABC):
         """Update learning rates for all the networks; called at the end of every epoch"""
         for scheduler in self.schedulers:
             scheduler.step()
-
-    def get_learning_rate(self):
-        """ Return current learning rates of both generator and discriminator"""
-        lr_G = self.optimizers['G'].param_groups[0]['lr']
-        lr_D = self.optimizers['D'].param_groups[0]['lr']
-        return lr_G, lr_D    
-
-    def get_current_visuals(self):
-        """Return visualization images. train.py will save the images to a HTML and Weights&Biases"""
-        visual_ret = OrderedDict()
-        for name in self.visual_names:
-            if isinstance(name, str):
-                visual_ret[name] = getattr(self, name)
-        return visual_ret
-        
-    def get_current_losses(self):
-        """Return traning losses / errors. train.py will print out these errors on console, and save them to a file"""
-        errors_ret = OrderedDict()
-        for name in self.loss_names:
-            if isinstance(name, str):
-                # float(...) works for both scalar tensor and float number
-                errors_ret[name] = float(getattr(self, 'loss_' + name))
-        return errors_ret
 
     def save_networks(self, epoch):
         """Save all the networks, optimizers and, if used, apex mixed precision's state_dict to the disk.
@@ -237,18 +205,6 @@ class BaseModel(ABC):
             self.optimizers['G'].load_state_dict(checkpoint['optimizer_G']) 
             self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
 
-
-    def print_networks(self):
-        """Print the total number of parameters in the network and network architecture"""
-        print('---------- Networks initialized -------------')
-        for name in self.networks.keys():
-            num_params = 0
-            for param in self.networks[name].parameters():
-                num_params += param.numel()
-            print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
-        print('-----------------------------------------------')
-
-
     def set_requires_grad(self, networks, requires_grad=False):
         """Set requies_grad=False for all the networks to avoid unnecessary computations
         Parameters:
@@ -261,3 +217,37 @@ class BaseModel(ABC):
             if net is not None:
                 for param in net.parameters():
                     param.requires_grad = requires_grad
+
+    def eval(self):
+        for name in self.networks.keys():
+            self.networks[name].eval()
+
+    def test(self):
+        with torch.no_grad():
+            self.forward()
+            
+    def get_learning_rates(self):
+        """ Return current learning rates of both generator and discriminator"""
+        lr_G = self.optimizers['G'].param_groups[0]['lr']
+        lr_D = self.optimizers['D'].param_groups[0]['lr']
+        return lr_G, lr_D    
+
+    def get_current_visuals(self):
+        return self.visuals
+        
+    def get_current_losses(self):
+        return self.losses
+
+    def get_loggable_data(self):
+        """Return data that is useful for tracking - learning rates, losses and visuals."""
+        return self.get_learning_rates(), self.get_current_losses(), self.get_current_visuals()
+
+    def print_networks(self):
+        """Print the total number of parameters in the network and network architecture"""
+        print('---------- Networks initialized -------------')
+        for name in self.networks.keys():
+            num_params = 0
+            for param in self.networks[name].parameters():
+                num_params += param.numel()
+            print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
+        print('-----------------------------------------------')

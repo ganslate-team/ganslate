@@ -17,8 +17,8 @@ class BaseGANConfig:
     generator:         BaseGeneratorConfig = MISSING
     discriminator:     BaseDiscriminatorConfig = MISSING
 
-    n_channels_input:  int = 1 # TODO: think if necessary, probably not
-    n_channels_output: int = 1
+    # n_channels_input:  int = 1  needed only for 2D approaches
+    # n_channels_output: int = 1
 
 
 @dataclass

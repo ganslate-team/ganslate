@@ -2,7 +2,7 @@ import torch
 from util.distributed import multi_gpu
 
 
-def reduce(input_data, average=False, all_reduce=False, device=torch.device('cpu')):
+def reduce(input_data, average=False, all_reduce=False):
     """
     Reduce any type of data [int, float, tensor, dict, list, tuple] by summing or averaging
     the value(s) using one of the methods:
@@ -16,13 +16,14 @@ def reduce(input_data, average=False, all_reduce=False, device=torch.device('cpu
         average (bool) -- true if the results should be averaged
         all_reduce (bool) -- true if communicating the reduced value to all processes, 
                              otherwise process of rank 0 only
-        device (torch.device) -- required in order to make sure that the backend of the
-                                 torch.distributed can work with it (e.g. nccl does not support CPU tensors)
 
     Returns the sum or average of the input data from across processes. 
     """
     if multi_gpu.get_world_size() < 2:
         return input_data
+
+    # use device that is compatible with the backend (e.g. nccl does not support CPU tensors)
+    device = torch.device('cuda' if torch.distributed.get_backend() == 'nccl' else 'cpu')
 
     with torch.no_grad():
         if isinstance(input_data, torch.Tensor):

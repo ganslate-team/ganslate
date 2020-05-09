@@ -23,7 +23,7 @@ def is_bias_before_norm(norm_type='instance'):
     elif norm_type == 'batch':
         return False
     else:
-        raise NotImplementedError('Normalization layer [%s] not supported' % norm_typeorm_type)
+        raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
 
 def get_scheduler(optimizer, conf):
     """Return a scheduler that keeps the same learning rate for the first <conf.n_epochs> epochs

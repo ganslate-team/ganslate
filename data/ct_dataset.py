@@ -3,7 +3,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from util.util import make_dataset, load_json
+from util.file_utils import make_dataset, load_json
 from util.preprocessing import normalize_from_hu
 from data.stochastic_focal_patching import StochasticFocalPatchSampler
 

@@ -1,7 +1,7 @@
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from util.util import now
+from util.file_utils import now
 
 from conf.base.datasets import BaseDatasetConfig
 from conf.base.gans import BaseGANConfig
@@ -20,8 +20,9 @@ class OptimizerConfig:
 
 @dataclass
 class LoggingConfig:
-    experiment_name:  str = now() # Name of the experiment. [Default: current date and time] TODO: not working in distributed mode
-    checkpoints_dir:  str = "./checkpoints"
+    #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] TODO: not working in distributed mode
+    #checkpoints_dir:  str = "./checkpoints/"
+    output_dir:       str = "./checkpoints/" + now()
     print_freq:       int = 50
     save_epoch_freq:  int = 25
     wandb:            bool = False
