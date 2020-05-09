@@ -2,7 +2,7 @@ from importlib import import_module
 from models.base_model import BaseModel
 
 
-def create_model(conf):
+def build_model(conf):
     model = find_model_using_name(conf.gan.model)
     return model(conf)
 

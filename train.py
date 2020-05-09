@@ -2,8 +2,8 @@ import os
 import time
 import torch
 from options.train_options import TrainOptions
-from data import CustomDataLoader
-from models import create_model
+from data import build_dataloaderLoader
+from models import build_model
 from util.visualizer import Visualizer
 from util.distributed import multi_gpu, comm, init_distributed
 import logging
@@ -31,8 +31,8 @@ def main():
         init_distributed(opt.local_rank)
         is_main_process = multi_gpu.get_rank() == 0
 
-    data_loader = CustomDataLoader(opt)
-    model = create_model(opt)
+    data_loader = build_dataloaderLoader(opt)
+    model = build_model(opt)
     device = model.device
 
     if is_main_process:

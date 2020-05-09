@@ -118,13 +118,15 @@ class UnpairedRevGAN3dModel(BaseModel):
         real_A = self.visuals['real_A']
         real_B = self.visuals['real_B']
 
+        # NOTE: G_A is self.networks['G'](inverse=False), G_B is self.networks['G'](inverse=True)
+        
         # Forward cycle G_A (A to B)
         fake_B = self.networks['G'](real_A) 
-        rec_A  = self.networks['G'](fake_B)
+        rec_A  = self.networks['G'](fake_B, inverse=True)
 
         # Backward cycle G_B (B to A)
         fake_A = self.networks['G'](real_B, inverse=True) # G forward is G_A, G inverse forward is G_B
-        rec_B  = self.networks['G'](fake_A, inverse=True)
+        rec_B  = self.networks['G'](fake_A)
 
         self.visuals.update({'fake_B': fake_B, 'rec_A': rec_A, 
                              'fake_A': fake_A, 'rec_B': rec_B})

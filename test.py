@@ -1,7 +1,7 @@
 import os
 from options.test_options import TestOptions
-from data import CustomDataLoader
-from models import create_model
+from data import build_dataloaderLoader
+from models import build_model
 from util.visualizer import save_images
 from util import html
 import numpy as np
@@ -15,8 +15,8 @@ if __name__ == '__main__':
     opt.shuffle = False  # no shuffle
     opt.no_flip = True  # no flip
     opt.display_id = -1  # no visdom display
-    data_loader = CustomDataLoader(opt)
-    model = create_model(opt)
+    data_loader = build_dataloaderLoader(opt)
+    model = build_model(opt)
     # create website
     web_dir = os.path.join(opt.results_dir, opt.name, '%s_%s' % (opt.phase, opt.load_epoch))
     webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.load_epoch))
