@@ -1,10 +1,9 @@
 import importlib
 from torch.utils.data import Dataset, DataLoader
-#from torch.utils.data.distributed import DistributedSampler
 from util.sampler import InfiniteSampler
 
 
-def build_dataloader(conf):
+def build_loader(conf):
     batch_size = conf.batch_size
     shuffle = conf.dataset.shuffle
     num_workers = conf.dataset.num_workers

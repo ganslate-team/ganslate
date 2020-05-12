@@ -183,7 +183,7 @@ class UnpairedRevGAN3dModel(BaseModel):
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity, Inverse) -------------
-        if self.criterions_G.use_identity():
+        if self.criterions_G.is_using_identity():
             self.visuals['idt_A'] = self.networks['G'](real_B)
             self.visuals['idt_B'] = self.networks['G'](real_A, inverse=True)
         losses_G = self.criterions_G(self.visuals)

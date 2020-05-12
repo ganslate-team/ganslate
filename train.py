@@ -2,7 +2,7 @@ import os
 import time
 import torch
 from options.train_options import TrainOptions
-from data import build_dataloaderLoader
+from data import build_loader
 from models import build_model
 from util.visualizer import Visualizer
 from util.distributed import multi_gpu, comm, init_distributed
@@ -31,7 +31,7 @@ def main():
         init_distributed(opt.local_rank)
         is_main_process = multi_gpu.get_rank() == 0
 
-    data_loader = build_dataloaderLoader(opt)
+    data_loader = build_loader(opt)
     model = build_model(opt)
     device = model.device
 
@@ -43,7 +43,7 @@ def main():
         visualizer = Visualizer(opt)
 
     total_steps = 0
-    for epoch in range(opt.continue_epoch, opt.n_epochs + opt.n_epochs_decay + 1):
+    for epoch in range(opt.continue_iter, opt.n_iters + opt.n_iters_decay + 1):
         epoch_start_time = time.time()
         iter_data_time = time.time()
         epoch_iter = 0
@@ -91,7 +91,7 @@ def main():
 
             if is_main_process and total_steps % opt.save_latest_freq == 0:
                 print('saving the latest model (epoch %d, total_steps %d)' % (epoch, total_steps))
-                model.save_networks('latest')
+                model.save_checkpoint('latest')
 
             iter_data_time = time.time()
 
@@ -99,13 +99,13 @@ def main():
 
         if is_main_process:
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
-            model.save_networks('latest')
+            model.save_checkpoint('latest')
             if epoch % opt.save_epoch_freq == 0:
-                model.save_networks(epoch)
+                model.save_checkpoint(epoch)
 
             epoch_time = time.time() - epoch_start_time
             print('End of epoch %d / %d \t Time Taken: %d sec' %
-                (epoch, opt.n_epochs + opt.n_epochs_decay, epoch_time))
+                (epoch, opt.n_iters + opt.n_iters_decay, epoch_time))
             
             if opt.wandb:
                 # TODO: do this properly and in a separate function

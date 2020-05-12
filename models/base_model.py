@@ -76,7 +76,7 @@ class BaseModel(ABC):
             self.convert_to_mixed_precision()
 
         if not self.is_train or self.conf.continue_train:
-            self.load_networks(self.conf.load_epoch)
+            self.load_networks(self.conf.load_iter)
 
         if self.num_devices > 1:
             self.parallelize_networks()
@@ -144,18 +144,18 @@ class BaseModel(ABC):
             self.optimizers = dict(zip(self.optimizers, optimizers))
 
     def update_learning_rate(self):
-        """Update learning rates for all the networks; called at the end of every epoch"""
+        """Update learning rates for all the networks; called at the end of every iteration"""
         for scheduler in self.schedulers:
             scheduler.step()
 
-    def save_networks(self, epoch):
+    def save_checkpoint(self, iter_idx):
         """Save all the networks, optimizers and, if used, apex mixed precision's state_dict to the disk.
 
         Parameters:
-            epoch (int) -- current epoch; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
+            iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
         checkpoint = {}
-        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % epoch)
+        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % iter_idx)
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
@@ -174,12 +174,12 @@ class BaseModel(ABC):
 
         torch.save(checkpoint, checkpoint_path)
     
-    def load_networks(self, epoch):
+    def load_networks(self, iter_idx):
         """Load all the networks, optimizers and, if used, apex mixed precision's state_dict from the disk.
         Parameters:
-            epoch (int) -- current epoch; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
+            iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % epoch)
+        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % iter_idx)
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         print('loaded the checkpoint from %s' % checkpoint_path) # TODO: make nice logging
 

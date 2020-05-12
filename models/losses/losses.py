@@ -9,8 +9,9 @@ class GeneratorLosses:
         lambda_identity = conf.optimizer.lambda_identity
         lambda_inverse = conf.optimizer.lambda_inverse
         proportion_ssim = conf.optimizer.proportion_ssim
+        channels_ssim = conf.dataset.patch_size[0] # TODO: how not to need this in SSIM implementation?
 
-        self.criterion_cycle = CycleLoss(lambda_A, lambda_B, proportion_ssim)
+        self.criterion_cycle = CycleLoss(lambda_A, lambda_B, proportion_ssim, channels_ssim)
 
         if lambda_identity > 0:
             self.criterion_idt = IdentityLoss(lambda_identity, lambda_A, lambda_B)
@@ -22,7 +23,7 @@ class GeneratorLosses:
         else:
             self.criterion_inv = None
 
-    def use_identity(self):
+    def is_using_identity(self):
         """Check if idt_A and idt_B should be computed."""
         if self.criterion_idt:
             return True
@@ -89,14 +90,14 @@ class InverseLoss:
         return loss_inv_A, loss_inv_B
 
 class CycleLoss:
-    def __init__(self, lambda_A, lambda_B, proportion_ssim=0):
+    def __init__(self, lambda_A, lambda_B, proportion_ssim, channels_ssim):
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B
 
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
             # TODO: FIX CHANNEL (refactor ssim code)
-            self.ssim_criterion = SSIM(data_range=(-1,1), channel=32)
+            self.ssim_criterion = SSIM(data_range=(-1,1), channel=channels_ssim)
             # weights for addition of SSIM and L1 losses
             self.alpha = proportion_ssim
             self.beta  = 1 - proportion_ssim 

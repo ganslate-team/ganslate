@@ -26,14 +26,14 @@ def is_bias_before_norm(norm_type='instance'):
         raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
 
 def get_scheduler(optimizer, conf):
-    """Return a scheduler that keeps the same learning rate for the first <conf.n_epochs> epochs
-    and linearly decays the rate to zero over the next <conf.n_epochs_decay> epochs.
+    """Return a scheduler that keeps the same learning rate for the first <conf.n_iters> epochs
+    and linearly decays the rate to zero over the next <conf.n_iters_decay> epochs.
     Parameters:
         optimizer          -- the optimizer of the network
         TODO
     """
-    def lambda_rule(epoch):
-        lr_l = 1.0 - max(0, epoch + conf.continue_epoch - conf.n_epochs) / float(conf.n_epochs_decay + 1)
+    def lambda_rule(iter_idx):
+        lr_l = 1.0 - max(0, iter_idx + conf.continue_iter - conf.n_iters) / float(conf.n_iters_decay + 1)
         return lr_l
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
 

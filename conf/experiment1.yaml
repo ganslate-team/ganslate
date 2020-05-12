@@ -1,6 +1,6 @@
 use_cuda: False
-n_epochs: 1
-n_epochs_decay: 0
+n_iters: 1
+n_iters_decay: 0
 batch_size: 1
 
 dataset: 
