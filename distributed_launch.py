@@ -68,32 +68,18 @@ multi-node) GPU training currently only achieves the best performance using
 the NCCL distributed backend. Thus NCCL backend is the recommended backend to
 use for GPU training.
 
-2. In your training program, you must parse the command-line argument:
-``--local_rank=LOCAL_PROCESS_RANK``, which will be provided by this module.
-If your training program uses GPUs, you should ensure that your code only
-runs on the GPU device of LOCAL_PROCESS_RANK. This can be done by:
+2. It is necessary to pass ``local_rank`` to the subprocesses via 
+environment variable ``LOCAL_RANK``.  You can acces the local rank from your 
+program using ``os.environ['LOCAL_RANK']``
 
-Parsing the local_rank argument
+.. warning::
 
-::
+    ``local_rank`` is NOT globally unique: it is only unique per process
+    on a machine.  Thus, don't use it to decide if you should, e.g.,
+    write to a networked filesystem.  See
+    https://github.com/pytorch/pytorch/issues/12042 for an example of
+    how things can go wrong if you don't do this correctly.
 
-    >>> import argparse
-    >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument("--local_rank", type=int)
-    >>> args = parser.parse_args()
-
-Set your device to local rank using either
-
-::
-
-    >>> torch.cuda.set_device(arg.local_rank)  # before your code runs
-
-or
-
-::
-
-    >>> with torch.cuda.device(arg.local_rank):
-    >>>    # your code to run
 
 3. In your training program, you are supposed to call the following function
 at the beginning to start the distributed backend. You need to make sure that
@@ -122,21 +108,6 @@ that your code will be operating on. This is generally the local rank of the
 process. In other words, the ``device_ids`` needs to be ``[args.local_rank]``,
 and ``output_device`` needs to be ``args.local_rank`` in order to use this
 utility
-
-5. Another way to pass ``local_rank`` to the subprocesses via environment variable
-``LOCAL_RANK``. This behavior is enabled when you launch the script with
-``--use_env=True``. You must adjust the subprocess example above to replace
-``args.local_rank`` with ``os.environ['LOCAL_RANK']``; the launcher
-will not pass ``--local_rank`` when you specify this flag.
-
-.. warning::
-
-    ``local_rank`` is NOT globally unique: it is only unique per process
-    on a machine.  Thus, don't use it to decide if you should, e.g.,
-    write to a networked filesystem.  See
-    https://github.com/pytorch/pytorch/issues/12042 for an example of
-    how things can go wrong if you don't do this correctly.
-
 """
 
 
@@ -144,7 +115,6 @@ import sys
 import subprocess
 import os
 from argparse import ArgumentParser, REMAINDER
-
 
 def parse_args():
     """
@@ -176,11 +146,6 @@ def parse_args():
                         help="Master node (rank 0)'s free port that needs to "
                              "be used for communication during distributed "
                              "training")
-    parser.add_argument("--use_env", default=False, action="store_true",
-                        help="Use environment variable to pass "
-                             "'local rank'. For legacy reasons, the default value is False. "
-                             "If set to True, the script will not pass "
-                             "--local_rank as argument, and will instead set LOCAL_RANK.")
     parser.add_argument("-m", "--module", default=False, action="store_true",
                         help="Changes each process to interpret the launch script "
                              "as a python module, executing with the same behavior as"
@@ -237,16 +202,10 @@ def main():
             if args.module:
                 cmd.append("-m")
         else:
-            if not args.use_env:
-                raise ValueError("When using the '--no_python' flag, you must also set the '--use_env' flag.")
             if args.module:
                 raise ValueError("Don't use both the '--no_python' flag and the '--module' flag at the same time.")
 
         cmd.append(args.training_script)
-
-        if not args.use_env:
-            cmd.append("--local_rank={}".format(local_rank))
-
         cmd.extend(args.training_script_args)
 
         process = subprocess.Popen(cmd, env=current_env)

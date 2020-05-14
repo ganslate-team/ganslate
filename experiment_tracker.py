@@ -104,6 +104,9 @@ class ExperimentTracker:
         file_path = os.path.join(self.output_dir, 'images/%d_%s.png' % (self.iter_idx, name))
         save_image(image, file_path)
 
+    def close(self):
+        self.tensorboard.close()
+
 
 class WandbTracker:
     def __init__(self, conf):
@@ -134,8 +137,6 @@ class TensorboardTracker:
     def __init__(self, conf):
         self.writer = SummaryWriter(conf.logging.output_dir)
 
-    def __del__(self):
-        self.writer.close()
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals):
         # Learning rates

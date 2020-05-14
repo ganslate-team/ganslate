@@ -1,7 +1,7 @@
 import torch
 from data import build_loader
 from models import build_model
-from util.distributed import multi_gpu #, comm
+from util.distributed import init_distributed, multi_gpu #, comm
 
 from experiment_tracker import ExperimentTracker
 
@@ -11,6 +11,9 @@ from conf.initializer import init_config
 
 class Trainer:
     def __init__(self, conf):
+        if conf.distributed:
+            init_distributed()
+
         self.model = build_model(conf)
         self.data_loader = build_loader(conf)
         self.tracker = ExperimentTracker(conf)
@@ -58,7 +61,6 @@ class Trainer:
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
-
 
 
 def main():

@@ -22,7 +22,7 @@ class OptimizerConfig:
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] TODO: not working in distributed mode
     #checkpoints_dir:  str = "./checkpoints/"
-    output_dir:       str = "./checkpoints/" + now()
+    output_dir:       str = "./checkpoints/" + "nesto" #now()
     print_freq:       int = 50
     checkpoint_freq:  int = 5
     wandb:            bool = False
@@ -36,7 +36,6 @@ class Config:
 
     # Distributed and mixed precision
     distributed:     bool = False
-    local_rank:      int = 0
     mixed_precision: bool = False
     opt_level:       str = "O1"
     per_loss_scale:  bool = True

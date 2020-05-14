@@ -9,6 +9,8 @@ from apex import amp
 
 from models.util import get_scheduler
 
+import multiprocessing as mp
+mp.set_start_method('forkserver') 
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
@@ -34,8 +36,8 @@ class BaseModel(ABC):
         self.conf = conf
         self.is_train = conf.gan.is_train
         self.device = torch.device('cuda:0') if conf.use_cuda else torch.device('cpu')
-        self.num_devices = torch.cuda.device_count()
-        self.save_dir = conf.logging.output_dir #os.path.join(conf.logging.checkpoints_dir, conf.logging.experiment_name) # TODO: conf in folder out
+        self.num_devices = int( os.environ.get('WORLD_SIZE', torch.cuda.device_count()) ) 
+        self.output_dir = conf.logging.output_dir
         
         torch.backends.cudnn.benchmark = True
 
@@ -71,16 +73,16 @@ class BaseModel(ABC):
         """
         if self.is_train:
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
-
+        
         if self.conf.mixed_precision:
             self.convert_to_mixed_precision()
-
+        
         if not self.is_train or self.conf.continue_train:
             self.load_networks(self.conf.load_iter)
-
+        
         if self.num_devices > 1:
             self.parallelize_networks()
-        
+
         torch.cuda.empty_cache()
 
     def backward(self, loss, optimizer, retain_graph=False, loss_id=0):
@@ -104,11 +106,13 @@ class BaseModel(ABC):
         """Wrap networks in DataParallel in case of multi-GPU setup, or in DistributedDataParallel if
         using a distributed setup. No parallelization is done in case of single-GPU setup.
         """
+        from util.distributed import multi_gpu
         for name in self.networks.keys():
             if self.conf.distributed:
+                local_rank = multi_gpu.get_rank()
                 self.networks[name] = DistributedDataParallel(self.networks[name],
-                                                              device_ids=[self.device], 
-                                                              output_device=self.device)
+                                                              device_ids=[local_rank], 
+                                                              output_device=local_rank)
             else:
                 self.networks[name] = DataParallel(self.networks[name])
 
@@ -155,7 +159,7 @@ class BaseModel(ABC):
             iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
         checkpoint = {}
-        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % iter_idx)
+        checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
@@ -179,7 +183,7 @@ class BaseModel(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % iter_idx)
+        checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         print('loaded the checkpoint from %s' % checkpoint_path) # TODO: make nice logging
 
