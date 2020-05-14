@@ -17,7 +17,8 @@ class UnpairedRevGAN3dModel(BaseModel):
         super(UnpairedRevGAN3dModel, self).__init__(conf)
         
         # Inputs and Outputs of the model
-        visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_A', 'real_B', 'fake_A', 'rec_B', 'idt_B']
+        visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', \
+                        'real_B', 'fake_A', 'rec_B', 'idt_A']
         self.visuals = {name: None for name in visual_names}
 
         # Losses used by the model

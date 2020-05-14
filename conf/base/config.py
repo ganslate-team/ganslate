@@ -23,9 +23,10 @@ class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] TODO: not working in distributed mode
     #checkpoints_dir:  str = "./checkpoints/"
     output_dir:       str = "./checkpoints/" + "nesto" #now()
-    print_freq:       int = 50
-    checkpoint_freq:  int = 5
+    log_freq:         int = 20
+    checkpoint_freq:  int = 50
     wandb:            bool = False
+    tensorboard:      bool = False
 
 @dataclass
 class Config:

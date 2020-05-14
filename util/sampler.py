@@ -44,7 +44,7 @@ class InfiniteSampler(Sampler):
         assert size > 0
         self._shuffle = shuffle
         if seed is None:
-            seed = multi_gpu.shared_random_seed()
+            seed = 1837237 #multi_gpu.shared_random_seed() TODO
         self._seed = int(seed)
 
         self._rank = multi_gpu.get_rank()

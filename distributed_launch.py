@@ -116,6 +116,7 @@ import subprocess
 import os
 from argparse import ArgumentParser, REMAINDER
 
+
 def parse_args():
     """
     Helper function parsing the command line options
@@ -219,4 +220,7 @@ def main():
 
 
 if __name__ == "__main__":
+
+    # import multiprocessing as mp
+    # mp.set_start_method('forkserver') 
     main()

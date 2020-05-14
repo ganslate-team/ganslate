@@ -3,14 +3,11 @@ import torch.nn as nn
 from torch.nn import init
 from torch.optim import lr_scheduler
 
-
 def get_norm_layer(norm_type='instance'):
     if norm_type == 'batch':
-        return functools.partial(nn.BatchNorm3d, affine=True) # TODO: check sync version https://pytorch.org/docs/stable/nn.html#torch.nn.SyncBatchNorm
+        return nn.BatchNorm3d
     elif norm_type == 'instance':
-        return functools.partial(nn.InstanceNorm3d, affine=False, track_running_stats=True)
-    elif norm_type == 'none':
-        return None
+        return nn.InstanceNorm3d
     else:
         raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
 
@@ -18,7 +15,7 @@ def is_bias_before_norm(norm_type='instance'):
     """When using BatchNorm, the preceding Conv layer does not use bias, 
     but it does if using InstanceNorm.
     """
-    if norm_type == 'instance' or norm_type == 'none':
+    if norm_type == 'instance':
         return True
     elif norm_type == 'batch':
         return False

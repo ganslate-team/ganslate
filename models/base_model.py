@@ -9,8 +9,7 @@ from apex import amp
 
 from models.util import get_scheduler
 
-import multiprocessing as mp
-mp.set_start_method('forkserver') 
+from util.distributed import multi_gpu
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
@@ -35,17 +34,29 @@ class BaseModel(ABC):
         """
         self.conf = conf
         self.is_train = conf.gan.is_train
-        self.device = torch.device('cuda:0') if conf.use_cuda else torch.device('cpu')
-        self.num_devices = int( os.environ.get('WORLD_SIZE', torch.cuda.device_count()) ) 
+        self.device = self._specify_device()
         self.output_dir = conf.logging.output_dir
-        
-        torch.backends.cudnn.benchmark = True
 
         self.visuals = {}
         self.losses = {}
         self.optimizers = {}
         self.networks = {}
+
+        torch.backends.cudnn.benchmark = True
     
+    def _specify_device(self):
+        if self.conf.use_cuda:
+            if self.conf.distributed:
+                # necessary for proper working of distributed training
+                return torch.device('cuda:%d' % multi_gpu.get_rank())
+            else:
+                return torch.device('cuda:0')
+        else:
+            return torch.device('cpu')
+            
+    def _count_devices(self):
+        return int( os.environ.get('WORLD_SIZE', torch.cuda.device_count()) )
+
     @abstractmethod
     def set_input(self, input):
         """Unpack input data from the dataloader.
@@ -80,7 +91,7 @@ class BaseModel(ABC):
         if not self.is_train or self.conf.continue_train:
             self.load_networks(self.conf.load_iter)
         
-        if self.num_devices > 1:
+        if self._count_devices() > 1:
             self.parallelize_networks()
 
         torch.cuda.empty_cache()
@@ -106,13 +117,13 @@ class BaseModel(ABC):
         """Wrap networks in DataParallel in case of multi-GPU setup, or in DistributedDataParallel if
         using a distributed setup. No parallelization is done in case of single-GPU setup.
         """
-        from util.distributed import multi_gpu
         for name in self.networks.keys():
             if self.conf.distributed:
-                local_rank = multi_gpu.get_rank()
                 self.networks[name] = DistributedDataParallel(self.networks[name],
-                                                              device_ids=[local_rank], 
-                                                              output_device=local_rank)
+                                                              device_ids=[self.device], 
+                                                              output_device=self.device,
+                                                              # if using batchnorm, broadcast_buffer=True will batch stats from rank 0, otherwise each proces has t
+                                                              broadcast_buffers=False) 
             else:
                 self.networks[name] = DataParallel(self.networks[name])
 
