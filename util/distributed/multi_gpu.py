@@ -94,6 +94,6 @@ def shared_random_seed() -> int:
     seed = torch.randint(2**31, (1,)).cuda() # TODO verify this works
     if is_main_process():
         if get_world_size() > 1:
-            torch.distributed.broadcast(seed, 0)
+            torch.distributed.broadcast(seed, 0) # TODO doesnt seem alright
     print('infinite sampler seed:', seed.item())
     return seed.item()

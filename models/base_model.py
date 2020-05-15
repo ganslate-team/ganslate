@@ -119,10 +119,11 @@ class BaseModel(ABC):
         """
         for name in self.networks.keys():
             if self.conf.distributed:
+                # if using batchnorm, broadcast_buffer=True will use batch stats from rank 0, 
+                # otherwise each process keeps its own stats
                 self.networks[name] = DistributedDataParallel(self.networks[name],
                                                               device_ids=[self.device], 
                                                               output_device=self.device,
-                                                              # if using batchnorm, broadcast_buffer=True will batch stats from rank 0, otherwise each proces has t
                                                               broadcast_buffers=False) 
             else:
                 self.networks[name] = DataParallel(self.networks[name])
@@ -139,21 +140,18 @@ class BaseModel(ABC):
                           but use a single global loss scale for all of them.
         """
         opt_level = self.conf.opt_level
-        per_loss_scale = self.conf.per_loss_scale
-
         networks = list(self.networks.values()) # fetch the networks
 
         # initialize mixed precision on networks and, if training, on optimizers
         if self.is_train:
-            # there is always one loss/backward pass per network  # TODO: test with and without per loss scale
-            num_losses = len(self.networks) if per_loss_scale else 1 
+            num_losses = len(self.networks) # each network has its own backward pass
             optimizers = list(self.optimizers.values())
             networks, optimizers = amp.initialize(networks, optimizers, 
                                                   opt_level=opt_level, num_losses=num_losses)
         else:
             networks = amp.initialize(networks, opt_level=opt_level)
 
-        # assigns back the returned mixed-precision networks and optimizers # TODO: say why
+        # assigns back the returned mixed-precision networks and optimizers
         self.networks = dict(zip(self.networks, networks))
         if self.is_train:
             self.optimizers = dict(zip(self.optimizers, optimizers))
@@ -196,8 +194,8 @@ class BaseModel(ABC):
         """
         checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
-        print('loaded the checkpoint from %s' % checkpoint_path) # TODO: make nice logging
-
+        print('loaded the checkpoint from %s' % checkpoint_path)
+        
         # load networks
         for name in self.networks.keys():
             self.networks[name].load_state_dict(checkpoint[name])

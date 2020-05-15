@@ -39,12 +39,11 @@ class Config:
     distributed:     bool = False
     mixed_precision: bool = False
     opt_level:       str = "O1"
-    per_loss_scale:  bool = True
 
     # Continuing training
     continue_train:  bool = False    # Continue training by loading a checkpoint. [Default: False]
     load_iter:      str = "latest"  # Which iteration's checkpoint to load. [Default: "latest"]
-    continue_iter:  int = 1         # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this
+    continue_iter:  int = 1         # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING

@@ -21,7 +21,7 @@ class ExperimentTracker:
             self._save_config(conf)
 
             if conf.logging.wandb:
-                self.wandb = WandbTracker(conf) # TODO: initialize these if defined by conf
+                self.wandb = WandbTracker(conf)
             else:
                 self.wandb = None
 
@@ -62,7 +62,7 @@ class ExperimentTracker:
         # reduce data loading per data point (avg) and send to the process of rank 0
         self.t_data = comm.reduce(self.t_data, average=True, all_reduce=False)
 
-    def log_iter(self, learning_rates, losses, visuals): # TODO: implement visuals, tensorboard, wandb, python logger
+    def log_iter(self, learning_rates, losses, visuals):
         """Parameters: # TODO: update this
             iters (int) -- current training iteration
             losses (tuple/list) -- training losses

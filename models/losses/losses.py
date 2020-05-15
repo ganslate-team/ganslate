@@ -96,8 +96,7 @@ class CycleLoss:
 
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
-            # TODO: FIX CHANNEL (refactor ssim code)
-            self.ssim_criterion = SSIM(data_range=(-1,1), channel=channels_ssim)
+            self.ssim_criterion = SSIM(data_range=(-1,1), channel=channels_ssim) # TODO: FIX CHANNEL (refactor ssim code)
             # weights for addition of SSIM and L1 losses
             self.alpha = proportion_ssim
             self.beta  = 1 - proportion_ssim 

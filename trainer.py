@@ -48,7 +48,7 @@ class Trainer:
         self.model.optimize_parameters()
 
     def _perform_scheduler_step(self):
-        self.model.update_learning_rate()  # perform a scheduler step # TODO: better to make decaying rape in checkponts rather than per iter
+        self.model.update_learning_rate()  # perform a scheduler step # TODO: better to make decaying rate in checkpoints rather than per iter
 
     def _save_checkpoint(self):
         if multi_gpu.is_main_process():
