@@ -241,9 +241,10 @@ class BaseModel(ABC):
             
     def get_learning_rates(self):
         """ Return current learning rates of both generator and discriminator"""
-        lr_G = self.optimizers['G'].param_groups[0]['lr']
-        lr_D = self.optimizers['D'].param_groups[0]['lr']
-        return lr_G, lr_D    
+        learning_rates = {}
+        learning_rates["lr_G"] = self.optimizers['G'].param_groups[0]['lr']
+        learning_rates["lr_D"] = self.optimizers['D'].param_groups[0]['lr']
+        return learning_rates 
 
     def get_current_visuals(self):
         return self.visuals

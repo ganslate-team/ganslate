@@ -45,9 +45,9 @@ class CTDataset(Dataset):
         A = normalize_from_hu(A, self.norm_A["min"], self.norm_A["max"])
         B = normalize_from_hu(B, self.norm_B["min"], self.norm_B["max"])
 
-        # Reshape so that it contains the channel as well (1 = grayscale)
-        A = A.view(1, *A.shape)
-        B = B.view(1, *B.shape)
+        # Add channel dimension (1 = grayscale)
+        A = A.unsqueeze(0)
+        B = B.unsqueeze(0)
 
         return {'A': A, 'B': B}
 

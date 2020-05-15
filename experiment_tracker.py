@@ -88,7 +88,7 @@ class ExperimentTracker:
                     self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals)
 
     def _log_message(self, learning_rates, losses):
-        lr_G, lr_D = learning_rates
+        lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]
         message = '\n' + 20 * '-' + ' '
         message += '(iter: %d | comp: %.3f, data: %.3f | lr_G: %.7f, lr_D = %.7f)' \
                        % (self.iter_idx, self.t_comp, self.t_data, lr_G, lr_D)
@@ -103,7 +103,7 @@ class ExperimentTracker:
         combined_slices = combined_slices[0] # we plot a single volume from the batch
         combined_slices = combined_slices.permute(1,0,2,3) # CxDxHxW -> DxCxHxW
 
-        # Concatenate all combined slices along height to form a single 2d image (the tensor in tuple are CxHxW, hence dim=1)
+        # Concatenate all combined slices along height to form a single 2d image (tensors in tuple are CxHxW, hence dim=1)
         combined_image = torch.cat(tuple(combined_slices), dim=1) 
         combined_image = (combined_image + 1) / 2 # [-1,1] -> [0,1]. Data range important when saving images.
 
@@ -132,9 +132,8 @@ class WandbTracker:
         log_dict['iter_idx'] = iter_idx
 
         # Learning rates
-        lr_G, lr_D = learning_rates
-        log_dict['lr_G'] = lr_G
-        log_dict['lr_D'] = lr_D
+        log_dict['lr_G'] = learning_rates['lr_G']
+        log_dict['lr_D'] = learning_rates['lr_D']
         
         # Losses
         for name, loss in losses.items():
@@ -157,7 +156,7 @@ class TensorboardTracker:
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals):
         # Learning rates
-        lr_G, lr_D = learning_rates
+        lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]
         self.writer.add_scalar('Learning Rates/lr_G', lr_G, iter_idx)
         self.writer.add_scalar('Learning Rates/lr_D', lr_D, iter_idx)
 
