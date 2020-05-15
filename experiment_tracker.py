@@ -16,20 +16,27 @@ from torch.utils.tensorboard import SummaryWriter
 class ExperimentTracker:
     def __init__(self, conf):
         self.output_dir = conf.logging.output_dir
-        mkdirs(os.path.join(self.output_dir, 'images'))
-        self._save_config(conf)
+        if multi_gpu.is_main_process():
+            mkdirs(os.path.join(self.output_dir, 'images'))
+            self._save_config(conf)
+
+            if conf.logging.wandb:
+                self.wandb = WandbTracker(conf)
+            else:
+                self.wandb = None
+
+            if conf.logging.tensorboard:
+                self.tensorboard = TensorboardTracker(conf)
+            else:
+                self.tensorboard = None
 
         self.batch_size = conf.batch_size
-        self.total_samples = 0
+        self.log_freq = conf.logging.log_freq
         self.iter_idx = None
         self.iter_end_time = None
         self.iter_start_time = None
         self.t_data = None
         self.t_comp = None
-
-        # TODO: initialize these if defined by conf
-        self.wandb = WandbTracker(conf)
-        self.tensorboard = TensorboardTracker(conf)
 
     def _save_config(self, conf):
         config_path = os.path.join(self.output_dir, "config.yaml")
@@ -55,32 +62,36 @@ class ExperimentTracker:
         # reduce data loading per data point (avg) and send to the process of rank 0
         self.t_data = comm.reduce(self.t_data, average=True, all_reduce=False)
 
-    def log_iter(self, learning_rates, losses, visuals): # TODO: implement visuals, tensorboard, wandb, python logger
+    def log_iter(self, learning_rates, losses, visuals):
         """Parameters: # TODO: update this
             iters (int) -- current training iteration
             losses (tuple/list) -- training losses
             t_comp (float) -- computational time per data point (normalized by batch_size)
             t_data (float) -- data loading time per data point (normalized by batch_size)
-        """        
-        visuals = {k: v for k, v in visuals.items() if v != None}
-        losses = {k: v for k, v in losses.items() if v != None}
-        losses = comm.reduce(losses, average=True, all_reduce=False) # reduce losses (avg) and send to the process of rank 0
+        """
 
-        if multi_gpu.is_main_process():
-            self.total_samples += self.batch_size * multi_gpu.get_world_size()
-            self._log_message(learning_rates, losses) 
+        if self.iter_idx % self.log_freq == 0:      
+            visuals = {k: v for k, v in visuals.items() if v is not None}
+            losses = {k: v for k, v in losses.items() if v is not None}
+            losses = comm.reduce(losses, average=True, all_reduce=False) # reduce losses (avg) and send to the process of rank 0
 
-            visuals = self._visuals_to_combined_2d_grid(visuals)
-            self._save_image(visuals)
+            if multi_gpu.is_main_process():
+                self._log_message(learning_rates, losses) 
 
-            self.wandb.log_iter(self.iter_idx, learning_rates, losses, visuals)
-            self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals)
+                visuals = self._visuals_to_combined_2d_grid(visuals)
+                self._save_image(visuals)
+
+                if self.wandb is not None:
+                    self.wandb.log_iter(self.iter_idx, learning_rates, losses, visuals)
+
+                if self.tensorboard is not None:
+                    self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals)
 
     def _log_message(self, learning_rates, losses):
         lr_G, lr_D = learning_rates
         message = '\n' + 20 * '-' + ' '
-        message += '(iter: %d, samples: %d | comp: %.3f, data: %.3f | lr_G: %.7f, lr_D = %.7f)' \
-                       % (self.iter_idx, self.total_samples, self.t_comp, self.t_data, lr_G, lr_D)
+        message += '(iter: %d | comp: %.3f, data: %.3f | lr_G: %.7f, lr_D = %.7f)' \
+                       % (self.iter_idx, self.t_comp, self.t_data, lr_G, lr_D)
         message += ' ' + 20 * '-' +  '\n'
         for k, v in losses.items():
             message += '%s: %.3f ' % (k, v)
@@ -88,7 +99,7 @@ class ExperimentTracker:
     
     def _visuals_to_combined_2d_grid(self, visuals):
         # Concatenate slices that are at the same level from different visuals along width (each tensor from visuals.values() is NxCxDxHxW, hence dim=4)
-        combined_slices = torch.cat(visuals.values(), dim=4) 
+        combined_slices = torch.cat(tuple(visuals.values()), dim=4) 
         combined_slices = combined_slices[0] # we plot a single volume from the batch
         combined_slices = combined_slices.permute(1,0,2,3) # CxDxHxW -> DxCxHxW
 
@@ -104,6 +115,10 @@ class ExperimentTracker:
         file_path = os.path.join(self.output_dir, 'images/%d_%s.png' % (self.iter_idx, name))
         save_image(image, file_path)
 
+    def close(self):
+        if multi_gpu.is_main_process() and self.tensorboard is not None:
+            self.tensorboard.close()
+
 
 class WandbTracker:
     def __init__(self, conf):
@@ -112,6 +127,9 @@ class WandbTracker:
     def log_iter(self, iter_idx, learning_rates, losses, visuals):
         """TODO"""
         log_dict = {}
+
+        # Iteration idx
+        log_dict['iter_idx'] = iter_idx
 
         # Learning rates
         lr_G, lr_D = learning_rates
@@ -134,7 +152,7 @@ class TensorboardTracker:
     def __init__(self, conf):
         self.writer = SummaryWriter(conf.logging.output_dir)
 
-    def __del__(self):
+    def close(self):
         self.writer.close()
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals):

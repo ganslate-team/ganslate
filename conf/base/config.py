@@ -22,10 +22,11 @@ class OptimizerConfig:
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] TODO: not working in distributed mode
     #checkpoints_dir:  str = "./checkpoints/"
-    output_dir:       str = "./checkpoints/" + now()
-    print_freq:       int = 50
-    checkpoint_freq:  int = 5
+    output_dir:       str = "./checkpoints/" + "nesto" #now()
+    log_freq:         int = 20
+    checkpoint_freq:  int = 50
     wandb:            bool = False
+    tensorboard:      bool = False
 
 @dataclass
 class Config:
@@ -36,15 +37,13 @@ class Config:
 
     # Distributed and mixed precision
     distributed:     bool = False
-    local_rank:      int = 0
     mixed_precision: bool = False
     opt_level:       str = "O1"
-    per_loss_scale:  bool = True
 
     # Continuing training
     continue_train:  bool = False    # Continue training by loading a checkpoint. [Default: False]
     load_iter:      str = "latest"  # Which iteration's checkpoint to load. [Default: "latest"]
-    continue_iter:  int = 1         # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this
+    continue_iter:  int = 1         # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING

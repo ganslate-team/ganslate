@@ -9,6 +9,7 @@ from apex import amp
 
 from models.util import get_scheduler
 
+from util.distributed import multi_gpu
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
@@ -33,17 +34,29 @@ class BaseModel(ABC):
         """
         self.conf = conf
         self.is_train = conf.gan.is_train
-        self.device = torch.device('cuda:0') if conf.use_cuda else torch.device('cpu')
-        self.num_devices = torch.cuda.device_count()
-        self.save_dir = conf.logging.output_dir #os.path.join(conf.logging.checkpoints_dir, conf.logging.experiment_name) # TODO: conf in folder out
-        
-        torch.backends.cudnn.benchmark = True
+        self.device = self._specify_device()
+        self.output_dir = conf.logging.output_dir
 
         self.visuals = {}
         self.losses = {}
         self.optimizers = {}
         self.networks = {}
+
+        torch.backends.cudnn.benchmark = True
     
+    def _specify_device(self):
+        if self.conf.use_cuda:
+            if self.conf.distributed:
+                # necessary for proper working of distributed training
+                return torch.device('cuda:%d' % multi_gpu.get_rank())
+            else:
+                return torch.device('cuda:0')
+        else:
+            return torch.device('cpu')
+            
+    def _count_devices(self):
+        return int( os.environ.get('WORLD_SIZE', torch.cuda.device_count()) )
+
     @abstractmethod
     def set_input(self, input):
         """Unpack input data from the dataloader.
@@ -71,16 +84,16 @@ class BaseModel(ABC):
         """
         if self.is_train:
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
-
+        
         if self.conf.mixed_precision:
             self.convert_to_mixed_precision()
-
+        
         if not self.is_train or self.conf.continue_train:
             self.load_networks(self.conf.load_iter)
-
-        if self.num_devices > 1:
-            self.parallelize_networks()
         
+        if self._count_devices() > 1:
+            self.parallelize_networks()
+
         torch.cuda.empty_cache()
 
     def backward(self, loss, optimizer, retain_graph=False, loss_id=0):
@@ -106,9 +119,12 @@ class BaseModel(ABC):
         """
         for name in self.networks.keys():
             if self.conf.distributed:
+                # if using batchnorm, broadcast_buffer=True will use batch stats from rank 0, 
+                # otherwise each process keeps its own stats
                 self.networks[name] = DistributedDataParallel(self.networks[name],
                                                               device_ids=[self.device], 
-                                                              output_device=self.device)
+                                                              output_device=self.device,
+                                                              broadcast_buffers=False) 
             else:
                 self.networks[name] = DataParallel(self.networks[name])
 
@@ -124,21 +140,18 @@ class BaseModel(ABC):
                           but use a single global loss scale for all of them.
         """
         opt_level = self.conf.opt_level
-        per_loss_scale = self.conf.per_loss_scale
-
         networks = list(self.networks.values()) # fetch the networks
 
         # initialize mixed precision on networks and, if training, on optimizers
         if self.is_train:
-            # there is always one loss/backward pass per network  # TODO: test with and without per loss scale
-            num_losses = len(self.networks) if per_loss_scale else 1 
+            num_losses = len(self.networks) # each network has its own backward pass
             optimizers = list(self.optimizers.values())
             networks, optimizers = amp.initialize(networks, optimizers, 
                                                   opt_level=opt_level, num_losses=num_losses)
         else:
             networks = amp.initialize(networks, opt_level=opt_level)
 
-        # assigns back the returned mixed-precision networks and optimizers # TODO: say why
+        # assigns back the returned mixed-precision networks and optimizers
         self.networks = dict(zip(self.networks, networks))
         if self.is_train:
             self.optimizers = dict(zip(self.optimizers, optimizers))
@@ -155,7 +168,7 @@ class BaseModel(ABC):
             iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
         checkpoint = {}
-        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % iter_idx)
+        checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
@@ -179,10 +192,10 @@ class BaseModel(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = os.path.join(self.save_dir, '%s_checkpoint.pth' % iter_idx)
+        checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
-        print('loaded the checkpoint from %s' % checkpoint_path) # TODO: make nice logging
-
+        print('loaded the checkpoint from %s' % checkpoint_path)
+        
         # load networks
         for name in self.networks.keys():
             self.networks[name].load_state_dict(checkpoint[name])

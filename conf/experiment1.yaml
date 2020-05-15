@@ -1,5 +1,5 @@
 use_cuda: False
-n_iters: 1
+n_iters: 100
 n_iters_decay: 0
 batch_size: 1
 

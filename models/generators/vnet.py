@@ -61,10 +61,9 @@ class InvertibleBlock(nn.Module):
                                                                keep_input_inverse=keep_input)
 
     def build_conv_block(self, n_channels, norm_layer, use_bias):
-        block = nn.Sequential(nn.Conv3d(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
-                              norm_layer(n_channels),
-                              nn.PReLU(n_channels))
-        return block
+        return nn.Sequential(nn.Conv3d(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
+                             norm_layer(n_channels),
+                             nn.PReLU(n_channels))
 
     def forward(self, x, inverse=False):
         if inverse:
@@ -83,7 +82,7 @@ class InvertibleSequence(nn.Module):
             sequence = reversed(self.sequence)
         else:
             sequence = self.sequence
-
+        
         for i, block in enumerate(sequence):
             if i == 0:    #https://github.com/silvandeleemput/memcnn/issues/39#issuecomment-599199122
                 if inverse:
@@ -105,8 +104,8 @@ class InputBlock(nn.Module):
     def forward(self, x):
         out = self.bn1(self.conv1(x))
         x_repeated = x.repeat(1, self.out_channels, 1, 1, 1) # match channel dimension for residual connection
-        out = self.relu(torch.add(out, x_repeated))
-        return out
+        out = out + x_repeated
+        return self.relu(out)
 
 
 class DownBlock(nn.Module):

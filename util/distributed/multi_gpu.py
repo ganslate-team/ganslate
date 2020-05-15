@@ -90,9 +90,10 @@ def shared_random_seed() -> int:
     A random number that is the same across all workers. If workers need a shared RNG, they can use this shared seed to
     create one.
     """
+
+    seed = torch.randint(2**31, (1,)).cuda() # TODO verify this works
     if is_main_process():
-        seed = torch.randint(2**31, (1,))
         if get_world_size() > 1:
-            torch.distributed.broadcast(seed, 0)
+            torch.distributed.broadcast(seed, 0) # TODO doesnt seem alright
     print('infinite sampler seed:', seed.item())
     return seed.item()
