@@ -15,7 +15,7 @@ import itertools
 
 from typing import Optional
 from torch.utils.data.sampler import Sampler
-from util.distributed import multi_gpu
+from util.distributed import communication
 
 
 class InfiniteSampler(Sampler):
@@ -44,11 +44,11 @@ class InfiniteSampler(Sampler):
         assert size > 0
         self._shuffle = shuffle
         if seed is None:
-            seed = 1837237 #multi_gpu.shared_random_seed() TODO
+            seed = 1837237 #communication.shared_random_seed() TODO
         self._seed = int(seed)
 
-        self._rank = multi_gpu.get_rank()
-        self._world_size = multi_gpu.get_world_size()
+        self._rank = communication.get_rank()
+        self._world_size = communication.get_world_size()
 
     def __iter__(self):
         start = self._rank

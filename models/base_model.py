@@ -9,7 +9,7 @@ from apex import amp
 
 from models.util import get_scheduler
 
-from util.distributed import multi_gpu
+from util.distributed import communication
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
@@ -48,7 +48,7 @@ class BaseModel(ABC):
         if self.conf.use_cuda:
             if self.conf.distributed:
                 # necessary for proper working of distributed training
-                return torch.device('cuda:%d' % multi_gpu.get_rank())
+                return torch.device('cuda:%d' % communication.get_rank())
             else:
                 return torch.device('cuda:0')
         else:

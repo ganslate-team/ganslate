@@ -1,9 +1,9 @@
 import torch
 from data import build_loader
 from models import build_model
-from util.distributed import init_distributed, multi_gpu #, comm
+from util.distributed import init_distributed, communication
 
-from experiment_tracker import ExperimentTracker
+from util.logging.experiment_tracker import ExperimentTracker
 
 from omegaconf import OmegaConf
 from conf.initializer import init_config
@@ -22,7 +22,7 @@ class Trainer:
         self.checkpoint_freq = conf.logging.checkpoint_freq
 
     def train(self):
-        if multi_gpu.is_main_process():
+        if communication.is_main_process():
             print('Training started.')
 
         self.tracker.start_dataloading_timer()
@@ -51,7 +51,7 @@ class Trainer:
         self.model.update_learning_rate()  # perform a scheduler step # TODO: better to make decaying rate in checkpoints rather than per iter
 
     def _save_checkpoint(self):
-        if multi_gpu.is_main_process():
+        if communication.is_main_process():
             if self.iter_idx % self.checkpoint_freq == 0:
                 print('Saving the model after %d iterations.' % (self.iter_idx))
                 self.model.save_checkpoint(self.iter_idx) #('latest')

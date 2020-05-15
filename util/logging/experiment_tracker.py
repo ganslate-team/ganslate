@@ -6,29 +6,27 @@ import time
 import torch
 from torchvision.utils import save_image
 
-from util.distributed import comm, multi_gpu
+from util.distributed import communication
 from util.file_utils import mkdirs
 
-import wandb
-from torch.utils.tensorboard import SummaryWriter
+from util.logging.wandb_tracker import WandbTracker
+from util.logging.tensorboard_tracker import TensorboardTracker
 
 
 class ExperimentTracker:
     def __init__(self, conf):
         self.output_dir = conf.logging.output_dir
-        if multi_gpu.is_main_process():
+        if communication.is_main_process():
             mkdirs(os.path.join(self.output_dir, 'images'))
             self._save_config(conf)
 
+            self.wandb = None
             if conf.logging.wandb:
                 self.wandb = WandbTracker(conf)
-            else:
-                self.wandb = None
-
+                
+            self.tensorboard = None
             if conf.logging.tensorboard:
                 self.tensorboard = TensorboardTracker(conf)
-            else:
-                self.tensorboard = None
 
         self.batch_size = conf.batch_size
         self.log_freq = conf.logging.log_freq
@@ -55,12 +53,12 @@ class ExperimentTracker:
     def end_computation_timer(self):
         self.t_comp = (time.time() - self.iter_start_time) / self.batch_size
         # reduce computational time data point (avg) and send to the process of rank 0
-        self.t_comp = comm.reduce(self.t_comp, average=True, all_reduce=False)
+        self.t_comp = communication.reduce(self.t_comp, average=True, all_reduce=False)
 
     def end_dataloading_timer(self):
         self.t_data = self.iter_start_time - self.iter_end_time # is it per sample or per batch?
         # reduce data loading per data point (avg) and send to the process of rank 0
-        self.t_data = comm.reduce(self.t_data, average=True, all_reduce=False)
+        self.t_data = communication.reduce(self.t_data, average=True, all_reduce=False)
 
     def log_iter(self, learning_rates, losses, visuals):
         """Parameters: # TODO: update this
@@ -73,9 +71,9 @@ class ExperimentTracker:
         if self.iter_idx % self.log_freq == 0:      
             visuals = {k: v for k, v in visuals.items() if v is not None}
             losses = {k: v for k, v in losses.items() if v is not None}
-            losses = comm.reduce(losses, average=True, all_reduce=False) # reduce losses (avg) and send to the process of rank 0
+            losses = communication.reduce(losses, average=True, all_reduce=False) # reduce losses (avg) and send to the process of rank 0
 
-            if multi_gpu.is_main_process():
+            if communication.is_main_process():
                 self._log_message(learning_rates, losses) 
 
                 visuals = self._visuals_to_combined_2d_grid(visuals)
@@ -116,54 +114,7 @@ class ExperimentTracker:
         save_image(image, file_path)
 
     def close(self):
-        if multi_gpu.is_main_process() and self.tensorboard is not None:
+        if communication.is_main_process() and self.tensorboard is not None:
             self.tensorboard.close()
 
 
-class WandbTracker:
-    def __init__(self, conf):
-        wandb.init(project="my-project", config=dict(conf)) # TODO: project and organization from conf
-
-    def log_iter(self, iter_idx, learning_rates, losses, visuals):
-        """TODO"""
-        log_dict = {}
-
-        # Iteration idx
-        log_dict['iter_idx'] = iter_idx
-
-        # Learning rates
-        log_dict['lr_G'] = learning_rates['lr_G']
-        log_dict['lr_D'] = learning_rates['lr_D']
-        
-        # Losses
-        for name, loss in losses.items():
-            log_dict['loss_%s' % name] = loss
-        
-        # Image
-        name, image = visuals['name'], visuals['image']
-        image = image.permute(1,2,0) # CxHxW -> HxWxC
-        log_dict[name] = [wandb.Image(image.cpu().detach().numpy())]
-
-        wandb.log(log_dict)
-
-
-class TensorboardTracker:
-    def __init__(self, conf):
-        self.writer = SummaryWriter(conf.logging.output_dir)
-
-    def close(self):
-        self.writer.close()
-
-    def log_iter(self, iter_idx, learning_rates, losses, visuals):
-        # Learning rates
-        lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]
-        self.writer.add_scalar('Learning Rates/lr_G', lr_G, iter_idx)
-        self.writer.add_scalar('Learning Rates/lr_D', lr_D, iter_idx)
-
-        # Losses
-        for name, loss in losses.items():
-            self.writer.add_scalar('Losses/%s' % name, loss, iter_idx)
-
-        # Image
-        name, image = visuals['name'], visuals['image']
-        self.writer.add_image('Visuals/%s' % name, image, iter_idx, dataformats='CHW')
