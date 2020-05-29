@@ -4,7 +4,7 @@ n_iters_decay: 0
 batch_size: 1
 
 dataset: 
-    class_name: "CTDatasetConfig"
+    class_name: "CTNRRDDatasetConfig"
     root: "./IGNORE/dataset/"
 
 gan:  

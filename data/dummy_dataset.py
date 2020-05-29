@@ -2,7 +2,7 @@ import os.path
 import torch
 import numpy as np
 from torch.utils.data import Dataset
-from util.file_utils import make_dataset
+from util.file_utils import make_dataset_of_files
 
 
 class DummyDataset(Dataset):
@@ -11,7 +11,7 @@ class DummyDataset(Dataset):
         self.conf = conf
         self.root = conf.dataset.root
         self.dir_AB = os.path.join(conf.dataset.root)
-        self.AB_paths = sorted(make_dataset(self.dir_AB))
+        self.AB_paths = sorted(make_dataset_of_files(self.dir_AB))
         self.A_size = 4
         self.B_size = self.A_size
 

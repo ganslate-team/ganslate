@@ -3,7 +3,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from util.file_utils import make_dataset, load_json
+from util.file_utils import make_dataset_of_files, load_json
 from util.preprocessing import normalize_from_hu
 from data.stochastic_focal_patching import StochasticFocalPatchSampler
 
@@ -14,8 +14,8 @@ class CTDataset(Dataset):
     def __init__(self, conf):
         dir_A = os.path.join(conf.dataset.root, 'A')
         dir_B = os.path.join(conf.dataset.root, 'B')
-        self.A_paths = make_dataset(dir_A, EXTENSIONS)
-        self.B_paths = make_dataset(dir_B, EXTENSIONS)
+        self.A_paths = make_dataset_of_files(dir_A, EXTENSIONS)
+        self.B_paths = make_dataset_of_files(dir_B, EXTENSIONS)
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 

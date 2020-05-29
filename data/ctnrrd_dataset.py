@@ -3,10 +3,10 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from util.file_utils import make_dataset, load_json
+from util.file_utils import make_dataset_of_folders, load_json
 from util.preprocessing import normalize_from_hu
+from util import sitk_utils
 from data.stochastic_focal_patching import StochasticFocalPatchSampler
-
 
 EXTENSIONS = ['.nrrd']
 
@@ -14,16 +14,13 @@ class CTNRRDDataset(Dataset):
     def __init__(self, conf):
         dir_A = os.path.join(conf.dataset.root, 'A')
         dir_B = os.path.join(conf.dataset.root, 'B')
-        self.A_paths = make_dataset(dir_A, EXTENSIONS)
-        self.B_paths = make_dataset(dir_B, EXTENSIONS)
+        self.A_paths = make_dataset_of_folders(dir_A, EXTENSIONS)
+        self.B_paths = make_dataset_of_folders(dir_B, EXTENSIONS)
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 
-        # Dataset range of values information for normalization
-        norm_A = os.path.join(conf.dataset.root, 'normalize_A.json')
-        norm_B = os.path.join(conf.dataset.root, 'normalize_B.json')
-        self.norm_A = load_json(norm_A)
-        self.norm_B = load_json(norm_B)
+        # Min and max HU values for clipping and normalization
+        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
 
         patch_size = conf.dataset.patch_size
         focal_region_proportion = conf.dataset.focal_region_proportion
@@ -33,17 +30,26 @@ class CTNRRDDataset(Dataset):
         index_A = index % self.A_size
         index_B = random.randint(0, self.B_size - 1)
 
-        A_path = self.A_paths[index_A]
-        B_path = self.B_paths[index_B]
+        A_path = os.path.join(self.A_paths[index_A], 'CT.nrrd')
+        B_path = os.path.join(self.B_paths[index_B], 'CT.nrrd')
         
-        A = torch.Tensor(np.load(A_path))
-        B = torch.Tensor(np.load(B_path))
+        # load nrrd as SimpleITK objects
+        A = sitk_utils.load(A_path)
+        B = sitk_utils.load(B_path)
+
+        A = sitk_utils.get_tensor(A)
+        B = sitk_utils.get_tensor(B)
         
-        A, B = self.patch_sampler.get_patch_pair(A, B) # Extract patches
+        # Extract patches
+        A, B = self.patch_sampler.get_patch_pair(A, B) 
+
+        # Limits the lowest and highest HU unit
+        A = np.clip(A, self.hu_min, self.hu_max)
+        B = np.clip(B, self.hu_min, self.hu_max)
 
         # Normalize Hounsfield units to range [-1,1]
-        A = normalize_from_hu(A, self.norm_A["min"], self.norm_A["max"])
-        B = normalize_from_hu(B, self.norm_B["min"], self.norm_B["max"])
+        A = normalize_from_hu(A, self.hu_min, self.hu_max)
+        B = normalize_from_hu(B, self.hu_min, self.hu_max)
 
         # Add channel dimension (1 = grayscale)
         A = A.unsqueeze(0)
