@@ -143,7 +143,8 @@ class UpBlock(nn.Module):
         self.relu = nn.PReLU(out_channels)
     
     def build_up_conv(self, in_channels, out_channels, norm_layer, use_bias):
-        return nn.Sequential(nn.ConvTranspose3d(in_channels, out_channels // 2, kernel_size=2, stride=2, bias=use_bias),
+        return nn.Sequential(nn.ConvTranspose3d(in_channels, out_channels // 2, 
+                                                kernel_size=2, stride=2, bias=use_bias),
                              norm_layer(out_channels // 2),
                              nn.PReLU(out_channels // 2))
 
