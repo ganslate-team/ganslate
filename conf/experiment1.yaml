@@ -1,12 +1,19 @@
-use_cuda: False
-n_iters: 100
+use_cuda: True
+n_iters: 500000
 n_iters_decay: 0
-batch_size: 1
+batch_size: 2
 
 dataset: 
     class_name: "CTNRRDDatasetConfig"
-    root: "./IGNORE/dataset/"
-
+    root: "/work/ft002207/CT_CBCT_dataset_resampled"
+    hounsfield_units_range: 
+        - -1000
+        - 2000
+    num_workers: 8
+    patch_size:
+        - 32
+        - 192
+        - 192
 gan:  
     class_name: "Cycle3DGANConfig"
 
@@ -18,3 +25,5 @@ gan:
 
 logging:
     wandb: True
+    log_freq: 10
+    checkpoint_freq: 10000

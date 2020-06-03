@@ -45,12 +45,12 @@ class BaseModel(ABC):
         torch.backends.cudnn.benchmark = True
     
     def _specify_device(self):
-        if self.conf.use_cuda:
-            if self.conf.distributed:
-                # necessary for proper working of distributed training
-                return torch.device('cuda:%d' % communication.get_rank())
-            else:
-                return torch.device('cuda:0')
+        # distributed GPU training
+        if self.conf.distributed:
+            return torch.device('cuda:%d' % communication.get_rank())
+        # non-distributed GPU training
+        elif self.conf.use_cuda: 
+            return torch.device('cuda:0')
         else:
             return torch.device('cpu')
             
@@ -125,7 +125,7 @@ class BaseModel(ABC):
                                                               device_ids=[self.device], 
                                                               output_device=self.device,
                                                               broadcast_buffers=False) 
-            else:
+            elif self.conf.use_cuda and torch.cuda.device_count() > 0:
                 self.networks[name] = DataParallel(self.networks[name])
 
     def convert_to_mixed_precision(self):

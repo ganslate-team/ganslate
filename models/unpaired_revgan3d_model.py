@@ -85,12 +85,9 @@ class UnpairedRevGAN3dModel(BaseModel):
         """Unpack input data from the dataloader.
         Parameters:
             input (dict) -- a pair of data samples from domain A and domain B.
-
-        The option 'direction' can be used to swap domain A and domain B.
         """
-        AtoB = self.conf.dataset.direction == 'AtoB' # TODO: more pythonic name
-        self.visuals['real_A'] = input['A' if AtoB else 'B'].to(self.device)
-        self.visuals['real_B'] = input['B' if AtoB else 'A'].to(self.device)
+        self.visuals['real_A'] = input['A'].to(self.device)
+        self.visuals['real_B'] = input['B'].to(self.device)
 
 
     def optimize_parameters(self):

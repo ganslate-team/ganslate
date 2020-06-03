@@ -89,7 +89,11 @@ class StochasticFocalPatchSampler:
     def calculate_valid_start_region(self, volume):
         """Patch can have a starting coordinate anywhere from where it can fit with the defined patch size."""
         volume_size = self.get_size(volume)
-        return volume_size - self.patch_size
-    
+        valid_start_region = volume_size - self.patch_size
+        if (np.array(valid_start_region) < 0).any():
+            raise ValueError("The defined patch size {} is not smaller than the size of the given input {}."\
+                             .format(self.patch_size, volume_size))
+        return valid_start_region
+
     def get_size(self, volume):
         return np.array(volume.shape[-3:])  # last three dimension (Z,X,Y)

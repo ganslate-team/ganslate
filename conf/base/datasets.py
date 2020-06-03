@@ -6,7 +6,6 @@ from omegaconf import MISSING
 class BaseDatasetConfig:
     name:         str = MISSING
     root:         str = MISSING
-    direction:    str = "AtoB"
     
     pool_size:    int = 50
     shuffle:      bool = True
