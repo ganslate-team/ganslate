@@ -4,7 +4,7 @@ n_iters_decay: 0
 batch_size: 2
 
 dataset: 
-    class_name: "CTNRRDDatasetConfig"
+    class_name: "CBCTtoCTDatasetConfig"
     root: "/work/ft002207/CT_CBCT_dataset_resampled"
     hounsfield_units_range: 
         - -1000
