@@ -38,13 +38,12 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
+	# limit CT so that it only contains part of the body shown in CBCT
+        CT = limit_CT_to_scope_of_CBCT(CT, CBCT)
+
         CBCT = sitk_utils.get_tensor(CBCT)
         CT = sitk_utils.get_tensor(CT)
-
-
-        # limit CT so that it only contains part of the body shown in CBCT
-        CT = limit_CT_to_scope_of_CBCT(CT, CBCT)
-        
+     
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT) 
 
