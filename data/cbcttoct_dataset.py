@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 from util.file_utils import make_dataset_of_folders, load_json
 from util.preprocessing import normalize_from_hu
 from util import sitk_utils
+from data.register_truncate import limit_CT_to_scope_of_CBCT
 from data.stochastic_focal_patching import StochasticFocalPatchSampler
 
 EXTENSIONS = ['.nrrd']
@@ -40,15 +41,9 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.get_tensor(CBCT)
         CT = sitk_utils.get_tensor(CT)
 
-        # remove first and last slice of CBCT due to FOV
-        CBCT = CBCT[1:-1]
 
-        # CT has more slices than CBCT, make sure that CT contains
-        # a similar size of the scanned body as by truncating it at both ends
-        num_extra_slices = CT.shape[0] - CBCT.shape[0]
-        start = int(num_extra_slices * 0.4) # these proportion decided heuristically 
-        end = int(-num_extra_slices * 0.6)  # by comparing the CBCT and CT images of the dataset
-        CT = CT[start:end]        
+        # limit CT so that it only contains part of the body shown in CBCT
+        CT = limit_CT_to_scope_of_CBCT(CT, CBCT)
         
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT) 
