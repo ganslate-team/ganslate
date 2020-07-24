@@ -3,8 +3,10 @@ from numpy import mean
 from itertools import product
 
 
-def limit_CT_to_scope_of_CBCT(CT, CBCT):
-    """TODO
+def truncate_CT_to_scope_of_CBCT(CT, CBCT):
+    """CBCT scans are usually focused on smaller part of the body compared to what is
+    represented in CT. This function limits a CT to the part of the body that is found
+    in CBCT by registering CT to the CBCT and cropping it to the relevant scope.
     https://discourse.itk.org/t/registration-to-get-rid-of-slices-containing-part-of-the-body-not-found-in-other-scan/3313/4
     """
     registration_transform = get_registration_transform(fixed_image=CBCT, 
@@ -34,12 +36,21 @@ def limit_CT_to_scope_of_CBCT(CT, CBCT):
     # Averaging them is a way to decide at which bottom and top slice the CT should be truncated.
     start_slice = int(round(mean(z_corners[:4])))
     end_slice = int(round(mean(z_corners[4:])))
-
+    # When the registration fails, just return the original CT. Happens infrequently.
+    if start_slice < 0:
+        print("Registration failed. Passing the whole CT volume.")
+        return CT
     return CT[:, :, start_slice:end_slice]
 
 
 def get_registration_transform(fixed_image, moving_image):
-    """TODO"""
+    """Performs the registration and returns a SimpleITK's `Transform` class which can be
+    used to resample an image so that it is registered to another one. However, in our code
+    we do not resample images but only use this information to find where the `moving_image` 
+    should be truncated so that it contains only the part of the body that is found in the `fixed_image`. 
+    Registration parameters are hardcoded and picked for the specific task of  CBCT to CT translation. 
+    TODO: consider making the adjustable in config."""
+    
     # SimpleITK registration's supported pixel types are sitkFloat32 and sitkFloat64
     fixed_image = sitk.Cast(fixed_image, sitk.sitkFloat32)
     moving_image = sitk.Cast(moving_image, sitk.sitkFloat32)
@@ -47,14 +58,14 @@ def get_registration_transform(fixed_image, moving_image):
     registration_method = sitk.ImageRegistrationMethod()
 
     # Similarity metric settings
-    registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=50)
+    registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=200)
     registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
     registration_method.SetMetricSamplingPercentage(0.01)
 
     registration_method.SetInterpolator(sitk.sitkLinear)
 
     # Optimizer settings
-    registration_method.SetOptimizerAsGradientDescent(learningRate=1.0, numberOfIterations=100, convergenceMinimumValue=1e-6, convergenceWindowSize=10)
+    registration_method.SetOptimizerAsGradientDescent(learningRate=1.0, numberOfIterations=200, convergenceMinimumValue=1e-6, convergenceWindowSize=10)
     registration_method.SetOptimizerScalesFromPhysicalShift()
 
     # Setup for the multi-resolution framework        

@@ -6,7 +6,7 @@ from torch.utils.data import Dataset
 from util.file_utils import make_dataset_of_folders, load_json
 from util.preprocessing import normalize_from_hu
 from util import sitk_utils
-from data.register_truncate import limit_CT_to_scope_of_CBCT
+from data.register_truncate import truncate_CT_to_scope_of_CBCT
 from data.stochastic_focal_patching import StochasticFocalPatchSampler
 
 EXTENSIONS = ['.nrrd']
@@ -23,9 +23,15 @@ class CBCTtoCTDataset(Dataset):
         # Min and max HU values for clipping and normalization
         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
 
-        patch_size = conf.dataset.patch_size
         focal_region_proportion = conf.dataset.focal_region_proportion
-        self.patch_sampler = StochasticFocalPatchSampler(patch_size, focal_region_proportion)
+        self.patch_size = np.array(conf.dataset.patch_size)
+        self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
+
+    def _is_volume_smaller_than_patch(self, sitk_volume):
+        volume_size = sitk_utils.get_size_zxy(sitk_volume)
+        if (volume_size < self.patch_size).any():
+            return True
+        return False
 
     def __getitem__(self, index):
         index_CBCT = index % self.num_datapoints_CBCT
@@ -38,18 +44,30 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
-	# limit CT so that it only contains part of the body shown in CBCT
-        CT = limit_CT_to_scope_of_CBCT(CT, CBCT)
+        if self._is_volume_smaller_than_patch(CBCT) or self._is_volume_smaller_than_patch(CT):
+            raise ValueError("Volume size not smaller than the defined patch size.\
+                              \nCBCT: {} \nCT: {} \npatch_size: {}."\
+                             .format(sitk_utils.get_size_zxy(CBCT),
+                                     sitk_utils.get_size_zxy(CT), 
+                                     self.patch_size))
+
+	    # limit CT so that it only contains part of the body shown in CBCT
+        CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
+        if self._is_volume_smaller_than_patch(CT_truncated):
+            print("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
+            del CT_truncated
+        else:
+            CT = CT_truncated
 
         CBCT = sitk_utils.get_tensor(CBCT)
         CT = sitk_utils.get_tensor(CT)
-     
+
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT) 
 
         # Limits the lowest and highest HU unit
-        CBCT = np.clip(CBCT, self.hu_min, self.hu_max)
-        CT = np.clip(CT, self.hu_min, self.hu_max)
+        CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
+        CT = torch.clamp(CT, self.hu_min, self.hu_max)
 
         # Normalize Hounsfield units to range [-1,1]
         CBCT = normalize_from_hu(CBCT, self.hu_min, self.hu_max)

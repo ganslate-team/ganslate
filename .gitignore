@@ -122,3 +122,4 @@ checkpoints/
 wandb
 core.login18*
 IGNORE/
+output_*

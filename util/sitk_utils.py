@@ -1,11 +1,21 @@
 import SimpleITK as sitk 
 from torch import Tensor
+import numpy as np
 
 def load(file_path):
     reader = sitk.ImageFileReader()
     reader.SetFileName(file_path)
     sitk_image = reader.Execute()
     return sitk_image
+
+def get_size_zxy(sitk_image):
+    """Get volume size in torch format (e.g. zxy instead of xyz)."""
+    size = sitk_image.GetSize()
+    n_dims = len(size) 
+    if n_dims == 3: 
+        return np.array([size[2], size[0], size[1]])
+    else:
+        raise NotImplementedError("Not implemented for {} dimensions.".format(n_dims))
 
 def get_npy(sitk_image):
     return sitk.GetArrayFromImage(sitk_image)
