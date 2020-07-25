@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from pytorch_msssim.ssim import SSIM, MS_SSIM
 from apex import amp
 
-from nn.losses.losses import GeneratorLosses
+from nn.losses.generator_loss import GeneratorLoss
 from nn.losses.GAN_loss import GANLoss
 
 class UnpairedRevGAN3dModel(BaseModel):
@@ -65,7 +65,7 @@ class UnpairedRevGAN3dModel(BaseModel):
         # Standard GAN loss 
         self.criterion_gan = GANLoss(conf.gan.loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterions_G = GeneratorLosses(conf)
+        self.criterion_G = GeneratorLoss(conf)
 
 
     def init_optimizers(self, conf):
@@ -181,10 +181,10 @@ class UnpairedRevGAN3dModel(BaseModel):
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity, Inverse) -------------
-        if self.criterions_G.is_using_identity():
+        if self.criterion_G.is_using_identity():
             self.visuals['idt_A'] = self.networks['G'](real_B)
             self.visuals['idt_B'] = self.networks['G'](real_A, inverse=True)
-        losses_G = self.criterions_G(self.visuals)
+        losses_G = self.criterion_G(self.visuals)
         self.losses.update(losses_G)
         # ---------------------------------------------------------------
 
