@@ -1,6 +1,6 @@
 import torch
 from data import build_loader
-from models import build_model
+from nn import build_model
 from util.distributed import init_distributed, communication
 
 from util.logging.experiment_tracker import ExperimentTracker

@@ -29,7 +29,7 @@ class CBCTtoCTDataset(Dataset):
 
     def _is_volume_smaller_than_patch(self, sitk_volume):
         volume_size = sitk_utils.get_size_zxy(sitk_volume)
-        if (volume_size < self.patch_size).any():
+          if (volume_size < self.patch_size).any():
             return True
         return False
 

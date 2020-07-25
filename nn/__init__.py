@@ -1,5 +1,5 @@
 from importlib import import_module
-from models.base_model import BaseModel
+from nn.base_model import BaseModel
 
 
 def build_model(conf):
@@ -8,9 +8,9 @@ def build_model(conf):
 
 def find_model_using_name(model_name):
     # Given the option --model [modelname],
-    # the file "models/modelname_model.py"
+    # the file "nn/modelname_model.py"
     # will be imported.
-    model_filename = "models." + model_name + "_model"
+    model_filename = "nn." + model_name + "_model"
     modellib = import_module(model_filename)
 
     # In the file, the class called ModelNameModel() will

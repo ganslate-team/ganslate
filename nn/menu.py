@@ -1,6 +1,6 @@
-from models.util import init_weights
-from models.generators.vnet import VNet
-from models.discriminators.patchgan_discriminator import PatchGANDiscriminator
+from nn.util import init_weights
+from nn.generators.vnet import VNet
+from nn.discriminators.patchgan_discriminator import PatchGANDiscriminator
 
 
 def define_G(conf, device):

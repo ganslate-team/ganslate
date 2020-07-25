@@ -7,7 +7,7 @@ from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from apex import amp
 
-from models.util import get_scheduler
+from nn.util import get_scheduler
 
 from util.distributed import communication
 

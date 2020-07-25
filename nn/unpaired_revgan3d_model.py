@@ -1,14 +1,14 @@
 import torch
 import itertools
 from util.image_pool import ImagePool
-from models.base_model import BaseModel
-from models.menu import define_D, define_G
+from nn.base_model import BaseModel
+from nn.menu import define_D, define_G
 import torch.nn.functional as F
 from pytorch_msssim.ssim import SSIM, MS_SSIM
 from apex import amp
 
-from models.losses.losses import GeneratorLosses
-from models.losses.GAN_loss import GANLoss
+from nn.losses.losses import GeneratorLosses
+from nn.losses.GAN_loss import GANLoss
 
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''

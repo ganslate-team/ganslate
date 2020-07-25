@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import memcnn
-from models.util import get_norm_layer, is_bias_before_norm
+from nn.util import get_norm_layer, is_bias_before_norm
 
 
 class VNet(nn.Module):

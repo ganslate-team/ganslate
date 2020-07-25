@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from models.util import get_norm_layer, is_bias_before_norm
+from nn.util import get_norm_layer, is_bias_before_norm
 
 
 class PatchGANDiscriminator(nn.Module):
