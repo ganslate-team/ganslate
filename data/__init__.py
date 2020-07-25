@@ -1,6 +1,6 @@
 import importlib
 from torch.utils.data import Dataset, DataLoader
-from util.sampler import InfiniteSampler
+from utils.sampler import InfiniteSampler
 
 
 def build_loader(conf):

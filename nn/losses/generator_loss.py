@@ -5,7 +5,7 @@ from nn.losses.ssim import SSIM
 # TODO: place it somewhere better
 def reshape_to_4D_if_5D(tensor):
     if len(tensor.shape) == 5:
-        return tensor.view(-1, tensor.shape[2:])
+        return tensor.view(-1, *tensor.shape[2:])
     return tensor
 
 class GeneratorLoss:
@@ -66,7 +66,7 @@ class CycleLoss:
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
             self.ssim_criterion = SSIM(data_range=2, # Dynamic range, data is between -1 and 1
-                                       channel=channels_ssim
+                                       channel=channels_ssim,
                                        K=(0.1, 0.4)) 
             # weights for addition of SSIM and L1 losses
             self.alpha = proportion_ssim

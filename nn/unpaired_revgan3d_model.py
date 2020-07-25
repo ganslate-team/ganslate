@@ -1,14 +1,13 @@
 import torch
 import itertools
-from util.image_pool import ImagePool
+from utils.image_pool import ImagePool
 from nn.base_model import BaseModel
-from nn.menu import define_D, define_G
+from nn import build_D, build_G
 import torch.nn.functional as F
-from pytorch_msssim.ssim import SSIM, MS_SSIM
 from apex import amp
 
 from nn.losses.generator_loss import GeneratorLoss
-from nn.losses.GAN_loss import GANLoss
+from nn.losses.gan_loss import GANLoss
 
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''
@@ -52,9 +51,9 @@ class UnpairedRevGAN3dModel(BaseModel):
         # TODO: move it to base_model 
         for name in self.networks.keys():
             if name.startswith('G'):
-                self.networks[name] = define_G(conf, self.device)
+                self.networks[name] = build_G(conf, self.device)
             elif name.startswith('D'):
-                self.networks[name] = define_D(conf, self.device)
+                self.networks[name] = build_D(conf, self.device)
             else:
                 raise ValueError('Network\'s name has to begin with either "G" if it is a generator, \
                                   or "D" if it is a discriminator.')

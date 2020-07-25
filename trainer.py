@@ -1,12 +1,12 @@
 import torch
 from data import build_loader
 from nn import build_model
-from util.distributed import init_distributed, communication
+from utils.distributed import init_distributed, communication
 
-from util.logging.experiment_tracker import ExperimentTracker
+from utils.logging.experiment_tracker import ExperimentTracker
 
 from omegaconf import OmegaConf
-from conf.initializer import init_config
+from conf import init_config
 
 class Trainer:
     def __init__(self, conf):

@@ -1,6 +1,6 @@
 import os
 import torch
-from util.distributed import communication
+from utils.distributed import communication
 
 def init_distributed():
     num_gpu = int(os.environ.get('WORLD_SIZE', 1))

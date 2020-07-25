@@ -15,7 +15,7 @@ import itertools
 
 from typing import Optional
 from torch.utils.data.sampler import Sampler
-from util.distributed import communication
+from utils.distributed import communication
 
 
 class InfiniteSampler(Sampler):

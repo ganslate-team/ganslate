@@ -3,9 +3,9 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from util.file_utils import make_dataset_of_files, load_json
-from util.preprocessing import normalize_from_hu
-from data.stochastic_focal_patching import StochasticFocalPatchSampler
+from utils.io import make_dataset_of_files, load_json
+from utils.medical_imaging import normalize_from_hu
+from data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 
 EXTENSIONS = ['.npy']

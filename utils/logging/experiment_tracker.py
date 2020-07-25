@@ -6,11 +6,11 @@ import time
 import torch
 from torchvision.utils import save_image
 
-from util.distributed import communication
-from util.file_utils import mkdirs
+from utils.distributed import communication
+from utils.io import mkdirs
 
-from util.logging.wandb_tracker import WandbTracker
-from util.logging.tensorboard_tracker import TensorboardTracker
+from utils.logging.wandb_tracker import WandbTracker
+from utils.logging.tensorboard_tracker import TensorboardTracker
 
 
 class ExperimentTracker:

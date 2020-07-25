@@ -7,11 +7,21 @@
 # All rights reserved.
 # Some changes are made to work together with DIRECT.
 
+# ----------------------------------------------------
+# Taken from DIRECT https://github.com/directgroup/direct
+# Added support for mixed precision by allowing the calculation when
+# an image is has type `half` and the other `float`.
+
 import torch
 import torch.nn.functional as F
 
 __all__ = ('batch_ssim', 'ms_ssim', 'SSIM', 'MS_SSIM',)
 
+def are_tensors_half_or_float(*args):
+    for tensor in args:
+        if not isinstance(tensor, torch.cuda.FloatTensor ) and not isinstance(tensor, torch.cuda.HalfTensor):
+            return False
+    return True
 
 def _fspecial_gauss_1d(size, sigma):
     """
@@ -137,7 +147,7 @@ def batch_ssim(input, target,
     if len(input.shape) != 4:
         raise ValueError('Input images should be 4-d tensors.')
 
-    if not input.type() == target.type():
+    if not input.type() == target.type() and not are_tensors_half_or_float(input, target):
         raise ValueError('Input images should have the same dtype.')
 
     if not input.shape == target.shape:
@@ -192,7 +202,7 @@ def ms_ssim(X, Y,
     if len(X.shape) != 4:
         raise ValueError('Input images should be 4-d tensors.')
 
-    if not X.type() == Y.type():
+    if not X.type() == Y.type() and not are_tensors_half_or_float(X, Y):
         raise ValueError('Input images should have the same dtype.')
 
     if not X.shape == Y.shape:
