@@ -1,8 +1,8 @@
 from importlib import import_module
-from nn.base_model import BaseModel
-from nn.utils import init_weights
-from nn.generators.vnet import VNet # TODO: do this better
-from nn.discriminators.patchgan_discriminator import PatchGANDiscriminator
+from midaGAN.nn.base_model import BaseModel
+from midaGAN.nn.utils import init_weights
+from midaGAN.nn.generators.vnet import VNet # TODO: do this better
+from midaGAN.nn.discriminators.patchgan_discriminator import PatchGANDiscriminator
 
 def build_model(conf):
     model = find_model_using_name(conf.gan.model)
@@ -12,7 +12,7 @@ def find_model_using_name(model_name):
     # Given the option --model [modelname],
     # the file "nn/modelname_model.py"
     # will be imported.
-    model_filename = "nn." + model_name + "_model"
+    model_filename = "midaGAN.nn." + model_name + "_model"
     modellib = import_module(model_filename)
 
     # In the file, the class called ModelNameModel() will

@@ -7,9 +7,9 @@ from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from apex import amp
 
-from nn.utils import get_scheduler
+from midaGAN.nn.utils import get_scheduler
 
-from utils.distributed import communication
+from midaGAN.utils import communication
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.

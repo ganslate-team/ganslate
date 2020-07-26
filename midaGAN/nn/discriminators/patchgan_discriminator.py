@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from nn.utils import get_norm_layer, is_bias_before_norm
+from midaGAN.nn.utils import get_norm_layer, is_bias_before_norm
 
 
 class PatchGANDiscriminator(nn.Module):

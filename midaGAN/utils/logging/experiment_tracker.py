@@ -6,18 +6,16 @@ import time
 import torch
 from torchvision.utils import save_image
 
-from utils.distributed import communication
-from utils.io import mkdirs
-
-from utils.logging.wandb_tracker import WandbTracker
-from utils.logging.tensorboard_tracker import TensorboardTracker
+from midaGAN.utils import communication, io
+from midaGAN.utils.logging.wandb_tracker import WandbTracker
+from midaGAN.utils.logging.tensorboard_tracker import TensorboardTracker
 
 
 class ExperimentTracker:
     def __init__(self, conf):
         self.output_dir = conf.logging.output_dir
         if communication.is_main_process():
-            mkdirs(os.path.join(self.output_dir, 'images'))
+            io.mkdirs(os.path.join(self.output_dir, 'images'))
             self._save_config(conf)
 
             self.wandb = None

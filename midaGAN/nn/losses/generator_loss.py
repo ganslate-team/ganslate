@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from nn.losses.ssim import SSIM
+from midaGAN.nn.losses.ssim import SSIM
 
 # TODO: place it somewhere better
 def reshape_to_4D_if_5D(tensor):

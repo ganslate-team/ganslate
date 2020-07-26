@@ -3,11 +3,11 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from utils.io import make_dataset_of_folders, load_json
-from utils.medical_imaging import normalize_from_hu
-from utils import sitk_utils
-from data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
-from data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+from midaGAN.utils.io import make_dataset_of_folders, load_json
+from midaGAN.utils.medical_imaging import normalize_from_hu
+from midaGAN.utils import sitk_utils
+from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
+from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 EXTENSIONS = ['.nrrd']
 

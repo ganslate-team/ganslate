@@ -9,8 +9,7 @@
 
 # ----------------------------------------------------
 # Taken from DIRECT https://github.com/directgroup/direct
-# Added support for mixed precision by allowing the calculation when
-# an image is has type `half` and the other `float`.
+# Added support for mixed precision by the case when one image is of type `half` and the other `float`.
 
 import torch
 import torch.nn.functional as F

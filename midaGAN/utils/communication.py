@@ -1,25 +1,28 @@
-# coding=utf-8
-"""
-Copyright (c) DIRECT Contributors
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-"""
-
 # Taken from Detectron 2, licensed under Apache 2.0.
 # https://github.com/facebookresearch/detectron2/blob/989f52d67d05445ccd030d8f13d6cc53e297fb91/detectron2/utils/comm.py
 # Changes:
-# - Docstring to match the rest of the library.
-# - Calls to other subroutines which do not exist in DIRECT.
-# - Extra logging.
+# - init_distributed()
+# - `reduce` and `all_reduce` for various datatypes
 
-
+import os
 import torch
 import logging
 import numpy as np
 
-from typing import List
-
 logger = logging.getLogger(__name__)
+
+
+def init_distributed():
+    num_gpu = int(os.environ.get('WORLD_SIZE', 1))
+    if num_gpu > 1:
+        torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
+        torch.distributed.init_process_group(
+            backend='nccl', init_method='env://'
+        )
+        synchronize()
+        print(f'Number of GPUs available in world: {num_gpu}.')
+    else:
+        raise ValueError("Distributed ON but but running single process") # TODO make nicer
 
 
 def synchronize():

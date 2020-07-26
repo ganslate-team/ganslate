@@ -2,7 +2,7 @@ import os.path
 import torch
 import numpy as np
 from torch.utils.data import Dataset
-from utils.io import make_dataset_of_files
+from midaGAN.utils.io import make_dataset_of_files
 
 
 class DummyDataset(Dataset):

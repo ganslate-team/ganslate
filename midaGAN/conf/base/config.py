@@ -2,8 +2,8 @@ from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 
-from conf.base.datasets import BaseDatasetConfig
-from conf.base.gans import BaseGANConfig
+from midaGAN.conf.base.datasets import BaseDatasetConfig
+from midaGAN.conf.base.gans import BaseGANConfig
 
 @dataclass
 class OptimizerConfig:

@@ -1,13 +1,14 @@
 import torch
-import itertools
-from utils.image_pool import ImagePool
-from nn.base_model import BaseModel
-from nn import build_D, build_G
 import torch.nn.functional as F
+
+import itertools
 from apex import amp
 
-from nn.losses.generator_loss import GeneratorLoss
-from nn.losses.gan_loss import GANLoss
+from midaGAN.utils.image_pool import ImagePool
+from midaGAN.nn import build_D, build_G
+from midaGAN.nn.base_model import BaseModel
+from midaGAN.nn.losses.generator_loss import GeneratorLoss
+from midaGAN.nn.losses.gan_loss import GANLoss
 
 class UnpairedRevGAN3dModel(BaseModel):
     ''' Unpaired 3D-RevGAN model '''
