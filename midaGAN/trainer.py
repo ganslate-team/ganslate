@@ -2,11 +2,7 @@ import torch
 from midaGAN.data import build_loader
 from midaGAN.nn import build_model
 from midaGAN.utils import communication
-
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
-
-from omegaconf import OmegaConf
-from midaGAN.conf import init_config
 
 class Trainer:
     def __init__(self, conf):
@@ -59,16 +55,3 @@ class Trainer:
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
-
-def main():
-    conf = init_config('./midaGAN/conf/experiment1.yaml')
-    cli = OmegaConf.from_cli()
-    conf = OmegaConf.merge(conf, cli)
-    print(conf.pretty())
-
-    trainer = Trainer(conf)
-    trainer.train()
-            
-
-if __name__ == '__main__':
-    main()

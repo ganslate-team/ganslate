@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/local_rwth/bin/zsh
  
 ### #SBATCH directives need to be in the first part of the jobscript
 
 ### Job name
-#SBATCH --job-name=new2
+#SBATCH --job-name=new1
 
 ### Output path for stdout and stderr
 ### %J is the job ID, %I is the array ID
@@ -29,9 +29,9 @@
 ### if needed: switch to your working directory (where you saved your program)
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
-source $HOME/.bashrc
-cd $HOME/ibRevGAN/
+source $HOME/.zshrc
+cd $HOME/midaGAN/
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python distributed_launch.py --nproc_per_node 2 trainer.py logging.wandb=True batch_size=1 dataset.patch_size=[32,288,288] logging.log_freq=50 optimizer.lambda_A=5.0 optimizer.lambda_B=5.0 optimizer.lambda_inverse=0 optimizer.lambda_identity=0 distributed=True mixed_precision=True n_iters=20000
+python distributed_launch.py --nproc_per_node 2 trainer.py logging.wandb=True batch_size=1 dataset.patch_size=[32,288,288] logging.log_freq=50 optimizer.lambda_inverse=0 optimizer.lambda_identity=0.1 distributed=True mixed_precision=True n_iters=20000

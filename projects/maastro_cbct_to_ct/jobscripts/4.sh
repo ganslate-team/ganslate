@@ -30,8 +30,8 @@
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 source $HOME/.bashrc
-cd $HOME/ibRevGAN/
+cd $HOME/midaGAN/
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python distributed_launch.py --nproc_per_node 2 trainer.py logging.wandb=True batch_size=1 dataset.patch_size=[32,288,288] logging.log_freq=50 optimizer.lambda_inverse=0 optimizer.lambda_identity=0.05 distributed=True mixed_precision=True n_iters=20000
+python distributed_launch.py --nproc_per_node 2 trainer.py logging.wandb=True batch_size=1 dataset.patch_size=[32,288,288] logging.log_freq=50 optimizer.lambda_A=5.0 optimizer.lambda_B=5.0 optimizer.lambda_inverse=0 optimizer.lambda_identity=0 distributed=True mixed_precision=True n_iters=20000
