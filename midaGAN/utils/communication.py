@@ -1,16 +1,16 @@
 # Taken from Detectron 2, licensed under Apache 2.0.
 # https://github.com/facebookresearch/detectron2/blob/989f52d67d05445ccd030d8f13d6cc53e297fb91/detectron2/utils/comm.py
 # Changes:
+# - removed half of the functions
 # - init_distributed()
 # - `reduce` and `all_reduce` for various datatypes
+# - `shared_random_seed` uses `torch.distributed.broadcast` instead of `all_gather` from Detectron2.
 
 import os
 import torch
 import logging
-import numpy as np
 
 logger = logging.getLogger(__name__)
-
 
 def init_distributed():
     num_gpu = int(os.environ.get('WORLD_SIZE', 1))
@@ -83,30 +83,34 @@ def get_world_size() -> int:
         return 1
     return torch.distributed.get_world_size()
 
+def get_backend_compatible_device():
+    """Use device that is compatible with the backend (e.g. nccl does not support CPU tensors).
+    Used when initializing placeholder tensors before performing communication operations.
+    """
+    return torch.device('cuda' if torch.distributed.get_backend() == 'nccl' else 'cpu')
+
+
 def shared_random_seed() -> int:
     """
     All workers must call this function, otherwise it will deadlock.
     Returns
     -------
-    A random number that is the same across all workers. If workers need a shared RNG, they can use this shared seed to
-    create one.
-    """
-
-    seed = torch.randint(2**31, (1,)).cuda() # TODO verify this works
-    if is_main_process():
-        if get_world_size() > 1:
-            torch.distributed.broadcast(seed, 0) # TODO doesnt seem alright
-    print('infinite sampler seed:', seed.item())
-    return seed.item()
-
+    A random number that is the same across all workers. If workers need a shared RNG, 
+    they can use this shared seed to create one.
+    """ 
+    device = get_backend_compatible_device()
+    # torch.Generator advises to use a high values as seed, hence 2**31
+    seed = torch.randint(2 ** 31, (1,)).to(device)
+    torch.distributed.broadcast(seed, 0)
+    return seed
 
 
 # ------------ Reduce and All Reduce --------------
 
 def reduce(input_data, average=False, all_reduce=False):
     """
-    Reduce any type of data [int, float, tensor, dict, list, tuple] by summing or averaging
-    the value(s) using one of the methods:
+    Interface function for performing reduce on any type of data [int, float, tensor, dict, list, tuple] 
+    by summing or averaging the value(s) using one of the methods:
     (1) rank 0 reduce (torch.distributed.reduce)  - communicates the sum or average of 
                                                     all processes to the process of rank 0 only
     (2) all reduce (torch.distributed.all_reduce) - communicates the sum or average of 
@@ -122,10 +126,8 @@ def reduce(input_data, average=False, all_reduce=False):
     """
     if get_world_size() < 2:
         return input_data
-
-    # use device that is compatible with the backend (e.g. nccl does not support CPU tensors)
-    device = torch.device('cuda' if torch.distributed.get_backend() == 'nccl' else 'cpu')
-
+    
+    device = get_backend_compatible_device()
     with torch.no_grad():
         if isinstance(input_data, torch.Tensor):
             reduced_data = reduce_tensor(input_data, average, all_reduce, device)

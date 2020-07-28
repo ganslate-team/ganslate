@@ -44,7 +44,7 @@ class InfiniteSampler(Sampler):
         assert size > 0
         self._shuffle = shuffle
         if seed is None:
-            seed = 1837237 #communication.shared_random_seed() TODO
+            seed = communication.shared_random_seed()
         self._seed = int(seed)
 
         self._rank = communication.get_rank()
