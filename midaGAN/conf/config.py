@@ -2,9 +2,10 @@ from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 
-from midaGAN.conf.base.datasets import BaseDatasetConfig
-from midaGAN.conf.base.gans import BaseGANConfig
+from midaGAN.conf.datasets import BaseDatasetConfig
+from midaGAN.conf.gans import BaseGANConfig
 
+    
 @dataclass
 class OptimizerConfig:
     beta1:           float = 0.5

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.base.generators import BaseGeneratorConfig
-from midaGAN.conf.base.discriminators import BaseDiscriminatorConfig
+from midaGAN.conf.generators import BaseGeneratorConfig
+from midaGAN.conf.discriminators import BaseDiscriminatorConfig
 
 
 @dataclass

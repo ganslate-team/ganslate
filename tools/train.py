@@ -11,9 +11,10 @@ from midaGAN.conf import init_config
 from omegaconf import OmegaConf
 
 def train():
-    # TODO: make this better
-    conf = init_config('./midaGAN/conf/experiment1.yaml')
     cli = OmegaConf.from_cli()
+    conf = init_config(cli.config)
+    cli.pop("config")
+
     conf = OmegaConf.merge(conf, cli)
     print(conf.pretty())
 

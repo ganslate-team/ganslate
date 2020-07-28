@@ -1,4 +1,4 @@
-from midaGAN.conf.base import config, datasets, gans, discriminators, generators
+from midaGAN.conf import config, datasets, gans, discriminators, generators
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 import sys
