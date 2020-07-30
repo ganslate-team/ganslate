@@ -22,7 +22,7 @@ def make_dataset_of_files(root, extensions=['.npy']):
 def has_extension(file, extensions):
     return any(file.endswith(ext) for ext in extensions)
 
-def make_dataset_of_folders(root, extensions=['.npy']):
+def make_dataset_of_directories(root, extensions=['.npy']):
     """The root of dataset contains folders for each data point. Each data point folder has to have
     (at least) one file of the specified extension. The dataset has to define which file it takes from
     such folder. Useful when using a dataset that stores, for example, an image and a mask together

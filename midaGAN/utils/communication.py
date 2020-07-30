@@ -98,10 +98,12 @@ def shared_random_seed() -> int:
     A random number that is the same across all workers. If workers need a shared RNG, 
     they can use this shared seed to create one.
     """ 
-    device = get_backend_compatible_device()
     # torch.Generator advises to use a high values as seed, hence 2**31
-    seed = torch.randint(2 ** 31, (1,)).to(device)
-    torch.distributed.broadcast(seed, 0)
+    seed = torch.randint(2 ** 31, (1,))
+    torch.distributed.is_initialized():
+        device = get_backend_compatible_device()
+        seed.to(device)
+        torch.distributed.broadcast(seed, 0)
     return seed
 
 

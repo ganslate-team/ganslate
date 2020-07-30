@@ -3,7 +3,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-from midaGAN.utils.io import make_dataset_of_folders, load_json
+from midaGAN.utils.io import make_dataset_of_directories, load_json
 from midaGAN.utils.medical_imaging import normalize_from_hu
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
@@ -15,8 +15,8 @@ class CBCTtoCTDataset(Dataset):
     def __init__(self, conf):
         dir_CBCT = os.path.join(conf.dataset.root, 'CBCT')
         dir_CT = os.path.join(conf.dataset.root, 'CT')
-        self.paths_CBCT = make_dataset_of_folders(dir_CBCT, EXTENSIONS)
-        self.paths_CT = make_dataset_of_folders(dir_CT, EXTENSIONS)
+        self.paths_CBCT = make_dataset_of_directories(dir_CBCT, EXTENSIONS)
+        self.paths_CT = make_dataset_of_directories(dir_CT, EXTENSIONS)
         self.num_datapoints_CBCT = len(self.paths_CBCT)
         self.num_datapoints_CT = len(self.paths_CT)
 
@@ -27,6 +27,7 @@ class CBCTtoCTDataset(Dataset):
         self.patch_size = np.array(conf.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
+    # TODO: move it somewhere else
     def _is_volume_smaller_than_patch(self, sitk_volume):
         volume_size = sitk_utils.get_size_zxy(sitk_volume)
         if (volume_size < self.patch_size).any():
@@ -44,6 +45,7 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
+        # TODO: make a function
         if self._is_volume_smaller_than_patch(CBCT) or self._is_volume_smaller_than_patch(CT):
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nCBCT: {} \nCT: {} \npatch_size: {}."\
