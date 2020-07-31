@@ -83,6 +83,7 @@ def get_world_size() -> int:
         return 1
     return torch.distributed.get_world_size()
 
+
 def get_backend_compatible_device():
     """Use device that is compatible with the backend (e.g. nccl does not support CPU tensors).
     Used when initializing placeholder tensors before performing communication operations.
@@ -100,7 +101,7 @@ def shared_random_seed() -> int:
     """ 
     # torch.Generator advises to use a high values as seed, hence 2**31
     seed = torch.randint(2 ** 31, (1,))
-    torch.distributed.is_initialized():
+    if torch.distributed.is_initialized():
         device = get_backend_compatible_device()
         seed.to(device)
         torch.distributed.broadcast(seed, 0)
