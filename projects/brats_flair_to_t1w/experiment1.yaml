@@ -7,10 +7,7 @@ dataset:
     class_name: "BratsDatasetConfig"
     root: "/work/ft002207/Task01_BrainTumour/imagesTr/"
     num_workers: 8
-    patch_size:
-        - 32
-        - 240
-        - 240
+    patch_size: [32, 240, 240]
 gan:  
     class_name: "Cycle3DGANConfig"
 

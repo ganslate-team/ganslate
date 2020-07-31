@@ -59,6 +59,21 @@ def get_rank() -> int:
 
     return torch.distributed.get_rank()
 
+def get_local_rank() -> int:
+    """
+    Get rank of the process, even when torch.distributed is not initialized.
+    Returns
+    -------
+    int
+    """
+    if not torch.distributed.is_available():
+        return 0
+    if not torch.distributed.is_initialized():
+        return 0
+
+    return int(os.environ['LOCAL_RANK'])
+
+
 
 def is_main_process() -> bool:
     """
@@ -103,7 +118,7 @@ def shared_random_seed() -> int:
     seed = torch.randint(2 ** 31, (1,))
     if torch.distributed.is_initialized():
         device = get_backend_compatible_device()
-        seed.to(device)
+        seed = seed.to(device)
         torch.distributed.broadcast(seed, 0)
     return seed
 

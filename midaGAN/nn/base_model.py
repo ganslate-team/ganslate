@@ -46,8 +46,8 @@ class BaseModel(ABC):
     
     def _specify_device(self):
         # distributed GPU training
-        if self.conf.distributed:
-            return torch.device('cuda:%d' % communication.get_rank())
+        if torch.distributed.is_initialized():
+            return torch.device('cuda:%d' % communication.get_local_rank())
         # non-distributed GPU training
         elif self.conf.use_cuda: 
             return torch.device('cuda:0')
@@ -118,7 +118,7 @@ class BaseModel(ABC):
         using a distributed setup. No parallelization is done in case of single-GPU setup.
         """
         for name in self.networks.keys():
-            if self.conf.distributed:
+            if torch.distributed.is_initialized():
                 # if using batchnorm, broadcast_buffer=True will use batch stats from rank 0, 
                 # otherwise each process keeps its own stats
                 self.networks[name] = DistributedDataParallel(self.networks[name],

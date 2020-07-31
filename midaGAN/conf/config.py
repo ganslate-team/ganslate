@@ -35,8 +35,7 @@ class Config:
     n_iters_decay:  int = MISSING        # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
     use_cuda:        bool = True     # Use CUDA i.e. GPU(s). [Default: True]
 
-    # Distributed and mixed precision
-    distributed:     bool = False
+    # Mixed precision
     mixed_precision: bool = False
     opt_level:       str = "O1"
 

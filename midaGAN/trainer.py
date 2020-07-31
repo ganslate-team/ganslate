@@ -1,6 +1,8 @@
+
+import os
 import torch
 
-from midaGAN import midaGanBase
+from midaGAN import midaGanBase # TODO: make nicer
 
 from midaGAN.data import build_loader
 from midaGAN.nn import build_model
@@ -11,7 +13,8 @@ from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
 
 class Trainer(midaGanBase):
     def __init__(self, conf):
-        if conf.distributed:
+        # Training ran with torch.distributed.launch if there is 'WORLD_SIZE' environment variable
+        if os.environ.get('WORLD_SIZE', None):
             communication.init_distributed()
 
         self.tracker = ExperimentTracker(conf)

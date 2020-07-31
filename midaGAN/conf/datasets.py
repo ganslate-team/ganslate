@@ -33,5 +33,5 @@ class CBCTtoCTDatasetConfig(BaseDatasetConfig):
 class BratsDatasetConfig(BaseDatasetConfig):
     name:         str = "brats"
     patch_size:   Tuple[int] = field(default_factory=lambda: (32, 32, 32))
-    focal_region_proportion: float = 0.1    # Proportion of focal region size compared to original volume size
+    focal_region_proportion: float = 0    # Proportion of focal region size compared to original volume size
 
