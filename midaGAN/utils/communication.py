@@ -12,6 +12,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def init_distributed():
     num_gpu = int(os.environ.get('WORLD_SIZE', 1))
     if num_gpu > 1:
@@ -59,6 +60,7 @@ def get_rank() -> int:
 
     return torch.distributed.get_rank()
 
+
 def get_local_rank() -> int:
     """
     Get rank of the process, even when torch.distributed is not initialized.
@@ -72,7 +74,6 @@ def get_local_rank() -> int:
         return 0
 
     return int(os.environ['LOCAL_RANK'])
-
 
 
 def is_main_process() -> bool:
