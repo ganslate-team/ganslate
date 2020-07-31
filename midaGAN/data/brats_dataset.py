@@ -82,10 +82,5 @@ class BratsDataset(Dataset):
 
         return {'A': A, 'B': B}
 
-
     def __len__(self):
         return self.num_datapoints_A
-
-
-
-
