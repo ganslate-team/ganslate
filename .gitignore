@@ -123,3 +123,4 @@ wandb
 core.login18*
 IGNORE/
 output_*
+log.txt

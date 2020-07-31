@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from midaGAN.utils.io import make_dataset_of_directories, load_json
-from midaGAN.utils.medical_imaging import normalize_from_hu
+from midaGAN.utils.normalization import normalize_from_hu
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler

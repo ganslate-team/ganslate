@@ -3,8 +3,9 @@ import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+import SimpleITK as sitk
 from midaGAN.utils.io import make_dataset_of_files
-from midaGAN.utils.medical_imaging import normalize_from_hu
+from midaGAN.utils.normalization import z_score_normalize
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
@@ -48,15 +49,15 @@ class BratsDataset(Dataset):
         index_A = index % self.num_datapoints
         index_B = random.randint(0, self.num_datapoints - 1)
 
-        path_A = self.paths_A[index_A]
-        path_B = self.paths_B[index_B]
+        path_A = self.paths_brats[index_A]
+        path_B = self.paths_brats[index_B]
         
         # load nrrd as SimpleITK objects
         A = sitk_utils.load(path_A)
         B = sitk_utils.load(path_B)
 
-        A = get_mri_sequence(path_A, FLAIR)
-        B = get_mri_sequence(path_B, T1W)
+        A = get_mri_sequence(A, FLAIR)
+        B = get_mri_sequence(B, T1W)
 
         # TODO: make a function
         if self._is_volume_smaller_than_patch(A) or self._is_volume_smaller_than_patch(B):
@@ -71,11 +72,10 @@ class BratsDataset(Dataset):
 
         # Extract patches
         A, B = self.patch_sampler.get_patch_pair(A, B) 
-
-        # Normalize Hounsfield units to range [-1,1]
-        #A = normalize_from_hu(A, self.hu_min, self.hu_max)
-        #B = normalize_from_hu(B, self.hu_min, self.hu_max)
-
+        # Z-score normalization per volume
+        A, _ = z_score_normalize(A, scale_to_range=(-1,1))
+        B, _ = z_score_normalize(B, scale_to_range=(-1,1))
+        
         # Add channel dimension (1 = grayscale)
         A = A.unsqueeze(0)
         B = B.unsqueeze(0)
@@ -83,4 +83,4 @@ class BratsDataset(Dataset):
         return {'A': A, 'B': B}
 
     def __len__(self):
-        return self.num_datapoints_A
+        return self.num_datapoints
