@@ -1,10 +1,14 @@
 import torch
+
+from midaGAN import midaGanBase
+
 from midaGAN.data import build_loader
 from midaGAN.nn import build_model
 from midaGAN.utils import communication
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
 
-class Trainer:
+
+class Trainer(midaGanBase):
     def __init__(self, conf):
         if conf.distributed:
             communication.init_distributed()
@@ -17,9 +21,10 @@ class Trainer:
         self.iter_idx = 0
         self.checkpoint_freq = conf.logging.checkpoint_freq
 
+        super().__init__()
+
     def train(self):
-        if communication.is_main_process():
-            print('Training started.')
+        self.logger.info('Training started.')
 
         self.tracker.start_dataloading_timer()
         for i, data in zip(self.iters, self.data_loader):
@@ -49,7 +54,7 @@ class Trainer:
     def _save_checkpoint(self):
         if communication.is_main_process():
             if self.iter_idx % self.checkpoint_freq == 0:
-                print('Saving the model after %d iterations.' % (self.iter_idx))
+                self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx) #('latest')
 
     def _set_iter_idx(self, iter_idx):
