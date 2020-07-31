@@ -5,6 +5,7 @@ from midaGAN import midaGanBase
 from midaGAN.data import build_loader
 from midaGAN.nn import build_model
 from midaGAN.utils import communication
+from midaGAN.utils.environment import setup_logging
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
 
 
