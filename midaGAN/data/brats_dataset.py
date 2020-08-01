@@ -73,8 +73,8 @@ class BratsDataset(Dataset):
         # Extract patches
         A, B = self.patch_sampler.get_patch_pair(A, B) 
         # Z-score normalization per volume
-        A, _ = z_score_normalize(A, scale_to_range=(-1,1))
-        B, _ = z_score_normalize(B, scale_to_range=(-1,1))
+        A = z_score_normalize(A, scale_to_range=(-1,1))
+        B = z_score_normalize(B, scale_to_range=(-1,1))
         
         # Add channel dimension (1 = grayscale)
         A = A.unsqueeze(0)

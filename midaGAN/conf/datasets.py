@@ -4,7 +4,7 @@ from omegaconf import MISSING
 
 @dataclass
 class BaseDatasetConfig:
-    name:         str = MISSING
+    name:         str = MISSING # TODO: used for importing data/name_dataset.py, any better way?
     root:         str = MISSING
     
     pool_size:    int = 50
@@ -34,4 +34,9 @@ class BratsDatasetConfig(BaseDatasetConfig):
     name:         str = "brats"
     patch_size:   Tuple[int] = field(default_factory=lambda: (32, 32, 32))
     focal_region_proportion: float = 0    # Proportion of focal region size compared to original volume size
+
+@dataclass
+class SliceBasedDatasetConfig(BaseDatasetConfig):
+    name:         str = "slice_based"
+
 

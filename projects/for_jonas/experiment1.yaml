@@ -1,0 +1,22 @@
+use_cuda: True
+n_iters: 50000
+n_iters_decay: 0
+batch_size: 1
+
+dataset: 
+    class_name: "SliceBasedDatasetConfig"
+    root: "/work/ft002207/Task01_BrainTumour/miniset/"
+    num_workers: 8
+gan:  
+    class_name: "Cycle3DGANConfig"
+
+    generator:  
+        class_name: "VnetGeneratorConfig"
+
+    discriminator:  
+        class_name: "PatchGANDiscriminatorConfig"
+
+logging:
+    wandb: False
+    log_freq: 1
+    checkpoint_freq: 1000

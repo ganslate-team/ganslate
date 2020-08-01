@@ -30,7 +30,6 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
     
     # Fetch all filepaths for each specified extension
     file_list = []
-    print(extensions)
     for ext in extensions:
         if not ext.startswith("."):
             ext = "." + ext
@@ -60,7 +59,7 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
             
         df = df.append(rows, ignore_index=True)
 
-    csv_path = str(dataset_path).replace('/', '_') + '.csv'
+    csv_path = dataset_path / 'dataset_summary.csv'
     df.to_csv(csv_path, index=False) 
     print(f'Dataset summary saved as { pathlib.Path(csv_path).absolute() }')
     return df
