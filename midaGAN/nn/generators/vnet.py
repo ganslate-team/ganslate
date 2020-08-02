@@ -6,7 +6,7 @@ from midaGAN.nn.utils import get_norm_layer, is_bias_before_norm
 
 class VNet(nn.Module):
     def __init__(self, start_n_filters, norm_type, use_memory_saving):
-        super(VNet, self).__init__()
+        super().__init__()
         keep_input = not use_memory_saving
         norm_layer = get_norm_layer(norm_type)
         use_bias = is_bias_before_norm(norm_type)
@@ -50,7 +50,7 @@ class VNet(nn.Module):
 class InvertibleBlock(nn.Module):
     # TODO: is it possible to pass in a constructed block and make it invertible? The class could be reusable for other architectures
     def __init__(self, n_channels, norm_layer, use_bias, keep_input):
-        super(InvertibleBlock, self).__init__()
+        super().__init__()
         
         invertible_module = memcnn.AdditiveCoupling(
             Fm=self.build_conv_block(n_channels//2, norm_layer, use_bias),
@@ -74,7 +74,7 @@ class InvertibleBlock(nn.Module):
 
 class InvertibleSequence(nn.Module):
     def __init__(self, n_channels, n_blocks, norm_layer, use_bias, keep_input):
-        super(InvertibleSequence, self).__init__()
+        super().__init__()
         self.sequence = nn.Sequential(*[InvertibleBlock(n_channels, norm_layer, use_bias, keep_input) for _ in range(n_blocks)])
     
     def forward(self, x, inverse=False):
@@ -95,7 +95,7 @@ class InvertibleSequence(nn.Module):
 
 class InputBlock(nn.Module):
     def __init__(self, out_channels, norm_layer, use_bias):
-        super(InputBlock, self).__init__()
+        super().__init__()
         self.out_channels = out_channels
         self.conv1 = nn.Conv3d(1, out_channels, kernel_size=5, padding=2, bias=use_bias)
         self.bn1 = norm_layer(out_channels)
@@ -110,7 +110,7 @@ class InputBlock(nn.Module):
 
 class DownBlock(nn.Module):
     def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input):
-        super(DownBlock, self).__init__()
+        super().__init__()
         out_channels = 2*in_channels
         self.down_conv_ab = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
         self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
@@ -135,7 +135,7 @@ class DownBlock(nn.Module):
 
 class UpBlock(nn.Module):
     def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input):
-        super(UpBlock, self).__init__()
+        super().__init__()
         self.up_conv_ab = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
         self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
 
@@ -162,7 +162,7 @@ class UpBlock(nn.Module):
 
 class OutBlock(nn.Module):
     def __init__(self, in_channels, norm_layer, use_bias):
-        super(OutBlock, self).__init__()
+        super().__init__()
         self.conv1 = nn.Conv3d(in_channels, in_channels, kernel_size=5, padding=2, bias=use_bias)
         self.bn1 = norm_layer(in_channels)
         self.conv2 = nn.Conv3d(in_channels, 1, kernel_size=1)

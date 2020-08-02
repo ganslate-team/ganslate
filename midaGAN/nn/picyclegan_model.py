@@ -10,11 +10,12 @@ from midaGAN.nn.base_model import BaseModel
 from midaGAN.nn.losses.generator_loss import GeneratorLoss
 from midaGAN.nn.losses.gan_loss import GANLoss
 
-class UnpairedRevGAN3dModel(BaseModel):
-    ''' Unpaired 3D-RevGAN model '''
+
+class PiCycleGANModel(BaseModel):
+    """Partially-invertible CycleGAN"""
 
     def __init__(self, conf):
-        super(UnpairedRevGAN3dModel, self).__init__(conf)
+        super().__init__(conf)
         
         # Inputs and Outputs of the model
         visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', \

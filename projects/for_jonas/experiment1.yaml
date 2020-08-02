@@ -8,7 +8,7 @@ dataset:
     root: "/work/ft002207/Task01_BrainTumour/miniset/"
     num_workers: 8
 gan:  
-    class_name: "Cycle3DGANConfig"
+    class_name: "PiCycleGANConfig"
 
     generator:  
         class_name: "VnetGeneratorConfig"

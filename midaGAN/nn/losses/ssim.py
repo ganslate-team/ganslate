@@ -9,7 +9,7 @@
 
 # ----------------------------------------------------
 # Taken from DIRECT https://github.com/directgroup/direct
-# Added support for mixed precision by the case when one image is of type `half` and the other `float`.
+# Added support for mixed precision by allowing one image to be of type `half` and the other `float`.
 
 import torch
 import torch.nn.functional as F
@@ -270,7 +270,7 @@ class SSIM(torch.nn.Module):
             nonnegative_ssim (bool, optional): force the ssim response to be nonnegative with relu.
         """
 
-        super(SSIM, self).__init__()
+        super().__init__()
         self.win_size = win_size
         self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat(channel, 1, 1, 1)
         self.reduction = reduction
@@ -306,8 +306,7 @@ class MS_SSIM(torch.nn.Module):
             weights (list, optional): weights for different levels
             K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
         """
-
-        super(MS_SSIM, self).__init__()
+        super().__init__()
         self.win_size = win_size
         self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat(channel, 1, 1, 1)
         self.reduction = reduction

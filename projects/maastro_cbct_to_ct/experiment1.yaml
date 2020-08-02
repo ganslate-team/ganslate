@@ -15,7 +15,7 @@ dataset:
         - 288
         - 288
 gan:  
-    class_name: "Cycle3DGANConfig"
+    class_name: "PiCycleGANConfig"
 
     generator:  
         class_name: "VnetGeneratorConfig"

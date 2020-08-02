@@ -9,7 +9,7 @@ dataset:
     num_workers: 8
     patch_size: [32, 240, 240]
 gan:  
-    class_name: "Cycle3DGANConfig"
+    class_name: "PiCycleGANConfig"
 
     generator:  
         class_name: "VnetGeneratorConfig"

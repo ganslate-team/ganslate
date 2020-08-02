@@ -8,6 +8,7 @@ from midaGAN.conf.discriminators import BaseDiscriminatorConfig
 class BaseGANConfig:
     """Base GAN config."""
     is_train:         bool = True
+    is_3d:            bool = True       # if True, use 3D GAN, otherwise 2D
     model:            str = MISSING
     loss_type:        str = "lsgan"
     norm_type:        str = "instance"
@@ -22,5 +23,6 @@ class BaseGANConfig:
 
 
 @dataclass
-class Cycle3DGANConfig(BaseGANConfig):
-    model: str = "unpaired_revgan3d"
+class PiCycleGANConfig(BaseGANConfig):
+    """Partially-invertible CycleGAN"""
+    model: str = "picyclegan"
