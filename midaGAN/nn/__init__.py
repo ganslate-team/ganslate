@@ -1,8 +1,12 @@
 from importlib import import_module
 from midaGAN.nn.base_model import BaseModel
 from midaGAN.nn.utils import init_weights
-from midaGAN.nn.generators.vnet import VNet # TODO: do this better
+
+# TODO: do these import better
+from midaGAN.nn.generators.vnet import VNet
+from midaGAN.nn.generators.vnet2d import VNet2D
 from midaGAN.nn.discriminators.patchgan_discriminator import PatchGANDiscriminator
+from midaGAN.nn.discriminators.patchgan2d_discriminator import PatchGAN2DDiscriminator
 
 def build_model(conf):
     model = find_model_using_name(conf.gan.model)
@@ -38,7 +42,9 @@ def build_G(conf, device):
     generator_args = dict(conf.gan.generator)
     generator_args.pop("model") # used only to select the model
 
-    if name.startswith('vnet'):
+    if name.startswith('vnet2d'):
+        generator = VNet2D(**generator_args, norm_type=norm_type)
+    elif name.startswith('vnet'):
         generator = VNet(**generator_args, norm_type=norm_type)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % name)
@@ -57,7 +63,9 @@ def build_D(conf, device):
     discriminator_args = dict(conf.gan.discriminator)
     discriminator_args.pop("model") # used only to select the model
 
-    if name == 'patch_gan':
+    if name == 'patchgan2d':
+        discriminator = PatchGAN2DDiscriminator(**discriminator_args, norm_type=norm_type)
+    elif name == 'patchgan':
         discriminator = PatchGANDiscriminator(**discriminator_args, norm_type=norm_type)
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' % name_D)

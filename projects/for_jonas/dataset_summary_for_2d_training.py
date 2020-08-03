@@ -26,7 +26,8 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
     """
 
     dataset_path = pathlib.Path(dataset_path)
-    df = pd.DataFrame(columns=['slice', 'volume_filename', 'volume_mean', 'volume_std', 'volume_num_slices'])
+    df = pd.DataFrame(columns=['slice', 'volume_filename', 'volume_mean', 'volume_std',
+                               'volume_min', 'volume_max', 'volume_num_slices'])
     
     # Fetch all filepaths for each specified extension
     file_list = []
@@ -41,19 +42,18 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
         volume = sitk_load(str(file))
         num_slices = volume.GetSize()[2]
         volume = sitk_get_tensor(volume) # because torch is used in dataloader to perform normalization
-        mean = float(volume.mean())
-        std = float(volume.std())
-        
         # Add as many rows to dataframe as there are slices in the volume, along with the useful data
         rows = []
         for i in range(num_slices):
             rows.append(
                 {
                     'slice': i, 
-                     'volume_filename': str(file.relative_to(dataset_path)), 
-                     'volume_mean': mean, 
-                     'volume_std': std, 
-                     'volume_num_slices': num_slices
+                    'volume_filename': str(file.relative_to(dataset_path)), 
+                    'volume_mean': float(volume.mean()), 
+                    'volume_std': float(volume.std()),
+                    'volume_min': float(volume.min()),
+                    'volume_max': float(volume.max()), 
+                    'volume_num_slices': int(num_slices)
                 }
             )
             
