@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
-from midaGAN.nn.utils import get_norm_layer, is_bias_before_norm
+from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 
 class PatchGANDiscriminator(nn.Module):
     def __init__(self, start_n_filters, n_layers, norm_type):
         super(PatchGANDiscriminator, self).__init__()
         
-        norm_layer = get_norm_layer(norm_type)
+        norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
         kw = 4

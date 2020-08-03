@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 import memcnn
-from midaGAN.nn.utils import get_norm_layer, is_bias_before_norm
+from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 
 class VNet(nn.Module):
     def __init__(self, start_n_filters, norm_type, use_memory_saving):
         super().__init__()
         keep_input = not use_memory_saving
-        norm_layer = get_norm_layer(norm_type)
+        norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
         self.in_ab = InputBlock(start_n_filters, norm_layer, use_bias) 
