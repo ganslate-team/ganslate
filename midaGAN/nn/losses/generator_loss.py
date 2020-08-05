@@ -16,9 +16,15 @@ class GeneratorLoss:
         lambda_inverse = conf.optimizer.lambda_inverse
         proportion_ssim = conf.optimizer.proportion_ssim
 
+        # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
+        # so the number of channels equals to the number of slices in sampled patches.
+        # In 2D training, the number of image channels is defined in the config.
+        channels_ssim = conf.dataset.patch_size[0] if 'patch_size' in conf.dataset.keys() \
+                        else conf.dataset.image_channels
+        # Cycle-consistency - L1, with optional weighted combination with SSIM
         self.criterion_cycle = CycleLoss(lambda_A, lambda_B, 
                                          proportion_ssim, 
-                                         channels_ssim=conf.dataset.patch_size[0])
+                                         channels_ssim=channels_ssim)
 
         if lambda_identity > 0:
             self.criterion_idt = IdentityLoss(lambda_identity, lambda_A, lambda_B)

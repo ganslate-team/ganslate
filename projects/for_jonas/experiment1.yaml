@@ -5,16 +5,19 @@ batch_size: 1
 
 dataset: 
     class_name: "SliceBasedDatasetConfig"
-    root: "/work/ft002207/Task01_BrainTumour/miniset/"
+    root: "/work/ft002207/miniset_sep_seq/"
     num_workers: 8
+
 gan:  
     class_name: "PiCycleGANConfig"
+    
+    is_3d: False
 
     generator:  
-        class_name: "VnetGeneratorConfig"
+        class_name: "Vnet2DGeneratorConfig"
 
     discriminator:  
-        class_name: "PatchGANDiscriminatorConfig"
+        class_name: "PatchGAN2DDiscriminatorConfig"
 
 logging:
     wandb: False

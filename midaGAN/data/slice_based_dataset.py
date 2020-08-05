@@ -44,13 +44,14 @@ class SliceBasedDataset(Dataset):
         # Z-score normalization per volume
         mean_std_A = (summary_A["volume_mean"], summary_A["volume_std"])
         mean_std_B = (summary_B["volume_mean"], summary_B["volume_std"])
-        A = z_score_normalize(A, scale_to_range=(-1,1), mean_std=mean_std_A)
-        B = z_score_normalize(B, scale_to_range=(-1,1), mean_std=mean_std_B)
+        min_max_A = (summary_A["volume_min"], summary_A["volume_max"])
+        min_max_B = (summary_B["volume_min"], summary_B["volume_max"])
+        A = z_score_normalize(A, scale_to_range=(-1,1), mean_std=mean_std_A, original_scale=min_max_A)
+        B = z_score_normalize(B, scale_to_range=(-1,1), mean_std=mean_std_B, original_scale=min_max_B)
         
         # Add channel dimension (1 = grayscale)
         A = A.unsqueeze(0)
         B = B.unsqueeze(0)
-
         return {'A': A, 'B': B}
 
     def __len__(self):

@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 import memcnn
-from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
+from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
 
-class VNet(nn.Module):
+class VNet2D(nn.Module):
     def __init__(self, start_n_filters, norm_type, use_memory_saving):
         super().__init__()
         keep_input = not use_memory_saving
-        norm_layer = get_norm_layer_3d(norm_type)
+        norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
         self.in_ab = InputBlock(start_n_filters, norm_layer, use_bias) 
@@ -61,7 +61,7 @@ class InvertibleBlock(nn.Module):
                                                                keep_input_inverse=keep_input)
 
     def build_conv_block(self, n_channels, norm_layer, use_bias):
-        return nn.Sequential(nn.Conv3d(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
+        return nn.Sequential(nn.Conv2d(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
                              norm_layer(n_channels),
                              nn.PReLU(n_channels))
 
@@ -97,13 +97,13 @@ class InputBlock(nn.Module):
     def __init__(self, out_channels, norm_layer, use_bias):
         super().__init__()
         self.out_channels = out_channels
-        self.conv1 = nn.Conv3d(1, out_channels, kernel_size=5, padding=2, bias=use_bias)
+        self.conv1 = nn.Conv2d(1, out_channels, kernel_size=5, padding=2, bias=use_bias)
         self.bn1 = norm_layer(out_channels)
         self.relu = nn.PReLU(out_channels)
 
     def forward(self, x):
         out = self.bn1(self.conv1(x))
-        x_repeated = x.repeat(1, self.out_channels, 1, 1, 1) # match channel dimension for residual connection
+        x_repeated = x.repeat(1, self.out_channels, 1, 1) # match channel dimension for residual connection
         out = out + x_repeated
         return self.relu(out)
 
@@ -118,7 +118,7 @@ class DownBlock(nn.Module):
         self.relu = nn.PReLU(out_channels)
 
     def build_down_conv(self, in_channels, out_channels, norm_layer, use_bias):
-        return nn.Sequential(nn.Conv3d(in_channels, out_channels, kernel_size=2, stride=2, bias=use_bias),
+        return nn.Sequential(nn.Conv2d(in_channels, out_channels, kernel_size=2, stride=2, bias=use_bias),
                              norm_layer(out_channels),
                              nn.PReLU(out_channels))
 
@@ -143,7 +143,7 @@ class UpBlock(nn.Module):
         self.relu = nn.PReLU(out_channels)
     
     def build_up_conv(self, in_channels, out_channels, norm_layer, use_bias):
-        return nn.Sequential(nn.ConvTranspose3d(in_channels, out_channels // 2, 
+        return nn.Sequential(nn.ConvTranspose2d(in_channels, out_channels // 2, 
                                                 kernel_size=2, stride=2, bias=use_bias),
                              norm_layer(out_channels // 2),
                              nn.PReLU(out_channels // 2))
@@ -163,9 +163,9 @@ class UpBlock(nn.Module):
 class OutBlock(nn.Module):
     def __init__(self, in_channels, norm_layer, use_bias):
         super().__init__()
-        self.conv1 = nn.Conv3d(in_channels, in_channels, kernel_size=5, padding=2, bias=use_bias)
+        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=5, padding=2, bias=use_bias)
         self.bn1 = norm_layer(in_channels)
-        self.conv2 = nn.Conv3d(in_channels, 1, kernel_size=1)
+        self.conv2 = nn.Conv2d(in_channels, 1, kernel_size=1)
         self.relu1 = nn.PReLU(1)
         self.tanh = nn.Tanh() 
 

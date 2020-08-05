@@ -3,7 +3,15 @@ import torch.nn as nn
 from torch.nn import init
 from torch.optim import lr_scheduler
 
-def get_norm_layer(norm_type='instance'):
+def get_norm_layer_2d(norm_type='instance'):
+    if norm_type == 'batch':
+        return nn.BatchNorm2d
+    elif norm_type == 'instance':
+        return nn.InstanceNorm2d
+    else:
+        raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
+
+def get_norm_layer_3d(norm_type='instance'):
     if norm_type == 'batch':
         return nn.BatchNorm3d
     elif norm_type == 'instance':
