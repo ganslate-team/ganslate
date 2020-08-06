@@ -1,0 +1,26 @@
+use_cuda: True
+n_iters: 50000
+n_iters_decay: 0
+batch_size: 1
+
+dataset: 
+    class_name: "SliceBasedDatasetConfig"
+    root: "/work/ft002207/miniset_sep_seq/"
+    num_workers: 8
+
+gan:  
+    class_name: "CycleGANConfig"
+    
+    is_3d: False
+
+    generator:  
+        class_name: "Vnet2DGeneratorConfig"
+        use_memory_saving: False
+
+    discriminator:  
+        class_name: "PatchGAN2DDiscriminatorConfig"
+
+logging:
+    wandb: False
+    log_freq: 1
+    checkpoint_freq: 1000

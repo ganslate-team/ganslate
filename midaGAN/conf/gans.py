@@ -21,6 +21,10 @@ class BaseGANConfig:
     # n_channels_input:  int = 1  needed only for 2D approaches
     # n_channels_output: int = 1
 
+@dataclass
+class CycleGANConfig(BaseGANConfig):
+    """CycleGAN"""
+    model: str = "cyclegan"
 
 @dataclass
 class PiCycleGANConfig(BaseGANConfig):

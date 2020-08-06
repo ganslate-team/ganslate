@@ -13,8 +13,8 @@ class OptimizerConfig:
     lr_G:            float = 0.0002
     lambda_A:        float = 10.0
     lambda_B:        float = 10.0
-    lambda_identity: float = 0.1
-    lambda_inverse:  float = 0.05
+    lambda_identity: float = 0
+    lambda_inverse:  float = 0
     proportion_ssim: float = 0.84
 
 
@@ -30,10 +30,10 @@ class LoggingConfig:
 
 @dataclass
 class Config:
-    batch_size:      int = MISSING
-    n_iters:        int = MISSING       # Number of iters without linear decay of learning rates. [Default: 200]
-    n_iters_decay:  int = MISSING        # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
-    use_cuda:        bool = True     # Use CUDA i.e. GPU(s). [Default: True]
+    batch_size:     int = MISSING
+    n_iters:        int = MISSING   # Number of iters without linear decay of learning rates. [Default: 200]
+    n_iters_decay:  int = MISSING   # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
+    use_cuda:       bool = True     # Use CUDA i.e. GPU(s). [Default: True]
 
     # Mixed precision
     mixed_precision: bool = False
@@ -41,8 +41,8 @@ class Config:
 
     # Continuing training
     continue_train:  bool = False    # Continue training by loading a checkpoint. [Default: False]
-    load_iter:      str = "latest"  # Which iteration's checkpoint to load. [Default: "latest"]
-    continue_iter:  int = 1         # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
+    load_iter:       str = "latest"  # Which iteration's checkpoint to load. [Default: "latest"]
+    continue_iter:   int = 1         # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING
