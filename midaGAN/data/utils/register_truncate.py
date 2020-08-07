@@ -1,6 +1,9 @@
 import SimpleITK as sitk
 from numpy import mean
 from itertools import product
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def truncate_CT_to_scope_of_CBCT(CT, CBCT):
@@ -38,7 +41,7 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     end_slice = int(round(mean(z_corners[4:])))
     # When the registration fails, just return the original CT. Happens infrequently.
     if start_slice < 0:
-        print("Registration failed. Passing the whole CT volume.")
+        logger.error("Registration failed. Passing the whole CT volume.")
         return CT
     return CT[:, :, start_slice:end_slice]
 

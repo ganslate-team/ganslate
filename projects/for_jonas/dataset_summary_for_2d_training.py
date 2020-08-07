@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 import SimpleITK as sitk
 
+
 def dataset_summary_for_2d_training(dataset_path, *extensions):
     """
     Creates a summary that can be used to randomly select a slice from the dataset of 3D images.
@@ -64,14 +65,17 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
     print(f'Dataset summary saved as { pathlib.Path(csv_path).absolute() }')
     return df
 
+
 def sitk_load(file_path):
     reader = sitk.ImageFileReader()
     reader.SetFileName(file_path)
     sitk_image = reader.Execute()
     return sitk_image
 
+
 def sitk_get_tensor(sitk_image):
     return torch.Tensor(sitk.GetArrayFromImage(sitk_image))
+
 
 if __name__ == '__main__':
     data_path = sys.argv[1]

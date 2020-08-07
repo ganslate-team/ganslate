@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
+import logging
 
 import torch
 from torch.nn import DataParallel
@@ -32,6 +33,8 @@ class BaseModel(ABC):
             -- self.visual_names (str list):        specify the images that you want to display and save.
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
+
+        self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
         self.is_train = conf.gan.is_train
         self.device = self._specify_device()
@@ -194,7 +197,7 @@ class BaseModel(ABC):
         """
         checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
-        print('loaded the checkpoint from %s' % checkpoint_path)
+        self.logger.info('loaded the checkpoint from %s' % checkpoint_path)
         
         # load networks
         for name in self.networks.keys():
@@ -205,12 +208,12 @@ class BaseModel(ABC):
         # TODO: what if trained per-loss loss-scale and now using global or vice versa? Just reset it, i.e. ignore the amp state_dict?
         if self.conf.mixed_precision:
             if "amp" not in checkpoint:
-                print("This checkpoint was not trained using mixed precision.")  # set as logger warning
+                self.logger.warning("This checkpoint was not trained using mixed precision.") 
             else:
                 amp.load_state_dict(checkpoint['amp'])
         else:
             if "amp" in checkpoint:
-                print("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
+                self.logger.warning("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
         
         # load optimizers   
         # TODO: option not to load the optimizers. Useful if a training was completed or if scheduler brought optimizers' LR lower than wanted
@@ -258,10 +261,11 @@ class BaseModel(ABC):
 
     def print_networks(self):
         """Print the total number of parameters in the network and network architecture"""
-        print('---------- Networks initialized -------------')
+        message = '---------- Networks initialized -------------\n'
         for name in self.networks.keys():
             num_params = 0
             for param in self.networks[name].parameters():
                 num_params += param.numel()
-            print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
-        print('-----------------------------------------------')
+            message += '[Network %s] Total number of parameters : %.3f M \n' % (name, num_params / 1e6)
+        message += '-----------------------------------------------'
+        self.logger.info(message)

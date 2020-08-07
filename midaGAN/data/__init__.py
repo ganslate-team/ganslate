@@ -1,7 +1,10 @@
 import importlib
+import logging
 from torch.utils.data import Dataset, DataLoader
 from midaGAN.utils.sampler import InfiniteSampler
 
+
+logger = logging.getLogger(__name__)
 
 def build_loader(conf):
     batch_size = conf.batch_size
@@ -40,7 +43,7 @@ def find_dataset_using_name(dataset_name):
             dataset = cls
             
     if dataset is None:
-        print("In %s.py, there should be a subclass of torch.utils.data.Dataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
+        logger.error("In %s.py, there should be a subclass of torch.utils.data.Dataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
         exit(0)
 
     return dataset

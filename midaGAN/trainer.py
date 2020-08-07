@@ -1,8 +1,7 @@
 
 import os
+import logging
 import torch
-
-from midaGAN import midaGanBase # TODO: make nicer
 
 from midaGAN.data import build_loader
 from midaGAN.nn import build_model
@@ -11,8 +10,10 @@ from midaGAN.utils.environment import setup_logging
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
 
 
-class Trainer(midaGanBase):
+class Trainer():
     def __init__(self, conf):
+        self.logger = logging.getLogger(type(self).__name__)
+        
         # Training ran with torch.distributed.launch if there is 'WORLD_SIZE' environment variable
         if os.environ.get('WORLD_SIZE', None):
             communication.init_distributed()

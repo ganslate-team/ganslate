@@ -21,7 +21,7 @@ def init_distributed():
             backend='nccl', init_method='env://'
         )
         synchronize()
-        print(f'Number of GPUs available in world: {num_gpu}.')
+        logger.info(f'Number of GPUs available in world: {num_gpu}.')
     else:
         raise ValueError("Distributed ON but but running single process") # TODO make nicer
 

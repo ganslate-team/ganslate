@@ -12,6 +12,7 @@ class PatchGAN2DDiscriminator(nn.Module):
         kw = 4
         padw = 1
         sequence = [
+            # TODO: instead of 1, give image_channel
             nn.Conv2d(1, start_n_filters, kernel_size=kw, stride=2, padding=padw),
             nn.LeakyReLU(0.2, True)
         ]

@@ -1,22 +1,23 @@
+import sys
+import torch
+from omegaconf import OmegaConf
+import logging
+logger = logging.getLogger(__name__)
+
+# --------- midaGAN imports ----------
 try:
     import midaGAN
 except ImportError:
-    print("midaGAN not installed as a package, importing it from the local directory.")
-    import sys
+    logger.warning("midaGAN not installed as a package, importing it from the local directory.")
     sys.path.append('./')
     import midaGAN
-import torch
 
 from midaGAN.utils import communication
 from midaGAN.utils.environment import setup_logging
 from midaGAN.trainer import Trainer
 from midaGAN.conf import init_config
-from omegaconf import OmegaConf
+# -------------------------------------
 
-from pprint import pformat
-
-import logging
-logger = logging.getLogger(__name__)
 
 def train():
     # experiment_dir = base_directory / run_name
@@ -40,7 +41,6 @@ def train():
     cli = OmegaConf.from_cli()
     conf = init_config(cli.config)
     cli.pop("config")
-
     conf = OmegaConf.merge(conf, cli)
 
     # logger.info(f'Machine rank: {machine_rank}.')

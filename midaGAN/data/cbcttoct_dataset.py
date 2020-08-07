@@ -1,5 +1,6 @@
 import os
 import random
+import logging
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -9,7 +10,11 @@ from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
+
+logger = logging.getLogger(__name__)
+
 EXTENSIONS = ['.nrrd']
+
 
 class CBCTtoCTDataset(Dataset):
     def __init__(self, conf):
@@ -56,7 +61,7 @@ class CBCTtoCTDataset(Dataset):
 	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if self._is_volume_smaller_than_patch(CT_truncated):
-            print("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
+            logger.error("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
             del CT_truncated
         else:
             CT = CT_truncated

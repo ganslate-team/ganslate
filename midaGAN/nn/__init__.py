@@ -1,12 +1,17 @@
 from importlib import import_module
+import logging
+
 from midaGAN.nn.base_model import BaseModel
 from midaGAN.nn.utils import init_weights
-
 # TODO: do these import better
 from midaGAN.nn.generators.vnet import VNet
 from midaGAN.nn.generators.vnet2d import VNet2D
 from midaGAN.nn.discriminators.patchgan_discriminator import PatchGANDiscriminator
 from midaGAN.nn.discriminators.patchgan2d_discriminator import PatchGAN2DDiscriminator
+
+
+logger = logging.getLogger(__name__)
+
 
 def build_model(conf):
     model = find_model_using_name(conf.gan.model)
@@ -30,7 +35,7 @@ def find_model_using_name(model_name):
             model = cls
 
     if model is None:
-        print("In %s.py, there should be a subclass of BaseModel with class name that matches %s in lowercase." % (model_filename, target_model_name))
+        logger.error("In %s.py, there should be a subclass of BaseModel with class name that matches %s in lowercase." % (model_filename, target_model_name))
         exit(0)
 
     return model

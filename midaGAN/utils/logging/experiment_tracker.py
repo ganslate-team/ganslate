@@ -13,6 +13,7 @@ from midaGAN.utils.logging.tensorboard_tracker import TensorboardTracker
 
 class ExperimentTracker:
     def __init__(self, conf):
+        self.logger = logging.getLogger(type(self).__name__)
         self.output_dir = conf.logging.output_dir
         if communication.is_main_process():
             io.mkdirs(os.path.join(self.output_dir, 'images'))
@@ -91,7 +92,7 @@ class ExperimentTracker:
         message += ' ' + 20 * '-' +  '\n'
         for k, v in losses.items():
             message += '%s: %.3f ' % (k, v)
-        print(message)
+        self.logger.info(message)
     
     def _visuals_to_combined_2d_grid(self, visuals):
         # if images are 3D (5D tensors)

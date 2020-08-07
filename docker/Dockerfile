@@ -35,7 +35,7 @@ RUN conda install pytorch=1.6 torchvision cudatoolkit=${CUDA} -c pytorch
 RUN conda install scipy pandas scikit-learn scikit-image=0.14 -yq
 RUN conda install cython tqdm jupyter sqlalchemy -yq
 RUN python -m pip install opencv-python simpleitk h5py -q
-RUN python -m pip install tb-nightly -q
+RUN python -m pip install tb-nightly memcnn wandb -q
 RUN python -m pip install --pre omegaconf -q
 
 USER root
