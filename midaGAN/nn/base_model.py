@@ -58,7 +58,7 @@ class BaseModel(ABC):
             return torch.device('cpu')
             
     def _count_devices(self):
-        return int( os.environ.get('WORLD_SIZE', torch.cuda.device_count()) )
+        return int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
 
     @abstractmethod
     def set_input(self, input):

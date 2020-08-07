@@ -4,7 +4,6 @@ from omegaconf import MISSING
 @dataclass
 class BaseGeneratorConfig:
     model:             str = MISSING
-    start_n_filters:   int = MISSING
     
 @dataclass
 class VnetGeneratorConfig(BaseGeneratorConfig):
@@ -19,3 +18,9 @@ class Vnet2DGeneratorConfig(BaseGeneratorConfig):
     model:             str = "vnet2d"
     start_n_filters:   int = 16
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
+
+@dataclass
+class UnetGeneratorConfig(BaseGeneratorConfig):
+    model:     str='unet'
+    num_downs: int=8
+    ngf:       int=64

@@ -37,7 +37,7 @@ class BratsDatasetConfig(BaseDatasetConfig):
 
 @dataclass
 class SliceBasedDatasetConfig(BaseDatasetConfig):
-    name:         str = "slice_based"
-    image_channels:     int = 1  # Number of image channels (1 for grayscale, 3 for RGB)
-
+    name:           str = "slice_based"
+    image_channels: int = 1  # Number of image channels (1 for grayscale, 3 for RGB)
+    pad_or_crop:    str = 'none'
 

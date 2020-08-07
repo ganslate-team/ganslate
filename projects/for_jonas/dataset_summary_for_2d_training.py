@@ -1,5 +1,7 @@
 import sys
 import pathlib
+import json
+import math
 import pandas as pd
 import torch
 import SimpleITK as sitk
@@ -27,9 +29,7 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
     """
 
     dataset_path = pathlib.Path(dataset_path)
-    df = pd.DataFrame(columns=['slice', 'volume_filename', 'volume_mean', 'volume_std',
-                               'volume_min', 'volume_max', 'volume_num_slices'])
-    
+    df = pd.DataFrame()
     # Fetch all filepaths for each specified extension
     file_list = []
     for ext in extensions:
@@ -43,6 +43,7 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
         volume = sitk_load(str(file))
         num_slices = volume.GetSize()[2]
         volume = sitk_get_tensor(volume) # because torch is used in dataloader to perform normalization
+
         # Add as many rows to dataframe as there are slices in the volume, along with the useful data
         rows = []
         for i in range(num_slices):
@@ -54,15 +55,21 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
                     'volume_std': float(volume.std()),
                     'volume_min': float(volume.min()),
                     'volume_max': float(volume.max()), 
-                    'volume_num_slices': int(num_slices)
+                    'volume_num_slices': int(num_slices),
+                    'slice_resolution': f"{volume.shape[1]}, {volume.shape[2]}"
                 }
             )
             
         df = df.append(rows, ignore_index=True)
 
+    if len(df) == 0:
+        print('No volumes found. Check if the specified extension(s) is correct.')
+        return
+
     csv_path = dataset_path / 'dataset_summary.csv'
     df.to_csv(csv_path, index=False) 
     print(f'Dataset summary saved as { pathlib.Path(csv_path).absolute() }')
+    resolution_info_for_padding_cropping_to_json(df, dataset_path)
     return df
 
 
@@ -71,6 +78,28 @@ def sitk_load(file_path):
     reader.SetFileName(file_path)
     sitk_image = reader.Execute()
     return sitk_image
+
+
+def resolution_info_for_padding_cropping_to_json(df, outpath):
+    resolutions = list(df["slice_resolution"])
+    x = [int(res.split(', ')[0]) for res in resolutions]
+    y = [int(res.split(', ')[1]) for res in resolutions]
+
+    pad_x_16 = math.ceil(max(x)/16) * 16
+    pad_y_16 = math.ceil(max(y)/16) * 16
+
+    crop_x_16 = math.floor(min(x)/16) * 16
+    crop_y_16 = math.floor(min(y)/16) * 16
+
+    info = {
+        'pad_to': (max(x), max(y)),
+        'pad_to_16': (pad_x_16, pad_y_16),
+        'crop_to': (min(x), min(y)),
+        'crop_to_16': (crop_x_16, crop_y_16)
+        }
+    with open(str(outpath / 'pad_crop_info.json'), "w") as outfile:
+        json.dump(info, outfile)
+    print(info)
 
 
 def sitk_get_tensor(sitk_image):
