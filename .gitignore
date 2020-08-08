@@ -124,3 +124,5 @@ core.login18*
 IGNORE/
 output_*
 log.txt
+pad_crop_info.json
+projects/for_jonas/lol.yaml

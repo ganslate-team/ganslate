@@ -1,0 +1,36 @@
+
+use_cuda: True
+n_iters: 50000
+n_iters_decay: 0
+batch_size: 1
+
+logging:
+    output_dir: "./checkpoints/ex1/"
+    wandb: False
+    tensorboard: False
+    log_freq: 10
+    checkpoint_freq: 1000
+
+dataset: 
+    class_name: "SliceBasedDatasetConfig"
+    root: "/work/ft002207/miniset_sep_seq/"
+    num_workers: 8
+    pad: True
+    pad_size: [288, 352] # Define what patch_size you want. You can re-run the data_summary scripts, it will return
+              # you a json with biggest and smallest x and y shapes in the dataset, can help you make the decision.
+              # NOTE that Vnet2D will need a factor of 16, Unet a factor of 32, not sure about Resnet
+    
+    # Cropping is also an option
+    #crop: False
+    #crop_size: [256, 128]
+
+gan:  
+    class_name: "PiCycleGANConfig"
+
+    generator:  
+        class_name: "Vnet2DGeneratorConfig"
+        use_memory_saving: False
+
+    discriminator:  
+        class_name: "PatchGAN2DDiscriminatorConfig"
+        n_layers: 4

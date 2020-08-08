@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import memcnn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
 class UnetGenerator(nn.Module):
@@ -19,7 +18,7 @@ class UnetGenerator(nn.Module):
         We construct the U-Net from the innermost layer to the outermost layer.
         It is a recursive process.
         """
-        super(UnetGenerator, self).__init__()
+        super().__init__()
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, input_nc=None, submodule=None, norm_type=norm_type, innermost=True)  # add the innermost layer
         for i in range(num_downs - 5):          # add intermediate layers with ngf * 8 filters
@@ -54,7 +53,7 @@ class UnetSkipConnectionBlock(nn.Module):
             norm_type          -- normalization layer
             use_dropout (bool)  -- if use dropout layers.
         """
-        super(UnetSkipConnectionBlock, self).__init__()
+        super().__init__()
         self.outermost = outermost
 
         norm_layer = get_norm_layer_2d(norm_type)

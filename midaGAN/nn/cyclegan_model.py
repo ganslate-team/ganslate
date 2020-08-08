@@ -79,8 +79,8 @@ class CycleGANModel(BaseModel):
         params_D = itertools.chain(self.networks['D_A'].parameters(), 
                                    self.networks['D_B'].parameters())         
 
-        self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, 0.999))
-        self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, 0.999))                             
+        self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, 0.999)) 
+        self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, 0.999))                            
 
 
     def set_input(self, input):

@@ -8,7 +8,6 @@ from midaGAN.conf.discriminators import BaseDiscriminatorConfig
 class BaseGANConfig:
     """Base GAN config."""
     is_train:         bool = True
-    is_3d:            bool = True       # if True, use 3D GAN, otherwise 2D
     model:            str = MISSING
     loss_type:        str = "lsgan"
     norm_type:        str = "instance"

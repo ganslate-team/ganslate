@@ -81,21 +81,16 @@ def sitk_load(file_path):
 
 
 def resolution_info_for_padding_cropping_to_json(df, outpath):
+    """Stores the information on what are the biggest and smallest separate x and y sizes.
+    Note that the biggest/smallest x is taken separately from biggest/smallest y.
+    """
     resolutions = list(df["slice_resolution"])
     x = [int(res.split(', ')[0]) for res in resolutions]
     y = [int(res.split(', ')[1]) for res in resolutions]
 
-    pad_x_16 = math.ceil(max(x)/16) * 16
-    pad_y_16 = math.ceil(max(y)/16) * 16
-
-    crop_x_16 = math.floor(min(x)/16) * 16
-    crop_y_16 = math.floor(min(y)/16) * 16
-
     info = {
-        'pad_to': (max(x), max(y)),
-        'pad_to_16': (pad_x_16, pad_y_16),
-        'crop_to': (min(x), min(y)),
-        'crop_to_16': (crop_x_16, crop_y_16)
+        'biggest_x_y': (max(x), max(y)),
+        'smallest_x_y': (min(x), min(y))
         }
     with open(str(outpath / 'pad_crop_info.json'), "w") as outfile:
         json.dump(info, outfile)

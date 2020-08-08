@@ -7,6 +7,7 @@ from midaGAN.nn.utils import init_weights
 from midaGAN.nn.generators.vnet import VNet
 from midaGAN.nn.generators.vnet2d import VNet2D
 from midaGAN.nn.generators.unet import UnetGenerator
+from midaGAN.nn.generators.resnet import ResnetGenerator
 from midaGAN.nn.discriminators.patchgan_discriminator import PatchGANDiscriminator
 from midaGAN.nn.discriminators.patchgan2d_discriminator import PatchGAN2DDiscriminator
 
@@ -54,6 +55,8 @@ def build_G(conf, device):
         generator = VNet(**generator_args, norm_type=norm_type)
     elif name.startswith('unet'):
         generator = UnetGenerator(**generator_args, norm_type=norm_type)
+    elif name.startswith('resnet'):
+        generator = ResnetGenerator(**generator_args, norm_type=norm_type)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % name)
     

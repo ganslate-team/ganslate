@@ -22,5 +22,12 @@ class Vnet2DGeneratorConfig(BaseGeneratorConfig):
 @dataclass
 class UnetGeneratorConfig(BaseGeneratorConfig):
     model:     str='unet'
-    num_downs: int=8
+    num_downs: int=7
+    ngf:       int=64
+
+
+@dataclass
+class ResnetGeneratorConfig(BaseGeneratorConfig):
+    model:     str='resnet'
+    n_blocks:  int=6
     ngf:       int=64

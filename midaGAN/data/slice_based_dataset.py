@@ -12,10 +12,15 @@ from midaGAN.utils import sitk_utils, io
 class SliceBasedDataset(Dataset):
     def __init__(self, conf):
         self.dir_root = os.path.join(conf.dataset.root)
-
-        self.pad_or_crop = conf.dataset.pad_or_crop
-        if self.pad_or_crop != 'none':
-            self.pad_crop_info = io.load_json(os.path.join(conf.dataset.root, 'pad_crop_info.json'))
+        
+        self.pad_size = None
+        self.crop_size = None
+        if conf.dataset.pad and conf.dataset.crop:
+            raise ValueError("Please specify either pad only, crop only or none.")
+        elif conf.dataset.pad:
+            self.pad_size = conf.dataset.pad_size
+        elif conf.dataset.crop:
+            self.crop_size = conf.dataset.crop_size
 
         dataset_summary = pd.read_csv(os.path.join(conf.dataset.root, 'dataset_summary.csv'))
         # Filter out rows by their domain
@@ -54,14 +59,12 @@ class SliceBasedDataset(Dataset):
         A = z_score_normalize(A, scale_to_range=(-1,1), mean_std=mean_std_A, original_scale=min_max_A)
         B = z_score_normalize(B, scale_to_range=(-1,1), mean_std=mean_std_B, original_scale=min_max_B)
         
-        if self.pad_or_crop == "pad":
-            A = pad_tensor_to_shape(A, output_shape=self.pad_crop_info["pad_to_16"])
-            B = pad_tensor_to_shape(B, output_shape=self.pad_crop_info["pad_to_16"])
-        elif self.pad_or_crop == "crop":
-            A = random_crop_tensor_to_shape(A, self.pad_crop_info["crop_to_16"])
-            B = random_crop_tensor_to_shape(B, self.pad_crop_info["crop_to_16"])
-        else:
-            raise ValueError(f"`pad_or_crop` does not support `{self.pad_or_crop}` as option.")
+        if self.pad_size:
+            A = pad_tensor_to_shape(A, output_shape=self.pad_size)
+            B = pad_tensor_to_shape(B, output_shape=self.pad_size)
+        elif self.crop_size:
+            A = random_crop_tensor_to_shape(A, output_shape=self.crop_size)
+            B = random_crop_tensor_to_shape(B, output_shape=self.crop_size)
 
         # Add channel dimension (1 = grayscale)
         A = A.unsqueeze(0)
@@ -84,4 +87,11 @@ def pad_tensor_to_shape(tensor, output_shape):
     return torch.nn.functional.pad(input=tensor, pad=pad, mode='constant', value=-1)
 
 def random_crop_tensor_to_shape(tensor, output_shape):
-    raise NotImplementedError('TODO')
+    output_shape = torch.tensor(output_shape)
+    input_shape = torch.tensor(tensor.shape)
+    start_region = input_shape - output_shape
+    x = torch.randint(start_region[0]+1, (1,))
+    y = torch.randint(start_region[1]+1, (1,))
+    cropped_tensor = tensor[x:x+output_shape[0], y:y+output_shape[1]]
+    
+    return cropped_tensor
