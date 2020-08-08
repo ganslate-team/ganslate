@@ -29,6 +29,7 @@ gan:
     generator:  
         class_name: "Vnet2DGeneratorConfig"
         use_memory_saving: False
+        use_inverse: False
 
     discriminator:  
         class_name: "PatchGAN2DDiscriminatorConfig"

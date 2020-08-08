@@ -11,6 +11,7 @@ class VnetGeneratorConfig(BaseGeneratorConfig):
     model:             str = "vnet"
     start_n_filters:   int = 16
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
+    use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
 
 @dataclass
 class Vnet2DGeneratorConfig(BaseGeneratorConfig):
@@ -18,6 +19,7 @@ class Vnet2DGeneratorConfig(BaseGeneratorConfig):
     model:             str = "vnet2d"
     start_n_filters:   int = 16
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
+    use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
 
 @dataclass
 class UnetGeneratorConfig(BaseGeneratorConfig):

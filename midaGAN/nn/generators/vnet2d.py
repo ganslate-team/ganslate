@@ -5,30 +5,34 @@ from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
 
 class VNet2D(nn.Module):
-    def __init__(self, start_n_filters, norm_type, use_memory_saving):
+    def __init__(self, start_n_filters, norm_type, use_memory_saving, use_inverse=True):
         super().__init__()
         keep_input = not use_memory_saving
         norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
         self.in_ab = InputBlock(start_n_filters, norm_layer, use_bias) 
-        self.in_ba = InputBlock(start_n_filters, norm_layer, use_bias)
+        if use_inverse:
+            self.in_ba = InputBlock(start_n_filters, norm_layer, use_bias)
 
-        self.down1 = DownBlock(start_n_filters, 1, norm_layer, use_bias, keep_input)
-        self.down2 = DownBlock(start_n_filters*2, 2, norm_layer, use_bias, keep_input) 
-        self.down3 = DownBlock(start_n_filters*4, 3, norm_layer, use_bias, keep_input) 
-        self.down4 = DownBlock(start_n_filters*8, 2, norm_layer, use_bias, keep_input) 
+        self.down1 = DownBlock(start_n_filters, 1, norm_layer, use_bias, keep_input, use_inverse)
+        self.down2 = DownBlock(start_n_filters*2, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down3 = DownBlock(start_n_filters*4, 3, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down4 = DownBlock(start_n_filters*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
 
-        self.up4 = UpBlock(start_n_filters*16, start_n_filters*16, 2, norm_layer, use_bias, keep_input) 
-        self.up3 = UpBlock(start_n_filters*16, start_n_filters*8, 2, norm_layer, use_bias, keep_input) 
-        self.up2 = UpBlock(start_n_filters*8, start_n_filters*4, 1, norm_layer, use_bias, keep_input) 
-        self.up1 = UpBlock(start_n_filters*4, start_n_filters*2, 1, norm_layer, use_bias, keep_input) 
+        self.up4 = UpBlock(start_n_filters*16, start_n_filters*16, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up3 = UpBlock(start_n_filters*16, start_n_filters*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up2 = UpBlock(start_n_filters*8, start_n_filters*4, 1, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up1 = UpBlock(start_n_filters*4, start_n_filters*2, 1, norm_layer, use_bias, keep_input, use_inverse) 
         
         self.out_ab = OutBlock(start_n_filters*2, norm_layer, use_bias) 
-        self.out_ba = OutBlock(start_n_filters*2, norm_layer, use_bias)
+        if use_inverse:
+            self.out_ba = OutBlock(start_n_filters*2, norm_layer, use_bias)
 
     def forward(self, x, inverse=False):
         if inverse:
+            if not use_inverse:
+                raise ValueError("Trying to perform inverse forward while `use_inverse` flag is turned off.")
             in_block  = self.in_ba
             out_block = self.out_ba
         else:
@@ -109,11 +113,12 @@ class InputBlock(nn.Module):
 
 
 class DownBlock(nn.Module):
-    def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input):
+    def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse):
         super().__init__()
         out_channels = 2*in_channels
         self.down_conv_ab = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
-        self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
+        if use_inverse:
+            self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
         self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input)
         self.relu = nn.PReLU(out_channels)
 
@@ -134,10 +139,11 @@ class DownBlock(nn.Module):
 
 
 class UpBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input):
+    def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse):
         super().__init__()
         self.up_conv_ab = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
-        self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
+        if use_inverse:
+            self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
 
         self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input)
         self.relu = nn.PReLU(out_channels)
