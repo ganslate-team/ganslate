@@ -10,8 +10,9 @@ class VNet(nn.Module):
         keep_input = not use_memory_saving
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
-
-        self.in_ab = InputBlock(start_n_filters, norm_layer, use_bias) 
+        self.use_inverse = use_inverse
+        
+        self.in_ab = InputBlock(start_n_filters, norm_layer, use_bias)
         if use_inverse:
             self.in_ba = InputBlock(start_n_filters, norm_layer, use_bias)
 
@@ -31,7 +32,7 @@ class VNet(nn.Module):
 
     def forward(self, x, inverse=False):
         if inverse:
-            if not use_inverse:
+            if not self.use_inverse:
                 raise ValueError("Trying to perform inverse forward while `use_inverse` flag is turned off.")
             in_block  = self.in_ba
             out_block = self.out_ba
