@@ -3,6 +3,13 @@ n_iters: 50000
 n_iters_decay: 0
 batch_size: 1
 
+logging:
+    output_dir: "./projects/brats_flair_to_t1w/checkpoints/experiment1/"
+    wandb: False
+    tensorboard: False
+    log_freq: 10
+    checkpoint_freq: 1000
+
 dataset: 
     class_name: "BratsDatasetConfig"
     root: "/work/ft002207/Task01_BrainTumour/imagesTr/"
@@ -16,6 +23,7 @@ gan:
 
     discriminator:  
         class_name: "PatchGANDiscriminatorConfig"
+        n_layers: 3
 
 logging:
     wandb: False
