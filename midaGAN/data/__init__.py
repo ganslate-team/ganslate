@@ -2,7 +2,7 @@ import importlib
 import logging
 from torch.utils.data import Dataset, DataLoader
 from midaGAN.utils.sampler import InfiniteSampler
-
+from midaGAN.utils import str_to_class
 
 logger = logging.getLogger(__name__)
 
