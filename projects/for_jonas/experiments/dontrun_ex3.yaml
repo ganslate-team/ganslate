@@ -28,9 +28,9 @@ gan:
     class_name: "CycleGANConfig"
 
     generator:  
-        class_name: "ResnetGeneratorConfig"
+        class_name: "ResnetConfig"
         n_blocks: 6 # NOTE, might need to be changed based on how big your inputs are
 
     discriminator:  
-        class_name: "PatchGAN2DDiscriminatorConfig"
+        class_name: "PatchGAN2DConfig"
         n_layers: 4

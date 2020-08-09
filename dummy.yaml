@@ -23,5 +23,5 @@ generator:
     use_memory_saving: False
 
 discriminator:  
-    class_name: "PatchGANDiscriminatorConfig"
+    class_name: "PatchGANConfig"
     n_layers: 3

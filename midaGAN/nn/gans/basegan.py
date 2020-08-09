@@ -12,21 +12,21 @@ from midaGAN.nn.utils import get_scheduler
 
 from midaGAN.utils import communication
 
-class BaseModel(ABC):
-    """This class is an abstract base class (ABC) for models.
+class BaseGAN(ABC):
+    """This class is an abstract base class (ABC) for GAN models.
     To create a subclass, you need to implement the following five functions:
-        -- <__init__>:                      initialize the class; first call BaseModel.__init__(self, conf).
+        -- <__init__>:                      initialize the class; first call BaseGAN.__init__(self, conf).
         -- <set_input>:                     unpack data from dataset and apply preprocessing.
         -- <forward>:                       produce intermediate results.
         -- <optimize_parameters>:           calculate losses, gradients, and update network weights.
     """
 
     def __init__(self, conf):
-        """Initialize the BaseModel class.
+        """Initialize the BaseGAN class.
         Parameters:
             conf -- TODO
         When creating your custom class, you need to implement your own initialization.
-        In this function, you should first call <BaseModel.__init__(self, conf)>
+        In this function, you should first call <BaseGAN.__init__(self, conf)>
         Then, you need to define four lists:
             -- self.loss_names (str list):          specify the training losses that you want to plot and save.
             -- self.model_names (str list):         define networks used in our training.

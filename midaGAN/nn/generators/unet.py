@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
-class UnetGenerator(nn.Module):
+class Unet(nn.Module):
     """Create a Unet-based generator"""
 
     def __init__(self, num_downs, norm_type, ngf=64, use_dropout=False):

@@ -19,14 +19,14 @@ gan:
     class_name: "CycleGANConfig"
 
     generator:  
-        # class_name: "UnetGeneratorConfig"
+        # class_name: "UnetConfig"
         # num_downs: 7
-        #class_name: "ResnetGeneratorConfig"
-        class_name: "Vnet2DGeneratorConfig"
+        #class_name: "ResnetConfig"
+        class_name: "Vnet2DConfig"
         
 
     discriminator:  
-        class_name: "PatchGAN2DDiscriminatorConfig"
+        class_name: "PatchGAN2DConfig"
         n_layers: 5
 
 logging:

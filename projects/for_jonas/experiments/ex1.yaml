@@ -28,9 +28,9 @@ gan:
     class_name: "PiCycleGANConfig"
 
     generator:  
-        class_name: "Vnet2DGeneratorConfig"
+        class_name: "Vnet2DConfig"
         use_memory_saving: False
 
     discriminator:  
-        class_name: "PatchGAN2DDiscriminatorConfig"
+        class_name: "PatchGAN2DConfig"
         n_layers: 4

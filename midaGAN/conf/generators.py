@@ -4,7 +4,7 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 
 @dataclass
-class VnetGeneratorConfig(BaseGeneratorConfig):
+class VnetConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
     model:             str = "vnet"
     start_n_filters:   int = 16
@@ -13,7 +13,7 @@ class VnetGeneratorConfig(BaseGeneratorConfig):
 
 
 @dataclass
-class Vnet2DGeneratorConfig(BaseGeneratorConfig):
+class Vnet2DConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
     model:             str = "vnet2d"
     start_n_filters:   int = 16
@@ -22,14 +22,14 @@ class Vnet2DGeneratorConfig(BaseGeneratorConfig):
 
 
 @dataclass
-class UnetGeneratorConfig(BaseGeneratorConfig):
+class UnetConfig(BaseGeneratorConfig):
     model:     str='unet'
     num_downs: int=7
     ngf:       int=64
 
 
 @dataclass
-class ResnetGeneratorConfig(BaseGeneratorConfig):
+class ResnetConfig(BaseGeneratorConfig):
     model:     str='resnet'
     n_blocks:  int=6
     ngf:       int=64

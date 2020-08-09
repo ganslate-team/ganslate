@@ -19,10 +19,10 @@ gan:
     class_name: "PiCycleGANConfig"
 
     generator:  
-        class_name: "VnetGeneratorConfig"
+        class_name: "VnetConfig"
 
     discriminator:  
-        class_name: "PatchGANDiscriminatorConfig"
+        class_name: "PatchGANConfig"
         n_layers: 3
 
 logging:
