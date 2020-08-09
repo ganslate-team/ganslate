@@ -1,10 +1,8 @@
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 
-@dataclass
-class BaseDiscriminatorConfig:
-    model:           str = MISSING
-    start_n_filters: int = MISSING 
+from midaGAN.conf.config import BaseDiscriminatorConfig
+
 
 @dataclass
 class PatchGANDiscriminatorConfig(BaseDiscriminatorConfig):

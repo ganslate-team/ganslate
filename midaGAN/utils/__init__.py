@@ -2,7 +2,7 @@
 import importlib
 
 
-def str_to_class(module_name: str, class_name: str) -> Callable:
+def str_to_class(module_name, class_name):
     """
     Convert a string to a class
     From: https://stackoverflow.com/a/1176180/576363

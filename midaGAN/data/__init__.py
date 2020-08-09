@@ -25,10 +25,6 @@ def build_dataset(conf):
     return dataset(conf)
 
 def find_dataset_using_name(dataset_name):
-    # TODO: nicer
-    # Given the option --dataset_mode [datasetname],
-    # the file "data/datasetname_dataset.py"
-    # will be imported.
     dataset_filename = "midaGAN.data." + dataset_name + "_dataset"
     datasetlib = importlib.import_module(dataset_filename)
 

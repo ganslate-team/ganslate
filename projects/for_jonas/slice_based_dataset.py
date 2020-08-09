@@ -7,8 +7,25 @@ import pandas as pd
 from torch.utils.data import Dataset
 from midaGAN.utils.normalization import z_score_normalize
 from midaGAN.utils import sitk_utils, io
+# Config imports
+from typing import Tuple
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.dataset import BaseDatasetConfig
 
 
+@dataclass
+class SliceBasedDatasetConfig(BaseDatasetConfig):
+    name:           str = "slice_based"
+    image_channels: int = 1  # Number of image channels (1 for grayscale, 3 for RGB)
+    
+    pad:            bool = False
+    pad_size: Tuple[int, int] = field(default_factory=lambda: ())
+    
+    crop:           bool = False
+    crop_size: Tuple[int, int] = field(default_factory=lambda: ())
+
+    
 class SliceBasedDataset(Dataset):
     def __init__(self, conf):
         self.dir_root = os.path.join(conf.dataset.root)
@@ -75,6 +92,7 @@ class SliceBasedDataset(Dataset):
     def __len__(self):
         return max(self.num_datapoints_A, self.num_datapoints_B)
 
+# TODO: move these two
 def pad_tensor_to_shape(tensor, output_shape):
     output_shape = torch.tensor(output_shape)
     input_shape = torch.tensor(tensor.shape)

@@ -43,10 +43,10 @@ def find_model_using_name(model_name):
     return model
 
 def build_G(conf, device):
-    name = conf.gan.generator.model
+    name = conf.generator.model
     norm_type = conf.gan.norm_type
     
-    generator_args = dict(conf.gan.generator)
+    generator_args = dict(conf.generator)
     generator_args.pop("model") # used only to select the model
 
     if name.startswith('vnet2d'):
@@ -68,10 +68,10 @@ def build_G(conf, device):
 
 
 def build_D(conf, device):
-    name = conf.gan.discriminator.model
+    name = conf.discriminator.model
     norm_type = conf.gan.norm_type
 
-    discriminator_args = dict(conf.gan.discriminator)
+    discriminator_args = dict(conf.discriminator)
     discriminator_args.pop("model") # used only to select the model
 
     if name == 'patchgan2d':

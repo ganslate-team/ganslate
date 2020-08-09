@@ -1,10 +1,8 @@
 from dataclasses import dataclass, field
 from omegaconf import MISSING
+from midaGAN.conf.config import BaseGeneratorConfig
 
-@dataclass
-class BaseGeneratorConfig:
-    model:             str = MISSING
-    
+
 @dataclass
 class VnetGeneratorConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
@@ -13,6 +11,7 @@ class VnetGeneratorConfig(BaseGeneratorConfig):
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
 
+
 @dataclass
 class Vnet2DGeneratorConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
@@ -20,6 +19,7 @@ class Vnet2DGeneratorConfig(BaseGeneratorConfig):
     start_n_filters:   int = 16
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
+
 
 @dataclass
 class UnetGeneratorConfig(BaseGeneratorConfig):

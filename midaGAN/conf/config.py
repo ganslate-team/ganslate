@@ -2,10 +2,40 @@ from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 
-from midaGAN.conf.datasets import BaseDatasetConfig
-from midaGAN.conf.gans import BaseGANConfig
 
+@dataclass
+class BaseDatasetConfig:
+    name:         str = MISSING # TODO: used for importing data/name_dataset.py, any better way?
+    root:         str = MISSING
     
+    pool_size:    int = 50
+    shuffle:      bool = True
+    num_workers:  int = 4
+
+
+@dataclass
+class BaseGANConfig:
+    """Base GAN config."""
+    is_train:         bool = True
+    model:            str = MISSING
+    loss_type:        str = "lsgan"
+    norm_type:        str = "instance"
+    weight_init_type: str = "normal"
+    weight_init_gain: float = 0.02
+    # n_channels_input:  int = 1  needed only for 2D approaches
+    # n_channels_output: int = 1
+
+
+@dataclass
+class BaseDiscriminatorConfig:
+    model: str = MISSING
+
+
+@dataclass
+class BaseGeneratorConfig:
+    model:             str = MISSING
+
+
 @dataclass
 class OptimizerConfig:
     beta1:           float = 0.5
@@ -46,5 +76,8 @@ class Config:
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING
+    generator:       BaseGeneratorConfig = MISSING
+    discriminator:   BaseDiscriminatorConfig = MISSING
+
     optimizer:       OptimizerConfig = OptimizerConfig()
     logging:         LoggingConfig = LoggingConfig()

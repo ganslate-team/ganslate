@@ -8,6 +8,19 @@ from midaGAN.utils.io import make_dataset_of_files
 from midaGAN.utils.normalization import z_score_normalize
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+# Config imports
+from typing import Tuple
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.dataset import BaseDatasetConfig
+
+
+@dataclass
+class BratsDatasetConfig(BaseDatasetConfig):
+    name:         str = "brats"
+    patch_size:   Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
+    focal_region_proportion: float = 0    # Proportion of focal region size compared to original volume size
+
 
 EXTENSIONS = ['.nii.gz']
 
