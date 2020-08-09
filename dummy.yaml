@@ -12,16 +12,16 @@ logging:
     checkpoint_freq: 1000
 
 dataset: 
-    class_name: "DummyDatasetConfig"
+    name: "DummyDataset"
     root: '.'
 
-gan:  
-    class_name: "PiCycleGANConfig"
+# gan:  
+#     name: "PiCycleGAN"
 
-generator:  
-    class_name: "VnetGeneratorConfig"
-    use_memory_saving: False
+# generator:  
+#     name: "VnetGenerator"
+#     use_memory_saving: False
 
-discriminator:  
-    class_name: "PatchGANConfig"
-    n_layers: 3
+# discriminator:  
+#     name: "PatchGAN"
+#     n_layers: 3

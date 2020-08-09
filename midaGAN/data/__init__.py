@@ -21,28 +21,7 @@ def build_loader(conf):
     return loader
 
 def build_dataset(conf):
-    dataset = find_dataset_using_name(conf.dataset.name)
-    return dataset(conf)
-
-def find_dataset_using_name(dataset_name):
-    dataset_filename = "midaGAN.data." + dataset_name + "_dataset"
-    datasetlib = importlib.import_module(dataset_filename)
-
-    # In the file, the class called DatasetNameDataset() will
-    # be instantiated. It has to be a subclass of Dataset,
-    # and it is case-insensitive.
-    dataset = None
-    target_dataset_name = dataset_name.replace('_', '') + 'dataset'
-    for name, cls in datasetlib.__dict__.items():
-        if name.lower() == target_dataset_name.lower() \
-           and issubclass(cls, Dataset):
-            dataset = cls
-            
-    if dataset is None:
-        logger.error("In %s.py, there should be a subclass of torch.utils.data.Dataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
-        exit(0)
-
+    name = conf.dataset.name
+    dataset_class = str_to_class(f"midaGAN.data.{name.replace('Dataset', '_dataset').lower()}", name)
+    dataset = dataset_class(conf)
     return dataset
-
-
-
