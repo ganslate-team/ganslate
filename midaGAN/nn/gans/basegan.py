@@ -7,10 +7,9 @@ import torch
 from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from apex import amp
-
 from midaGAN.nn.utils import get_scheduler
-
 from midaGAN.utils import communication
+
 
 class BaseGAN(ABC):
     """This class is an abstract base class (ABC) for GAN models.

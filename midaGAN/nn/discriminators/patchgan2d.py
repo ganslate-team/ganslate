@@ -1,6 +1,18 @@
 import torch
 import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
+# Config imports
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.config import BaseDiscriminatorConfig
+
+
+@dataclass
+class PatchGAN2DConfig(BaseDiscriminatorConfig):
+    model:           str = "patchgan2d"
+    start_n_filters: int = 64
+    n_layers:        int = 3
+
 
 class PatchGAN2D(nn.Module):
     def __init__(self, start_n_filters, n_layers, norm_type):

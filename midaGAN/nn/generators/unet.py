@@ -1,6 +1,17 @@
 import torch
 import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
+# Config imports
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.config import BaseGeneratorConfig
+
+@dataclass
+class UnetConfig(BaseGeneratorConfig):
+    model:     str='unet'
+    num_downs: int=7
+    ngf:       int=64
+
 
 class Unet(nn.Module):
     """Create a Unet-based generator"""

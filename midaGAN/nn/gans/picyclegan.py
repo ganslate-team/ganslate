@@ -9,6 +9,16 @@ from midaGAN.nn import build_D, build_G
 from midaGAN.nn.basegan import BaseGAN
 from midaGAN.nn.losses.generator_loss import GeneratorLoss
 from midaGAN.nn.losses.gan_loss import GANLoss
+# Config imports
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.config import BaseGANConfig
+
+
+@dataclass
+class PiCycleGANConfig(BaseGANConfig):
+    """Partially-invertible CycleGAN"""
+    model: str = "picyclegan"
 
 
 class PiCycleGAN(BaseGAN):

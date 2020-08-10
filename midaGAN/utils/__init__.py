@@ -1,31 +1,24 @@
-
+import pathlib
 import importlib
-# import pathlib
+from inspect import isclass
+from pkgutil import iter_modules
+from pathlib import Path
 
-# def list_modules_from_directory(dir_path):
-#     return [str(module_name.stem) for module_name in pathlib.Path('.').glob('*.py')]
+def import_class_from_dir(class_name, dirs):
+    for (importer, module_name, _) in iter_modules(dirs):
 
-def str_to_class(module_name, class_name):
-    """
-    Convert a string to a class
-    From: https://stackoverflow.com/a/1176180/576363
-
-    Parameters
-    ----------
-    module_name : str
-        e.g. direct.data.transforms
-    class_name : str
-        e.g. Identity
-    Returns
-    -------
-    object
-    """
-    try:
-        # Load the module, will raise ModuleNotFoundError if module cannot be loaded.
-        module = importlib.import_module(module_name)
-        # Get the class, will raise AttributeError if class cannot be found.
-        the_class = getattr(module, class_name)
-        return the_class
+        file_path =  importer.path / module_name 
+        file_path = file_path.resolve().with_suffix('.py')
         
-    except AttributeError:
-        return None
+        # Import the module from the file path by creating a spec: 
+        # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        # Import the class from the module and return it 
+        for attribute_name in dir(module):
+            attribute = getattr(module, attribute_name)
+
+            if isclass(attribute) and class_name == attribute_name:            
+                return attribute 

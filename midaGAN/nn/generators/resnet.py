@@ -3,6 +3,18 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
+# Config imports
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.config import BaseGeneratorConfig
+
+
+@dataclass
+class ResnetConfig(BaseGeneratorConfig):
+    model:     str='resnet'
+    n_blocks:  int=6
+    ngf:       int=64
+
 
 class Resnet(nn.Module):
     """Resnet-based generator that consists of Resnet blocks between a few downsampling/upsampling operations.

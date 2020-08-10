@@ -1,1 +1,0 @@
-from midaGAN.data.dummy_dataset import DummyDatasetConfig
