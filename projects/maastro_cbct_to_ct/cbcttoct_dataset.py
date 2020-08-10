@@ -7,8 +7,8 @@ from torch.utils.data import Dataset
 from midaGAN.utils.io import make_dataset_of_directories, load_json
 from midaGAN.utils.normalization import normalize_from_hu
 from midaGAN.utils import sitk_utils
-from midaGAN.datasets.utils.register_truncate import truncate_CT_to_scope_of_CBCT
-from midaGAN.datasets.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
+from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
 from typing import Tuple

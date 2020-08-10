@@ -6,20 +6,20 @@ import logging
 from pathlib import Path
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
+
+import midaGAN
 from midaGAN.conf import config
 from midaGAN.utils import import_class_from_dirs_and_modules
 
-from midaGAN.nn import (gans, generators, discriminators)
-from midaGAN import datasets
 
 logger = logging.getLogger(__name__)
 
 # But it's not used only for config, it's also used for importing models, datasets etc (do a search to see) TODO: change name?
 CONFIG_LOCATIONS = {
-    "dataset": [datasets],
-    "gan": [gans],
-    "generator": [generators],
-    "discriminator": [discriminators],
+    "dataset": [midaGAN.data],
+    "gan": [midaGAN.nn.gans],
+    "generator": [midaGAN.nn.generators],
+    "discriminator": [midaGAN.nn.discriminators],
 }
 
 def init_config(yaml_file):
