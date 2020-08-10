@@ -1,0 +1,29 @@
+use_cuda: True
+n_iters: 200000
+n_iters_decay: 0
+batch_size: 1
+mixed_precision: True
+
+logging:
+    output_dir: "./checkpoints/brats_ex1/"
+    wandb: True
+    log_freq: 50
+    checkpoint_freq: 10000
+
+dataset: 
+    name: "BratsDataset"
+    root: "/work/ft002207/Task01_BrainTumour/imagesTr/"
+    num_workers: 8
+    patch_size: [32, 240, 240]
+    
+gan:  
+    name: "CycleGAN"
+
+generator:  
+    name: "Vnet"
+    use_inverse: False
+    use_memory_saving: False
+
+discriminator:  
+    name: "PatchGAN"
+    n_layers: 3

@@ -5,21 +5,33 @@ import itertools
 from apex import amp
 
 from midaGAN.utils.image_pool import ImagePool
-from midaGAN.nn import build_D, build_G
-from midaGAN.nn.base_model import BaseModel
+from midaGAN.nn.generators import build_G
+from midaGAN.nn.discriminators import build_D
+from midaGAN.nn.gans.basegan import BaseGAN
+
 from midaGAN.nn.losses.generator_loss import GeneratorLoss
 from midaGAN.nn.losses.gan_loss import GANLoss
 
+# Config imports
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.config import BaseGANConfig
 
-class CycleGANModel(BaseModel):
+
+@dataclass
+class CycleGANConfig(BaseGANConfig):
+    """CycleGAN"""
+    name: str = "cyclegan"
+
+
+class CycleGAN(BaseGAN):
     """CycleGAN"""
 
     def __init__(self, conf):
         super().__init__(conf)
         
         # Inputs and Outputs of the model
-        visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', \
-                        'real_B', 'fake_A', 'rec_B', 'idt_A']
+        visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', 'real_B', 'fake_A', 'rec_B', 'idt_A']
         self.visuals = {name: None for name in visual_names}
 
         # Losses used by the model
@@ -50,7 +62,7 @@ class CycleGANModel(BaseModel):
 
 
     def init_networks(self, conf):
-        # TODO: move it to base_model 
+        # TODO: move it to basegan 
         for name in self.networks.keys():
             if name.startswith('G'):
                 self.networks[name] = build_G(conf, self.device)
@@ -62,7 +74,7 @@ class CycleGANModel(BaseModel):
 
 
     def init_criterions(self, conf):
-        # TODO: move it to base_model
+        # TODO: move it to basegan
         # Standard GAN loss 
         self.criterion_gan = GANLoss(conf.gan.loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss

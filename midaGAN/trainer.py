@@ -4,7 +4,7 @@ import logging
 import torch
 
 from midaGAN.data import build_loader
-from midaGAN.nn import build_model
+from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication
 from midaGAN.utils.environment import setup_logging
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
@@ -20,7 +20,7 @@ class Trainer():
 
         self.tracker = ExperimentTracker(conf)
         self.data_loader = build_loader(conf)
-        self.model = build_model(conf)
+        self.model = build_gan(conf)
 
         self.iters = range(conf.continue_iter, 1 + conf.n_iters + conf.n_iters_decay)
         self.iter_idx = 0

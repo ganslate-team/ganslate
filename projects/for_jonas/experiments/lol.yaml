@@ -1,0 +1,36 @@
+use_cuda: True
+n_iters: 20000
+n_iters_decay: 0
+batch_size: 1
+
+dataset: 
+    name: "SliceBasedDataset"
+    root: "/work/ft002207/jonas_dataset/"
+    num_workers: 8
+    pad: True
+    pad_size: [288, 352]
+    #crop: False
+    #crop_size: [256, 128]
+
+optimizer:
+    lambda_identity: 0.1
+
+gan:  
+    name: "CycleGAN"
+
+generator:  
+    # name: "Unet"
+    # num_downs: 7
+    #name: "Resnet"
+    name: "Vnet2D"
+    
+
+discriminator:  
+    name: "PatchGAN2D"
+    n_layers: 5
+
+logging:
+    wandb: False
+    tensorboard: False
+    log_freq: 10
+    checkpoint_freq: 1000

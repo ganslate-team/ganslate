@@ -1,11 +1,4 @@
 .DS_Store
-results/
-scripts/caffemodel/
-build/
-jobs/log/
-log/
-jobs/
-datasets/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -20,8 +13,6 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
-ignore_this/
 eggs/
 .eggs/
 lib/
@@ -125,4 +116,5 @@ IGNORE/
 output_*
 log.txt
 pad_crop_info.json
-projects/for_jonas/lol.yaml
+
+Untitled.ipynb

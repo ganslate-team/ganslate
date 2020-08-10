@@ -8,6 +8,20 @@ from midaGAN.utils.normalization import normalize_from_hu
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 
+# Config imports
+from typing import Tuple
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.config import BaseDatasetConfig
+
+
+@dataclass
+class CTDatasetConfig(BaseDatasetConfig):
+    name:         str = "ct"
+    patch_size:   Tuple[int] = field(default_factory=lambda: (32, 32, 32))
+    focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
+
+
 EXTENSIONS = ['.npy']
 
 class CTDataset(Dataset):

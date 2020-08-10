@@ -1,8 +1,9 @@
 import importlib
 import logging
 from torch.utils.data import Dataset, DataLoader
+import midaGAN
 from midaGAN.utils.sampler import InfiniteSampler
-
+from midaGAN.utils import import_class_from_dirs_and_modules
 
 logger = logging.getLogger(__name__)
 
@@ -21,32 +22,8 @@ def build_loader(conf):
     return loader
 
 def build_dataset(conf):
-    dataset = find_dataset_using_name(conf.dataset.name)
-    return dataset(conf)
-
-def find_dataset_using_name(dataset_name):
-    # TODO: nicer
-    # Given the option --dataset_mode [datasetname],
-    # the file "data/datasetname_dataset.py"
-    # will be imported.
-    dataset_filename = "midaGAN.data." + dataset_name + "_dataset"
-    datasetlib = importlib.import_module(dataset_filename)
-
-    # In the file, the class called DatasetNameDataset() will
-    # be instantiated. It has to be a subclass of Dataset,
-    # and it is case-insensitive.
-    dataset = None
-    target_dataset_name = dataset_name.replace('_', '') + 'dataset'
-    for name, cls in datasetlib.__dict__.items():
-        if name.lower() == target_dataset_name.lower() \
-           and issubclass(cls, Dataset):
-            dataset = cls
-            
-    if dataset is None:
-        logger.error("In %s.py, there should be a subclass of torch.utils.data.Dataset with class name that matches %s in lowercase." % (dataset_filename, target_dataset_name))
-        exit(0)
-
+    name = conf.dataset.name
+    config_locations = midaGAN.conf.CONFIG_LOCATIONS
+    dataset_class = import_class_from_dirs_and_modules(name, config_locations["dataset"])
+    dataset = dataset_class(conf)
     return dataset
-
-
-

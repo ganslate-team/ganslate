@@ -1,55 +1,73 @@
-from midaGAN.conf import config, datasets, gans, discriminators, generators
+
+import os
+import sys
+import logging
+
+from pathlib import Path
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
-import sys
 
-MODULES = {
-    'dataset': datasets,
-    'gan': gans,
-    'discriminator': discriminators,
-    'generator': generators
+import midaGAN
+from midaGAN.conf import config
+from midaGAN.utils import import_class_from_dirs_and_modules
+
+
+logger = logging.getLogger(__name__)
+
+# But it's not used only for config, it's also used for importing models, datasets etc (do a search to see) TODO: change name?
+CONFIG_LOCATIONS = {
+    "dataset": [midaGAN.data],
+    "gan": [midaGAN.nn.gans],
+    "generator": [midaGAN.nn.generators],
+    "discriminator": [midaGAN.nn.discriminators],
 }
 
 def init_config(yaml_file):
-    conf = OmegaConf.structured(config.Config)   # base config
+    # Allows the framework to find user-defined, project-specific, dataset classes and their configs
+    current_project_folder = Path(yaml_file).resolve().parent.parent
+    CONFIG_LOCATIONS["dataset"].append(current_project_folder)
+    logger.info(f"Project directory {current_project_folder} added to path to allow imports of modules from it.")
+
+    # Init default config
+    conf = OmegaConf.structured(config.Config)
+    OmegaConf.set_struct(conf, True)
+
+    # Load run-specific config 
     yaml_conf = OmegaConf.load(yaml_file)
+    set_omegaconf_resolvers(yaml_conf) 
     yaml_conf = instantiate_dataclasses_from_yaml(yaml_conf) # make yaml mergeable by instantiating the dataclasses
+    
+    # Merge default and run-specifig config
     return OmegaConf.merge(conf, yaml_conf)
 
 def instantiate_dataclasses_from_yaml(conf):
     for key, entry in conf.items():
-        if is_dataclass(entry):
+        if is_dataclass(entry, key):
             dataclass = init_dataclass(key, entry)
-            dataclass = populate_dataclass_attrs(dataclass, conf[key])
-            conf[key] = dataclass
+            OmegaConf.update(conf, key, OmegaConf.merge(dataclass, conf[key]))
     return conf
 
-def populate_dataclass_attrs(dataclass, values_dict):
-    check_if_contains_invalid_keys(values_dict, dataclass)
-    for attribute in dataclass.keys():
-        if attribute in values_dict.keys():
-            if is_dataclass(values_dict[attribute]):
-                values_dict = instantiate_dataclasses_from_yaml(values_dict)
-            dataclass[attribute] = values_dict[attribute]
-    return dataclass
-
-def check_if_contains_invalid_keys(values_dict, dataclass):
-    values_dict = {k:v for k,v in values_dict.items() if k != "class_name"}
-    keys_dataclass = set(dataclass.keys())
-    keys_to_be_set = set(values_dict.keys())
-    invalid_keys = keys_to_be_set - keys_dataclass
-    if len(invalid_keys) > 0:
-        # TODO: you just see the key, not where it's nested, how to show the whole path?
-        raise ValueError("YAML configuration contains following invalid key(s): {}.".format(invalid_keys))
-
 def init_dataclass(key, entry):
-    module = MODULES[key]
-    dataclass = getattr(module, entry["class_name"])
-    dataclass = OmegaConf.structured(dataclass)
-    return dataclass
+    dataclass_name = f'{entry["name"]}Config'
+    dataclass = import_class_from_dirs_and_modules(dataclass_name, CONFIG_LOCATIONS[key])
+    return OmegaConf.structured(dataclass)
 
-def is_dataclass(entry):
+def is_dataclass(entry, key):
     if isinstance(entry, DictConfig):
-        if "class_name" in entry.keys():
+        if key in CONFIG_LOCATIONS.keys():
             return True
     return False
+
+def set_omegaconf_resolvers(conf):
+    # Infer length of an object with interpolations using omegaconf
+    # Here till issue closed: https://github.com/omry/omegaconf/issues/100
+    try:
+        OmegaConf.register_resolver(
+        "len",
+        lambda x: len(
+            conf.select(x),
+        ))   
+
+    # Added exception handler for profiling with torch bottleneck
+    except AssertionError:
+        logger.info('Already registered resolver')

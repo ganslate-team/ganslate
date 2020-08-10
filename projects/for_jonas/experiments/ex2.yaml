@@ -1,18 +1,17 @@
-
 use_cuda: True
 n_iters: 50000
 n_iters_decay: 0
 batch_size: 1
 
 logging:
-    output_dir: "./checkpoints/ex1/"
+    output_dir: "./checkpoints/ex2/"
     wandb: False
     tensorboard: False
     log_freq: 10
     checkpoint_freq: 1000
 
 dataset: 
-    class_name: "SliceBasedDatasetConfig"
+    name: "SliceBasedDataset"
     root: "/work/ft002207/miniset_sep_seq/"
     num_workers: 8
     pad: True
@@ -25,12 +24,13 @@ dataset:
     #crop_size: [256, 128]
 
 gan:  
-    class_name: "PiCycleGANConfig"
+    name: "CycleGAN"
 
-    generator:  
-        class_name: "Vnet2DGeneratorConfig"
-        use_memory_saving: False
+generator:  
+    name: "Vnet2D"
+    use_memory_saving: False
+    use_inverse: False
 
-    discriminator:  
-        class_name: "PatchGAN2DDiscriminatorConfig"
-        n_layers: 4
+discriminator:  
+    name: "PatchGAN2D"
+    n_layers: 4

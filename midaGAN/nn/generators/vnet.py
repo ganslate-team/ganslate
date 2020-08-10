@@ -3,8 +3,22 @@ import torch.nn as nn
 import memcnn
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
+# Config imports
+from dataclasses import dataclass, field
+from omegaconf import MISSING
+from midaGAN.conf.config import BaseGeneratorConfig
 
-class VNet(nn.Module):
+
+@dataclass
+class VnetConfig(BaseGeneratorConfig):
+    """Partially-invertible V-Net generator."""
+    name:             str = "vnet"
+    start_n_filters:   int = 16
+    use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
+    use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
+
+
+class Vnet(nn.Module):
     def __init__(self, start_n_filters, norm_type, use_memory_saving, use_inverse):
         super().__init__()
         keep_input = not use_memory_saving

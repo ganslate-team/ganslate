@@ -3,7 +3,7 @@
 ### #SBATCH directives need to be in the first part of the jobscript
 
 ### Job name
-#SBATCH --job-name=brats
+#SBATCH --job-name=ex1
 
 ### Output path for stdout and stderr
 ### %J is the job ID, %I is the array ID
@@ -34,4 +34,4 @@ cd $HOME/midaGAN/
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config=projects/brats_flair_to_t1w/experiment1.yaml mixed_precision=True logging.wandb=True logging.log_freq=50 n_iters=15000
+python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config=projects/brats_flair_to_t1w/experiments/ex1.yaml

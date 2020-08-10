@@ -42,7 +42,8 @@ def train():
     conf = init_config(cli.config)
     cli.pop("config")
     conf = OmegaConf.merge(conf, cli)
-
+    
+    # TODO: all this should be in trainer.py
     # logger.info(f'Machine rank: {machine_rank}.')
     logger.info(f'Local rank: {communication.get_local_rank()}.')
     logger.info(f'Logging: {log_file}.')

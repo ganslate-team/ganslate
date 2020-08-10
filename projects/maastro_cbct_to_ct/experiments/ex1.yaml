@@ -1,0 +1,26 @@
+use_cuda: True
+n_iters: 200000
+n_iters_decay: 0
+batch_size: 1
+
+logging:
+    output_dir: ./checkpoints/cbct_ex2/
+    wandb: True
+    log_freq: 50
+    checkpoint_freq: 10000
+
+dataset: 
+    name: "CBCTtoCTDataset"
+    root: "/work/ft002207/CT_CBCT_dataset_resampled"
+    hounsfield_units_range: [-1000, 2000]
+    num_workers: 8
+    patch_size: [32, 288, 288]
+    
+gan:  
+    name: "PiCycleGAN"
+
+generator:  
+    name: "Vnet"
+
+discriminator:  
+    name: "PatchGAN"

@@ -1,9 +1,9 @@
-#!/usr/local_rwth/bin/zsh
+#!/bin/bash
  
 ### #SBATCH directives need to be in the first part of the jobscript
 
 ### Job name
-#SBATCH --job-name=ganIbro
+#SBATCH --job-name=ex2
 
 ### Output path for stdout and stderr
 ### %J is the job ID, %I is the array ID
@@ -30,8 +30,8 @@
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 source $HOME/.bashrc
-conda activate maastro
+cd $HOME/midaGAN/
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname
-python train.py --name NAME --niter 20 --niter_decay 20 --lr_G 0.0001 --lr_D 0.0004 --batch_size 8 --model picyclegan --which_model_netG vnet_generator  --which_model_netD n_layers --n_layers_D 3 --dataset_mode npy_unaligned_3d --dataset.root /hpcwork/ft002207/lung1_lidc_gan --gpu_ids 0,1 --save_epoch_freq 10 --num_workers 8 --wandb True
+python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config=projects/maastro_cbct_to_ct/experiments/ex2.yaml
