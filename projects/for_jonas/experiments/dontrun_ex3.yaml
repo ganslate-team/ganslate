@@ -12,7 +12,7 @@ logging:
     checkpoint_freq: 1000
 
 dataset: 
-    class_name: "SliceBasedDatasetConfig"
+    name: "SliceBasedDataset"
     root: "/work/ft002207/miniset_sep_seq/"
     num_workers: 8
     pad: True
@@ -25,12 +25,12 @@ dataset:
     #crop_size: [256, 128]
 
 gan:  
-    class_name: "CycleGANConfig"
+    name: "CycleGAN"
 
-    generator:  
-        class_name: "ResnetConfig"
-        n_blocks: 6 # NOTE, might need to be changed based on how big your inputs are
+generator:  
+    name: "Resnet"
+    n_blocks: 6 # NOTE, might need to be changed based on how big your inputs are
 
-    discriminator:  
-        class_name: "PatchGAN2DConfig"
-        n_layers: 4
+discriminator:  
+    name: "PatchGAN2D"
+    n_layers: 4

@@ -3,7 +3,7 @@ import os
 import logging
 import torch
 
-from midaGAN.data import build_loader
+from midaGAN.datasets import build_loader
 from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication
 from midaGAN.utils.environment import setup_logging

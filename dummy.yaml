@@ -15,13 +15,13 @@ dataset:
     name: "DummyDataset"
     root: '.'
 
-# gan:  
-#     name: "PiCycleGAN"
+gan:  
+    name: "PiCycleGAN"
 
-# generator:  
-#     name: "VnetGenerator"
-#     use_memory_saving: False
+generator:  
+    name: "Vnet"
+    use_memory_saving: False
 
-# discriminator:  
-#     name: "PatchGAN"
-#     n_layers: 3
+discriminator:  
+    name: "PatchGAN"
+    n_layers: 3

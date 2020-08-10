@@ -17,7 +17,7 @@ class BaseDatasetConfig:
 class BaseGANConfig:
     """Base GAN config."""
     is_train:         bool = True
-    model:            str = MISSING
+    name:            str = MISSING
     loss_type:        str = "lsgan"
     norm_type:        str = "instance"
     weight_init_type: str = "normal"
@@ -28,12 +28,12 @@ class BaseGANConfig:
 
 @dataclass
 class BaseDiscriminatorConfig:
-    model: str = MISSING
+    name: str = MISSING
 
 
 @dataclass
 class BaseGeneratorConfig:
-    model:             str = MISSING
+    name:             str = MISSING
 
 
 @dataclass

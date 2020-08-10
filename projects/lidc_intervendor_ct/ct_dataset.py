@@ -5,13 +5,14 @@ import torch
 from torch.utils.data import Dataset
 from midaGAN.utils.io import make_dataset_of_files, load_json
 from midaGAN.utils.normalization import normalize_from_hu
-from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+from midaGAN.datasets.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+
 
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.dataset import BaseDatasetConfig
+from midaGAN.conf.config import BaseDatasetConfig
 
 
 @dataclass

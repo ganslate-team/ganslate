@@ -1,14 +1,24 @@
-import pathlib
 import importlib
-from inspect import isclass
-from pkgutil import iter_modules
+import inspect
 from pathlib import Path
+from pkgutil import iter_modules
 
-def import_class_from_dir(class_name, dirs):
+def import_class_from_dirs_and_modules(class_name, dirs_modules):
+    dirs = []
+    for location in dirs_modules:
+        if inspect.ismodule(location):
+            dir_path = Path(location.__file__).parent
+        else:
+            dir_path = Path(location).resolve()
+        dirs.append(dir_path)
+        
     for (importer, module_name, _) in iter_modules(dirs):
 
         file_path =  importer.path / module_name 
         file_path = file_path.resolve().with_suffix('.py')
+
+        if not file_path.exists():
+            continue
         
         # Import the module from the file path by creating a spec: 
         # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
@@ -20,5 +30,7 @@ def import_class_from_dir(class_name, dirs):
         for attribute_name in dir(module):
             attribute = getattr(module, attribute_name)
 
-            if isclass(attribute) and class_name == attribute_name:            
+            if inspect.isclass(attribute) and class_name == attribute_name:            
                 return attribute 
+                
+    raise ValueError(f"Class with name {class_name} not found in any of the given directories or modules.")

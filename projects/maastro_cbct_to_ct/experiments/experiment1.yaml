@@ -4,7 +4,7 @@ n_iters_decay: 0
 batch_size: 1
 
 dataset: 
-    class_name: "CBCTtoCTDatasetConfig"
+    name: "CBCTtoCTDatasetConfig"
     root: "/work/ft002207/CT_CBCT_dataset_resampled"
     hounsfield_units_range: 
         - -1000
@@ -15,13 +15,13 @@ dataset:
         - 288
         - 288
 gan:  
-    class_name: "PiCycleGANConfig"
+    name: "PiCycleGANConfig"
 
-    generator:  
-        class_name: "VnetConfig"
+generator:  
+    name: "VnetConfig"
 
-    discriminator:  
-        class_name: "PatchGANConfig"
+discriminator:  
+    name: "PatchGANConfig"
 
 logging:
     wandb: False

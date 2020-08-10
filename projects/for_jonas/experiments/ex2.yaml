@@ -11,7 +11,7 @@ logging:
     checkpoint_freq: 1000
 
 dataset: 
-    class_name: "SliceBasedDatasetConfig"
+    name: "SliceBasedDataset"
     root: "/work/ft002207/miniset_sep_seq/"
     num_workers: 8
     pad: True
@@ -24,13 +24,13 @@ dataset:
     #crop_size: [256, 128]
 
 gan:  
-    class_name: "CycleGANConfig"
+    name: "CycleGAN"
 
-    generator:  
-        class_name: "Vnet2DConfig"
-        use_memory_saving: False
-        use_inverse: False
+generator:  
+    name: "Vnet2D"
+    use_memory_saving: False
+    use_inverse: False
 
-    discriminator:  
-        class_name: "PatchGAN2DConfig"
-        n_layers: 4
+discriminator:  
+    name: "PatchGAN2D"
+    n_layers: 4

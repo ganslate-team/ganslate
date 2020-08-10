@@ -1,12 +1,13 @@
-# midaGAN.nn.generators 
-from midaGAN.utils import str_to_class
+import midaGAN
+from midaGAN.utils import import_class_from_dirs_and_modules
+from midaGAN.nn.utils import init_weights
 
 def build_G(conf, device):
+
     name = conf.generator.name
-    generator_class = str_to_class(f"midiGAN.nn.generators.{name.lower()}", name)
-    if generator_class is None:
-        raise NotImplementedError(f"Generator at `midiGAN.nn.generators.{name.lower()}.{name} not found")
-    
+    config_locations = midaGAN.conf.CONFIG_LOCATIONS
+    generator_class = import_class_from_dirs_and_modules(name, config_locations["generator"])
+
     generator_args = dict(conf.generator)
     generator_args.pop("name") # used only to select the model class
     norm_type = conf.gan.norm_type

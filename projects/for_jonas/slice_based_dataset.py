@@ -7,11 +7,12 @@ import pandas as pd
 from torch.utils.data import Dataset
 from midaGAN.utils.normalization import z_score_normalize
 from midaGAN.utils import sitk_utils, io
+
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.dataset import BaseDatasetConfig
+from midaGAN.conf.config import BaseDatasetConfig
 
 
 @dataclass

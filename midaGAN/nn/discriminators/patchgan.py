@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
+
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
@@ -9,7 +10,7 @@ from midaGAN.conf.config import BaseDiscriminatorConfig
 
 @dataclass
 class PatchGANConfig(BaseDiscriminatorConfig):
-    model:           str = "patchgan"
+    name:           str = "patchgan"
     start_n_filters: int = 64
     n_layers:        int = 3
 

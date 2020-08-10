@@ -11,19 +11,19 @@ logging:
     checkpoint_freq: 1000
 
 dataset: 
-    class_name: "BratsDatasetConfig"
+    name: "BratsDataset"
     root: "/work/ft002207/Task01_BrainTumour/imagesTr/"
     num_workers: 8
     patch_size: [32, 240, 240]
 gan:  
-    class_name: "PiCycleGANConfig"
+    name: "PiCycleGAN"
 
-    generator:  
-        class_name: "VnetConfig"
+generator:  
+    name: "Vnet"
 
-    discriminator:  
-        class_name: "PatchGANConfig"
-        n_layers: 3
+discriminator:  
+    name: "PatchGAN"
+    n_layers: 3
 
 logging:
     wandb: False

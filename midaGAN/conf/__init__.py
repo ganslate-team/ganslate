@@ -1,29 +1,43 @@
 
 import os
 import sys
+import logging
+
+from pathlib import Path
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
-from midaGAN.conf import config, datasets, gans, discriminators, 
-from midaGAN.utils import import_class_from_dir
+from midaGAN.conf import config
+from midaGAN.utils import import_class_from_dirs_and_modules
 
+from midaGAN.nn import (gans, generators, discriminators)
+from midaGAN import datasets
 
-DIRS_WITH_CONFIGS = {
-    "dataset": ["midaGAN.conf."]
+logger = logging.getLogger(__name__)
+
+# But it's not used only for config, it's also used for importing models, datasets etc (do a search to see) TODO: change name?
+CONFIG_LOCATIONS = {
+    "dataset": [datasets],
+    "gan": [gans],
+    "generator": [generators],
+    "discriminator": [discriminators],
 }
 
-
 def init_config(yaml_file):
-    conf = OmegaConf.structured(config.Config)   # base config
-    yaml_conf = OmegaConf.load(yaml_file)
+    # Allows the framework to find user-defined, project-specific, dataset classes and their configs
+    current_project_folder = Path(yaml_file).resolve().parent.parent
+    CONFIG_LOCATIONS["dataset"].append(current_project_folder)
+    logger.info(f"Project directory {current_project_folder} added to path to allow imports of modules from it.")
 
-    # Set environment variable for PROJECTS_DIR
-    os.environ["PROJECTS_DIR"] = str(Path(yaml_file).resolve().parent)
-
-    print(f"Projects Directory {os.environ.get('PROJECTS_DIR')} stored as environment variable.")
+    # Init default config
+    conf = OmegaConf.structured(config.Config)
     OmegaConf.set_struct(conf, True)
-    # Resolvers for more readable parameter initialization
-    set_omegaconf_resolvers(yaml_conf)
+
+    # Load run-specific config 
+    yaml_conf = OmegaConf.load(yaml_file)
+    set_omegaconf_resolvers(yaml_conf) 
     yaml_conf = instantiate_dataclasses_from_yaml(yaml_conf) # make yaml mergeable by instantiating the dataclasses
+    
+    # Merge default and run-specifig config
     return OmegaConf.merge(conf, yaml_conf)
 
 def instantiate_dataclasses_from_yaml(conf):
@@ -34,25 +48,26 @@ def instantiate_dataclasses_from_yaml(conf):
     return conf
 
 def init_dataclass(key, entry):
-    print(f"Key: {key}")
     dataclass_name = f'{entry["name"]}Config'
-    print(f"Dataclass: {dataclass_name}")
-    # Check if dataclass is present in projects folder! 
-    dataclass = import_class_from_dir(dataclass_name, [Path(os.environ.get("PROJECTS_DIR"))])
-    
-    # If not present in projects, use the conf folder to check datasets.
-    if dataclass is None:
-        module = getattr(sys.modules[__name__], key) # Rename modules and load them directly using getattr
-        if hasattr(module, dataclass_name):
-            dataclass = getattr(module, dataclass_name) 
-        else:
-            raise ValueError(f'YAML configuration incorrect with name:{entry["name"]} for {key}')
-        
-    dataclass = OmegaConf.structured(dataclass)
-    return dataclass
+    dataclass = import_class_from_dirs_and_modules(dataclass_name, CONFIG_LOCATIONS[key])
+    return OmegaConf.structured(dataclass)
 
 def is_dataclass(entry, key):
     if isinstance(entry, DictConfig):
-        if hasattr(sys.modules[__name__], key):
+        if key in CONFIG_LOCATIONS.keys():
             return True
     return False
+
+def set_omegaconf_resolvers(conf):
+    # Infer length of an object with interpolations using omegaconf
+    # Here till issue closed: https://github.com/omry/omegaconf/issues/100
+    try:
+        OmegaConf.register_resolver(
+        "len",
+        lambda x: len(
+            conf.select(x),
+        ))   
+
+    # Added exception handler for profiling with torch bottleneck
+    except AssertionError:
+        logger.info('Already registered resolver')

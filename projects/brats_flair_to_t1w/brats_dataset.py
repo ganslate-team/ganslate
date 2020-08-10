@@ -7,12 +7,13 @@ import SimpleITK as sitk
 from midaGAN.utils.io import make_dataset_of_files
 from midaGAN.utils.normalization import z_score_normalize
 from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+from midaGAN.datasets.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.dataset import BaseDatasetConfig
+from midaGAN.conf.config import BaseDatasetConfig
 
 
 @dataclass
