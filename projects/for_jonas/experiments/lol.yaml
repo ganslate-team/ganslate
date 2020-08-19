@@ -19,7 +19,7 @@ gan:
     name: "CycleGAN"
 
 generator:  
-    # name: "Unet"
+    # name: "Unet2D"
     # num_downs: 7
     #name: "Resnet"
     name: "Vnet2D"

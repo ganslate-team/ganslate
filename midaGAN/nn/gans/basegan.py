@@ -79,16 +79,16 @@ class BaseGAN(ABC):
 
     def setup(self):
         """Final step of initializing a GAN model. Does following:
-            (1) Sets up schedulers 
-            (2) Converts the model to mixed precision, if specified
+            (1) Converts the model to mixed precision, if specified
+            (2) Sets up schedulers 
             (3) Loads a checkpoint if continuing training or inferencing            
             (4) Applies parallelization to the model if possible
         """
-        if self.is_train:
-            self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
-        
         if self.conf.mixed_precision:
             self.convert_to_mixed_precision()
+        
+        if self.is_train:
+            self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
         
         if not self.is_train or self.conf.continue_train:
             self.load_networks(self.conf.load_iter)

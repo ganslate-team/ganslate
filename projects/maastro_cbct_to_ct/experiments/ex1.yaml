@@ -20,7 +20,7 @@ gan:
     name: "PiCycleGAN"
 
 generator:  
-    name: "Vnet"
+    name: "Vnet3D"
 
 discriminator:  
-    name: "PatchGAN"
+    name: "PatchGAN3D"

@@ -10,39 +10,39 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 
 @dataclass
-class VnetConfig(BaseGeneratorConfig):
+class Vnet3DConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
-    name:             str = "vnet"
-    start_n_filters:   int = 16
+    name:             str = "vnet3d"
+    in_num_channels:   int = 16
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
 
 
-class Vnet(nn.Module):
-    def __init__(self, start_n_filters, norm_type, use_memory_saving, use_inverse):
+class Vnet3D(nn.Module):
+    def __init__(self, in_num_channels, norm_type, use_memory_saving, use_inverse):
         super().__init__()
         keep_input = not use_memory_saving
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
         
-        self.in_ab = InputBlock(start_n_filters, norm_layer, use_bias)
+        self.in_ab = InputBlock(in_num_channels, norm_layer, use_bias)
         if use_inverse:
-            self.in_ba = InputBlock(start_n_filters, norm_layer, use_bias)
+            self.in_ba = InputBlock(in_num_channels, norm_layer, use_bias)
 
-        self.down1 = DownBlock(start_n_filters, 1, norm_layer, use_bias, keep_input, use_inverse)
-        self.down2 = DownBlock(start_n_filters*2, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.down3 = DownBlock(start_n_filters*4, 3, norm_layer, use_bias, keep_input, use_inverse) 
-        self.down4 = DownBlock(start_n_filters*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down1 = DownBlock(in_num_channels, 1, norm_layer, use_bias, keep_input, use_inverse)
+        self.down2 = DownBlock(in_num_channels*2, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down3 = DownBlock(in_num_channels*4, 3, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down4 = DownBlock(in_num_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
 
-        self.up4 = UpBlock(start_n_filters*16, start_n_filters*16, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up3 = UpBlock(start_n_filters*16, start_n_filters*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up2 = UpBlock(start_n_filters*8, start_n_filters*4, 1, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up1 = UpBlock(start_n_filters*4, start_n_filters*2, 1, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up4 = UpBlock(in_num_channels*16, in_num_channels*16, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up3 = UpBlock(in_num_channels*16, in_num_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up2 = UpBlock(in_num_channels*8, in_num_channels*4, 1, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up1 = UpBlock(in_num_channels*4, in_num_channels*2, 1, norm_layer, use_bias, keep_input, use_inverse) 
         
-        self.out_ab = OutBlock(start_n_filters*2, norm_layer, use_bias) 
+        self.out_ab = OutBlock(in_num_channels*2, norm_layer, use_bias) 
         if use_inverse:
-            self.out_ba = OutBlock(start_n_filters*2, norm_layer, use_bias)
+            self.out_ba = OutBlock(in_num_channels*2, norm_layer, use_bias)
 
     def forward(self, x, inverse=False):
         if inverse:

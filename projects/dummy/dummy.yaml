@@ -19,9 +19,9 @@ gan:
     name: "PiCycleGAN"
 
 generator:  
-    name: "Vnet"
+    name: "Vnet3D"
     use_memory_saving: False
 
 discriminator:  
-    name: "PatchGAN"
+    name: "PatchGAN3D"
     n_layers: 3

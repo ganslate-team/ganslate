@@ -21,10 +21,10 @@ gan:
     name: "CycleGAN"
 
 generator:  
-    name: "Vnet"
+    name: "Vnet3D"
     use_inverse: False
     use_memory_saving: True
 
 discriminator:  
-    name: "PatchGAN"
+    name: "PatchGAN3D"
 
