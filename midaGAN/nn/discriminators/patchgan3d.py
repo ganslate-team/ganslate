@@ -11,12 +11,13 @@ from midaGAN.conf.config import BaseDiscriminatorConfig
 @dataclass
 class PatchGAN3DConfig(BaseDiscriminatorConfig):
     name:           str = "patchgan3d"
-    in_num_channels: int = 64
+    in_num_channels: int = 1
+    ndf:             int = 64
     n_layers:        int = 3
 
 
 class PatchGAN3D(nn.Module):
-    def __init__(self, in_num_channels, n_layers, norm_type):
+    def __init__(self, in_num_channels, ndf, n_layers, norm_type):
         super().__init__()
         
         norm_layer = get_norm_layer_3d(norm_type)
@@ -25,7 +26,7 @@ class PatchGAN3D(nn.Module):
         kw = 4
         padw = 1
         sequence = [
-            nn.Conv3d(1, in_num_channels, kernel_size=kw, stride=2, padding=padw),
+            nn.Conv3d(in_num_channels, ndf, kernel_size=kw, stride=2, padding=padw),
             nn.LeakyReLU(0.2, True)
         ]
 
@@ -35,18 +36,18 @@ class PatchGAN3D(nn.Module):
             nf_mult_prev = nf_mult
             nf_mult = min(2**n, 8)
             sequence += [
-                nn.Conv3d(in_num_channels * nf_mult_prev, in_num_channels * nf_mult,
+                nn.Conv3d(ndf * nf_mult_prev, ndf * nf_mult,
                           kernel_size=kw, stride=2, padding=padw, bias=use_bias),
-                norm_layer(in_num_channels * nf_mult),
+                norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
 
         nf_mult_prev = nf_mult
         nf_mult = min(2**n_layers, 8)
         sequence += [
-            nn.Conv3d(in_num_channels * nf_mult_prev, in_num_channels * nf_mult,
+            nn.Conv3d(ndf * nf_mult_prev, ndf * nf_mult,
                       kernel_size=kw, stride=1, padding=padw, bias=use_bias),
-            norm_layer(in_num_channels * nf_mult),
+            norm_layer(ndf * nf_mult),
             nn.LeakyReLU(0.2, True)
         ]
 

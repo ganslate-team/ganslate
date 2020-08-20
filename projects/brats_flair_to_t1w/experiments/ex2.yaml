@@ -12,17 +12,16 @@ logging:
 
 dataset: 
     name: "BratsDataset"
-    root: "/work/ft002207/Task01_BrainTumour/imagesTr/"
+    root: "/workspace/data/Task01_BrainTumour/imagesTr/"
     num_workers: 8
-    patch_size: [32, 240, 240]
+    patch_size: [128, 224, 224]
     
 gan:  
     name: "CycleGAN"
 
 generator:  
-    name: "Resnet3D"
-    #use_inverse: False
-    #use_memory_saving: False
+    name: "Unet3D"
+    num_downs: 5
 
 discriminator:  
     name: "PatchGAN3D"

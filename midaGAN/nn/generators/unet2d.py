@@ -9,9 +9,10 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 @dataclass
 class Unet2DConfig(BaseGeneratorConfig):
-    name:     str='unet2d'
-    num_downs: int=7
-    ngf:       int=64
+    name:     str = 'unet2d'
+    num_downs: int = 7
+    ngf:       int = 64
+    use_dropout = False
 
 
 class Unet2D(nn.Module):
@@ -75,9 +76,9 @@ class UnetSkipConnectionBlock(nn.Module):
             in_num_channels = outer_nc
         downconv = nn.Conv2d(in_num_channels, inner_nc, kernel_size=4,
                              stride=2, padding=1, bias=use_bias)
-        downrelu = nn.LeakyReLU(0.2, True)
+        downrelu = nn.LeakyReLU(0.2)
         downnorm = norm_layer(inner_nc)
-        uprelu = nn.ReLU(True)
+        uprelu = nn.ReLU()
         upnorm = norm_layer(outer_nc)
 
         if outermost:

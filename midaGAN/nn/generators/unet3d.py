@@ -9,9 +9,10 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 @dataclass
 class Unet3DConfig(BaseGeneratorConfig):
-    name:     str='unet3d'
-    num_downs: int=5
-    ngf:       int=64
+    name:     str = 'unet3d'
+    num_downs: int = 7
+    ngf:       int = 64
+    use_dropout = False
 
 
 class Unet3D(nn.Module):
@@ -75,9 +76,9 @@ class UnetSkipConnectionBlock(nn.Module):
             in_num_channels = outer_nc
         downconv = nn.Conv3d(in_num_channels, inner_nc, kernel_size=4,
                              stride=2, padding=1, bias=use_bias)
-        downrelu = nn.LeakyReLU(0.2, True)
+        downrelu = nn.LeakyReLU(0.2)
         downnorm = norm_layer(inner_nc)
-        uprelu = nn.ReLU(True)
+        uprelu = nn.ReLU()
         upnorm = norm_layer(outer_nc)
 
         if outermost:
@@ -110,12 +111,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
     def forward(self, x):
         if self.outermost:
-            print('y311eaaaaaaaaaaaa')
-            print(self.model(x).shape)
             return self.model(x)
         else:   # add skip connections
-            print('yeaaaaaaaaaaaa')
-            print(x.shape)
-            print(self.model(x).shape)
             return torch.cat([x, self.model(x)], 1)
 
