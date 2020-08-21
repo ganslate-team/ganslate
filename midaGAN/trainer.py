@@ -8,12 +8,12 @@ from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication
 from midaGAN.utils.environment import setup_logging
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
-
+from midaGAN.utils.summary import gan_summary
 
 class Trainer():
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
-        
+
         # Training ran with torch.distributed.launch if there is 'WORLD_SIZE' environment variable
         if os.environ.get('WORLD_SIZE', None):
             communication.init_distributed()
@@ -26,10 +26,10 @@ class Trainer():
         self.iter_idx = 0
         self.checkpoint_freq = conf.logging.checkpoint_freq
 
-        super().__init__()
-
     def train(self):
-        self.logger.info('Training started.')
+        if communication.is_main_process():
+            self.logger.info(gan_summary(self.model, self.data_loader))
+            self.logger.info('Training started.')
 
         self.tracker.start_dataloading_timer()
         for i, data in zip(self.iters, self.data_loader):

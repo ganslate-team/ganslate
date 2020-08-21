@@ -111,12 +111,7 @@ class UnetSkipConnectionBlock(nn.Module):
 
     def forward(self, x):
         if self.outermost:
-            print('y311eaaaaaaaaaaaa')
-            print(self.model(x).shape)
             return self.model(x)
         else:   # add skip connections
-            print('yeaaaaaaaaaaaa')
-            print(x.shape)
-            print(self.model(x).shape)
             return torch.cat([x, self.model(x)], 1)
 

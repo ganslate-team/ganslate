@@ -257,14 +257,3 @@ class BaseGAN(ABC):
     def get_loggable_data(self):
         """Return data that is useful for tracking - learning rates, losses and visuals."""
         return self.get_learning_rates(), self.get_current_losses(), self.get_current_visuals()
-
-    def print_networks(self):
-        """Print the total number of parameters in the network and network architecture"""
-        message = '---------- Networks initialized -------------\n'
-        for name in self.networks.keys():
-            num_params = 0
-            for param in self.networks[name].parameters():
-                num_params += param.numel()
-            message += '[Network %s] Total number of parameters : %.3f M \n' % (name, num_params / 1e6)
-        message += '-----------------------------------------------'
-        self.logger.info(message)
