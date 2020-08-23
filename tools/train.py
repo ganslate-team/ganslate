@@ -1,6 +1,7 @@
 import sys
 import torch
 from omegaconf import OmegaConf
+from pathlib import Path
 import logging
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,14 @@ def train():
     # communication.synchronize()  # Ensure folders are in place.
 
     # log_file = experiment_dir / f'log_{machine_rank}_{communication.get_local_rank()}.txt'
-    log_file = 'log.txt'
+    
+
+    cli = OmegaConf.from_cli()
+    conf = init_config(cli.config)
+    cli.pop("config")
+    conf = OmegaConf.merge(conf, cli)
+    
+    log_file = Path(conf.logging.output_dir) / Path('log.txt')
     debug = False
     setup_logging(
         use_stdout=communication.get_local_rank() == 0 or debug,
@@ -38,11 +46,6 @@ def train():
         log_level=('INFO' if not debug else 'DEBUG')
     )
 
-    cli = OmegaConf.from_cli()
-    conf = init_config(cli.config)
-    cli.pop("config")
-    conf = OmegaConf.merge(conf, cli)
-    
     # TODO: all this should be in trainer.py
     # logger.info(f'Machine rank: {machine_rank}.')
     logger.info(f'Local rank: {communication.get_local_rank()}.')

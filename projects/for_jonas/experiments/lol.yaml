@@ -21,7 +21,7 @@ gan:
 generator:  
     # name: "Unet2D"
     # num_downs: 7
-    #name: "Resnet"
+    #name: "Resnet2D"
     name: "Vnet2D"
     
 
