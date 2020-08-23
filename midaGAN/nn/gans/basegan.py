@@ -174,7 +174,7 @@ class BaseGAN(ABC):
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
-            if isinstance(net, DataParallel) or isinstance(net, DistributedDataParallel):
+            if isinstance(net, (DataParallel, DistributedDataParallel)):
                 checkpoint[name] = net.module.state_dict()  # e.g. checkpoint["D_A"]
             else:
                 checkpoint[name] = net.state_dict()

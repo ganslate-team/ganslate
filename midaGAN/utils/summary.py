@@ -1,16 +1,17 @@
 # Taken from https://github.com/sksq96/pytorch-summary/blob/master/torchsummary/torchsummary.py
 # Edited:
 #   - returns string and doesn't print anything anymore, so that it can be used with `logging` module
-#   - summar_string() -> summary(), removed old summary()
+#   - summary_string() -> summary(), removed old summary()
 #   - gan_summary function that outputs summaries of each unique network architecture in GAN setup
 
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from torch.nn import DataParallel
+from torch.nn.parallel import DistributedDataParallel
 
 from collections import OrderedDict
 import numpy as np
-import copy
 
 
 def gan_summary(gan, dataloader):
@@ -21,12 +22,14 @@ def gan_summary(gan, dataloader):
     message += f"GAN setup consists of networks: {list(gan.networks.keys())}\n"
 
     logged_networks = []
-    for name, network in gan.networks.items():
+    for name, net in gan.networks.items():
+        if isinstance(net, (DataParallel, DistributedDataParallel)):
+            network = net.module
         # Networks of the same network class are output only once. E.g. G_A and G_B, only one logged.
-        if str(type(network)) not in logged_networks:
+        if str(type(net)) not in logged_networks:
             message += f"\nNetwork name: {name}\n"
-            message += summary(network, input_shape, device=gan.device)
-            logged_networks.append(str(type(network)))
+            message += summary(net, input_shape, device=gan.device)
+            logged_networks.append(str(type(net)))
     return message
 
 def summary(model, input_size, batch_size=-1, device=torch.device('cuda:0'), dtypes=None):
