@@ -10,7 +10,7 @@ from midaGAN.conf.config import BaseDiscriminatorConfig
 
 @dataclass
 class PatchGAN2DConfig(BaseDiscriminatorConfig):
-    name:           str = "patchgan2d"
+    name:           str = "PatchGAN2D"
     in_num_channels: int = 1
     ndf:             int = 64
     n_layers:        int = 3

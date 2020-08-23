@@ -9,7 +9,7 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 @dataclass
 class Unet3DConfig(BaseGeneratorConfig):
-    name:     str = 'unet3d'
+    name:     str = 'Unet3D'
     num_downs: int = 7
     ngf:       int = 64
     use_dropout = False

@@ -12,7 +12,7 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 @dataclass
 class Resnet2DConfig(BaseGeneratorConfig):
-    name:     str = 'resnet2d'
+    name:     str = 'Resnet2D'
     in_num_channels:  int = 1
     out_num_channels: int = 1
     n_residual_blocks: int = 9

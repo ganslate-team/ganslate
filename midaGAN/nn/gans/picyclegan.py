@@ -20,7 +20,7 @@ from midaGAN.conf.config import BaseGANConfig
 @dataclass
 class PiCycleGANConfig(BaseGANConfig):
     """Partially-invertible CycleGAN"""
-    name: str = "picyclegan"
+    name: str = "PiCycleGAN"
 
 
 class PiCycleGAN(BaseGAN):

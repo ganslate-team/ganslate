@@ -18,7 +18,7 @@ from midaGAN.conf.config import BaseDatasetConfig
 
 @dataclass
 class BratsDatasetConfig(BaseDatasetConfig):
-    name:         str = "brats"
+    name:         str = "BratsDataset"
     patch_size:   Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
     focal_region_proportion: float = 0    # Proportion of focal region size compared to original volume size
 

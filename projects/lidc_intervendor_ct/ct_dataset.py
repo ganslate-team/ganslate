@@ -17,7 +17,7 @@ from midaGAN.conf.config import BaseDatasetConfig
 
 @dataclass
 class CTDatasetConfig(BaseDatasetConfig):
-    name:         str = "ct"
+    name:         str = "CTDataset"
     patch_size:   Tuple[int] = field(default_factory=lambda: (32, 32, 32))
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
 

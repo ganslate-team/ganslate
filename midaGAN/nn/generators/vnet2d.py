@@ -12,7 +12,7 @@ from midaGAN.conf.config import BaseGeneratorConfig
 @dataclass
 class Vnet2DConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
-    name:             str = "vnet2d"
+    name:             str = "Vnet2D"
     in_num_channels:   int = 16
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers

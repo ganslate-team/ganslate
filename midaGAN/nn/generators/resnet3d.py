@@ -12,11 +12,10 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 @dataclass
 class Resnet3DConfig(BaseGeneratorConfig):
-    name:     str='resnet3d'
+    name:     str='Resnet3D'
     in_num_channels:  int = 1
     out_num_channels: int = 1
     n_residual_blocks: int = 9
-
 
 
 class Resnet3D(nn.Module):

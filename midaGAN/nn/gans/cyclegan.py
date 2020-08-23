@@ -21,7 +21,7 @@ from midaGAN.conf.config import BaseGANConfig
 @dataclass
 class CycleGANConfig(BaseGANConfig):
     """CycleGAN"""
-    name: str = "cyclegan"
+    name: str = "CycleGAN"
 
 
 class CycleGAN(BaseGAN):
