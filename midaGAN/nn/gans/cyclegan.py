@@ -156,12 +156,12 @@ class CycleGAN(BaseGAN):
         if discriminator == 'D_A':
             real = self.visuals['real_B']
             fake = self.visuals['fake_B']
-            fake = self.fake_A_pool.query(fake)
+            fake = self.fake_B_pool.query(fake)
             
         elif discriminator == 'D_B':
             real = self.visuals['real_A']
             fake = self.visuals['fake_A']
-            fake = self.fake_B_pool.query(fake)
+            fake = self.fake_A_pool.query(fake)
         else:
             raise ValueError('The discriminator has to be either "D_A" or "D_B".')
 
