@@ -87,7 +87,7 @@ class CycleLoss:
 
         # cycle-consistency using a weighted combination of SSIM and L1 
         if self.ssim_criterion:
-            # Merge channel and slice dimensions of volume inputs to allow calculating SSIM 
+            # Merge channel and slice dimensions of volume inputs to allow calculation of SSIM 
             real_A = reshape_to_4D_if_5D(real_A)
             real_B = reshape_to_4D_if_5D(real_B)
             rec_A = reshape_to_4D_if_5D(rec_A)

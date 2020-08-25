@@ -42,7 +42,7 @@ class CycleGAN(BaseGAN):
         optimizer_names = ['G', 'D']
         self.optimizers = {name: None for name in optimizer_names}
 
-        # Generator and Discriminators
+        # Generators and Discriminators
         network_names = ['G_A', 'G_B', 'D_A', 'D_B'] if self.is_train else ['G_A'] # during test time, only G
         self.networks = {name: None for name in network_names}
 

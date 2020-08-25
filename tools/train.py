@@ -38,6 +38,11 @@ def train():
     cli.pop("config")
     conf = OmegaConf.merge(conf, cli)
     
+    
+    trainer = Trainer(conf)
+
+
+    # TODO: clean this mess
     log_file = Path(conf.logging.output_dir) / Path('log.txt')
     debug = False
     setup_logging(
@@ -45,7 +50,6 @@ def train():
         filename=log_file,
         log_level=('INFO' if not debug else 'DEBUG')
     )
-
     # TODO: all this should be in trainer.py
     # logger.info(f'Machine rank: {machine_rank}.')
     logger.info(f'Local rank: {communication.get_local_rank()}.')
@@ -58,7 +62,7 @@ def train():
     logger.info(f'CUDA {torch.version.cuda} - cuDNN {torch.backends.cudnn.version()}.')
     logger.info(f'Configuration: {conf.pretty()}.')
 
-    trainer = Trainer(conf)
+
     trainer.train()
 
 
