@@ -10,14 +10,14 @@ from midaGAN.conf.config import BaseDiscriminatorConfig
 
 @dataclass
 class PatchGAN3DConfig(BaseDiscriminatorConfig):
-    name:           str = "PatchGAN3D"
-    in_num_channels: int = 1
-    ndf:             int = 64
-    n_layers:        int = 3
+    name:        str = "PatchGAN3D"
+    in_channels: int = 1
+    ndf:         int = 64
+    n_layers:    int = 3
 
 
 class PatchGAN3D(nn.Module):
-    def __init__(self, in_num_channels, ndf, n_layers, norm_type):
+    def __init__(self, in_channels, ndf, n_layers, norm_type):
         super().__init__()
         
         norm_layer = get_norm_layer_3d(norm_type)
@@ -26,7 +26,7 @@ class PatchGAN3D(nn.Module):
         kw = 4
         padw = 1
         sequence = [
-            nn.Conv3d(in_num_channels, ndf, kernel_size=kw, stride=2, padding=padw),
+            nn.Conv3d(in_channels, ndf, kernel_size=kw, stride=2, padding=padw),
             nn.LeakyReLU(0.2, True)
         ]
 
@@ -51,7 +51,7 @@ class PatchGAN3D(nn.Module):
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv3d(ndf * nf_mult,  in_num_channels, kernel_size=kw, stride=1, padding=padw)]
+        sequence += [nn.Conv3d(ndf * nf_mult,  in_channels, kernel_size=kw, stride=1, padding=padw)]
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):

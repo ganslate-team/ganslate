@@ -110,8 +110,8 @@ class BaseGAN(ABC):
                              it will use a global scaler for all losses.
         """
         if self.conf.mixed_precision:
-            with amp.scale_loss(loss, optimizer, loss_id) as loss_scaled:
-                loss_scaled.backward(retain_graph=retain_graph)
+            with amp.scale_loss(loss, optimizer, loss_id) as scaled_loss:
+                scaled_loss.backward(retain_graph=retain_graph)
         else:
             loss.backward(retain_graph=retain_graph)
 
@@ -126,7 +126,7 @@ class BaseGAN(ABC):
                 self.networks[name] = DistributedDataParallel(self.networks[name],
                                                               device_ids=[self.device], 
                                                               output_device=self.device,
-                                                              broadcast_buffers=False) 
+                                                              broadcast_buffers=False) # TODO: =True? 
             elif self.conf.use_cuda and torch.cuda.device_count() > 0:
                 self.networks[name] = DataParallel(self.networks[name])
 

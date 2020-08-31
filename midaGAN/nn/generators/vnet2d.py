@@ -12,37 +12,41 @@ from midaGAN.conf.config import BaseGeneratorConfig
 @dataclass
 class Vnet2DConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
-    name:             str = "Vnet2D"
-    in_num_channels:   int = 16
-    use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
-    use_inverse:       bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
-
+    name:              str = "Vnet2D"
+    use_memory_saving:    bool = True  # Turn on memory saving for invertible layers. [Default: True]
+    use_inverse:          bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
+    first_layer_channels: int = 16
 
 class Vnet2D(nn.Module):
-    def __init__(self, in_num_channels, norm_type, use_memory_saving, use_inverse=True):
+    def __init__(self, in_channels, norm_type, first_layer_channels=16, use_memory_saving=True, use_inverse=True):
         super().__init__()
+        if first_layer_channels % in_channels:
+            raise ValueError("`first_layer_channels` has to be divisible by `in_channels`.")
+
         keep_input = not use_memory_saving
         norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
 
-        self.in_ab = InputBlock(in_num_channels, norm_layer, use_bias) 
+        out_channels = in_channels
+
+        self.in_ab = InputBlock(in_channels, first_layer_channels, norm_layer, use_bias) 
         if use_inverse:
-            self.in_ba = InputBlock(in_num_channels, norm_layer, use_bias)
+            self.in_ba = InputBlock(first_layer_channels, norm_layer, use_bias)
 
-        self.down1 = DownBlock(in_num_channels, 1, norm_layer, use_bias, keep_input, use_inverse)
-        self.down2 = DownBlock(in_num_channels*2, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.down3 = DownBlock(in_num_channels*4, 3, norm_layer, use_bias, keep_input, use_inverse) 
-        self.down4 = DownBlock(in_num_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down1 = DownBlock(first_layer_channels, 1, norm_layer, use_bias, keep_input, use_inverse)
+        self.down2 = DownBlock(first_layer_channels*2, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down3 = DownBlock(first_layer_channels*4, 3, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down4 = DownBlock(first_layer_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
 
-        self.up4 = UpBlock(in_num_channels*16, in_num_channels*16, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up3 = UpBlock(in_num_channels*16, in_num_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up2 = UpBlock(in_num_channels*8, in_num_channels*4, 1, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up1 = UpBlock(in_num_channels*4, in_num_channels*2, 1, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up4 = UpBlock(first_layer_channels*16, first_layer_channels*16, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up3 = UpBlock(first_layer_channels*16, first_layer_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up2 = UpBlock(first_layer_channels*8, first_layer_channels*4, 1, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up1 = UpBlock(first_layer_channels*4, first_layer_channels*2, 1, norm_layer, use_bias, keep_input, use_inverse) 
         
-        self.out_ab = OutBlock(in_num_channels*2, norm_layer, use_bias) 
+        self.out_ab = OutBlock(first_layer_channels*2, out_channels, norm_layer, use_bias) 
         if use_inverse:
-            self.out_ba = OutBlock(in_num_channels*2, norm_layer, use_bias)
+            self.out_ba = OutBlock(first_layer_channels*2, out_channels, norm_layer, use_bias)
 
     def forward(self, x, inverse=False):
         if inverse:
@@ -113,16 +117,16 @@ class InvertibleSequence(nn.Module):
 
 
 class InputBlock(nn.Module):
-    def __init__(self, out_channels, norm_layer, use_bias):
+    def __init__(self, in_channels, out_channels, norm_layer, use_bias):
         super().__init__()
-        self.out_channels = out_channels
-        self.conv1 = nn.Conv2d(1, out_channels, kernel_size=5, padding=2, bias=use_bias)
+        self.n_repeats = out_channels // in_channels  # how many times an image has to be repeated to match `out_channels`
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=5, padding=2, bias=use_bias)
         self.bn1 = norm_layer(out_channels)
         self.relu = nn.PReLU(out_channels)
 
     def forward(self, x):
         out = self.bn1(self.conv1(x))
-        x_repeated = x.repeat(1, self.out_channels, 1, 1) # match channel dimension for residual connection
+        x_repeated = x.repeat(1, self.n_repeats, 1, 1) # match channel dimension for residual connection
         out = out + x_repeated
         return self.relu(out)
 
@@ -182,12 +186,12 @@ class UpBlock(nn.Module):
 
 
 class OutBlock(nn.Module):
-    def __init__(self, in_channels, norm_layer, use_bias):
+    def __init__(self, in_channels, out_channels, norm_layer, use_bias):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=5, padding=2, bias=use_bias)
         self.bn1 = norm_layer(in_channels)
-        self.conv2 = nn.Conv2d(in_channels, 1, kernel_size=1)
-        self.relu1 = nn.PReLU(1)
+        self.relu1 = nn.PReLU(in_channels)
+        self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         self.tanh = nn.Tanh() 
 
     def forward(self, x):

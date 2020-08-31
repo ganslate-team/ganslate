@@ -18,7 +18,7 @@ class GeneratorLoss:
 
         # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
         # so the number of channels equals to the number of slices in sampled patches.
-        # In 2D training, the number of image channels is defined in the config.
+        # In 2D training, the number of image channels is defined in the config. TODO: nicer
         channels_ssim = conf.dataset.patch_size[0] if 'patch_size' in conf.dataset.keys() \
                         else conf.dataset.image_channels
         # Cycle-consistency - L1, with optional weighted combination with SSIM
@@ -53,13 +53,13 @@ class GeneratorLoss:
 
         # identity loss
         if self.criterion_idt:
-            if idt_A is not None and idt_B is not None:
+            if idt_A and idt_B:
                 losses['idt_A'], losses['idt_B'] = self.criterion_idt(real_A, real_B, idt_A, idt_B)
             else:
                 raise ValueError("idt_A and/or idt_B is not computed but the identity loss is defined.")
 
         # inverse loss
-        if self.criterion_inv is not None:
+        if self.criterion_inv:
             losses['inv_A'], losses['inv_B'] = self.criterion_inv(real_A, real_B, fake_A, fake_B)
         return losses
 
@@ -106,7 +106,7 @@ class CycleLoss:
         return loss_cycle_A, loss_cycle_B
 
 
-# TODO: Idenity and Inverse are basically the same thing,
+# TODO: Identity and Inverse are basically the same thing,
 # just different args. Make it the same or keep separated for readability?
 class IdentityLoss:
     def __init__(self, lambda_identity, lambda_A, lambda_B):

@@ -13,21 +13,21 @@ from midaGAN.conf.config import BaseGeneratorConfig
 @dataclass
 class Resnet2DConfig(BaseGeneratorConfig):
     name:     str = 'Resnet2D'
-    in_num_channels:  int = 1
-    out_num_channels: int = 1
+    in_channels:  int = 1
     n_residual_blocks: int = 9
 
 
 class Resnet2D(nn.Module):
-    def __init__(self, in_num_channels, out_num_channels, norm_type, n_residual_blocks=9):
+    def __init__(self, in_channels, norm_type, n_residual_blocks=9):
         super().__init__()
 
+        out_channels = in_channels
         norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
         # Initial convolution block       
         model = [   nn.ReflectionPad2d(3),
-                    nn.Conv2d(in_num_channels, 64, 7, bias=use_bias),
+                    nn.Conv2d(in_channels, 64, 7, bias=use_bias),
                     norm_layer(64),
                     nn.ReLU(inplace=True) ]
 
@@ -56,7 +56,7 @@ class Resnet2D(nn.Module):
 
         # Output layer
         model += [  nn.ReflectionPad2d(3),
-                    nn.Conv2d(64, out_num_channels, 7, bias=use_bias),
+                    nn.Conv2d(64, out_channels, 7, bias=use_bias),
                     nn.Tanh() ]
 
         self.model = nn.Sequential(*model)
@@ -68,7 +68,7 @@ class Resnet2D(nn.Module):
 class ResidualBlock(nn.Module):
     def __init__(self, in_features, norm_type):
         super().__init__()
-        norm_layer = get_norm_layer_3d(norm_type)
+        norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
         conv_block = [  nn.ReflectionPad2d(1),

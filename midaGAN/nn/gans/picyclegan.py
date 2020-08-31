@@ -8,6 +8,7 @@ from midaGAN.utils.image_pool import ImagePool
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
 from midaGAN.nn.gans.basegan import BaseGAN
+
 from midaGAN.nn.losses.generator_loss import GeneratorLoss
 from midaGAN.nn.losses.gan_loss import GANLoss
 
@@ -128,8 +129,6 @@ class PiCycleGAN(BaseGAN):
         real_A = self.visuals['real_A']
         real_B = self.visuals['real_B']
 
-        # NOTE: G_A is self.networks['G'](inverse=False), G_B is self.networks['G'](inverse=True)
-        
         # Forward cycle G_A (A to B)
         fake_B = self.networks['G'](real_A) 
         rec_A  = self.networks['G'](fake_B, inverse=True)
@@ -156,12 +155,12 @@ class PiCycleGAN(BaseGAN):
         if discriminator == 'D_A':
             real = self.visuals['real_B']
             fake = self.visuals['fake_B']
-            fake = self.fake_A_pool.query(fake)
+            fake = self.fake_B_pool.query(fake)
             
         elif discriminator == 'D_B':
             real = self.visuals['real_A']
             fake = self.visuals['fake_A']
-            fake = self.fake_B_pool.query(fake)
+            fake = self.fake_A_pool.query(fake)
         else:
             raise ValueError('The discriminator has to be either "D_A" or "D_B".')
 

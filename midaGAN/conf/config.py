@@ -29,11 +29,13 @@ class BaseGANConfig:
 @dataclass
 class BaseDiscriminatorConfig:
     name: str = MISSING
+    in_channels:      int = MISSING
 
 
 @dataclass
 class BaseGeneratorConfig:
     name:             str = MISSING
+    in_channels:      int = MISSING # TODO: put in GAN config since both G and D use `in_channels`?
 
 
 @dataclass

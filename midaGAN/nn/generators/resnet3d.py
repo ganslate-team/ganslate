@@ -13,22 +13,22 @@ from midaGAN.conf.config import BaseGeneratorConfig
 @dataclass
 class Resnet3DConfig(BaseGeneratorConfig):
     name:     str='Resnet3D'
-    in_num_channels:  int = 1
-    out_num_channels: int = 1
+    in_channels:  int = 1
     n_residual_blocks: int = 9
 
 
 class Resnet3D(nn.Module):
     """Note: Unlike 2D version, this one uses ReplicationPad instead of RefectionPad"""
-    def __init__(self, in_num_channels, out_num_channels, norm_type, n_residual_blocks=9):
+    def __init__(self, in_channels, norm_type, n_residual_blocks=9):
         super().__init__()
 
+        in_channels = out_channels
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
         # Initial convolution block       
         model = [   nn.ReplicationPad3d(3),
-                    nn.Conv3d(in_num_channels, 64, 7, bias=use_bias),
+                    nn.Conv3d(in_channels, 64, 7, bias=use_bias),
                     norm_layer(64),
                     nn.ReLU(inplace=True) ]
 
@@ -57,7 +57,7 @@ class Resnet3D(nn.Module):
 
         # Output layer
         model += [  nn.ReplicationPad3d(3),
-                    nn.Conv3d(64, out_num_channels, 7, bias=use_bias),
+                    nn.Conv3d(64, out_channels, 7, bias=use_bias),
                     nn.Tanh() ]
 
         self.model = nn.Sequential(*model)

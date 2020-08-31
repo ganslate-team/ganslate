@@ -170,7 +170,7 @@ class CycleGAN(BaseGAN):
 
         loss_real = self.criterion_gan(pred_real, target_is_real=True)
         loss_fake = self.criterion_gan(pred_fake, target_is_real=False)
-        self.losses[discriminator] = (loss_real + loss_fake) * 0.5  # combined loss
+        self.losses[discriminator] = (loss_real + loss_fake) * 0.5  # combined loss TODO: should the `* 0.5` be removed? Quote: " In practice, we divide the objective by 2 while optimizing D, which slows down the rate at which D learns, relative to the rate of G"
 
         # backprop
         self.backward(loss=self.losses[discriminator], optimizer=self.optimizers['D'], loss_id=loss_id)
