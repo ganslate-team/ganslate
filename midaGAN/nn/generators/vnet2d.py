@@ -18,7 +18,7 @@ class Vnet2DConfig(BaseGeneratorConfig):
     first_layer_channels: int = 16
 
 class Vnet2D(nn.Module):
-    def __init__(self, in_channels, norm_type, first_layer_channels=16, use_memory_saving=True, use_inverse=True):
+        def __init__(self, in_channels, norm_type, first_layer_channels=16, use_memory_saving=True, use_inverse=True):
         super().__init__()
         if first_layer_channels % in_channels:
             raise ValueError("`first_layer_channels` has to be divisible by `in_channels`.")
@@ -27,26 +27,34 @@ class Vnet2D(nn.Module):
         norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
-
+        is_inplace = not use_inverse  # activations in invertible blocks are not inplace when invertibility is used
         out_channels = in_channels
-
+        
         self.in_ab = InputBlock(in_channels, first_layer_channels, norm_layer, use_bias) 
         if use_inverse:
-            self.in_ba = InputBlock(first_layer_channels, norm_layer, use_bias)
+            self.in_ba = InputBlock(in_channels, first_layer_channels, norm_layer, use_bias)
 
-        self.down1 = DownBlock(first_layer_channels, 1, norm_layer, use_bias, keep_input, use_inverse)
-        self.down2 = DownBlock(first_layer_channels*2, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.down3 = DownBlock(first_layer_channels*4, 3, norm_layer, use_bias, keep_input, use_inverse) 
-        self.down4 = DownBlock(first_layer_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
+        self.down1 = DownBlock(first_layer_channels, 1, 
+                               norm_layer, use_bias, keep_input, use_inverse, is_inplace)
+        self.down2 = DownBlock(first_layer_channels*2, 2, 
+                               norm_layer, use_bias, keep_input, use_inverse, is_inplace) 
+        self.down3 = DownBlock(first_layer_channels*4, 3, 
+                               norm_layer, use_bias, keep_input, use_inverse, is_inplace) 
+        self.down4 = DownBlock(first_layer_channels*8, 2, 
+                               norm_layer, use_bias, keep_input, use_inverse, is_inplace)
 
-        self.up4 = UpBlock(first_layer_channels*16, first_layer_channels*16, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up3 = UpBlock(first_layer_channels*16, first_layer_channels*8, 2, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up2 = UpBlock(first_layer_channels*8, first_layer_channels*4, 1, norm_layer, use_bias, keep_input, use_inverse) 
-        self.up1 = UpBlock(first_layer_channels*4, first_layer_channels*2, 1, norm_layer, use_bias, keep_input, use_inverse) 
+        self.up4 = UpBlock(first_layer_channels*16, first_layer_channels*16, 2, 
+                           norm_layer, use_bias, keep_input, use_inverse, is_inplace) 
+        self.up3 = UpBlock(first_layer_channels*16, first_layer_channels*8, 2, 
+                           norm_layer, use_bias, keep_input, use_inverse, is_inplace) 
+        self.up2 = UpBlock(first_layer_channels*8, first_layer_channels*4, 1, 
+                           norm_layer, use_bias, keep_input, use_inverse, is_inplace) 
+        self.up1 = UpBlock(first_layer_channels*4, first_layer_channels*2, 1, 
+                           norm_layer, use_bias, keep_input, use_inverse, is_inplace) 
         
-        self.out_ab = OutBlock(first_layer_channels*2, out_channels, norm_layer, use_bias) 
+        self.out_ab = OutBlock(first_layer_channels*2, out_channels, norm_layer, use_bias)  
         if use_inverse:
-            self.out_ba = OutBlock(first_layer_channels*2, out_channels, norm_layer, use_bias)
+            self.out_ba = OutBlock(first_layer_channels*2, out_channels, norm_layer, use_bias) 
 
     def forward(self, x, inverse=False):
         if inverse:
@@ -72,21 +80,21 @@ class Vnet2D(nn.Module):
 
 class InvertibleBlock(nn.Module):
     # TODO: is it possible to pass in a constructed block and make it invertible? The class could be reusable for other architectures
-    def __init__(self, n_channels, norm_layer, use_bias, keep_input):
+    def __init__(self, n_channels, norm_layer, use_bias, keep_input, is_inplace):
         super().__init__()
         
         invertible_module = memcnn.AdditiveCoupling(
-            Fm=self.build_conv_block(n_channels//2, norm_layer, use_bias),
-            Gm=self.build_conv_block(n_channels//2, norm_layer, use_bias)
+            Fm=self.build_conv_block(n_channels//2, norm_layer, use_bias, is_inplace),
+            Gm=self.build_conv_block(n_channels//2, norm_layer, use_bias, is_inplace)
         )
         self.invertible_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
                                                                keep_input=keep_input, 
                                                                keep_input_inverse=keep_input)
 
-    def build_conv_block(self, n_channels, norm_layer, use_bias):
+    def build_conv_block(self, n_channels, norm_layer, use_bias, is_inplace):
         return nn.Sequential(nn.Conv2d(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
                              norm_layer(n_channels),
-                             nn.PReLU(n_channels))
+                             nn.PReLU(n_channels, is_inplace))
 
     def forward(self, x, inverse=False):
         if inverse:
@@ -96,9 +104,14 @@ class InvertibleBlock(nn.Module):
 
 
 class InvertibleSequence(nn.Module):
-    def __init__(self, n_channels, n_blocks, norm_layer, use_bias, keep_input):
+    def __init__(self, n_channels, n_blocks, norm_layer, use_bias, keep_input, is_inplace):
         super().__init__()
-        self.sequence = nn.Sequential(*[InvertibleBlock(n_channels, norm_layer, use_bias, keep_input) for _ in range(n_blocks)])
+
+        sequence = []
+        for _ in range(n_blocks):
+            block = InvertibleBlock(n_channels, norm_layer, use_bias, keep_input, is_inplace)
+            sequence.append(block) 
+        self.sequence = nn.Sequential(*sequence)
     
     def forward(self, x, inverse=False):
         if inverse:
@@ -132,13 +145,14 @@ class InputBlock(nn.Module):
 
 
 class DownBlock(nn.Module):
-    def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse):
+    def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse, is_inplace):
         super().__init__()
+
         out_channels = 2*in_channels
         self.down_conv_ab = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
         if use_inverse:
             self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
-        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input)
+        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input, is_inplace)
         self.relu = nn.PReLU(out_channels)
 
     def build_down_conv(self, in_channels, out_channels, norm_layer, use_bias):
@@ -158,13 +172,14 @@ class DownBlock(nn.Module):
 
 
 class UpBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse):
+    def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse, is_inplace):
         super().__init__()
+
         self.up_conv_ab = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
         if use_inverse:
             self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
 
-        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input)
+        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input, is_inplace)
         self.relu = nn.PReLU(out_channels)
     
     def build_up_conv(self, in_channels, out_channels, norm_layer, use_bias):
@@ -199,4 +214,3 @@ class OutBlock(nn.Module):
         out = self.conv2(out)
         res = self.tanh(out)
         return res
-
