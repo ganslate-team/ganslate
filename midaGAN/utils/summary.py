@@ -24,7 +24,7 @@ def gan_summary(gan, dataloader):
     logged_networks = []
     for name, net in gan.networks.items():
         if isinstance(net, (DataParallel, DistributedDataParallel)):
-            network = net.module
+            net = net.module
         # Networks of the same network class are output only once. E.g. G_A and G_B, only one logged.
         if str(type(net)) not in logged_networks:
             message += f"\nNetwork name: {name}\n"
