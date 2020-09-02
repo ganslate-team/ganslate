@@ -23,7 +23,7 @@ generator:
     name: "Piresnet3D"
     use_memory_saving: True
     use_inverse: True
-    depth: 7
+    depth: 3
     in_channels: 1
 
 discriminator:  
@@ -32,8 +32,8 @@ discriminator:
     in_channels: 1
 
 optimizer:
-  lambda_A: 10.0
-  lambda_B: 10.0
+  lambda_A: 5.0
+  lambda_B: 5.0
   lambda_identity: 0.0
   lambda_inverse: 0.05
   proportion_ssim: 0.84
