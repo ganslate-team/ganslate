@@ -18,7 +18,7 @@ class Vnet2DConfig(BaseGeneratorConfig):
     first_layer_channels: int = 16
 
 class Vnet2D(nn.Module):
-        def __init__(self, in_channels, norm_type, first_layer_channels=16, use_memory_saving=True, use_inverse=True):
+    def __init__(self, in_channels, norm_type, first_layer_channels=16, use_memory_saving=True, use_inverse=True):
         super().__init__()
         if first_layer_channels % in_channels:
             raise ValueError("`first_layer_channels` has to be divisible by `in_channels`.")
