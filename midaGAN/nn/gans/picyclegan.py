@@ -169,7 +169,7 @@ class PiCycleGAN(BaseGAN):
 
         loss_real = self.criterion_gan(pred_real, target_is_real=True)
         loss_fake = self.criterion_gan(pred_fake, target_is_real=False)
-        self.losses[discriminator] = (loss_real + loss_fake) * 0.5  # combined loss
+        self.losses[discriminator] = loss_real + loss_fake
 
         # backprop
         self.backward(loss=self.losses[discriminator], optimizer=self.optimizers['D'], 
