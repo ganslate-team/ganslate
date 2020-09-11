@@ -2,6 +2,20 @@ import functools
 import torch.nn as nn
 from torch.nn import init
 from torch.optim import lr_scheduler
+from midaGAN.nn import separable
+
+def get_conv_layer_3d(is_separable=False):
+    if is_separable:
+        return separable.SeparableConv3d
+    else:
+        return nn.Conv3d
+
+def get_conv_transpose_layer_3d(is_separable=False):
+    if is_separable:
+        return separable.SeparableConvTranspose3d
+    else:
+        return nn.ConvTranspose3d
+
 
 def get_norm_layer_2d(norm_type='instance'):
     if norm_type == 'batch':

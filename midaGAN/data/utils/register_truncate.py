@@ -12,8 +12,15 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     in CBCT by registering CT to the CBCT and cropping it to the relevant scope.
     https://discourse.itk.org/t/registration-to-get-rid-of-slices-containing-part-of-the-body-not-found-in-other-scan/3313/4
     """
-    registration_transform = get_registration_transform(fixed_image=CBCT, 
-                                                        moving_image=CT)
+    try:
+        registration_transform = get_registration_transform(fixed_image=CBCT, 
+                                                            moving_image=CT)
+    except RuntimeError as e:
+        if "Too many samples map outside moving image buffer" in e.message:
+            logger.info("Registration failed due to poor initial overlap. Passing the whole CT volume.") # happens extremely rarely
+            return CT
+        else:
+            raise e                                            
 
     # Start and end positions of CBCT volume
     start_position = [0,0,0]
@@ -41,7 +48,7 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     end_slice = int(round(mean(z_corners[4:])))
     # When the registration fails, just return the original CT. Happens infrequently.
     if start_slice < 0:
-        logger.error("Registration failed. Passing the whole CT volume.")
+        logger.info("Registration failed as the at least one corner is below 0 in one of the axes. Passing the whole CT volume.")
         return CT
     return CT[:, :, start_slice:end_slice]
 
