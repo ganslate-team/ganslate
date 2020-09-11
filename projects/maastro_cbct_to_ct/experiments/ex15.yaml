@@ -1,0 +1,43 @@
+use_cuda: True
+n_iters: 20000
+n_iters_decay: 20000
+batch_size: 1
+mixed_precision: True
+
+logging:
+    output_dir: "./checkpoints/cbcttoct_ex15"
+    wandb: True
+    log_freq: 50
+    checkpoint_freq: 2000
+
+dataset: 
+    name: "CBCTtoCTDataset"
+    root: "/workspace/data/lung1_ct_cbct_nrrd_resampled/"
+    num_workers: 16
+    patch_size: [48, 224, 224]
+    
+gan:  
+    name: "PiCycleGAN"
+
+generator:
+  name: Vnet3D
+  in_channels: 1
+  use_memory_saving: false
+  use_inverse: True
+  is_separable: False
+  down_blocks: [2, 2, 3, 3]
+  up_blocks: [3, 3, 3, 3]
+
+discriminator:
+    name: "PatchGAN3D"
+    n_layers: 3
+    in_channels: 1
+
+optimizer:
+  lambda_A: 25.0
+  lambda_B: .0
+  lambda_identity: 0.0
+  lambda_inverse: 0.0
+  proportion_ssim: 0.84
+  lr_D: 0.0002
+  lr_G: 0.0004

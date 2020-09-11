@@ -12,7 +12,7 @@ from midaGAN.conf.config import BaseGeneratorConfig
 
 
 @dataclass
-class Vnets3DConfig(BaseGeneratorConfig):
+class Vnet3DConfig(BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
     name:                 str = "Vnet3D"
     use_memory_saving:    bool = True  # Turn on memory saving for invertible layers. [Default: True]
@@ -22,7 +22,7 @@ class Vnets3DConfig(BaseGeneratorConfig):
     up_blocks:            Tuple = (2, 2, 1, 1)
     is_separable:         bool = False
 
-class Vnets3D(nn.Module):
+class Vnet3D(nn.Module):
     def __init__(self, in_channels, norm_type, first_layer_channels=16, 
                  down_blocks=(1, 2, 3, 2), up_blocks=(2, 2, 1, 1),
                  use_memory_saving=True, use_inverse=True, is_separable=False):
