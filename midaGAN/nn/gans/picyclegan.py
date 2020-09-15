@@ -55,8 +55,8 @@ class PiCycleGAN(BaseGAN):
             self.init_optimizers(conf)
 
             # Create image buffer to store previously generated images
-            self.fake_A_pool = ImagePool(conf.dataset.pool_size)
-            self.fake_B_pool = ImagePool(conf.dataset.pool_size)
+            self.fake_A_pool = ImagePool(conf.gan.pool_size)
+            self.fake_B_pool = ImagePool(conf.gan.pool_size)
 
         self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
 

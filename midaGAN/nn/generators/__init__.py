@@ -5,8 +5,8 @@ from midaGAN.nn.utils import init_weights
 def build_G(conf, device):
 
     name = conf.generator.name
-    config_locations = midaGAN.conf.CONFIG_LOCATIONS
-    generator_class = import_class_from_dirs_and_modules(name, config_locations["generator"])
+    import_locations = midaGAN.conf.IMPORT_LOCATIONS
+    generator_class = import_class_from_dirs_and_modules(name, import_locations["generator"])
 
     generator_args = dict(conf.generator)
     generator_args.pop("name") # used only to select the model class

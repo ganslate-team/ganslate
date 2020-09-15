@@ -13,10 +13,7 @@ from midaGAN.utils.summary import gan_summary
 class Trainer():
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
-
-        # Training ran with torch.distributed.launch if there is 'WORLD_SIZE' environment variable
-        if os.environ.get('WORLD_SIZE', None):
-            communication.init_distributed()
+        conf = self._build_config()
 
         self.tracker = ExperimentTracker(conf)
         self.data_loader = build_loader(conf)
@@ -65,3 +62,9 @@ class Trainer():
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
+
+    def _build_config(self):
+        cli = OmegaConf.from_cli()
+        conf = init_config(cli.config)
+        cli.pop("config")
+        return OmegaConf.merge(conf, cli)

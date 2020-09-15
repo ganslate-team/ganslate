@@ -7,8 +7,6 @@ from omegaconf import MISSING
 class BaseDatasetConfig:
     name:         str = MISSING # TODO: used for importing data/name_dataset.py, any better way?
     root:         str = MISSING
-    
-    pool_size:    int = 50
     shuffle:      bool = True
     num_workers:  int = 4
 
@@ -17,25 +15,26 @@ class BaseDatasetConfig:
 class BaseGANConfig:
     """Base GAN config."""
     is_train:         bool = True
-    name:            str = MISSING
+    name:             str = MISSING
     loss_type:        str = "lsgan"
     norm_type:        str = "instance"
     weight_init_type: str = "normal"
     weight_init_gain: float = 0.02
+    pool_size:        int = 50
     # n_channels_input:  int = 1  needed only for 2D approaches
     # n_channels_output: int = 1
 
 
 @dataclass
 class BaseDiscriminatorConfig:
-    name: str = MISSING
-    in_channels:      int = MISSING
+    name:        str = MISSING
+    in_channels: int = MISSING
 
 
 @dataclass
 class BaseGeneratorConfig:
-    name:             str = MISSING
-    in_channels:      int = MISSING # TODO: put in GAN config since both G and D use `in_channels`?
+    name:        str = MISSING
+    in_channels: int = MISSING # TODO: put in GAN config since both G and D use `in_channels`?
 
 
 @dataclass
@@ -54,11 +53,11 @@ class OptimizerConfig:
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
     #checkpoints_dir:  str = "./checkpoints/"
-    output_dir:       str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
-    log_freq:         int = 20
-    checkpoint_freq:  int = 50
-    wandb:            bool = False
-    tensorboard:      bool = False
+    output_dir:      str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
+    log_freq:        int = 20
+    checkpoint_freq: int = 50
+    wandb:           bool = False
+    tensorboard:     bool = False
 
 @dataclass
 class Config:
@@ -83,3 +82,10 @@ class Config:
 
     optimizer:       OptimizerConfig = OptimizerConfig()
     logging:         LoggingConfig = LoggingConfig()
+
+
+@dataclass
+class InferenceConfig:
+    checkpoint_dir: str = MISSING
+    load_iter:      str = MISSING
+    dataset:        BaseDatasetConfig = MISSING

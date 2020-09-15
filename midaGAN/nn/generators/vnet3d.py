@@ -18,8 +18,8 @@ class Vnet3DConfig(BaseGeneratorConfig):
     use_memory_saving:    bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse:          bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
     first_layer_channels: int = 16
-    down_blocks:          Tuple = (1, 2, 3, 2)
-    up_blocks:            Tuple = (2, 2, 1, 1)
+    down_blocks:          Tuple[int] = (1, 2, 3, 2)
+    up_blocks:            Tuple[int] = (2, 2, 1, 1)
     is_separable:         bool = False
 
 class Vnet3D(nn.Module):

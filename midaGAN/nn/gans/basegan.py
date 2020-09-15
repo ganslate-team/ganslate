@@ -32,6 +32,9 @@ class BaseGAN(ABC):
             -- self.visual_names (str list):        specify the images that you want to display and save.
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
+        # It's ran with torch.distributed.launch if there is 'WORLD_SIZE' environment variable
+        if os.environ.get('WORLD_SIZE', None):
+            communication.init_distributed()
 
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
@@ -89,6 +92,8 @@ class BaseGAN(ABC):
         
         if self.is_train:
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
+        else:
+            self.eval()
         
         if not self.is_train or self.conf.continue_train:
             self.load_networks(self.conf.load_iter)
@@ -237,9 +242,12 @@ class BaseGAN(ABC):
         for name in self.networks.keys():
             self.networks[name].eval()
 
-    def test(self):
+    def infer(self, input):
+        if len(self.networks.keys) != 1:
+            raise ValueError("When inferring there should be only one network initialized - generator.")
         with torch.no_grad():
-            self.forward()
+            generator = self.networks.keys[0]
+            return self.networks[generator].forward(input)
             
     def get_learning_rates(self):
         """ Return current learning rates of both generator and discriminator"""

@@ -32,13 +32,6 @@ def train():
 
     # log_file = experiment_dir / f'log_{machine_rank}_{communication.get_local_rank()}.txt'
     
-
-    cli = OmegaConf.from_cli()
-    conf = init_config(cli.config)
-    cli.pop("config")
-    conf = OmegaConf.merge(conf, cli)
-    
-    
     trainer = Trainer(conf)
 
 

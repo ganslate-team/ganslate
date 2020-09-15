@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def build_gan(conf):
     name = conf.gan.name
-    config_locations = midaGAN.conf.CONFIG_LOCATIONS
-    model_class = import_class_from_dirs_and_modules(name, config_locations["gan"])
+    import_locations = midaGAN.conf.IMPORT_LOCATIONS
+    model_class = import_class_from_dirs_and_modules(name, import_locations["gan"])
     model = model_class(conf)
     return model
