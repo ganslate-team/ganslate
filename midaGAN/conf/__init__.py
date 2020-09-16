@@ -21,7 +21,7 @@ IMPORT_LOCATIONS = {
     "discriminator": [midaGAN.nn.discriminators],
 }
 
-def init_config(conf, config_class=config.Config):
+def init_config(conf, config_class=config.Config, contains_dataclasses=True):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 
@@ -36,7 +36,8 @@ def init_config(conf, config_class=config.Config):
         logger.info(f"Project directory {conf.project_dir} added to path to allow imports of modules from it.")
 
     # Make yaml mergeable by instantiating the dataclasses
-    conf = instantiate_dataclasses_from_yaml(conf) 
+    if contains_dataclasses:
+        conf = instantiate_dataclasses_from_yaml(conf) 
     
     # Merge default and run-specifig config
     return OmegaConf.merge(base_conf, conf)
@@ -63,12 +64,7 @@ def set_omegaconf_resolvers(conf):
     # Infer length of an object with interpolations using omegaconf
     # Here till issue closed: https://github.com/omry/omegaconf/issues/100
     try:
-        OmegaConf.register_resolver(
-        "len",
-        lambda x: len(
-            conf.select(x),
-        ))   
-
+        OmegaConf.register_resolver("len", lambda x: len(conf.select(x)))
     # Added exception handler for profiling with torch bottleneck
     except AssertionError:
         logger.info('Already registered resolver')

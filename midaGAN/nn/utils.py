@@ -16,14 +16,13 @@ def get_conv_transpose_layer_3d(is_separable=False):
     else:
         return nn.ConvTranspose3d
 
-
 def get_norm_layer_2d(norm_type='instance'):
     if norm_type == 'batch':
         return nn.BatchNorm2d
     elif norm_type == 'instance':
         return nn.InstanceNorm2d
     else:
-        raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
+        raise NotImplementedError(f"Normalization layer `{norm_type}` not supported")
 
 def get_norm_layer_3d(norm_type='instance'):
     if norm_type == 'batch':
@@ -31,7 +30,7 @@ def get_norm_layer_3d(norm_type='instance'):
     elif norm_type == 'instance':
         return nn.InstanceNorm3d
     else:
-        raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
+        raise NotImplementedError(f"Normalization layer `{norm_type}` not supported")
 
 def is_bias_before_norm(norm_type='instance'):
     """When using BatchNorm, the preceding Conv layer does not use bias, 
@@ -42,7 +41,7 @@ def is_bias_before_norm(norm_type='instance'):
     elif norm_type == 'batch':
         return False
     else:
-        raise NotImplementedError('Normalization layer [%s] not supported' % norm_type)
+        raise NotImplementedError(f"Normalization layer `{norm_type}` not supported")
 
 def get_scheduler(optimizer, conf):
     """Return a scheduler that keeps the same learning rate for the first <conf.n_iters> epochs
@@ -70,7 +69,7 @@ def init_weights(net, weight_init_type='normal', gain=0.02):
             elif weight_init_type == 'orthogonal':
                 init.orthogonal_(m.weight.data, gain=gain)
             else:
-                raise NotImplementedError('initialization method [%s] is not implemented' % weight_init_type)
+                raise NotImplementedError(f"initialization method `{weight_init_type}` is not implemented")
             if hasattr(m, 'bias') and m.bias is not None:
                 init.constant_(m.bias.data, 0.0)
         elif classname.find('BatchNorm3d') != -1:

@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import random
 import logging
 import numpy as np
@@ -31,8 +31,8 @@ EXTENSIONS = ['.nrrd']
 
 class CBCTtoCTDataset(Dataset):
     def __init__(self, conf):
-        dir_CBCT = os.path.join(conf.dataset.root, 'CBCT')
-        dir_CT = os.path.join(conf.dataset.root, 'CT')
+        dir_CBCT = Path(conf.dataset.root) / 'CBCT'
+        dir_CT = Path(conf.dataset.root) / 'CT'
         self.paths_CBCT = make_dataset_of_directories(dir_CBCT, EXTENSIONS)
         self.paths_CT = make_dataset_of_directories(dir_CT, EXTENSIONS)
         self.num_datapoints_CBCT = len(self.paths_CBCT)
@@ -56,8 +56,8 @@ class CBCTtoCTDataset(Dataset):
         index_CBCT = index % self.num_datapoints_CBCT
         index_CT = random.randint(0, self.num_datapoints_CT - 1)
 
-        path_CBCT = os.path.join(self.paths_CBCT[index_CBCT], 'CT.nrrd')
-        path_CT = os.path.join(self.paths_CT[index_CT], 'CT.nrrd')
+        path_CBCT = Path(self.paths_CBCT[index_CBCT]) / 'CT.nrrd'
+        path_CT = Path(self.paths_CT[index_CT]) / 'CT.nrrd'
         
         # load nrrd as SimpleITK objects
         CBCT = sitk_utils.load(path_CBCT)

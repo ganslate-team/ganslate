@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 
@@ -52,8 +52,7 @@ class OptimizerConfig:
 @dataclass
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
-    #checkpoints_dir:  str = "./checkpoints/"
-    output_dir:      str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
+    checkpoint_dir:  str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
     log_freq:        int = 20
     checkpoint_freq: int = 50
     wandb:           bool = False
@@ -61,19 +60,20 @@ class LoggingConfig:
 
 @dataclass
 class Config:
-    batch_size:     int = MISSING
-    n_iters:        int = MISSING   # Number of iters without linear decay of learning rates. [Default: 200]
-    n_iters_decay:  int = MISSING   # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
-    use_cuda:       bool = True     # Use CUDA i.e. GPU(s). [Default: True]
+    project_dir:     Optional[str] = None  # Needed if project-specific classes are to be imported 
+    batch_size:      int = MISSING   
+    n_iters:         int = MISSING  # Number of iters without linear decay of learning rates. [Default: 200]
+    n_iters_decay:   int = MISSING  # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
+    use_cuda:        bool = True    # Use CUDA i.e. GPU(s). [Default: True]
 
     # Mixed precision
     mixed_precision: bool = False
     opt_level:       str = "O1"
 
     # Continuing training
-    continue_train:  bool = False    # Continue training by loading a checkpoint. [Default: False]
-    load_iter:       str = "latest"  # Which iteration's checkpoint to load. [Default: "latest"]
-    continue_iter:   int = 1         # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
+    continue_train:  bool = False  # Continue training by loading a checkpoint. [Default: False]
+    load_iter:       Optional[str] = None  # Which iteration's checkpoint to load. [Default: "latest"]
+    continue_iter:   int = 1  # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING
@@ -88,4 +88,5 @@ class Config:
 class InferenceConfig:
     checkpoint_dir: str = MISSING
     load_iter:      str = MISSING
-    dataset:        BaseDatasetConfig = MISSING
+    output_dir:     str = MISSING
+    dataset:        Dict[Any, Any] = MISSING  # Type checked in Config

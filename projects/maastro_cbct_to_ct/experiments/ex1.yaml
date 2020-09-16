@@ -4,7 +4,7 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    output_dir: ./checkpoints/cbct_ex2/
+    checkpoint_dir: ./checkpoints/cbct_ex2/
     wandb: True
     log_freq: 50
     checkpoint_freq: 10000

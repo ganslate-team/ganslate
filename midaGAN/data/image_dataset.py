@@ -1,5 +1,5 @@
-import os
 import random
+from pathlib import Path
 
 from PIL import Image
 from torch.utils.data import Dataset
@@ -28,8 +28,8 @@ EXTENSIONS = ['.jpg', '.jpeg', '.png']
 class ImageDataset(Dataset):
     def __init__(self, conf):
         
-        self.dir_A = os.path.join(conf.dataset.root, 'A')
-        self.dir_B = os.path.join(conf.dataset.root, 'B')
+        self.dir_A = Path(conf.dataset.root) / 'A'
+        self.dir_B = Path(conf.dataset.root) / 'B'
 
         self.A_paths = make_dataset_of_files(self.dir_A, EXTENSIONS)
         self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)

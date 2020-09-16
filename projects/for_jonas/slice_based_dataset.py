@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import random
 import numpy as np
 import torch
@@ -29,7 +29,7 @@ class SliceBasedDatasetConfig(BaseDatasetConfig):
     
 class SliceBasedDataset(Dataset):
     def __init__(self, conf):
-        self.dir_root = os.path.join(conf.dataset.root)
+        self.dir_root = Path(conf.dataset.root)
         
         self.pad_size = None
         self.crop_size = None
@@ -40,7 +40,7 @@ class SliceBasedDataset(Dataset):
         elif conf.dataset.crop:
             self.crop_size = conf.dataset.crop_size
 
-        dataset_summary = pd.read_csv(os.path.join(conf.dataset.root, 'dataset_summary.csv'))
+        dataset_summary = pd.read_csv(Path(conf.dataset.root) / 'dataset_summary.csv')
         # Filter out rows by their domain
         self.domain_A_summary = dataset_summary[dataset_summary["volume_filename"].str.startswith('A')]
         self.domain_B_summary = dataset_summary[dataset_summary["volume_filename"].str.startswith('B')]
@@ -55,8 +55,8 @@ class SliceBasedDataset(Dataset):
         summary_A = self.domain_A_summary.iloc[index_A]
         summary_B = self.domain_B_summary.iloc[index_B]
 
-        path_A = os.path.join(self.dir_root, summary_A["volume_filename"])
-        path_B = os.path.join(self.dir_root, summary_B["volume_filename"])
+        path_A = self.dir_root / summary_A["volume_filename"]
+        path_B = self.dir_root / summary_B["volume_filename"]
         
         # load volume as SimpleITK object
         A = sitk_utils.load(path_A)

@@ -2,6 +2,7 @@
 import os
 import logging
 import torch
+from omegaconf import OmegaConf
 
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
@@ -9,19 +10,21 @@ from midaGAN.utils import communication
 from midaGAN.utils.environment import setup_logging
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
 from midaGAN.utils.summary import gan_summary
+from midaGAN.conf import init_config
 
 class Trainer():
-    def __init__(self, conf):
+    def __init__(self):
         self.logger = logging.getLogger(type(self).__name__)
-        conf = self._build_config()
+        self.conf = self._build_config()
 
-        self.tracker = ExperimentTracker(conf)
-        self.data_loader = build_loader(conf)
-        self.model = build_gan(conf)
+        self.tracker = ExperimentTracker(self.conf)
+        self.data_loader = build_loader(self.conf)
+        self.model = build_gan(self.conf)
 
-        self.iters = range(conf.continue_iter, 1 + conf.n_iters + conf.n_iters_decay)
+        self.iters = range(self.conf.continue_iter, 
+                           1 + self.conf.n_iters + self.conf.n_iters_decay)
         self.iter_idx = 0
-        self.checkpoint_freq = conf.logging.checkpoint_freq
+        self.checkpoint_freq = self.conf.logging.checkpoint_freq
 
     def train(self):
         if communication.is_main_process():
@@ -65,6 +68,5 @@ class Trainer():
 
     def _build_config(self):
         cli = OmegaConf.from_cli()
-        conf = init_config(cli.config)
-        cli.pop("config")
+        conf = init_config(cli.pop("config"))
         return OmegaConf.merge(conf, cli)

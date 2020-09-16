@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 import logging
@@ -40,7 +41,7 @@ class BaseGAN(ABC):
         self.conf = conf
         self.is_train = conf.gan.is_train
         self.device = self._specify_device()
-        self.output_dir = conf.logging.output_dir
+        self.checkpoint_dir = conf.logging.checkpoint_dir
 
         self.visuals = {}
         self.losses = {}
@@ -52,7 +53,8 @@ class BaseGAN(ABC):
     def _specify_device(self):
         # distributed GPU training
         if torch.distributed.is_initialized():
-            return torch.device('cuda:%d' % communication.get_local_rank())
+            rank = communication.get_local_rank()
+            return torch.device(f"cuda:{rank}")
         # non-distributed GPU training
         elif self.conf.use_cuda: 
             return torch.device('cuda:0')
@@ -175,7 +177,7 @@ class BaseGAN(ABC):
             iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
         checkpoint = {}
-        checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
+        checkpoint_path = Path(self.checkpoint_dir) / f"{iter_idx}_checkpoint.pth"
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
@@ -199,9 +201,9 @@ class BaseGAN(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = os.path.join(self.output_dir, '%s_checkpoint.pth' % iter_idx)
+        checkpoint_path = Path(self.checkpoint_dir) / f"{iter_idx}_checkpoint.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
-        self.logger.info('loaded the checkpoint from %s' % checkpoint_path)
+        self.logger.info(f"Loaded the checkpoint from {checkpoint_path}")
         
         # load networks
         for name in self.networks.keys():

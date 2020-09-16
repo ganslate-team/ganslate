@@ -161,7 +161,8 @@ def reduce(input_data, average=False, all_reduce=False):
             reduced_data = reduce_int_float(input_data, average, all_reduce, device)
         
         else:
-            raise NotImplementedError("Reduction on data type %s is not implemented." % str(type(data)))
+            data_type = str(type(data))
+            raise NotImplementedError(f"Reduction on data type `{data_type}` is not implemented.")
     return reduced_data
 
 

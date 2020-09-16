@@ -27,7 +27,7 @@ class GANLoss(nn.Module):
         elif gan_mode in ['wgangp', 'nonsaturating']:
             self.loss = None
         else:
-            raise NotImplementedError('gan mode %s not implemented' % gan_mode)
+            raise NotImplementedError(f"GAN mode {gan_mode} not implemented.")
 
     def get_target_tensor(self, prediction, target_is_real):
         """Create label tensors with the same size as the input.

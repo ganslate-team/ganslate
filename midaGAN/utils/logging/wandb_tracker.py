@@ -18,7 +18,7 @@ class WandbTracker:
         
         # Losses
         for name, loss in losses.items():
-            log_dict['loss_%s' % name] = loss
+            log_dict[f"loss_{name}"] = loss
         
         # Image
         name, image = visuals['name'], visuals['image']

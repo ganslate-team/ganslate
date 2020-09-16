@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import random
 import numpy as np
 import torch
@@ -26,16 +26,16 @@ EXTENSIONS = ['.npy']
 
 class CTDataset(Dataset):
     def __init__(self, conf):
-        dir_A = os.path.join(conf.dataset.root, 'A')
-        dir_B = os.path.join(conf.dataset.root, 'B')
+        dir_A = Path(conf.dataset.root) / 'A'
+        dir_B = Path(conf.dataset.root) / 'B'
         self.A_paths = make_dataset_of_files(dir_A, EXTENSIONS)
         self.B_paths = make_dataset_of_files(dir_B, EXTENSIONS)
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 
         # Dataset range of values information for normalization
-        norm_A = os.path.join(conf.dataset.root, 'normalize_A.json')
-        norm_B = os.path.join(conf.dataset.root, 'normalize_B.json')
+        norm_A = Path(conf.dataset.root) / 'normalize_A.json'
+        norm_B = Path(conf.dataset.root) / 'normalize_B.json'
         self.norm_A = load_json(norm_A)
         self.norm_B = load_json(norm_B)
 

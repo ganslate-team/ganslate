@@ -4,7 +4,7 @@ import numpy as np
 
 def load(file_path):
     reader = sitk.ImageFileReader()
-    reader.SetFileName(file_path)
+    reader.SetFileName(str(file_path))
     sitk_image = reader.Execute()
     return sitk_image
 

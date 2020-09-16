@@ -3,7 +3,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 class TensorboardTracker:
     def __init__(self, conf):
-        self.writer = SummaryWriter(conf.logging.output_dir)
+        self.writer = SummaryWriter(conf.logging.checkpoint_dir)
 
     def close(self):
         self.writer.close()
@@ -16,8 +16,8 @@ class TensorboardTracker:
 
         # Losses
         for name, loss in losses.items():
-            self.writer.add_scalar('Losses/%s' % name, loss, iter_idx)
+            self.writer.add_scalar(f"Losses/{name}", loss, iter_idx)
 
         # Image
         name, image = visuals['name'], visuals['image']
-        self.writer.add_image('Visuals/%s' % name, image, iter_idx, dataformats='CHW')
+        self.writer.add_image(f"Visuals/{name}", image, iter_idx, dataformats='CHW')

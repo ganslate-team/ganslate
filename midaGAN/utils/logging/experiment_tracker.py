@@ -1,10 +1,10 @@
-
-import os
+from pathlib import Path
 import logging
 import time
 
 import torch
 from torchvision.utils import save_image
+from omegaconf import OmegaConf
 
 from midaGAN.utils import communication, io
 from midaGAN.utils.logging.wandb_tracker import WandbTracker
@@ -14,9 +14,9 @@ from midaGAN.utils.logging.tensorboard_tracker import TensorboardTracker
 class ExperimentTracker:
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
-        self.output_dir = conf.logging.output_dir
+        self.checkpoint_dir = conf.logging.checkpoint_dir
         if communication.is_main_process():
-            io.mkdirs(os.path.join(self.output_dir, 'images'))
+            io.mkdirs(Path(self.checkpoint_dir) / 'images')
             self._save_config(conf)
 
             self.wandb = None
@@ -36,9 +36,9 @@ class ExperimentTracker:
         self.t_comp = None
 
     def _save_config(self, conf):
-        config_path = os.path.join(self.output_dir, "config.yaml")
+        config_path = Path(self.checkpoint_dir) / "config.yaml"
         with open(config_path, "w") as file:
-            file.write(conf.pretty())
+            file.write(OmegaConf.to_yaml(conf))
 
     def set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
@@ -116,7 +116,7 @@ class ExperimentTracker:
 
     def _save_image(self, visuals):
         name, image = visuals['name'], visuals['image']
-        file_path = os.path.join(self.output_dir, 'images/%d_%s.png' % (self.iter_idx, name))
+        file_path = Path(self.checkpoint_dir) / f"images/{self.iter_idx}_{name}.png" 
         save_image(image, file_path)
 
     def close(self):

@@ -1,22 +1,18 @@
-import os
+from pathlib import Path
 import json
-import glob
 
-def mkdirs(paths):
-    if isinstance(paths, list) and not isinstance(paths, str):
-        for path in paths:
-            mkdir(path)
-    else:
-        mkdir(paths)
-
-def mkdir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
+def mkdirs(*paths):
+    #if isinstance(paths, list):
+    for path in paths:
+        Path(path).mkdir(parents=True, exist_ok=True)
+    #else:
+    #    Path(paths).mkdir(parents=True, exist_ok=True)
 
 def make_dataset_of_files(root, extensions=['.npy']):
     """The root of dataset contains files of the given extension."""
-    assert os.path.isdir(root), '%s is not a valid directory' % root
-    paths = [os.path.join(root, file) for file in os.listdir(root) if has_extension(file, extensions)]
+    root = Path(root)
+    assert root.is_dir(), f"{root} is not a valid directory"
+    paths = [root / file for file in root.iterdir() if has_extension(file, extensions)]
     return sorted(paths)
     
 def has_extension(file, extensions):
@@ -28,19 +24,18 @@ def make_dataset_of_directories(root, extensions=['.npy']):
     such folder. Useful when using a dataset that stores, for example, an image and a mask together
     in their own folder.
     """
-    assert os.path.isdir(root), '%s is not a valid directory' % root
-    paths = [os.path.join(root, folder) for folder in os.listdir(root) \
-             if os.path.isdir(os.path.join(root, folder))]
+    root = Path(root)
+    assert root.is_dir(), f"{root} is not a valid directory"
+    paths = [root / folder for folder in root.iterdir() if (root / folder).is_dir()]
     paths = [folder for folder in paths if has_files_with_extension(folder, extensions)]
     return sorted(paths)
 
 def has_files_with_extension(folder, extensions):
     for ext in extensions:
-        files_in_folder = list(glob.glob(os.path.join(folder, "*"+ext)))
+        files_in_folder = list(folder.glob(f"*.{ext}"))
         if files_in_folder:
             return True
     return False
-
 
 def load_json(file):
     with open(file, 'r') as f:

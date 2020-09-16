@@ -32,11 +32,11 @@ def train():
 
     # log_file = experiment_dir / f'log_{machine_rank}_{communication.get_local_rank()}.txt'
     
-    trainer = Trainer(conf)
-
+    trainer = Trainer()
+    conf = trainer.conf
 
     # TODO: clean this mess
-    log_file = Path(conf.logging.output_dir) / Path('log.txt')
+    log_file = Path(conf.logging.checkpoint_dir) / Path('log.txt')
     debug = False
     setup_logging(
         use_stdout=communication.get_local_rank() == 0 or debug,
@@ -53,7 +53,7 @@ def train():
     logger.info(f'Python version: {sys.version.strip()}.')
     logger.info(f'PyTorch version: {torch.__version__}.')  # noqa
     logger.info(f'CUDA {torch.version.cuda} - cuDNN {torch.backends.cudnn.version()}.')
-    logger.info(f'Configuration: {conf.pretty()}.')
+    logger.info(f'Configuration: {OmegaConf.to_yaml(conf)}.')
 
 
     trainer.train()
