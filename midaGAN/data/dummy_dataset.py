@@ -6,7 +6,7 @@ from midaGAN.utils.io import make_dataset_of_files
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.config import BaseDatasetConfig
+from midaGAN.conf import BaseDatasetConfig
 
 DUMMY_PATCH_SIZE = [32, 32, 32]
 

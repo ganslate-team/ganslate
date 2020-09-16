@@ -58,8 +58,10 @@ class LoggingConfig:
     wandb:           bool = False
     tensorboard:     bool = False
 
+
 @dataclass
 class Config:
+    # TODO: add git hash? will help when re-running or inferencing old runs
     project_dir:     Optional[str] = None  # Needed if project-specific classes are to be imported 
     batch_size:      int = MISSING   
     n_iters:         int = MISSING  # Number of iters without linear decay of learning rates. [Default: 200]
@@ -89,4 +91,4 @@ class InferenceConfig:
     checkpoint_dir: str = MISSING
     load_iter:      str = MISSING
     output_dir:     str = MISSING
-    dataset:        Dict[Any, Any] = MISSING  # Type checked in Config
+    dataset:        Dict[str, Any] = MISSING  # Type checked in Config

@@ -7,8 +7,8 @@ from pathlib import Path
 from omegaconf import OmegaConf, DictConfig
 
 import midaGAN
-from midaGAN.conf import config
 from midaGAN.utils import import_class_from_dirs_and_modules
+from midaGAN.conf.config import * # make everything accessible from `midaGAN.conf`
 
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ IMPORT_LOCATIONS = {
     "discriminator": [midaGAN.nn.discriminators],
 }
 
-def init_config(conf, config_class=config.Config, contains_dataclasses=True):
+def init_config(conf, config_class=Config, contains_dataclasses=True):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 

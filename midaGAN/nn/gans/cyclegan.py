@@ -15,7 +15,7 @@ from midaGAN.nn.losses.gan_loss import GANLoss
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.config import BaseGANConfig
+from midaGAN.conf import BaseGANConfig
 
 
 @dataclass

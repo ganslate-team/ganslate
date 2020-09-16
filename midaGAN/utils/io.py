@@ -2,11 +2,8 @@ from pathlib import Path
 import json
 
 def mkdirs(*paths):
-    #if isinstance(paths, list):
     for path in paths:
         Path(path).mkdir(parents=True, exist_ok=True)
-    #else:
-    #    Path(paths).mkdir(parents=True, exist_ok=True)
 
 def make_dataset_of_files(root, extensions=['.npy']):
     """The root of dataset contains files of the given extension."""

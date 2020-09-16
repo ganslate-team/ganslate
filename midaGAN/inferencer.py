@@ -7,8 +7,7 @@ from omegaconf import OmegaConf
 
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
-from midaGAN.conf import init_config
-from midaGAN.conf.config import InferenceConfig
+from midaGAN.conf import init_config, InferenceConfig
 
 
 class Inferencer():

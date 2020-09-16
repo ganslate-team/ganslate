@@ -33,4 +33,5 @@ def import_class_from_dirs_and_modules(class_name, dirs_modules):
             if inspect.isclass(attribute) and class_name == attribute_name:            
                 return attribute 
                 
-    raise ValueError(f"Class with name {class_name} not found in any of the given directories or modules.")
+    raise ValueError(f"Class with name `{class_name}`` not found in any of the given directories or modules.\
+                       If it is located in a project folder, set `project_dir` in config as the project's path.")

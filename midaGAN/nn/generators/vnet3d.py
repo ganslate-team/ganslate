@@ -8,7 +8,7 @@ from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d,
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.config import BaseGeneratorConfig
+from midaGAN.conf import BaseGeneratorConfig
 
 
 @dataclass
