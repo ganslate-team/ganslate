@@ -18,9 +18,10 @@ class Inferencer():
         self.data_loader = build_loader(self.conf)
         self.model = build_gan(self.conf)
 
-    def infer(self, input):
+    def infer(self):
         for data in self.data_loader:
-            out = self.model.infer(input)
+            out = self.model.infer(data)
+            print(out.shape)
             self._save(out)
 
     def _save(self, output):

@@ -96,6 +96,8 @@ class BaseGAN(ABC):
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
         else:
             self.eval()
+            if len(self.networks.keys()) != 1:
+                raise ValueError("When inferring there should be only one network initialized - generator.")
         
         if not self.is_train or self.conf.continue_train:
             self.load_networks(self.conf.load_iter)
@@ -245,10 +247,11 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
-        if len(self.networks.keys) != 1:
-            raise ValueError("When inferring there should be only one network initialized - generator.")
+        if self.is_train:
+            raise ValueError("Inference cannot be done in training mode.")
         with torch.no_grad():
-            generator = self.networks.keys[0]
+            generator = list(self.networks.keys())[0] # in inference mode only generator is defined
+            input = input.to(self.device)
             return self.networks[generator].forward(input)
             
     def get_learning_rates(self):

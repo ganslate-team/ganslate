@@ -22,3 +22,9 @@ def get_npy(sitk_image):
 
 def get_tensor(sitk_image):
     return Tensor(get_npy(sitk_image))
+
+def is_volume_smaller_than(self, sitk_volume, target_shape):
+    volume_size = get_size_zxy(sitk_volume)
+    if (volume_size < target_shape).any():
+        return True
+    return False

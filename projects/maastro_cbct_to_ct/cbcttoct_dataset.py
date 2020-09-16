@@ -18,6 +18,8 @@ from midaGAN.conf import BaseDatasetConfig
 
 logger = logging.getLogger(__name__)
 
+EXTENSIONS = ['.nrrd']
+
 
 @dataclass
 class CBCTtoCTDatasetConfig(BaseDatasetConfig):
@@ -26,8 +28,6 @@ class CBCTtoCTDatasetConfig(BaseDatasetConfig):
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
 
-
-EXTENSIONS = ['.nrrd']
 
 class CBCTtoCTDataset(Dataset):
     def __init__(self, conf):
@@ -45,13 +45,6 @@ class CBCTtoCTDataset(Dataset):
         self.patch_size = np.array(conf.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
-    # TODO: move it somewhere else
-    def _is_volume_smaller_than_patch(self, sitk_volume):
-        volume_size = sitk_utils.get_size_zxy(sitk_volume)
-        if (volume_size < self.patch_size).any():
-            return True
-        return False
-
     def __getitem__(self, index):
         index_CBCT = index % self.num_datapoints_CBCT
         index_CT = random.randint(0, self.num_datapoints_CT - 1)
@@ -64,7 +57,8 @@ class CBCTtoCTDataset(Dataset):
         CT = sitk_utils.load(path_CT)
 
         # TODO: make a function
-        if self._is_volume_smaller_than_patch(CBCT) or self._is_volume_smaller_than_patch(CT):
+        if (sitk_utils.is_volume_smaller_than(CBCT, self.patch_size) 
+                or sitk_utils.is_volume_smaller_than(CT, self.patch_size)):
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nCBCT: {} \nCT: {} \npatch_size: {}."\
                              .format(sitk_utils.get_size_zxy(CBCT),
@@ -73,7 +67,7 @@ class CBCTtoCTDataset(Dataset):
 
 	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
-        if self._is_volume_smaller_than_patch(CT_truncated):
+        if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size):
             logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
             del CT_truncated
         else:
@@ -103,6 +97,38 @@ class CBCTtoCTDataset(Dataset):
     def __len__(self):
         return max(self.num_datapoints_CBCT, self.num_datapoints_CT)
 
+
+@dataclass
+class CBCTtoCTInferenceDatasetConfig(BaseDatasetConfig):
+    name:                    str = "CBCTtoCTInferenceDataset"
+    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
+    
+
+class CBCTtoCTInferenceDataset(Dataset):
+    def __init__(self, conf):
+        self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
+        self.num_datapoints = len(self.paths)
+        # Min and max HU values for clipping and normalization
+        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+
+    def __getitem__(self, index):
+        path = Path(self.paths[index]) / 'CT.nrrd'
+        # load nrrd as SimpleITK objects
+        volume = sitk_utils.load(path)
+        volume = sitk_utils.get_tensor(volume)
+        # Limits the lowest and highest HU unit
+        volume = torch.clamp(volume, self.hu_min, self.hu_max)
+        # Normalize Hounsfield units to range [-1,1]
+        volume = normalize_from_hu(volume, self.hu_min, self.hu_max)
+        # Add channel dimension (1 = grayscale)
+        volume = volume.unsqueeze(0)
+        return volume
+
+    def __len__(self):
+        return self.num_datapoints
+
+    def save(self, out_tensor):
+        pass
 
 
 

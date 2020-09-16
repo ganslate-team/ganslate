@@ -13,11 +13,11 @@ def build_loader(conf):
     dataset = build_dataset(conf)
 
     if conf.gan.is_train:
-        shuffle = conf.dataset.shuffle
-        sampler = InfiniteSampler(size=len(dataset), shuffle=shuffle, seed=None) # TODO: seed to conf and other components? Remember that torch.Generator advises to use high values for seed, if the defines int is small should we multiply it by some factor?
+        sampler = InfiniteSampler(size=len(dataset), 
+                                  shuffle=conf.dataset.shuffle, 
+                                  seed=None) # TODO: seed to conf and other components? Remember that torch.Generator advises to use high values for seed, if the defines int is small should we multiply it by some factor?
     else:
-        shuffle = False
-        sampler = 404 # TODO Implement non-infinite sampler
+        sampler = None # TODO: add DistributedSampler
 
     loader = DataLoader(dataset,
                         batch_size=batch_size,

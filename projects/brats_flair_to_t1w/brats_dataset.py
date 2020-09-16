@@ -52,13 +52,6 @@ class BratsDataset(Dataset):
         self.patch_size = np.array(conf.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
-    # TODO: move it somewhere else
-    def _is_volume_smaller_than_patch(self, sitk_volume):
-        volume_size = sitk_utils.get_size_zxy(sitk_volume)
-        if (volume_size < self.patch_size).any():
-            return True
-        return False
-
     def __getitem__(self, index):
         index_A = index % self.num_datapoints
         index_B = random.randint(0, self.num_datapoints - 1)
@@ -73,8 +66,8 @@ class BratsDataset(Dataset):
         A = get_mri_sequence(A, FLAIR)
         B = get_mri_sequence(B, T1W)
 
-        # TODO: make a function
-        if self._is_volume_smaller_than_patch(A) or self._is_volume_smaller_than_patch(B):
+        if (sitk_utils.is_volume_smaller_than(A, self.patch_size) 
+                or sitk_utils.is_volume_smaller_than(B, self.patch_size)):
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nA: {} \nB: {} \npatch_size: {}."\
                              .format(sitk_utils.get_size_zxy(A),

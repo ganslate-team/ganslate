@@ -29,7 +29,9 @@ def make_dataset_of_directories(root, extensions=['.npy']):
 
 def has_files_with_extension(folder, extensions):
     for ext in extensions:
-        files_in_folder = list(folder.glob(f"*.{ext}"))
+        if not ext.startswith("."):
+            ext = "." + ext
+        files_in_folder = list(folder.glob(f"*{ext}"))
         if files_in_folder:
             return True
     return False

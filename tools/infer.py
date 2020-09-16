@@ -17,4 +17,5 @@ from midaGAN.inferencer import Inferencer
 # -------------------------------------
 
 if __name__ == '__main__':
-    Inferencer()
+    a = Inferencer()
+    a.infer()
