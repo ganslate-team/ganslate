@@ -56,7 +56,7 @@ def train():
     logger.info(f'Configuration: {OmegaConf.to_yaml(conf)}.')
 
 
-    trainer.train()
+    trainer.run()
 
 
 if __name__ == '__main__':

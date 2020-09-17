@@ -18,7 +18,7 @@ class Inferencer():
         self.data_loader = build_loader(self.conf)
         self.model = build_gan(self.conf)
 
-    def infer(self):
+    def run(self):
         for data in self.data_loader:
             out = self.model.infer(data)
             print(out.shape)

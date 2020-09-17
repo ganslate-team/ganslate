@@ -26,7 +26,7 @@ class Trainer():
         self.iter_idx = 0
         self.checkpoint_freq = self.conf.logging.checkpoint_freq
 
-    def train(self):
+    def run(self):
         if communication.is_main_process():
             self.logger.info(gan_summary(self.model, self.data_loader))
             self.logger.info('Training started.')
