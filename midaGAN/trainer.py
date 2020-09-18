@@ -2,20 +2,19 @@
 import os
 import logging
 import torch
-from omegaconf import OmegaConf
 
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
+from midaGAN.conf.builders import build_training_conf
+
 from midaGAN.utils import communication
-from midaGAN.utils.environment import setup_logging
 from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
 from midaGAN.utils.summary import gan_summary
-from midaGAN.conf import init_config
 
 class Trainer():
     def __init__(self):
         self.logger = logging.getLogger(type(self).__name__)
-        self.conf = self._build_config()
+        self.conf = build_training_conf()
 
         self.tracker = ExperimentTracker(self.conf)
         self.data_loader = build_loader(self.conf)

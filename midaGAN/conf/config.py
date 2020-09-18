@@ -53,6 +53,7 @@ class OptimizerConfig:
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
     checkpoint_dir:  str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
+    inference_dir:   Optional[str] = None  # Path where the inference will store the results
     log_freq:        int = 20
     checkpoint_freq: int = 50
     wandb:           bool = False
@@ -88,7 +89,7 @@ class Config:
 
 @dataclass
 class InferenceConfig:
+    inference_dir:  str = MISSING
     checkpoint_dir: str = MISSING
     load_iter:      str = MISSING
-    output_dir:     str = MISSING
     dataset:        Dict[str, Any] = MISSING  # Type checked in Config
