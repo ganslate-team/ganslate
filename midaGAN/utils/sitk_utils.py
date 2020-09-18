@@ -9,10 +9,10 @@ def load(file_path):
     return sitk_image
 
 def write(sitk_image, file_path):
-    sitk.WriteImage(sitk_image, str(file_path))
+    sitk.WriteImage(sitk_image, str(file_path), True) # True is for useCompression flag
 
 def tensor_to_sitk_image(tensor, origin, spacing, direction, dtype='int16'):
-    array = tensor.cpu().numpy().astype(dtype)
+    array = tensor.cpu().numpy().astype(str(dtype))
     sitk_image = sitk.GetImageFromArray(array)
     sitk_image.SetOrigin(origin)
     sitk_image.SetSpacing(spacing)
@@ -39,3 +39,6 @@ def is_volume_smaller_than(self, sitk_volume, target_shape):
     if (volume_size < target_shape).any():
         return True
     return False
+
+def get_npy_dtype(sitk_image):
+    return str(sitk.GetArrayFromImage(sitk_image).dtype)

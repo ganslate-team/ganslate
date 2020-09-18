@@ -33,7 +33,8 @@ class Inferer():
             # E.g. origin, spacing and direction is required in order to properly save medical images.
             if isinstance(data, list): # dataloader yields a list when passing multiple values at once
                 data, metadata = data
-                metadata = [np.array(elem) for elem in metadata] # tensor -> numpy
+                # TODO: make better, not great that elem[0] for strings
+                metadata = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in metadata]
                 has_metadata = True
 
             data = data.to(self.device)

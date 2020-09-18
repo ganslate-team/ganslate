@@ -116,7 +116,11 @@ class CBCTtoCTInferenceDataset(Dataset):
         path = str(Path(self.paths[index]) / 'CT.nrrd')
         # load nrrd as SimpleITK objects
         volume = sitk_utils.load(path)
-        metadata = (path, volume.GetOrigin(), volume.GetSpacing(), volume.GetDirection())
+        metadata = (path, 
+                    volume.GetOrigin(), 
+                    volume.GetSpacing(), 
+                    volume.GetDirection(),
+                    sitk_utils.get_npy_dtype(volume))
 
         volume = sitk_utils.get_tensor(volume)
         # Limits the lowest and highest HU unit
@@ -135,8 +139,8 @@ class CBCTtoCTInferenceDataset(Dataset):
         tensor = tensor.squeeze()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
         
-        datapoint_path, origin, spacing, direction = metadata
-        sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype='int16')
+        datapoint_path, origin, spacing, direction, dtype = metadata
+        sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)
 
         # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
         datapoint_name = Path(str(datapoint_path)).parent.name
