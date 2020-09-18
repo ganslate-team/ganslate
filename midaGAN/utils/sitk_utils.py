@@ -1,11 +1,22 @@
 import SimpleITK as sitk 
-from torch import Tensor
+import torch
 import numpy as np
 
 def load(file_path):
     reader = sitk.ImageFileReader()
     reader.SetFileName(str(file_path))
     sitk_image = reader.Execute()
+    return sitk_image
+
+def write(sitk_image, file_path):
+    sitk.WriteImage(sitk_image, str(file_path))
+
+def tensor_to_sitk_image(tensor, origin, spacing, direction, dtype='int16'):
+    array = tensor.cpu().numpy().astype(dtype)
+    sitk_image = sitk.GetImageFromArray(array)
+    sitk_image.SetOrigin(origin)
+    sitk_image.SetSpacing(spacing)
+    sitk_image.SetDirection(direction)
     return sitk_image
 
 def get_size_zxy(sitk_image):
@@ -21,7 +32,7 @@ def get_npy(sitk_image):
     return sitk.GetArrayFromImage(sitk_image)
 
 def get_tensor(sitk_image):
-    return Tensor(get_npy(sitk_image))
+    return torch.Tensor(get_npy(sitk_image))
 
 def is_volume_smaller_than(self, sitk_volume, target_shape):
     volume_size = get_size_zxy(sitk_volume)

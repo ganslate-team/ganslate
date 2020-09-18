@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from midaGAN.utils.io import make_dataset_of_files, load_json
-from midaGAN.utils.normalization import normalize_from_hu
+from midaGAN.utils.normalization import min_max_normalize
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 
@@ -56,8 +56,8 @@ class CTDataset(Dataset):
         A, B = self.patch_sampler.get_patch_pair(A, B) # Extract patches
 
         # Normalize Hounsfield units to range [-1,1]
-        A = normalize_from_hu(A, self.norm_A["min"], self.norm_A["max"])
-        B = normalize_from_hu(B, self.norm_B["min"], self.norm_B["max"])
+        A = min_max_normalize(A, self.norm_A["min"], self.norm_A["max"])
+        B = min_max_normalize(B, self.norm_B["min"], self.norm_B["max"])
 
         # Add channel dimension (1 = grayscale)
         A = A.unsqueeze(0)

@@ -4,8 +4,10 @@ import logging
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+
+import midaGAN
 from midaGAN.utils.io import make_dataset_of_directories, load_json
-from midaGAN.utils.normalization import normalize_from_hu
+from midaGAN.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
@@ -84,15 +86,14 @@ class CBCTtoCTDataset(Dataset):
         CT = torch.clamp(CT, self.hu_min, self.hu_max)
 
         # Normalize Hounsfield units to range [-1,1]
-        CBCT = normalize_from_hu(CBCT, self.hu_min, self.hu_max)
-        CT = normalize_from_hu(CT, self.hu_min, self.hu_max)
+        CBCT = min_max_normalize(CBCT, self.hu_min, self.hu_max)
+        CT = min_max_normalize(CT, self.hu_min, self.hu_max)
 
         # Add channel dimension (1 = grayscale)
         CBCT = CBCT.unsqueeze(0)
         CT = CT.unsqueeze(0)
 
         return {'A': CBCT, 'B': CT}
-
 
     def __len__(self):
         return max(self.num_datapoints_CBCT, self.num_datapoints_CT)
@@ -112,23 +113,37 @@ class CBCTtoCTInferenceDataset(Dataset):
         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
 
     def __getitem__(self, index):
-        path = Path(self.paths[index]) / 'CT.nrrd'
+        path = str(Path(self.paths[index]) / 'CT.nrrd')
         # load nrrd as SimpleITK objects
         volume = sitk_utils.load(path)
+        metadata = (path, volume.GetOrigin(), volume.GetSpacing(), volume.GetDirection())
+
         volume = sitk_utils.get_tensor(volume)
         # Limits the lowest and highest HU unit
         volume = torch.clamp(volume, self.hu_min, self.hu_max)
         # Normalize Hounsfield units to range [-1,1]
-        volume = normalize_from_hu(volume, self.hu_min, self.hu_max)
+        volume = min_max_normalize(volume, self.hu_min, self.hu_max)
         # Add channel dimension (1 = grayscale)
         volume = volume.unsqueeze(0)
-        return volume
+
+        return volume, metadata
 
     def __len__(self):
         return self.num_datapoints
 
-    def save(self, out_tensor):
-        pass
+    def save(self, tensor, metadata, output_dir):
+        tensor = tensor.squeeze()
+        tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
+        
+        datapoint_path, origin, spacing, direction = metadata
+        sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype='int16')
+
+        # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
+        datapoint_name = Path(str(datapoint_path)).parent.name
+        save_path = Path(output_dir) / Path(datapoint_name).with_suffix('.nrrd')
+
+        sitk_utils.write(sitk_image, save_path)
+        
 
 
 

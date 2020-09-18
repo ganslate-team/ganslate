@@ -13,9 +13,9 @@ except ImportError:
     sys.path.append('./')
     import midaGAN
 
-from midaGAN.inferencer import Inferencer
+from midaGAN.inferer import Inferer
 # -------------------------------------
 
 if __name__ == '__main__':
-    inferencer= Inferencer()
-    inferencer.run()
+    inferer= Inferer()
+    inferer.run()

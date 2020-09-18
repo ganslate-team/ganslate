@@ -66,7 +66,4 @@ class Trainer():
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
 
-    def _build_config(self):
-        cli = OmegaConf.from_cli()
-        conf = init_config(cli.pop("config"))
-        return OmegaConf.merge(conf, cli)
+    

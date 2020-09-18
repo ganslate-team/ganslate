@@ -251,7 +251,6 @@ class BaseGAN(ABC):
             raise ValueError("Inference cannot be done in training mode.")
         with torch.no_grad():
             generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
-            input = input.to(self.device)
             return self.networks[generator].forward(input)
             
     def get_learning_rates(self):

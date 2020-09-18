@@ -1,12 +1,15 @@
 import torch
 
-def normalize_from_hu(image, MIN_B=-1024.0, MAX_B=3072.0):
-    # https://stats.stackexchange.com/questions/178626/how-to-normalize-data-between-1-and-1
-    image = (image - MIN_B) / (MAX_B - MIN_B)
+def min_max_normalize(image, min_value, max_value):
+    image = (image - min_value) / (max_value - min_value)
     return 2*image - 1
 
-def denormalize_to_hu(image, MIN_B=-1024.0, MAX_B=3072.0):
-    pass
+def min_max_denormalize(image, min_value, max_value):
+    image += 1
+    image /= 2
+    image *= (max_value - min_value)
+    image += min_value
+    return image
 
 def z_score_normalize(tensor, scale_to_range=None, mean_std=None, original_scale=None):
     # TODO: Separate it to normal vs slice-based-on-volume
