@@ -26,7 +26,7 @@ def build_inference_conf():
     for key in train_to_inference_options:
         inference_conf[key] = train_conf[key]
 
-    #
+    # However, if some of above options were specified in cli, they have priority
     inference_conf = OmegaConf.merge(inference_conf, cli)
     
     # Inference-time defaults
