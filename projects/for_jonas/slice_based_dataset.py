@@ -74,8 +74,15 @@ class SliceBasedDataset(Dataset):
         mean_std_B = (summary_B["volume_mean"], summary_B["volume_std"])
         min_max_A = (summary_A["volume_min"], summary_A["volume_max"])
         min_max_B = (summary_B["volume_min"], summary_B["volume_max"])
-        A = z_score_normalize(A, scale_to_range=(-1,1), mean_std=mean_std_A, original_scale=min_max_A)
-        B = z_score_normalize(B, scale_to_range=(-1,1), mean_std=mean_std_B, original_scale=min_max_B)
+        
+        A = z_score_normalize_with_precomputed_stats(A, 
+                                                     scale_to_range=(-1,1), 
+                                                     mean_std=mean_std_A, 
+                                                     original_scale=min_max_A)
+        B = z_score_normalize_with_precomputed_stats(B, 
+                                                     scale_to_range=(-1,1), 
+                                                     mean_std=mean_std_B, 
+                                                     original_scale=min_max_B)
         
         if self.pad_size:
             A = pad_tensor_to_shape(A, output_shape=self.pad_size)
