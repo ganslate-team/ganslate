@@ -57,10 +57,11 @@ class Trainer():
         self.model.update_learning_rate()  # perform a scheduler step # TODO: better to make decaying rate in checkpoints rather than per iter
 
     def _save_checkpoint(self):
+        # TODO: save on cancel
         if communication.is_main_process():
             if self.iter_idx % self.checkpoint_freq == 0:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
-                self.model.save_checkpoint(self.iter_idx) #('latest')
+                self.model.save_checkpoint(self.iter_idx)
 
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx

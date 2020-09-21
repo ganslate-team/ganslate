@@ -7,7 +7,7 @@ from midaGAN.conf.base_configs import *
 @dataclass
 class OptimizerConfig:
     beta1:           float = 0.5
-    lr_D:            float = 0.0002
+    lr_D:            float = 0.0001
     lr_G:            float = 0.0002
     lambda_A:        float = 10.0
     lambda_B:        float = 10.0
@@ -21,15 +21,15 @@ class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
     checkpoint_dir:  str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
     #inference_dir:   Optional[str] = None  # Path where the inference will store the results
-    log_freq:        int = 20
-    checkpoint_freq: int = 50
+    log_freq:        int = 50
+    checkpoint_freq: int = 2000
     wandb:           bool = False
     tensorboard:     bool = False
 
 
 @dataclass
 class LoadCheckpointConfig:
-    iter:             str = MISSING  # Which iteration's checkpoint to load. [Default: "latest"]
+    iter:             str = MISSING  # Which iteration's checkpoint to load. 
     count_start_iter: int = 1  # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
 
 
