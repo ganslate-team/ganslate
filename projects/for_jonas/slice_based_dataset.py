@@ -5,7 +5,7 @@ import torch
 import torchvision
 import pandas as pd
 from torch.utils.data import Dataset
-from midaGAN.utils.normalization import z_score_normalize
+from midaGAN.data.utils.normalization import z_score_normalize
 from midaGAN.utils import sitk_utils, io
 
 # Config imports

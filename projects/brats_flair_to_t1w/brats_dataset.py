@@ -5,8 +5,8 @@ import torch
 from torch.utils.data import Dataset
 import SimpleITK as sitk
 from midaGAN.utils.io import make_dataset_of_files
-from midaGAN.utils.normalization import z_score_normalize
 from midaGAN.utils import sitk_utils
+from midaGAN.data.utils.normalization import z_score_normalize
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
