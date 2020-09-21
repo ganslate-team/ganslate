@@ -17,5 +17,5 @@ from midaGAN.inferer import Inferer
 # -------------------------------------
 
 if __name__ == '__main__':
-    inferer= Inferer()
+    inferer = Inferer()
     inferer.run()

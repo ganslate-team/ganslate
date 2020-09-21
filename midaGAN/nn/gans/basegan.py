@@ -51,13 +51,11 @@ class BaseGAN(ABC):
         torch.backends.cudnn.benchmark = True
     
     def _specify_device(self):
-        # distributed GPU training
         if torch.distributed.is_initialized():
             rank = communication.get_local_rank()
-            return torch.device(f"cuda:{rank}")
-        # non-distributed GPU training
+            return torch.device(f"cuda:{rank}")  # distributed GPU training
         elif self.conf.use_cuda: 
-            return torch.device('cuda:0')
+            return torch.device('cuda:0')  # non-distributed GPU training
         else:
             return torch.device('cpu')
             
@@ -99,8 +97,8 @@ class BaseGAN(ABC):
             if len(self.networks.keys()) != 1: # TODO: any nicer way? look at infer() as well
                 raise ValueError("When inferring there should be only one network initialized - generator.")
         
-        if not self.is_train or self.conf.continue_train:
-            self.load_networks(self.conf.load_iter)
+        if self.conf.load_checkpoint:
+            self.load_networks(self.conf.load_checkpoint.iter)
         
         if self._count_devices() > 1:
             self.parallelize_networks()

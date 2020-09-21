@@ -51,7 +51,8 @@ def get_scheduler(optimizer, conf):
         TODO
     """
     def lambda_rule(iter_idx):
-        lr_l = 1.0 - max(0, iter_idx + conf.continue_iter - conf.n_iters) / float(conf.n_iters_decay + 1)
+        start_iter = 1 if not conf.load_checkpoint else conf.load_checkpoint.count_start_iter
+        lr_l = 1.0 - max(0, iter_idx + start_iter - conf.n_iters) / float(conf.n_iters_decay + 1)
         return lr_l
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
 

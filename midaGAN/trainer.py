@@ -20,8 +20,9 @@ class Trainer():
         self.data_loader = build_loader(self.conf)
         self.model = build_gan(self.conf)
 
-        self.iters = range(self.conf.continue_iter, 
-                           1 + self.conf.n_iters + self.conf.n_iters_decay)
+        start_iter = 1 if not self.conf.load_checkpoint else self.conf.load_checkpoint.count_start_iter
+        end_iter = 1 + self.conf.n_iters + self.conf.n_iters_decay
+        self.iters = range(start_iter, end_iter)
         self.iter_idx = 0
         self.checkpoint_freq = self.conf.logging.checkpoint_freq
 

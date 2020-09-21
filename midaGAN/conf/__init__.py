@@ -8,12 +8,13 @@ from omegaconf import OmegaConf, DictConfig
 
 import midaGAN
 from midaGAN.utils import import_class_from_dirs_and_modules
-from midaGAN.conf.config import * # make everything accessible from `midaGAN.conf`
+from midaGAN.conf.train_config import TrainConfig
+from midaGAN.conf.inference_config import InferenceConfig
+from midaGAN.conf.base_configs import *
 
 
 logger = logging.getLogger(__name__)
 
-# But it's not used only for config, it's also used for importing models, datasets etc (do a search to see) TODO: change name?
 IMPORT_LOCATIONS = {
     "dataset": [midaGAN.data],
     "gan": [midaGAN.nn.gans],
@@ -21,7 +22,7 @@ IMPORT_LOCATIONS = {
     "discriminator": [midaGAN.nn.discriminators],
 }
 
-def init_config(conf, config_class=Config, contains_dataclasses=True):
+def init_config(conf, config_class=TrainConfig):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 
@@ -36,8 +37,7 @@ def init_config(conf, config_class=Config, contains_dataclasses=True):
         logger.info(f"Project directory {conf.project_dir} added to path to allow imports of modules from it.")
 
     # Make yaml mergeable by instantiating the dataclasses
-    if contains_dataclasses:
-        conf = instantiate_dataclasses_from_yaml(conf) 
+    conf = instantiate_dataclasses_from_yaml(conf) 
     
     # Merge default and run-specifig config
     return OmegaConf.merge(base_conf, conf)

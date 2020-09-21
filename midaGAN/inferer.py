@@ -18,10 +18,7 @@ class Inferer():
         self.data_loader = build_loader(self.conf)
         self.model = build_gan(self.conf)
         self.device = self.model.device
-
-        self.sliding_window_inferer = SlidingWindowInferer(roi_size=(48, 224, 224),
-                                                           sw_batch_size=1,
-                                                           overlap=0.25)
+        self.sliding_window_inferer = self._init_sliding_window_inferer()
 
     def run(self):
         has_metadata = False
@@ -52,5 +49,14 @@ class Inferer():
 
     def predict(self, input):
         return self.model.infer(input)
+
+    def _init_sliding_window_inferer(self):
+        if self.conf.sliding_window:
+            return SlidingWindowInferer(roi_size=self.conf.sliding_window.window_size,
+                                        sw_batch_size=self.conf.sliding_window.batch_size,
+                                        overlap=self.conf.sliding_window.overlap,
+                                        mode=self.conf.sliding_window.mode)
+        else:
+            return None
 
     

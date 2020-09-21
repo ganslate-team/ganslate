@@ -15,23 +15,24 @@ def build_inference_conf():
         inference_conf = OmegaConf.merge(inference_conf, cli)
     else:
         inference_conf = cli
-    # Init config to perform type checking and check if there are extra or missing entries
-    inference_conf = init_config(inference_conf, InferenceConfig, contains_dataclasses=False)
 
     # Fetch the config that was used during training of this specific run
-    train_conf = Path(inference_conf.checkpoint_dir) / "config.yaml"
+    train_conf = Path(inference_conf.logging.checkpoint_dir) / "config.yaml"
     train_conf = OmegaConf.load(str(train_conf))
 
-    # Override exising keys in training config with inference-specific params
-    train_conf.load_iter = inference_conf.load_iter
-    train_conf.dataset = dict(inference_conf.dataset)
-    train_conf.logging.checkpoint_dir = inference_conf.checkpoint_dir
-    train_conf.logging.inference_dir = inference_conf.inference_dir
-    # Inference defaults
-    train_conf.dataset.shuffle = False
-    train_conf.gan.is_train = False
-    train_conf.batch_size = 1
+    # Copy the run-specific options that are important for inference
+    train_to_inference_options = ["project_dir", "gan", "generator", 
+                                  "use_cuda", "mixed_precision", "opt_level"]
+    for key in train_to_inference_options:
+        inference_conf[key] = train_conf[key]
+
+    #
+    inference_conf = OmegaConf.merge(inference_conf, cli)
     
-    # TODO: dump inference and training reference configs
-    conf = init_config(train_conf)
-    return conf
+    # Inference-time defaults
+    inference_conf.dataset.shuffle = False
+    inference_conf.gan.is_train = False
+    inference_conf.batch_size = 1
+
+    return init_config(inference_conf, InferenceConfig)
+
