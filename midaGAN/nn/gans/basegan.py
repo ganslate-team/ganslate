@@ -203,7 +203,7 @@ class BaseGAN(ABC):
         """
         checkpoint_path = Path(self.checkpoint_dir) / f"{iter_idx}_checkpoint.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
-        self.logger.info(f"Loaded the checkpoint from {checkpoint_path}")
+        self.logger.info(f"Loaded the checkpoint from `{checkpoint_path}`")
         
         # load networks
         for name in self.networks.keys():
@@ -222,10 +222,13 @@ class BaseGAN(ABC):
                 self.logger.warning("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
         
         # load optimizers   
-        # TODO: option not to load the optimizers. Useful if a training was completed or if scheduler brought optimizers' LR lower than wanted
         if self.is_train:
-            self.optimizers['G'].load_state_dict(checkpoint['optimizer_G']) 
-            self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
+            if self.conf.load_checkpoint.reset_optimizers:
+                self.logger.info("Optimizers' state_dicts were not loaded. Optimizers starting from scratch.")
+            else:
+                self.logger.info("Optimizers' state_dicts are loaded from the checkpoint.")
+                self.optimizers['G'].load_state_dict(checkpoint['optimizer_G']) 
+                self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
 
     def set_requires_grad(self, networks, requires_grad=False):
         """Set requies_grad=False for all the networks to avoid unnecessary computations

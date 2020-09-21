@@ -31,7 +31,7 @@ class LoggingConfig:
 class LoadCheckpointConfig:
     iter:             str = MISSING  # Which iteration's checkpoint to load. 
     count_start_iter: int = 1  # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
-
+    reset_optimizers: bool = False  # If true, the checkpoint optimizer state_dict won't be loaded and optimizers will start from scratch.
 
 @dataclass
 class TrainConfig(BaseConfig):
