@@ -1,3 +1,4 @@
+project_dir: "./projects/maastro_cbct_to_ct"
 use_cuda: True
 n_iters: 200000
 n_iters_decay: 0

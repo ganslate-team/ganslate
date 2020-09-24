@@ -1,3 +1,4 @@
+project_dir: "./projects/maastro_cbct_to_ct"
 use_cuda: True
 n_iters: 20000
 n_iters_decay: 20000
@@ -17,21 +18,20 @@ dataset:
     patch_size: [48, 224, 224]
     
 gan:  
-    name: "CycleGAN"
+    name: "PiCycleGAN"
 
 generator:
   name: Piresnet3D
   in_channels: 1
-  use_memory_saving: false
-  use_inverse: false
+  use_memory_saving: true
+  use_inverse: true
   first_layer_channels: 32
-  depth: 3
+  depth: 1
 
 discriminator:  
-    name: "Discrim3D"
+    name: "PatchGAN3D"
     n_layers: 3
     in_channels: 1
-    input_size: [48, 224, 224] # TODO: same as dataset.patch_size - how to make it less repetive and intuitive?
 
 optimizer:
   lambda_A: 25.0
