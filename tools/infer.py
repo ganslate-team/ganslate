@@ -1,7 +1,4 @@
 import sys
-import torch
-from omegaconf import OmegaConf
-from pathlib import Path
 import logging
 logger = logging.getLogger(__name__)
 
@@ -14,8 +11,18 @@ except ImportError:
     import midaGAN
 
 from midaGAN.inferer import Inferer
+from midaGAN.conf.builders import build_inference_conf
+from midaGAN.utils import communication, environment
 # -------------------------------------
 
-if __name__ == '__main__':
-    inferer = Inferer()
+def main():
+    communication.init_distributed()  # inits distributed mode if ran with torch.distributed.launch
+
+    conf = build_inference_conf()
+    #environment.setup_training_logging(conf) TODO: for inference
+
+    inferer = Inferer(conf)
     inferer.run()
+
+if __name__ == '__main__':
+    main()

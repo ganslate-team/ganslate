@@ -7,14 +7,13 @@ from monai.inferers import SlidingWindowInferer
 
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
-from midaGAN.conf.builders import build_inference_conf
 from midaGAN.utils import io
 
 
 class Inferer():
-    def __init__(self):
+    def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
-        self.conf = build_inference_conf()
+        self.conf = conf
         self.data_loader = build_loader(self.conf)
         self.model = build_gan(self.conf)
         self.device = self.model.device
@@ -23,7 +22,7 @@ class Inferer():
     def run(self):
         has_metadata = False
         inference_dir = self.conf.logging.inference_dir
-        io.mkdirs(inference_dir) # TODO: should be done by InferenceTracker
+        io.mkdirs(inference_dir) # TODO: should be done by InferenceTracker or setup_logging
 
         for data in self.data_loader:
             # Sometimes, metadata is necessary to be able to store the generated outputs.

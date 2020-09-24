@@ -33,9 +33,6 @@ class BaseGAN(ABC):
             -- self.visual_names (str list):        specify the images that you want to display and save.
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
-        # It's ran with torch.distributed.launch if there is 'WORLD_SIZE' environment variable
-        if os.environ.get('WORLD_SIZE', None):
-            communication.init_distributed()
 
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
