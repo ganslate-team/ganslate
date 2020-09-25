@@ -6,7 +6,7 @@ batch_size: 1
 
 logging:
     checkpoint_dir: "./checkpoints/ex3/"
-    wandb: False
+    wandb: None
     tensorboard: False
     log_freq: 10
     checkpoint_freq: 1000

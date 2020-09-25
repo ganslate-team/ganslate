@@ -3,7 +3,7 @@ import logging
 import time
 
 import torch
-from torchvision.utils import save_image
+import torchvision
 from omegaconf import OmegaConf
 
 from midaGAN.utils import communication, io
@@ -15,17 +15,19 @@ class ExperimentTracker:
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
         self.checkpoint_dir = conf.logging.checkpoint_dir
+
+        self.wandb = None
+        self.tensorboard = None
         if communication.is_main_process():
             io.mkdirs(Path(self.checkpoint_dir) / 'images')
             self._save_config(conf)
-
-            self.wandb = None
+            
             if conf.logging.wandb:
                 self.wandb = WandbTracker(conf)
-                
-            self.tensorboard = None
+
             if conf.logging.tensorboard:
                 self.tensorboard = TensorboardTracker(conf)
+
 
         self.batch_size = conf.batch_size
         self.log_freq = conf.logging.log_freq
@@ -78,10 +80,10 @@ class ExperimentTracker:
                 visuals = self._visuals_to_combined_2d_grid(visuals)
                 self._save_image(visuals)
 
-                if self.wandb is not None:
+                if self.wandb:
                     self.wandb.log_iter(self.iter_idx, learning_rates, losses, visuals)
 
-                if self.tensorboard is not None:
+                if self.tensorboard:
                     self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals)
 
     def _log_message(self, learning_rates, losses):
@@ -97,14 +99,13 @@ class ExperimentTracker:
     def _visuals_to_combined_2d_grid(self, visuals):
         # if images are 3D (5D tensors)
         if len(list(visuals.values())[0].shape) == 5: # TODO make nicer
-            # Concatenate slices that are at the same level from different visuals along width (each tensor from visuals.values() is NxCxDxHxW, hence dim=4)
+            # Concatenate slices that are at the same level from different visuals along 
+            # width (each tensor from visuals.values() is NxCxDxHxW, hence dim=4)
             combined_slices = torch.cat(tuple(visuals.values()), dim=4) 
             combined_slices = combined_slices[0] # we plot a single volume from the batch
             combined_slices = combined_slices.permute(1,0,2,3) # CxDxHxW -> DxCxHxW
-
             # Concatenate all combined slices along height to form a single 2d image (tensors in tuple are CxHxW, hence dim=1)
             combined_image = torch.cat(tuple(combined_slices), dim=1) 
-            
         else:
             # NxCxHxW
             combined_image = torch.cat(tuple(visuals.values()), dim=3)
@@ -117,10 +118,10 @@ class ExperimentTracker:
     def _save_image(self, visuals):
         name, image = visuals['name'], visuals['image']
         file_path = Path(self.checkpoint_dir) / f"images/{self.iter_idx}_{name}.png" 
-        save_image(image, file_path)
+        torchvision.utils.save_image(image, file_path)
 
     def close(self):
-        if communication.is_main_process() and self.tensorboard is not None:
+        if communication.is_main_process() and self.tensorboard:
             self.tensorboard.close()
 
 

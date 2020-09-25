@@ -6,7 +6,8 @@ batch_size: 1
 
 logging:
     checkpoint_dir: ./checkpoints/cbct_ex2/
-    wandb: True
+    wandb:
+        project: "my-project"
     log_freq: 50
     checkpoint_freq: 10000
 

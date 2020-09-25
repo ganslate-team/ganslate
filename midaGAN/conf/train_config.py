@@ -15,16 +15,19 @@ class OptimizerConfig:
     lambda_inverse:  float = 0
     proportion_ssim: float = 0.84
 
+@dataclass
+class WandbConfig:
+    project: str = "my-project"
+    entity: Optional[str] = None
 
 @dataclass
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
     checkpoint_dir:  str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
-    #inference_dir:   Optional[str] = None  # Path where the inference will store the results
     log_freq:        int = 50
     checkpoint_freq: int = 2000
-    wandb:           bool = False
     tensorboard:     bool = False
+    wandb:           Optional[WandbConfig] = None
 
 
 @dataclass

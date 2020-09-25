@@ -26,11 +26,11 @@ def build_loader(conf):
                                          num_replicas=communication.get_world_size(),
                                          rank=communication.get_local_rank()) # TODO: verify that this indeed should be local rank and not rank
 
-    loader =  DataLoader(dataset,
-                         batch_size=conf.batch_size,
-                         sampler=sampler,
-                         num_workers=conf.dataset.num_workers,
-                         pin_memory=True)
+    loader = DataLoader(dataset,
+                        batch_size=conf.batch_size,
+                        sampler=sampler,
+                        num_workers=conf.dataset.num_workers,
+                        pin_memory=True)
     return loader
 
 def build_dataset(conf):
