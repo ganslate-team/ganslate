@@ -5,7 +5,6 @@ from collections import OrderedDict
 import logging
 
 import torch
-from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from apex import amp
 from midaGAN.nn.utils import get_scheduler
@@ -120,8 +119,8 @@ class BaseGAN(ABC):
             loss.backward(retain_graph=retain_graph)
 
     def parallelize_networks(self):
-        """Wrap networks in DataParallel in case of multi-GPU setup, or in DistributedDataParallel if
-        using a distributed setup. No parallelization is done in case of single-GPU setup.
+        """Wrap networks in DistributedDataParallel if using a distributed multi-GPU setup. 
+        No parallelization is done in case of single-GPU setup.
         """
         for name in self.networks.keys():
             if torch.distributed.is_initialized():
@@ -132,7 +131,9 @@ class BaseGAN(ABC):
                                                               output_device=self.device,
                                                               broadcast_buffers=False)
             elif self.conf.use_cuda and torch.cuda.device_count() > 0:
-                self.networks[name] = DataParallel(self.networks[name])
+                message = ("Multi-GPU runs must be launched in distributed mode using `torch.distributed.launch`."
+                           " Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID> to use a single GPU if multiple are present.")
+                raise RuntimeError(message)
 
     def convert_to_mixed_precision(self):
         """Initializes Nvidia Apex Mixed Precision
@@ -178,7 +179,7 @@ class BaseGAN(ABC):
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
-            if isinstance(net, (DataParallel, DistributedDataParallel)):
+            if isinstance(net, DistributedDataParallel):
                 checkpoint[name] = net.module.state_dict()  # e.g. checkpoint["D_A"]
             else:
                 checkpoint[name] = net.state_dict()
