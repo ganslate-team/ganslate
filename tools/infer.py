@@ -19,7 +19,7 @@ def main():
     communication.init_distributed()  # inits distributed mode if ran with torch.distributed.launch
 
     conf = build_inference_conf()
-    #environment.setup_training_logging(conf) TODO: for inference
+    environment.setup_logging_with_config(conf)
 
     inferer = Inferer(conf)
     inferer.run()

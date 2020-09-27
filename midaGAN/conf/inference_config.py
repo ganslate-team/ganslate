@@ -9,9 +9,6 @@ from midaGAN.conf.base_configs import *
 class LoggingConfig:
     inference_dir:  str = MISSING  # Path where the inference will store the results
     checkpoint_dir: str = MISSING  # Where the checkpoints and training config yaml were saved
-    log_freq:       int = 50
-    #wandb:          bool = False
-    #tensorboard:    bool = False
 
 
 @dataclass

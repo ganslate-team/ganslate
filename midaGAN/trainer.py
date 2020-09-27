@@ -6,7 +6,7 @@ from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
 
 from midaGAN.utils import communication
-from midaGAN.utils.logging.experiment_tracker import ExperimentTracker
+from midaGAN.utils.trackers.training_tracker import TrainingTracker
 from midaGAN.utils.summary import gan_summary
 
 class Trainer():
@@ -14,7 +14,7 @@ class Trainer():
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
 
-        self.tracker = ExperimentTracker(self.conf)
+        self.tracker = TrainingTracker(self.conf)
 
         self.data_loader = build_loader(self.conf)
         self.model = build_gan(self.conf)
@@ -26,9 +26,8 @@ class Trainer():
         self.checkpoint_freq = self.conf.logging.checkpoint_freq
 
     def run(self):
-        if communication.is_main_process():
-            self.logger.info(gan_summary(self.model, self.data_loader))
-            self.logger.info('Training started.')
+        self.logger.info(gan_summary(self.model, self.data_loader))
+        self.logger.info('Training started.')
 
         self.tracker.start_dataloading_timer()
         for i, data in zip(self.iters, self.data_loader):
@@ -57,7 +56,7 @@ class Trainer():
 
     def _save_checkpoint(self):
         # TODO: save on cancel
-        if communication.is_main_process():
+        if communication.get_local_rank() == 0:
             if self.iter_idx % self.checkpoint_freq == 0:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx)

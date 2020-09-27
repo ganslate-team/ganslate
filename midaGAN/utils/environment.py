@@ -16,18 +16,25 @@ from midaGAN.utils import io, communication
 
 logger = logging.getLogger(__name__)
 
-def setup_training_logging(conf, debug=False):
+def setup_logging_with_config(conf, debug=False):
     use_stdout = communication.get_local_rank() == 0 or debug
     log_level = 'INFO' if not debug else 'DEBUG'
 
-    checkpoint_dir = conf.logging.checkpoint_dir
-    io.mkdirs(checkpoint_dir)
-    filename = Path(checkpoint_dir) / 'log.txt'
+    if conf.gan.is_train:
+        output_dir = Path(conf.logging.checkpoint_dir).resolve()
+        saving_to_message = f'Saving checkpoints, logs and config to: {output_dir}'
+        filename = Path(output_dir) / 'training_log.txt'
+    else:
+        output_dir = Path(conf.logging.inference_dir).resolve()
+        saving_to_message = f'Saving inference outputs, logs and config to: {output_dir}'
+        filename = Path(output_dir) / 'inference_log.txt'
+
+    io.mkdirs(output_dir)
 
     setup_logging(use_stdout, filename, log_level=log_level)
 
-    logger.info(f'Configuration: {OmegaConf.to_yaml(conf)}')
-    logger.info(f'Saving checkpoints, logs and config to: {checkpoint_dir}')
+    logger.info(f'Configuration:\n{OmegaConf.to_yaml(conf)}')
+    logger.info(saving_to_message)
     logger.info(f'Python version: {sys.version.strip()}')
     logger.info(f'PyTorch version: {torch.__version__}')  # noqa
     logger.info(f'CUDA {torch.version.cuda} - cuDNN {torch.backends.cudnn.version()}')

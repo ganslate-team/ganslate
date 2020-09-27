@@ -1,65 +1,31 @@
 from pathlib import Path
 import logging
-import time
 
 import torch
 import torchvision
 from omegaconf import OmegaConf
 
 from midaGAN.utils import communication, io
-from midaGAN.utils.logging.wandb_tracker import WandbTracker
-from midaGAN.utils.logging.tensorboard_tracker import TensorboardTracker
+from midaGAN.utils.trackers.base_tracker import BaseTracker
+from midaGAN.utils.trackers.tensorboard_tracker import TensorboardTracker
+from midaGAN.utils.trackers.wandb_tracker import WandbTracker
 
 
-class ExperimentTracker:
+class TrainingTracker(BaseTracker):
     def __init__(self, conf):
+        super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
-        self.checkpoint_dir = conf.logging.checkpoint_dir
+        self.log_freq = conf.logging.log_freq
 
         self.wandb = None
         self.tensorboard = None
-        if communication.is_main_process():
-            io.mkdirs(Path(self.checkpoint_dir) / 'images')
-            self._save_config(conf)
-            
+        if communication.get_local_rank() == 0:
+            io.mkdirs(Path(self.output_dir) / 'images')
+
             if conf.logging.wandb:
                 self.wandb = WandbTracker(conf)
-
             if conf.logging.tensorboard:
                 self.tensorboard = TensorboardTracker(conf)
-
-
-        self.batch_size = conf.batch_size
-        self.log_freq = conf.logging.log_freq
-        self.iter_idx = None
-        self.iter_end_time = None
-        self.iter_start_time = None
-        self.t_data = None
-        self.t_comp = None
-
-    def _save_config(self, conf):
-        config_path = Path(self.checkpoint_dir) / "config.yaml"
-        with open(config_path, "w") as file:
-            file.write(OmegaConf.to_yaml(conf))
-
-    def set_iter_idx(self, iter_idx):
-        self.iter_idx = iter_idx
-
-    def start_computation_timer(self):
-        self.iter_start_time = time.time()
-
-    def start_dataloading_timer(self):
-        self.iter_end_time = time.time()
-    
-    def end_computation_timer(self):
-        self.t_comp = (time.time() - self.iter_start_time) / self.batch_size
-        # reduce computational time data point (avg) and send to the process of rank 0
-        self.t_comp = communication.reduce(self.t_comp, average=True, all_reduce=False)
-
-    def end_dataloading_timer(self):
-        self.t_data = self.iter_start_time - self.iter_end_time # is it per sample or per batch?
-        # reduce data loading per data point (avg) and send to the process of rank 0
-        self.t_data = communication.reduce(self.t_data, average=True, all_reduce=False)
 
     def log_iter(self, learning_rates, losses, visuals):
         """Parameters: # TODO: update this
@@ -68,15 +34,14 @@ class ExperimentTracker:
             t_comp (float) -- computational time per data point (normalized by batch_size)
             t_data (float) -- data loading time per data point (normalized by batch_size)
         """
-
         if self.iter_idx % self.log_freq == 0:      
             visuals = {k: v for k, v in visuals.items() if v is not None}
             losses = {k: v for k, v in losses.items() if v is not None}
             losses = communication.reduce(losses, average=True, all_reduce=False) # reduce losses (avg) and send to the process of rank 0
 
-            if communication.is_main_process():
-                self._log_message(learning_rates, losses) 
-
+            self._log_message(learning_rates, losses) 
+            
+            if communication.get_local_rank() == 0:
                 visuals = self._visuals_to_combined_2d_grid(visuals)
                 self._save_image(visuals)
 
@@ -117,11 +82,11 @@ class ExperimentTracker:
 
     def _save_image(self, visuals):
         name, image = visuals['name'], visuals['image']
-        file_path = Path(self.checkpoint_dir) / f"images/{self.iter_idx}_{name}.png" 
+        file_path = Path(self.output_dir) / f"images/{self.iter_idx}_{name}.png" 
         torchvision.utils.save_image(image, file_path)
 
     def close(self):
-        if communication.is_main_process() and self.tensorboard:
+        if communication.get_local_rank() == 0 and self.tensorboard:
             self.tensorboard.close()
 
 

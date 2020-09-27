@@ -130,7 +130,7 @@ class BaseGAN(ABC):
                 self.networks[name] = DistributedDataParallel(self.networks[name],
                                                               device_ids=[self.device], 
                                                               output_device=self.device,
-                                                              broadcast_buffers=False) # TODO: =True? 
+                                                              broadcast_buffers=False)
             elif self.conf.use_cuda and torch.cuda.device_count() > 0:
                 self.networks[name] = DataParallel(self.networks[name])
 
@@ -198,7 +198,7 @@ class BaseGAN(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = Path(self.checkpoint_dir) / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.checkpoint_dir).resolve() / f"{iter_idx}_checkpoint.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.logger.info(f"Loaded the checkpoint from `{checkpoint_path}`")
         

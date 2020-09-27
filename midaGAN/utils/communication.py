@@ -78,16 +78,6 @@ def get_local_rank() -> int:
     return int(os.environ['LOCAL_RANK'])
 
 
-def is_main_process() -> bool:
-    """
-    Simple wrapper around get_rank().
-    Returns
-    -------
-    bool
-    """
-    return get_rank() == 0
-
-
 def get_world_size() -> int:
     """
     Get number of compute device in the world, returns 1 in case multi device is not initialized.
