@@ -3,7 +3,9 @@ import wandb
 
 class WandbTracker:
     def __init__(self, conf):
-        wandb.init(project="my-project", config=dict(conf)) # TODO: project and organization from conf
+        project = conf.logging.wandb.project
+        entity = conf.logging.wandb.entity
+        wandb.init(project=project, entity=entity, config=dict(conf)) # TODO: project and organization from conf
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals):
         """TODO"""

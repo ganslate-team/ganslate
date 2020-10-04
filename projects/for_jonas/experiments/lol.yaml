@@ -30,7 +30,7 @@ discriminator:
     n_layers: 5
 
 logging:
-    wandb: False
+    wandb: None
     tensorboard: False
     log_freq: 10
     checkpoint_freq: 1000

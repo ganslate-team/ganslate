@@ -1,4 +1,4 @@
-from pathlib import Path, PosixPath
+from pathlib import Path
 import json
 
 def mkdirs(*paths):
@@ -13,10 +13,7 @@ def make_dataset_of_files(root, extensions=['.npy']):
     return sorted(paths)
     
 def has_extension(file, extensions):
-    if isinstance(file, str):
-        return any(file.endswith(ext) for ext in extensions)
-    elif isinstance(file, PosixPath):
-        return any(ext in extensions for ext in file.suffixes)
+    return any(ext in extensions for ext in Path(file).suffixes)
 
 def make_dataset_of_directories(root, extensions=['.npy']):
     """The root of dataset contains folders for each data point. Each data point folder has to have

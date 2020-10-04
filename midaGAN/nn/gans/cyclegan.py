@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import itertools
 from apex import amp
 
-from midaGAN.utils.image_pool import ImagePool
+from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
 from midaGAN.nn.gans.basegan import BaseGAN

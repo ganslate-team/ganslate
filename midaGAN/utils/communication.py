@@ -14,16 +14,18 @@ logger = logging.getLogger(__name__)
 
 
 def init_distributed():
-    num_gpu = int(os.environ.get('WORLD_SIZE', 1))
-    if num_gpu > 1:
-        torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
-        torch.distributed.init_process_group(
-            backend='nccl', init_method='env://'
-        )
-        synchronize()
-        logger.info(f'Number of GPUs available in world: {num_gpu}.')
-    else:
-        raise ValueError("Distributed ON but but running single process") # TODO make nicer
+    """Initialize distributed mode if ran with `torch.distributed.launch --use_env`"""
+    if os.environ.get('WORLD_SIZE', None):
+        num_gpu = int(os.environ.get('WORLD_SIZE', 1))
+        if num_gpu > 1:
+            torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
+            torch.distributed.init_process_group(
+                backend='nccl', init_method='env://'
+            )
+            synchronize()
+            logger.info(f'Number of GPUs available in world: {num_gpu}.')
+        else:
+            raise ValueError("Distributed ON but but running single process") # TODO make nicer
 
 
 def synchronize():
@@ -74,16 +76,6 @@ def get_local_rank() -> int:
         return 0
 
     return int(os.environ['LOCAL_RANK'])
-
-
-def is_main_process() -> bool:
-    """
-    Simple wrapper around get_rank().
-    Returns
-    -------
-    bool
-    """
-    return get_rank() == 0
 
 
 def get_world_size() -> int:

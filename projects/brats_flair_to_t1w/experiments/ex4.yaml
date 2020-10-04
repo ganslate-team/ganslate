@@ -6,7 +6,8 @@ mixed_precision: True
 
 logging:
     checkpoint_dir: "./checkpoints/brats_ex4"
-    wandb: True
+    wandb:
+        project: "my-project"
     log_freq: 50
     checkpoint_freq: 10000
 

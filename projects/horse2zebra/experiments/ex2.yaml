@@ -6,7 +6,8 @@ mixed_precision: False
 
 logging:
     checkpoint_dir: "./checkpoints/horse2zebra_ex2"
-    wandb: True
+    wandb:
+        project: "my-project"
     log_freq: 50
     checkpoint_freq: 20000
 

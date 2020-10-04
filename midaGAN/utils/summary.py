@@ -7,7 +7,6 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 
 from collections import OrderedDict
@@ -23,7 +22,7 @@ def gan_summary(gan, dataloader):
 
     logged_networks = []
     for name, net in gan.networks.items():
-        if isinstance(net, (DataParallel, DistributedDataParallel)):
+        if isinstance(net, DistributedDataParallel):
             net = net.module
         # Networks of the same network class are output only once. E.g. G_A and G_B, only one logged.
         if str(type(net)) not in logged_networks:

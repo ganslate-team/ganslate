@@ -5,7 +5,6 @@ from collections import OrderedDict
 import logging
 
 import torch
-from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from apex import amp
 from midaGAN.nn.utils import get_scheduler
@@ -33,9 +32,6 @@ class BaseGAN(ABC):
             -- self.visual_names (str list):        specify the images that you want to display and save.
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
-        # It's ran with torch.distributed.launch if there is 'WORLD_SIZE' environment variable
-        if os.environ.get('WORLD_SIZE', None):
-            communication.init_distributed()
 
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
@@ -123,8 +119,8 @@ class BaseGAN(ABC):
             loss.backward(retain_graph=retain_graph)
 
     def parallelize_networks(self):
-        """Wrap networks in DataParallel in case of multi-GPU setup, or in DistributedDataParallel if
-        using a distributed setup. No parallelization is done in case of single-GPU setup.
+        """Wrap networks in DistributedDataParallel if using a distributed multi-GPU setup. 
+        No parallelization is done in case of single-GPU setup.
         """
         for name in self.networks.keys():
             if torch.distributed.is_initialized():
@@ -133,9 +129,11 @@ class BaseGAN(ABC):
                 self.networks[name] = DistributedDataParallel(self.networks[name],
                                                               device_ids=[self.device], 
                                                               output_device=self.device,
-                                                              broadcast_buffers=False) # TODO: =True? 
+                                                              broadcast_buffers=False)
             elif self.conf.use_cuda and torch.cuda.device_count() > 0:
-                self.networks[name] = DataParallel(self.networks[name])
+                message = ("Multi-GPU runs must be launched in distributed mode using `torch.distributed.launch`."
+                           " Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID> to use a single GPU if multiple are present.")
+                raise RuntimeError(message)
 
     def convert_to_mixed_precision(self):
         """Initializes Nvidia Apex Mixed Precision
@@ -181,7 +179,7 @@ class BaseGAN(ABC):
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
-            if isinstance(net, (DataParallel, DistributedDataParallel)):
+            if isinstance(net, DistributedDataParallel):
                 checkpoint[name] = net.module.state_dict()  # e.g. checkpoint["D_A"]
             else:
                 checkpoint[name] = net.state_dict()
@@ -201,9 +199,9 @@ class BaseGAN(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = Path(self.checkpoint_dir) / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.checkpoint_dir).resolve() / f"{iter_idx}_checkpoint.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
-        self.logger.info(f"Loaded the checkpoint from {checkpoint_path}")
+        self.logger.info(f"Loaded the checkpoint from `{checkpoint_path}`")
         
         # load networks
         for name in self.networks.keys():
@@ -222,10 +220,13 @@ class BaseGAN(ABC):
                 self.logger.warning("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
         
         # load optimizers   
-        # TODO: option not to load the optimizers. Useful if a training was completed or if scheduler brought optimizers' LR lower than wanted
         if self.is_train:
-            self.optimizers['G'].load_state_dict(checkpoint['optimizer_G']) 
-            self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
+            if self.conf.load_checkpoint.reset_optimizers:
+                self.logger.info("Optimizers' state_dicts were not loaded. Optimizers starting from scratch.")
+            else:
+                self.logger.info("Optimizers' state_dicts are loaded from the checkpoint.")
+                self.optimizers['G'].load_state_dict(checkpoint['optimizer_G']) 
+                self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
 
     def set_requires_grad(self, networks, requires_grad=False):
         """Set requies_grad=False for all the networks to avoid unnecessary computations

@@ -7,13 +7,8 @@ from midaGAN.conf.base_configs import *
 
 @dataclass
 class LoggingConfig:
-    #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
-    checkpoint_dir:  str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
-    inference_dir:   Optional[str] = None  # Path where the inference will store the results
-    log_freq:        int = 20
-    #checkpoint_freq: int = 50
-    #wandb:           bool = False
-    #tensorboard:     bool = False
+    inference_dir:  str = MISSING  # Path where the inference will store the results
+    checkpoint_dir: str = MISSING  # Where the checkpoints and training config yaml were saved
 
 
 @dataclass
@@ -32,7 +27,7 @@ class SlidingWindowConfig:
 @dataclass
 class InferenceConfig(BaseConfig):
     load_checkpoint: LoadCheckpointConfig = LoadCheckpointConfig()
-    logging:        LoggingConfig = LoggingConfig()
-    sliding_window: Optional[SlidingWindowConfig] = None
+    logging:         LoggingConfig = LoggingConfig()
+    sliding_window:  Optional[SlidingWindowConfig] = None
 
 

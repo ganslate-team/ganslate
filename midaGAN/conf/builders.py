@@ -17,7 +17,7 @@ def build_inference_conf():
         inference_conf = cli
 
     # Fetch the config that was used during training of this specific run
-    train_conf = Path(inference_conf.logging.checkpoint_dir) / "config.yaml"
+    train_conf = Path(inference_conf.logging.checkpoint_dir) / "training_config.yaml"
     train_conf = OmegaConf.load(str(train_conf))
 
     # Copy the run-specific options that are important for inference
