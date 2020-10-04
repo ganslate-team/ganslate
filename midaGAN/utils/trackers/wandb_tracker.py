@@ -1,11 +1,15 @@
 
 import wandb
+from omegaconf import OmegaConf
 
 class WandbTracker:
     def __init__(self, conf):
         project = conf.logging.wandb.project
         entity = conf.logging.wandb.entity
-        wandb.init(project=project, entity=entity, config=dict(conf)) # TODO: project and organization from conf
+
+        config_dict = OmegaConf.to_container(conf, resolve=True)
+
+        wandb.init(project=project, entity=entity, config=config_dict) # TODO: project and organization from conf
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals):
         """TODO"""
