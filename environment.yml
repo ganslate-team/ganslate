@@ -47,7 +47,6 @@ dependencies:
   - pip:
     - absl-py==0.10.0
     - aiohttp==3.6.2
-    - apex==0.1
     - async-timeout==3.0.1
     - attrs==20.2.0
     - cachetools==4.1.1
