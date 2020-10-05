@@ -14,7 +14,7 @@
 import torch
 import torch.nn.functional as F
 
-__all__ = ('batch_ssim', 'ms_ssim', 'SSIM', 'MS_SSIM',)
+__all__ = ('batch_ssim', 'ms_ssim', 'SSIM', 'MS_SSIM', 'ThreeComponentSSIM')
 
 def are_tensors_half_or_float(*args):
     for tensor in args:
@@ -137,7 +137,7 @@ def _ssim(X, Y,
 
     ssim_per_channel = torch.flatten(ssim_map, 2).mean(-1)
     cs = torch.flatten(cs_map, 2).mean(-1)
-    return ssim_per_channel, cs
+    return ssim_per_channel, cs, ssim_map
 
 
 def batch_ssim(input, target,
@@ -183,18 +183,19 @@ def batch_ssim(input, target,
         win = _fspecial_gauss_1d(win_size, win_sigma)
         win = win.repeat(input.shape[1], 1, 1, 1)
 
-    ssim_per_channel, cs = _ssim(input, target,
+    ssim_per_channel, cs, ssim_map = _ssim(input, target,
                                  data_range=data_range,
                                  win=win,
                                  size_average=False,
                                  K=K)
+
     if nonnegative_ssim:
         ssim_per_channel = torch.relu(ssim_per_channel)
 
     if reduction == 'mean':
         return ssim_per_channel.mean()
     else:
-        return ssim_per_channel.mean(1)
+        return ssim_map
 
 
 def ms_ssim(X, Y,
@@ -344,6 +345,87 @@ class MS_SSIM(torch.nn.Module):
                        reduction=self.reduction)
 
 
+class ThreeComponentSSIM(torch.nn.Module):
+    def __init__(self,
+                    data_range=255,
+                    win_size=11,
+                    win_sigma=1.5,
+                    channel=3,
+                    weights=None,
+                    K=(0.01, 0.03),
+                    reduction=None, multiscale=False, nonnegative_ssim=False):
+
+        r""" class for 3-Component SSIM
+        Args:
+            data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
+            size_average (bool, optional): if size_average=True, ssim of all images will be averaged as a scalar
+            win_size: (int, optional): the size of gauss kernel
+            win_sigma: (float, optional): sigma of normal distribution
+            channel (int, optional): input channels (default: 3)
+            weights (list, optional): weights for different levels
+            K (list or tuple, optional): scalar constants (K1, K2). Try a larger K2 constant (e.g. 0.4) if you get a negative or NaN results.
+        """
+        super().__init__()
+        self.win_size = win_size
+        self.win = _fspecial_gauss_1d(win_size, win_sigma).repeat(channel, 1, 1, 1)
+        self.reduction = reduction
+        self.data_range = data_range
+        self.weights = weights
+        self.K = K
+        self.multiscale = multiscale
+        self.nonnegative_ssim = nonnegative_ssim
+
+    def forward(self, X, Y):
+        """
+        :param X: Original Image, order is important for threshold computation
+        :param Y: Compared Image
+
+        Computations:
+        http://utw10503.utweb.utexas.edu/publications/2009/cl_spie09.pdf
+        """
+        if self.multiscale:
+            SSIM_map = ms_ssim(X, Y,
+                    data_range=self.data_range,
+                    win=self.win,
+                    weights=self.weights,
+                    K=self.K,
+                    reduction=self.reduction)
+        else:
+            SSIM_map = batch_ssim(X, Y,
+                        data_range=self.data_range,
+                        win=self.win,
+                        K=self.K,
+                        nonnegative_ssim=self.nonnegative_ssim,
+                        reduction=self.reduction)
+        
+
+
+        X_grad = gradient_image(X)
+        Y_grad = gradient_image(Y)
+
+        # SSIM_map changes shape due to convolution. Crop the values 
+        X_grad = X_grad[..., :SSIM_map.shape[-2], :SSIM_map.shape[-1]]
+        Y_grad = Y_grad[..., :SSIM_map.shape[-2], :SSIM_map.shape[-1]]
+
+        gmax = X_grad.max()
+        th1 = 0.12 * gmax
+        th2 = 0.06 * gmax
+
+        edge_mask = (X_grad > th1 ) | (Y_grad> th1)
+        smooth_mask = (X_grad < th2) & (Y_grad <= th1)
+        texture_mask = ~(edge_mask | smooth_mask)
+
+
+        edge_map = edge_mask * SSIM_map
+        smooth_map = smooth_mask * SSIM_map
+        texture_map = texture_mask * SSIM_map
+
+        return .5 * edge_map[edge_mask != 0].mean() + \
+                .25 * smooth_map[smooth_mask != 0].mean() + \
+                    .25 * texture_map[texture_mask != 0].mean()
+                
+
+
 if __name__ == "__main__":
     import SimpleITK as sitk
     import numpy as np
@@ -363,22 +445,25 @@ if __name__ == "__main__":
 
     channels_ssim = array_a.shape[0]
 
-    array_b = blur(array_b, sigma=3)
+    array_b = blur(array_b, sigma=7)
     
     tensor_a = torch.Tensor(array_a).unsqueeze(dim=0)
     tensor_b = torch.Tensor(array_b).unsqueeze(dim=0)
 
-    tensor_a = gradient_image(tensor_a)
-    tensor_b = gradient_image(tensor_b)
+    # tensor_a = gradient_image(tensor_a)
+    # tensor_b = gradient_image(tensor_b)
 
-    ssim = SSIM(channel=channels_ssim, data_range=1)
+
+    print(f"Tensor A max: {tensor_a.max()} min: {tensor_a.min()}")
+    print(f"Tensor B max: {tensor_b.max()} min: {tensor_b.min()}")
+
+    ssim = ThreeComponentSSIM(channel=channels_ssim, data_range=1)
     ssim_val = ssim(tensor_a, tensor_b)
-
 
     tensor_a = tensor_a.permute(1, 0, 2, 3)
     tensor_b = tensor_b.permute(1, 0, 2, 3)
     
-    save_image(tensor_a, "ssim_grad_a.png", padding=10)
-    save_image(tensor_b, "ssim_grad_b.png", padding=10)
+    save_image(tensor_a, "ssim_a.png", padding=10)
+    save_image(tensor_b, "ssim_b.png", padding=10)
 
     print(f"Calculated SSIM Value is : {ssim_val}")
