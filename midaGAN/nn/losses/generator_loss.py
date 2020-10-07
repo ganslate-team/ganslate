@@ -86,8 +86,8 @@ class CycleLoss:
                 logger.warning("Specified SSIM type not found, reverting to using default SSIM")
                 ssim_module = ssim.SSIM
 
-            self.ssim_criterion = ssim_module(data_range=1, # Dynamic range needs to be 1 for float32 types. 
-                                       channel=channels_ssim)
+            self.ssim_criterion = ssim_module(data_range=2, # Dynamic range needs to be 2 since the data is from -1 to 1.
+                                       channel=channels_ssim, nonnegative_ssim=True)
 
             # weights for addition of SSIM and L1 losses
             self.alpha = proportion_ssim

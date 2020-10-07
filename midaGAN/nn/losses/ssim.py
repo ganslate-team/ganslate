@@ -196,6 +196,7 @@ def batch_ssim(input, target,
 
     if nonnegative_ssim:
         ssim_per_channel = torch.relu(ssim_per_channel)
+        ssim_map = torch.relu(ssim_map)
 
     if reduction == 'mean':
         return ssim_per_channel.mean()
