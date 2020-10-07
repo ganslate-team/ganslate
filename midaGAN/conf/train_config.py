@@ -14,6 +14,7 @@ class OptimizerConfig:
     lambda_identity: float = 0
     lambda_inverse:  float = 0
     proportion_ssim: float = 0.84
+    ssim_type:       str = "SSIM" # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
 
 @dataclass
 class WandbConfig:
