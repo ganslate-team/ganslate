@@ -41,9 +41,7 @@ class BaseConfig:
     project_dir:     Optional[str] = None  # Needed if project-specific classes are to be imported 
 
     use_cuda:        bool = True    # Use CUDA i.e. GPU(s). [Default: True]
-    # Mixed precision
     mixed_precision: bool = False
-    opt_level:       str = "O1"
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING

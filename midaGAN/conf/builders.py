@@ -22,7 +22,7 @@ def build_inference_conf():
 
     # Copy the run-specific options that are important for inference
     train_to_inference_options = ["project_dir", "gan", "generator", 
-                                  "use_cuda", "mixed_precision", "opt_level"]
+                                  "use_cuda", "mixed_precision"]
     for key in train_to_inference_options:
         inference_conf[key] = train_conf[key]
 

@@ -6,7 +6,8 @@ import logging
 
 import torch
 from torch.nn.parallel import DistributedDataParallel
-from apex import amp
+from torch.cuda.amp import GradScaler
+
 from midaGAN.nn.utils import get_scheduler
 from midaGAN.utils import communication
 
@@ -44,6 +45,8 @@ class BaseGAN(ABC):
         self.optimizers = {}
         self.networks = {}
 
+        self.scaler = GradScaler(enabled=self.conf.mixed_precision)
+
         torch.backends.cudnn.benchmark = True
     
     def _specify_device(self):
@@ -54,9 +57,6 @@ class BaseGAN(ABC):
             return torch.device('cuda:0')  # non-distributed GPU training
         else:
             return torch.device('cpu')
-            
-    def _count_devices(self):
-        return int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
 
     @abstractmethod
     def set_input(self, input):
@@ -82,10 +82,7 @@ class BaseGAN(ABC):
             (2) Sets up schedulers 
             (3) Loads a checkpoint if continuing training or inferencing            
             (4) Applies parallelization to the model if possible
-        """
-        if self.conf.mixed_precision:
-            self.convert_to_mixed_precision()
-        
+        """        
         if self.is_train:
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
         else:
@@ -96,27 +93,22 @@ class BaseGAN(ABC):
         if self.conf.load_checkpoint:
             self.load_networks(self.conf.load_checkpoint.iter)
         
-        if self._count_devices() > 1:
+        num_devices = int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
+        if num_devices > 1:
             self.parallelize_networks()
 
         torch.cuda.empty_cache()
 
-    def backward(self, loss, optimizer, retain_graph=False, loss_id=0):
+    def backward(self, loss, retain_graph=False):
         """Run backward pass in a regular or mixed precision mode; called by methods <backward_D_basic> and <backward_G>.
         Parameters:
             loss (loss class) -- loss on which to perform backward pass
-            optimizer (optimizer class) -- mixed precision scales the loss with its optimizer
             retain_graph (bool) -- specify if the backward pass should retain the graph
-            loss_id (int) -- when used in conjunction with the `num_losses` argument to amp.initialize, 
-                             enables Amp to use a different loss scale per loss. 
-                             By initializing Amp with `num_losses=1` and setting `loss_id=0` for each loss, 
-                             it will use a global scaler for all losses.
         """
-        if self.conf.mixed_precision:
-            with amp.scale_loss(loss, optimizer, loss_id) as scaled_loss:
-                scaled_loss.backward(retain_graph=retain_graph)
-        else:
-            loss.backward(retain_graph=retain_graph)
+        self.scaler.scale(loss).backward(retain_graph=retain_graph)
+
+    def optimizer_step(self, optimizer):
+        self.scaler.step(self.optimizers[optimizer])
 
     def parallelize_networks(self):
         """Wrap networks in DistributedDataParallel if using a distributed multi-GPU setup. 
@@ -131,37 +123,10 @@ class BaseGAN(ABC):
                                                               output_device=self.device,
                                                               broadcast_buffers=False)
             elif self.conf.use_cuda and torch.cuda.device_count() > 0:
-                message = ("Multi-GPU runs must be launched in distributed mode using `torch.distributed.launch`."
-                           " Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID> to use a single GPU if multiple are present.")
+                message = ("Multi-GPU runs must be launched in distributed mode using"
+                           " `torch.distributed.launch`. Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID>"
+                           " to use a single GPU if multiple are present.")
                 raise RuntimeError(message)
-
-    def convert_to_mixed_precision(self):
-        """Initializes Nvidia Apex Mixed Precision
-        Parameters:
-            opt_level (str) -- specifies Amp's optimization level. Accepted values are
-                               "O0", "O1", "O2", and "O3". Check Apex documentation.
-            num_losses -- Option to tell Amp in advance how many losses/backward passes you plan to use. 
-                          When used in conjunction with the `loss_id` argument to amp.scale_loss, enables Amp to use 
-                          a different loss scale per loss/backward pass, which can improve stability.
-                          If `num_losses=1`, Amp will still support multiple losses/backward passes, 
-                          but use a single global loss scale for all of them.
-        """
-        opt_level = self.conf.opt_level
-        networks = list(self.networks.values()) # fetch the networks
-
-        # initialize mixed precision on networks and, if training, on optimizers
-        if self.is_train:
-            num_losses = len(self.networks) # each network has its own backward pass
-            optimizers = list(self.optimizers.values())
-            networks, optimizers = amp.initialize(networks, optimizers, 
-                                                  opt_level=opt_level, num_losses=num_losses)
-        else:
-            networks = amp.initialize(networks, opt_level=opt_level)
-
-        # assigns back the returned mixed-precision networks and optimizers
-        self.networks = dict(zip(self.networks, networks))
-        if self.is_train:
-            self.optimizers = dict(zip(self.optimizers, optimizers))
 
     def update_learning_rate(self):
         """Update learning rates for all the networks; called at the end of every iteration"""
@@ -190,7 +155,7 @@ class BaseGAN(ABC):
 
         # save apex mixed precision
         if self.conf.mixed_precision:
-            checkpoint['amp'] = amp.state_dict()
+            checkpoint['grad_scaler'] = self.scaler.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
     
@@ -207,17 +172,15 @@ class BaseGAN(ABC):
         for name in self.networks.keys():
             self.networks[name].load_state_dict(checkpoint[name])
 
-        # load amp state    
-        # TODO: what about opt_level, does it matter if it's different from before?
-        # TODO: what if trained per-loss loss-scale and now using global or vice versa? Just reset it, i.e. ignore the amp state_dict?
+        # load GradScaler state
         if self.conf.mixed_precision:
-            if "amp" not in checkpoint:
+            if "grad_scaler" not in checkpoint:
                 self.logger.warning("This checkpoint was not trained using mixed precision.") 
             else:
-                amp.load_state_dict(checkpoint['amp'])
+                self.scaler.load_state_dict(checkpoint['grad_scaler'])
         else:
-            if "amp" in checkpoint:
-                self.logger.warning("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
+            if "grad_scaler" in checkpoint:
+                self.logger.warning("Loading a model trained with mixed precision while mixed precision is off.")
         
         # load optimizers   
         if self.is_train:
