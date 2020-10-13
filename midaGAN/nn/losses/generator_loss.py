@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
-from midaGAN.nn.losses.ssim import SSIM
+import midaGAN.nn.losses.ssim as ssim
+
+import logging
+logger = logging.getLogger(__name__)
 
 # TODO: place it somewhere better
 def reshape_to_4D_if_5D(tensor):
@@ -15,6 +18,7 @@ class GeneratorLoss:
         lambda_identity = conf.optimizer.lambda_identity
         lambda_inverse = conf.optimizer.lambda_inverse
         proportion_ssim = conf.optimizer.proportion_ssim
+        ssim_type = conf.optimizer.ssim_type
 
         # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
         # so the number of channels equals to the number of slices in sampled patches.
@@ -24,7 +28,7 @@ class GeneratorLoss:
         # Cycle-consistency - L1, with optional weighted combination with SSIM
         self.criterion_cycle = CycleLoss(lambda_A, lambda_B, 
                                          proportion_ssim, 
-                                         channels_ssim=channels_ssim)
+                                         channels_ssim=channels_ssim, ssim_type=ssim_type)
 
         if lambda_identity > 0:
             self.criterion_idt = IdentityLoss(lambda_identity, lambda_A, lambda_B)
@@ -65,15 +69,26 @@ class GeneratorLoss:
 
 
 class CycleLoss:
-    def __init__(self, lambda_A, lambda_B, proportion_ssim, channels_ssim):
+    def __init__(self, lambda_A, lambda_B, proportion_ssim, channels_ssim, ssim_type):
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B
 
+
+
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
-            self.ssim_criterion = SSIM(data_range=2, # Dynamic range, data is between -1 and 1
-                                       channel=channels_ssim,
-                                       K=(0.1, 0.4)) 
+            
+            if hasattr(ssim, ssim_type):
+                logger.info(f"{ssim_type} set as SSIM loss function")
+
+                ssim_module = getattr(ssim, ssim_type)
+            else:
+                logger.warning("Specified SSIM type not found, reverting to using default SSIM")
+                ssim_module = ssim.SSIM
+
+            self.ssim_criterion = ssim_module(data_range=1, 
+                                       channel=channels_ssim, nonnegative_ssim=True)
+
             # weights for addition of SSIM and L1 losses
             self.alpha = proportion_ssim
             self.beta  = 1 - proportion_ssim 
@@ -93,9 +108,17 @@ class CycleLoss:
             rec_A = reshape_to_4D_if_5D(rec_A)
             rec_B = reshape_to_4D_if_5D(rec_B)
 
+            # Data range needs to be positive and normalized
+            # https://github.com/VainF/pytorch-msssim#2-normalized-input
+            ssim_real_A =  (real_A + 1)/2
+            ssim_real_B = (real_B + 1)/2
+
+            ssim_rec_A = (rec_A + 1)/2
+            ssim_rec_B = (rec_B + 1)/2
+
             # (1-SSIM) because the more similar the images are, the higher value will SSIM give (max 1, min -1)
-            loss_ssim_A = 1 - self.ssim_criterion(rec_A, real_A) 
-            loss_ssim_B = 1 - self.ssim_criterion(rec_B, real_B)
+            loss_ssim_A = 1 - self.ssim_criterion(ssim_real_A, ssim_rec_A) 
+            loss_ssim_B = 1 - self.ssim_criterion(ssim_real_B, ssim_rec_B)
 
             # weighted sum of SSIM and L1 losses for both forward and backward cycle losses
             loss_cycle_A = self.alpha * loss_ssim_A + self.beta * loss_cycle_A  
