@@ -13,7 +13,9 @@ def make_dataset_of_files(root, extensions=['.npy']):
     return sorted(paths)
     
 def has_extension(file, extensions):
-    return any(ext in extensions for ext in Path(file).suffixes)
+    suffix = Path(file).suffixes 
+    suffix = "".join(suffix)  # join necessary to get ".nii.gz" and similar suffixes properly
+    return any(ext in suffix for ext in extensions)
 
 def make_dataset_of_directories(root, extensions=['.npy']):
     """The root of dataset contains folders for each data point. Each data point folder has to have

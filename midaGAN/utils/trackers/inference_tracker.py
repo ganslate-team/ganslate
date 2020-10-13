@@ -13,8 +13,9 @@ class InferenceTracker(BaseTracker):
 
     def log_message(self, iter_idx, data_loader):
         iter_idx *= communication.get_world_size()
-        len_dataset = len(data_loader.dataset)
-        # In case of DDP, if (len_dataset % number of processes != 0), it will show more iterations than there really are
+        # Get the len of dataset, not dataloader, since each DDP loader only has a portion of the dataset
+        len_dataset = len(data_loader.dataset)  
+        # In case of DDP, if (len_dataset % number of processes != 0), it will show more iters than there are
         if iter_idx > len_dataset:  
             iter_idx = len_dataset
         message = f"{iter_idx}/{len_dataset} - loading: {self.t_data:.2f}s"
