@@ -1,6 +1,7 @@
 
 import os
 import logging
+import torch
 
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
@@ -14,9 +15,11 @@ class Trainer():
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
 
-
-        # Set reproducibility parameters
-        environment.set_seed(self.conf.seed)
+        torch.backends.cudnn.benchmark = True # https://stackoverflow.com/a/58965640
+        
+        # Set reproducibility parameters (random numbers and cudnn backend)
+        if self.conf.seed:
+            environment.set_seed(self.conf.seed)
 
         self.tracker = TrainingTracker(self.conf)
 

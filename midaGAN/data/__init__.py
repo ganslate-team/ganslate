@@ -16,8 +16,7 @@ def build_loader(conf):
 
     if conf.gan.is_train:
         sampler = InfiniteSampler(size=len(dataset), 
-                                  shuffle=conf.dataset.shuffle, 
-                                  seed=None) # TODO: seed to conf and other components? Remember that torch.Generator advises to use high values for seed, if the defines int is small should we multiply it by some factor?
+                                  shuffle=conf.dataset.shuffle)
     else:
         sampler = None
         if torch.distributed.is_initialized():

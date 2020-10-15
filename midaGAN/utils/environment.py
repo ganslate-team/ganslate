@@ -107,6 +107,7 @@ def set_seed(seed=0):
     np.random.seed(seed)
     random.seed(seed)
     
+    # https://pytorch.org/docs/stable/notes/randomness.html#cudnn
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     

@@ -43,8 +43,6 @@ class BaseGAN(ABC):
         self.losses = {}
         self.optimizers = {}
         self.networks = {}
-
-        torch.backends.cudnn.benchmark = True
     
     def _specify_device(self):
         if torch.distributed.is_initialized():

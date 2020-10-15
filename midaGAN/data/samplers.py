@@ -29,7 +29,7 @@ class InfiniteSampler(Sampler):
     or `range(size) + range(size) + ...` (if shuffle is False)
     """
 
-    def __init__(self, size: int, shuffle: bool = True, seed: Optional[int] = None):
+    def __init__(self, size: int, shuffle: bool = True):
         """
         Parameters
         ----------
@@ -37,16 +37,11 @@ class InfiniteSampler(Sampler):
             Length of the underlying dataset.
         shuffle : bool
             If true, the indices will be shuffled
-        seed : int
-            Initial seed of the shuffle, must be the same across all workers!
         """
         self._size = size
         assert size > 0
         self._shuffle = shuffle
-        if seed is None:
-            seed = communication.shared_random_seed()
-        self._seed = int(seed)
-
+        self._seed = communication.shared_random_seed()
         self._rank = communication.get_rank()
         self._world_size = communication.get_world_size()
 
