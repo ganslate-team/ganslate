@@ -88,7 +88,7 @@ def gaussian_filter(input, win):
     out = F.conv2d(out, win.transpose(2, 3), stride=1, padding=0, groups=C)
     return out
 
-
+    
 def _ssim(X, Y,
           data_range,
           win,
@@ -132,12 +132,18 @@ def _ssim(X, Y,
     sigma2_sq = compensation * (gaussian_filter(Y * Y, win) - mu2_sq)
     sigma12 = compensation * (gaussian_filter(X * Y, win) - mu1_mu2)
 
-    cs_map = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)  # set alpha=beta=gamma=1
-    ssim_map = ((2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1)) * cs_map
+    S1 = (2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1)
+    S2 = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)  # set alpha=beta=gamma=1
 
-    ssim_per_channel = torch.flatten(ssim_map, 2).mean(-1)
-    cs = torch.flatten(cs_map, 2).mean(-1)
-    return ssim_per_channel, cs, ssim_map
+    # SSIM Distance metric approximation from: https://ece.uwaterloo.ca/~z70wang/publications/TIP_SSIM_MathProperties.pdf
+    # Clamp to 2 because the max value can only be 2. Due to floating point errors it might sometimes cross it.
+    S = torch.clamp(S1 + S2, max=2)
+    D_map = torch.sqrt(2 - S)
+
+    D_per_channel = torch.flatten(D_map, 2).mean(-1)
+    cs = torch.flatten(S2, 2).mean(-1)
+    return D_per_channel, cs, D_map
+
 
 
 def batch_ssim(input, target,
@@ -458,7 +464,7 @@ if __name__ == "__main__":
     print(f"Tensor B max: {tensor_b.max()} min: {tensor_b.min()}")
 
     ssim = ThreeComponentSSIM(channel=channels_ssim, data_range=1)
-    ssim_val = ssim(tensor_a, tensor_b)
+    ssim_val = ssim(tensor_a, torch.ones_like(tensor_a))
 
     tensor_a = tensor_a.permute(1, 0, 2, 3)
     tensor_b = tensor_b.permute(1, 0, 2, 3)
