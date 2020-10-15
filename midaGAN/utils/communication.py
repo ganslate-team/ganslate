@@ -108,12 +108,13 @@ def shared_random_seed() -> int:
     they can use this shared seed to create one.
     """ 
     # torch.Generator advises to use a high values as seed, hence 2**31
-    seed = torch.randint(2 ** 31, (1,))
+    # The seed is reproducible when torch seed is set with `torch.manual_seed()`
+    seed = torch.randint(2 ** 31, (1,))  
     if torch.distributed.is_initialized():
         device = get_backend_compatible_device()
         seed = seed.to(device)
         torch.distributed.broadcast(seed, 0)
-    return seed
+    return int(seed)
 
 
 # ------------ Reduce and All Reduce --------------
