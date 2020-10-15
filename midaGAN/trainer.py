@@ -5,7 +5,7 @@ import logging
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
 
-from midaGAN.utils import communication
+from midaGAN.utils import communication, environment
 from midaGAN.utils.trackers.training_tracker import TrainingTracker
 from midaGAN.utils.summary import gan_summary
 
@@ -13,6 +13,10 @@ class Trainer():
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
+
+
+        # Set reproducibility parameters
+        environment.set_seed(self.conf.seed)
 
         self.tracker = TrainingTracker(self.conf)
 
