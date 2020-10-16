@@ -437,8 +437,8 @@ class ThreeComponentSSIM(torch.nn.Module):
         smooth_map = smooth_mask * SSIM_map
         texture_map = texture_mask * SSIM_map
 
-        return .5 * edge_map[edge_mask != 0].mean() + \
-                .25 * smooth_map[smooth_mask != 0].mean() + \
-                    .25 * texture_map[texture_mask != 0].mean()
+        return .4 * edge_map[edge_mask != 0].mean() + \
+                .4 * smooth_map[smooth_mask != 0].mean() + \
+                    .2 * texture_map[texture_mask != 0].mean()
                 
 
