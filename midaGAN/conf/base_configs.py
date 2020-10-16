@@ -39,7 +39,8 @@ class BaseGeneratorConfig:
 class BaseConfig:
     batch_size:      int = MISSING
     project_dir:     Optional[str] = None  # Needed if project-specific classes are to be imported 
-
+    
+    seed:           int = 0 #Seed for reproducibility!
     use_cuda:        bool = True    # Use CUDA i.e. GPU(s). [Default: True]
     # Mixed precision
     mixed_precision: bool = False
