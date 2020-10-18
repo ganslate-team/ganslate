@@ -7,7 +7,7 @@ def mkdirs(*paths):
 
 def make_dataset_of_files(root, extensions=['.npy']):
     """The root of dataset contains files of the given extension."""
-    root = Path(root)
+    root = Path(root).resolve()
     assert root.is_dir(), f"{root} is not a valid directory"
     paths = [root / file for file in root.iterdir() if has_extension(file, extensions)]
     return sorted(paths)
@@ -23,7 +23,7 @@ def make_dataset_of_directories(root, extensions=['.npy']):
     such folder. Useful when using a dataset that stores, for example, an image and a mask together
     in their own folder.
     """
-    root = Path(root)
+    root = Path(root).resolve()
     assert root.is_dir(), f"{root} is not a valid directory"
     paths = [root / folder for folder in root.iterdir() if (root / folder).is_dir()]
     paths = [folder for folder in paths if has_files_with_extension(folder, extensions)]
