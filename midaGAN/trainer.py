@@ -33,7 +33,7 @@ class Trainer():
         self.checkpoint_freq = self.conf.logging.checkpoint_freq
 
     def run(self):
-        self.logger.info(gan_summary(self.model, self.data_loader))
+        # self.logger.info(gan_summary(self.model, self.data_loader)) TODO: breaks 3D training with num_workers>0
         self.logger.info('Training started.')
 
         self.tracker.start_dataloading_timer()

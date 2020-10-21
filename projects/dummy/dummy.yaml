@@ -5,10 +5,10 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: "./checkpoints/ex1/"
-    wandb: None
+    checkpoint_dir: "./checkpoints/dummy/"
+    wandb: null
     tensorboard: False
-    log_freq: 10
+    log_freq: 1
     checkpoint_freq: 1000
 
 dataset: 
@@ -21,6 +21,7 @@ gan:
 generator:  
     name: "Vnet3D"
     use_memory_saving: False
+    in_channels: 1
 
 discriminator:  
     name: "PatchGAN3D"
