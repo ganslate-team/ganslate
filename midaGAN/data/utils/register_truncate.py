@@ -17,7 +17,7 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
                                                             moving_image=CT)
     except RuntimeError as e:
         if "Too many samples map outside moving image buffer" in e.message:
-            logger.info("Registration failed due to poor initial overlap. Passing the whole CT volume.") # happens extremely rarely
+            logger.warning("Registration failed due to poor initial overlap. Passing the whole CT volume.") # happens extremely rarely
             return CT
         else:
             raise e                                            
@@ -48,7 +48,7 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     end_slice = int(round(mean(z_corners[4:])))
     # When the registration fails, just return the original CT. Happens infrequently.
     if start_slice < 0:
-        logger.info("Registration failed as the at least one corner is below 0 in one of the axes. Passing the whole CT volume.")
+        logger.warning("Registration failed as the at least one corner is below 0 in one of the axes. Passing the whole CT volume.")
         return CT
     return CT[:, :, start_slice:end_slice]
 

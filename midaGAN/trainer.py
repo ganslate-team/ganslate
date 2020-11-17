@@ -15,8 +15,6 @@ class Trainer():
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
 
-        torch.backends.cudnn.benchmark = True # https://stackoverflow.com/a/58965640
-        
         # Set reproducibility parameters (random numbers and cudnn backend)
         if self.conf.seed:
             environment.set_seed(self.conf.seed)
