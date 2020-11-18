@@ -24,9 +24,9 @@ def volume_invalid_check_and_replace(volume, patch_size, replacement_paths=[], o
     volume or None
 
     """
-    
+
     if original_path is not None:
-        replacement_paths = replacement_paths.remove(original_path)
+        replacement_paths.remove(original_path)
 
     # Check if volume is smaller than patch size
     while sitk_utils.is_volume_smaller_than(volume, patch_size):
