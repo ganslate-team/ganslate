@@ -1,0 +1,45 @@
+project_dir: "./projects/nki_cervix_cbct_to_ct"
+use_cuda: True
+n_iters: 200000
+n_iters_decay: 0
+batch_size: 1
+
+logging:
+    checkpoint_dir: ./checkpoints/cbct_ex1/
+    wandb:
+        project: "NKI_CBCT_CT"
+    log_freq: 5
+    checkpoint_freq: 10000
+
+dataset: 
+    name: "CBCTtoCTDataset"
+    root: "/repos/Maastro/nki_cervix"
+    hounsfield_units_range: [-1000, 2000]
+    num_workers: 1
+    patch_size: [16, 128, 128]
+    
+gan:  
+    name: "PiCycleGAN"
+
+generator:
+  name: Vnet3D
+  in_channels: 1
+  use_memory_saving: False
+  use_inverse: True
+  is_separable: False
+  down_blocks: [2, 2, 3]
+  up_blocks: [3, 3, 3]
+
+discriminator:
+    name: "PatchGAN3D"
+    n_layers: 2
+    in_channels: 1
+
+optimizer:
+  lambda_A: 25.0
+  lambda_B: 25.0
+  lambda_identity: 0.0
+  lambda_inverse: 0.0
+  proportion_ssim: 0.84
+  lr_D: 0.0002
+  lr_G: 0.0004
