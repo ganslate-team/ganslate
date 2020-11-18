@@ -11,7 +11,7 @@ from midaGAN.utils import sitk_utils
 from midaGAN.data.utils import volume_invalid_check_and_replace
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
-from midaGAN.data.utils.fov_truncate import truncate_based_on_fov
+from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 import warnings
@@ -72,10 +72,12 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
-        # Replace with valid volumes if volumes are invalid
-        # TODO: 
-        CBCT = volume_invalid_check_and_replace(CBCT, self.patch_size, replacement_paths=paths_CBCT.copy(), original_path=path_CBCT)
-        CT = volume_invalid_check_and_replace(CT, self.patch_size, replacement_paths=paths_CT.copy(), original_path=path_CT)
+        # Replace with volumes from replacement paths if the volumes are smaller than patch size
+        CBCT = volume_invalid_check_and_replace(CBCT, self.patch_size, \
+                    replacement_paths=paths_CBCT.copy(), original_path=path_CBCT)
+
+        CT = volume_invalid_check_and_replace(CT, self.patch_size, \
+                    replacement_paths=paths_CT.copy(), original_path=path_CT)
 
 
         if CBCT is None or CT is None:
@@ -85,7 +87,7 @@ class CBCTtoCTDataset(Dataset):
         CBCT = CBCT - 1024
 
         # Truncate CBCT based on size of FOV in the image
-        CBCT = truncate_based_on_fov(CBCT)
+        CBCT = truncate_CBCT_based_on_fov(CBCT)
 
 	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
