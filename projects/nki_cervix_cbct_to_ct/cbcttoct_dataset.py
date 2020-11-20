@@ -43,7 +43,8 @@ class CBCTtoCTDataset(Dataset):
 
         for patient in root_path.iterdir():
             self.paths_CBCT[patient.stem] = make_recursive_dataset_of_files(patient / "CBCT", EXTENSIONS)
-            self.paths_CT[patient.stem] = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
+            CT_nrrds = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
+            self.paths_CT[patient.stem] = [path for path in CT_nrrds if path.stem == "CT"]
 
         assert len(self.paths_CBCT) == len(self.paths_CT), \
             "Number of patients should match for CBCT and CT"
