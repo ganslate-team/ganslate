@@ -93,7 +93,6 @@ def gaussian_filter(input, win):
     out = F.conv2d(out, win.transpose(2, 3), stride=1, padding=0, groups=C)
     return out
 
-
 def _ssim(X, Y,
           data_range,
           win,
@@ -137,12 +136,17 @@ def _ssim(X, Y,
     sigma2_sq = compensation * (gaussian_filter(Y * Y, win) - mu2_sq)
     sigma12 = compensation * (gaussian_filter(X * Y, win) - mu1_mu2)
 
-    cs_map = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)  # set alpha=beta=gamma=1
-    ssim_map = ((2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1)) * cs_map
+    S1 = (2 * mu1_mu2 + C1) / (mu1_sq + mu2_sq + C1)
+    S2 = (2 * sigma12 + C2) / (sigma1_sq + sigma2_sq + C2)  # set alpha=beta=gamma=1
 
-    ssim_per_channel = torch.flatten(ssim_map, 2).mean(-1)
-    cs = torch.flatten(cs_map, 2).mean(-1)
-    return ssim_per_channel, cs, ssim_map
+    # SSIM Distance metric approximation from: https://ece.uwaterloo.ca/~z70wang/publications/TIP_SSIM_MathProperties.pdf
+    # Add relu here since floating point rounding errors can lead this value to be slightly negative!
+    S = torch.relu(2 - (S1 + S2))
+    D_map = torch.sqrt(S)
+
+    D_per_channel = torch.flatten(D_map, 2).mean(-1)
+    cs = torch.flatten(S2, 2).mean(-1)
+    return D_per_channel, cs, D_map
 
 
 def batch_ssim(input, target,

@@ -1,11 +1,12 @@
 
 import os
 import logging
+import torch
 
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
 
-from midaGAN.utils import communication
+from midaGAN.utils import communication, environment
 from midaGAN.utils.trackers.training_tracker import TrainingTracker
 from midaGAN.utils.summary import gan_summary
 
@@ -13,6 +14,12 @@ class Trainer():
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
+
+        torch.backends.cudnn.benchmark = True # https://stackoverflow.com/a/58965640
+        
+        # Set reproducibility parameters (random numbers and cudnn backend)
+        if self.conf.seed:
+            environment.set_seed(self.conf.seed)
 
         self.tracker = TrainingTracker(self.conf)
 
@@ -26,7 +33,7 @@ class Trainer():
         self.checkpoint_freq = self.conf.logging.checkpoint_freq
 
     def run(self):
-        self.logger.info(gan_summary(self.model, self.data_loader))
+        # self.logger.info(gan_summary(self.model, self.data_loader)) TODO: breaks 3D training with num_workers>0
         self.logger.info('Training started.')
 
         self.tracker.start_dataloading_timer()

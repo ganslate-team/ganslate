@@ -3,12 +3,13 @@ n_iters: 200000
 n_iters_decay: 0
 batch_size: 1
 mixed_precision: True
+project_dir: "./projects/brats_flair_to_t1w/"
 
 logging:
     checkpoint_dir: "./checkpoints/brats_ex5"
     wandb:
         project: "my-project"
-    log_freq: 50
+    log_freq: 1
     checkpoint_freq: 10000
 
 dataset: 
@@ -23,6 +24,7 @@ gan:
 generator:  
     name: "Unet3D"
     num_downs: 7
+    in_channels: 1
 
 discriminator:  
     name: "PatchGAN3D"

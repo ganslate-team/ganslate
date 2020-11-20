@@ -8,6 +8,9 @@ from typing import Optional
 from os import PathLike
 from pathlib import Path
 
+import numpy as np
+import random
+
 import torch
 from omegaconf import OmegaConf
 
@@ -97,3 +100,14 @@ def setup_logging(use_stdout: Optional[bool] = True,
         fh.setLevel(log_level)
         fh.setFormatter(formatter)
         root.addHandler(fh)
+
+
+def set_seed(seed=0):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    
+    # https://pytorch.org/docs/stable/notes/randomness.html#cudnn
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    

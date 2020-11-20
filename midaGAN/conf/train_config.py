@@ -49,4 +49,5 @@ class TrainConfig(BaseConfig):
     optimizer:       OptimizerConfig = OptimizerConfig()
     logging:         LoggingConfig = LoggingConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None
+    seed:            Optional[int] = None  # Seed for reproducibility
 

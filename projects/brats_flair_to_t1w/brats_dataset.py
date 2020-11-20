@@ -19,23 +19,27 @@ from midaGAN.conf import BaseDatasetConfig
 @dataclass
 class BratsDatasetConfig(BaseDatasetConfig):
     name:         str = "BratsDataset"
-    patch_size:   Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
+    patch_size:   Tuple[int, int, int] = (32, 32, 32)
     focal_region_proportion: float = 0    # Proportion of focal region size compared to original volume size
+    source_sequence: str = "flair"
+    target_sequence: str = "t1w"
 
 
 EXTENSIONS = ['.nii.gz']
 
-# MRI sequences z-axis index in Brats
-FLAIR = 0
-T1W = 1
-T1GD = 2
-T2W = 3
+# MRI sequences z-axis indices in Brats
+SEQUENCE_MAP = {"flair": 0,
+                "t1w":   1,
+                "t1gd":  2,
+                "t2w":   3}
 
-def get_mri_sequence(sitk_image, z_index):
+def get_mri_sequence(sitk_image, sequence_name):
+    z_index = SEQUENCE_MAP[sequence_name.lower()]
+
     size = list(sitk_image.GetSize())
     size[3] = 0
     index = [0, 0, 0, z_index]
-    
+
     Extractor = sitk.ExtractImageFilter()
     Extractor.SetSize(size)
     Extractor.SetIndex(index)
@@ -52,6 +56,9 @@ class BratsDataset(Dataset):
         self.patch_size = np.array(conf.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
+        self.source_sequence = conf.dataset.source_sequence
+        self.target_sequence = conf.dataset.target_sequence
+
     def __getitem__(self, index):
         index_A = index % self.num_datapoints
         index_B = random.randint(0, self.num_datapoints - 1)
@@ -63,8 +70,8 @@ class BratsDataset(Dataset):
         A = sitk_utils.load(path_A)
         B = sitk_utils.load(path_B)
 
-        A = get_mri_sequence(A, FLAIR)
-        B = get_mri_sequence(B, T1W)
+        A = get_mri_sequence(A, self.source_sequence)
+        B = get_mri_sequence(B, self.target_sequence)
 
         if (sitk_utils.is_volume_smaller_than(A, self.patch_size) 
                 or sitk_utils.is_volume_smaller_than(B, self.patch_size)):

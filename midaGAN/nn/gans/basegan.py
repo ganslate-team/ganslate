@@ -46,8 +46,6 @@ class BaseGAN(ABC):
         self.networks = {}
 
         self.scaler = GradScaler(enabled=self.conf.mixed_precision)
-
-        torch.backends.cudnn.benchmark = True
     
     def _specify_device(self):
         if torch.distributed.is_initialized():

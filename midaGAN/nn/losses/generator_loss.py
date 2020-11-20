@@ -116,9 +116,9 @@ class CycleLoss:
             ssim_rec_A = (rec_A + 1)/2
             ssim_rec_B = (rec_B + 1)/2
 
-            # (1-SSIM) because the more similar the images are, the higher value will SSIM give (max 1, min -1)
-            loss_ssim_A = 1 - self.ssim_criterion(ssim_real_A, ssim_rec_A) 
-            loss_ssim_B = 1 - self.ssim_criterion(ssim_real_B, ssim_rec_B)
+            # SSIM criterion returns distance metric
+            loss_ssim_A = self.ssim_criterion(ssim_real_A, ssim_rec_A) 
+            loss_ssim_B = self.ssim_criterion(ssim_real_B, ssim_rec_B)
 
             # weighted sum of SSIM and L1 losses for both forward and backward cycle losses
             loss_cycle_A = self.alpha * loss_ssim_A + self.beta * loss_cycle_A  
