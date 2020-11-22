@@ -38,7 +38,6 @@ def get_connected_components(binary_array: np.ndarray, structuring_element: np.n
     connected_component_array, num_connected_components = ndimage.label(binary_array, \
                                                                         structure=structuring_element)
 
-    print("Number of connected components found:", num_connected_components)
     return connected_component_array
 
 
@@ -67,7 +66,7 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
     connected_components = get_connected_components(binarized_image)
     
     # Get counts for each component in the connected component analysis
-    label_counts = [np.sum(connected_components==label) for label in range(connected_components.max())]
+    label_counts = [np.sum(connected_components==label) for label in range(1, connected_components.max() + 1)]
     max_label = np.argmax(label_counts) + 1
 
     

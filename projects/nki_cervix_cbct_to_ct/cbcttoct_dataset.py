@@ -1,6 +1,5 @@
 from pathlib import Path
 import random
-import logging
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -11,7 +10,8 @@ from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-
+from midaGAN.data.utils.body_mask import apply_body_mask_and_bound
+from midaGAN.data.utils import volume_invalid_check_and_replace
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -19,6 +19,8 @@ from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf import BaseDatasetConfig
+
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,9 @@ class CBCTtoCTDatasetConfig(BaseDatasetConfig):
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
     enable_masking:          bool = True
     enable_bounding:         bool = True
+    ct_mask_threshold:          int = -300
+    cbct_mask_threshold:        int = -700
+
 
 class CBCTtoCTDataset(Dataset):
     def __init__(self, conf):
@@ -61,16 +66,18 @@ class CBCTtoCTDataset(Dataset):
 
         self.apply_mask = conf.dataset.enable_masking
         self.apply_bound = conf.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
+        self.ct_mask_threshold = conf.dataset.ct_mask_threshold
 
     def __getitem__(self, index):
         patient_index = list(self.paths_CT)[index]
 
-        path_CBCT = self.paths_CBCT[patient_index]
-        path_CT = self.paths_CT[patient_index]
+        paths_CBCT = self.paths_CBCT[patient_index]
+        paths_CT = self.paths_CT[patient_index]
 
 
-        path_CBCT = path_CBCT[random.randint(0, len(path_CBCT) - 1)]
-        path_CT = path_CT[random.randint(0, len(path_CT) - 1)]
+        path_CBCT = random.choice(paths_CBCT)
+        path_CT = random.choice(paths_CT)
         
         # load nrrd as SimpleITK objects
         CBCT = sitk_utils.load(path_CBCT)
@@ -118,10 +125,19 @@ class CBCTtoCTDataset(Dataset):
 
         # Apply body masking to the CT and CBCT arrays 
         # and bound the z, x, y grid to around the mask
-        CBCT = apply_body_mask_and_bound(CBCT, \
-                    apply_mask=self.apply_mask, apply_bound=self.apply_bound)
-        CT = apply_body_mask_and_bound(CT, \    
-                    apply_mask=self.apply_mask, apply_bound=self.apply_bound)
+        try: 
+            CBCT = apply_body_mask_and_bound(CBCT, \
+                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, HU_threshold=self.cbct_mask_threshold)
+        except:
+            logger.error(f"Error applying mask and bound in file : {path_CBCT}")
+
+        try:
+            CT = apply_body_mask_and_bound(CT, \
+                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, HU_threshold=self.ct_mask_threshold)
+
+        except:
+            logger.error(f"Error applying mask and bound in file : {path_CT}")        
+
 
         # Convert array to torch tensors
         CBCT = torch.tensor(CBCT)
