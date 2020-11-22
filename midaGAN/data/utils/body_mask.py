@@ -2,7 +2,7 @@ from scipy import ndimage
 import cv2
 import numpy as np
 
-def get_connected_components(binary_array, structuring_element=None):
+def get_connected_components(binary_array: np.ndarray, structuring_element: np.ndarray=None) -> np.ndarray:
     """
     Returns a label map with a unique integer label for each connected geometrical object in the given binary array.
     Integer labels of components start from 1. Background is 0.
@@ -43,7 +43,7 @@ def get_connected_components(binary_array, structuring_element=None):
 
 
 
-def body_mask_and_bound(image, HU_threshold=-300):
+def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
     """
     Function that gets a mask around the patient body and returns a 3D bound
 
@@ -94,6 +94,51 @@ def body_mask_and_bound(image, HU_threshold=-300):
 
         # Project the hull onto the body_mask image, everything 
         # inside the hull is set to 1. 
-        cv2.drawContours(body_mask[z], [hull], -1, 1, -1)
+        cv2.drawContours(body_mask[z], [hull], -1,  1, -1)
+
+        # # Blurring the mask for smoother edges, this will also smooth out the jagged contours
+        # # found in the sagittal view
+        # body_mask[z] = cv2.GaussianBlur(body_mask[z], (5,5), 0)
 
     return body_mask, bound
+
+
+
+def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
+                                apply_mask: bool =True, apply_bound: bool=True, HU_threshold: int =-300) -> np.ndarray:
+
+    """
+    Function to apply mask based filtering and bound the array
+    
+    Parameters
+    ------------------
+    array: Input array to bound and mask
+    masking_value: Value to apply outside the mask
+    apply_mask: Set to True to apply mask
+    apply_bound: Set to True to apply bound
+    HU_threshold: Threshold to apply for binarization of the image. 
+
+    Returns
+    ------------------
+    array: Output array that will be masked with the masking_value outside
+    the patient body and will be cropped to fit the bounds.
+
+    """
+
+    body_mask, ((z_max, z_min), \
+        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(array, HU_threshold)
+    
+    # Apply mask to the image array 
+    if apply_mask:
+        array = np.where(body_mask, array, masking_value)
+
+    # Index the array within the bounds and return cropped array
+    if apply_bound:
+        array = array[z_max:z_min, y_max: y_min, x_max: x_min]
+
+    return array
+
+    
+
+
+

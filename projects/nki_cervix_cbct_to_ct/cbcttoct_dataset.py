@@ -31,7 +31,8 @@ class CBCTtoCTDatasetConfig(BaseDatasetConfig):
     patch_size:              Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
-
+    enable_masking:          bool = True
+    enable_bounding:         bool = True
 
 class CBCTtoCTDataset(Dataset):
     def __init__(self, conf):
@@ -57,6 +58,9 @@ class CBCTtoCTDataset(Dataset):
         focal_region_proportion = conf.dataset.focal_region_proportion
         self.patch_size = np.array(conf.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
+
+        self.apply_mask = conf.dataset.enable_masking
+        self.apply_bound = conf.dataset.enable_bounding
 
     def __getitem__(self, index):
         patient_index = list(self.paths_CT)[index]
@@ -106,8 +110,22 @@ class CBCTtoCTDataset(Dataset):
         else:
             CT = CT_truncated
 
-        CBCT = sitk_utils.get_tensor(CBCT)
-        CT = sitk_utils.get_tensor(CT)
+
+
+        # Mask and bound is applied on numpy arrays!
+        CBCT = sitk_utils.get_npy(CBCT)
+        CT = sitk_utils.get_npy(CT)
+
+        # Apply body masking to the CT and CBCT arrays 
+        # and bound the z, x, y grid to around the mask
+        CBCT = apply_body_mask_and_bound(CBCT, \
+                    apply_mask=self.apply_mask, apply_bound=self.apply_bound)
+        CT = apply_body_mask_and_bound(CT, \    
+                    apply_mask=self.apply_mask, apply_bound=self.apply_bound)
+
+        # Convert array to torch tensors
+        CBCT = torch.tensor(CBCT)
+        CT = torch.tensor(CT)
 
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT) 
