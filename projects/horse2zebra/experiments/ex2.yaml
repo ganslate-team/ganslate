@@ -13,7 +13,7 @@ logging:
 
 dataset: 
     name: "ImageDataset"
-    root: "/workspace/datasets/horse2zebra"
+    root: "/workspace/sdata/horse2zebra"
     num_workers: 16
     image_channels: 3
     preprocess: "resize"

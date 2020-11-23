@@ -1,22 +1,22 @@
-project_dir: "./projects/maastro_cbct_to_ct"
 use_cuda: True
-n_iters: 20000
-n_iters_decay: 20000
+n_iters: 200000
+n_iters_decay: 0
 batch_size: 1
 mixed_precision: True
+project_dir: "./projects/brats_flair_to_t1w/"
 
 logging:
-    checkpoint_dir: "./checkpoints/cbcttoct_ex16"
+    checkpoint_dir: "./checkpoints/brats_ex6"
     wandb:
         project: "my-project"
-    log_freq: 50
-    checkpoint_freq: 2000
+    log_freq: 1
+    checkpoint_freq: 10000
 
 dataset: 
-    name: "CBCTtoCTDataset"
-    root: "/workspace/data/lung1_ct_cbct_nrrd_resampled/"
-    num_workers: 16
-    patch_size: [16, 464, 464]
+    name: "BratsDataset"
+    root: "/workspace/data/Task01_BrainTumour/imagesTr/"
+    num_workers: 8
+    patch_size: [128, 128, 128]
     
 gan:  
     name: "PiCycleGAN"
@@ -35,11 +35,12 @@ discriminator:
     n_layers: 2
     in_channels: 1
 
+
 optimizer:
-  lambda_A: 25.0
-  lambda_B: 25.0
+  lambda_A: 10.0
+  lambda_B: 10.0
   lambda_identity: 0.0
-  lambda_inverse: 0.0
+  lambda_inverse: 0.01
   proportion_ssim: 0.84
-  lr_D: 0.0002
-  lr_G: 0.0004
+  lr_D: 0.0002 
+  lr_G: 0.0002

@@ -1,12 +1,7 @@
 
 
 ## Installation
-To install apex run the 
-```
-bash install_apex.sh
-```
-
-For all other dependencies use conda env 
+For all dependencies use conda env 
 ```
 conda env update -f environment.yml
 ```

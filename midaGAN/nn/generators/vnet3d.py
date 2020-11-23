@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-import memcnn
+
+from midaGAN.nn import invertible
 from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d,
                               get_norm_layer_3d, is_bias_before_norm)
 
@@ -117,57 +118,6 @@ class Vnet3D(nn.Module):
         out = out_block(out)
         return out
 
-class InvertibleBlock(nn.Module):
-    # TODO: is it possible to pass in a constructed block and make it invertible? The class could be reusable for other architectures
-    def __init__(self, n_channels, norm_layer, use_bias, keep_input, is_inplace, is_separable):
-        super().__init__()
-        self.is_separable = is_separable
-        invertible_module = memcnn.AdditiveCoupling(
-            Fm=self.build_conv_block(n_channels//2, norm_layer, use_bias, is_inplace),
-            Gm=self.build_conv_block(n_channels//2, norm_layer, use_bias, is_inplace)
-        )
-        self.invertible_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                               keep_input=keep_input, 
-                                                               keep_input_inverse=keep_input)
-
-    def build_conv_block(self, n_channels, norm_layer, use_bias, is_inplace):
-        conv_layer = get_conv_layer_3d(self.is_separable)
-        return nn.Sequential(conv_layer(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
-                             norm_layer(n_channels),
-                             nn.PReLU(n_channels, is_inplace))
-
-    def forward(self, x, inverse=False):
-        if inverse:
-            return self.invertible_block.inverse(x)
-        else:
-            return self.invertible_block(x)
-
-
-class InvertibleSequence(nn.Module):
-    def __init__(self, n_channels, n_blocks, norm_layer, use_bias, keep_input, is_inplace, is_separable):
-        super().__init__()
-
-        sequence = []
-        for _ in range(n_blocks):
-            block = InvertibleBlock(n_channels, norm_layer, use_bias, keep_input, is_inplace, is_separable)
-            sequence.append(block) 
-        self.sequence = nn.Sequential(*sequence)
-    
-    def forward(self, x, inverse=False):
-        if inverse:
-            sequence = reversed(self.sequence)
-        else:
-            sequence = self.sequence
-        
-        for i, block in enumerate(sequence):
-            if i == 0:    #https://github.com/silvandeleemput/memcnn/issues/39#issuecomment-599199122
-                if inverse:
-                    block.invertible_block.keep_input_inverse = True
-                else:
-                    block.invertible_block.keep_input = True
-            x = block(x, inverse=inverse)
-        return x        
-
 
 class InputBlock(nn.Module):
     def __init__(self, in_channels, out_channels, norm_layer, use_bias, is_separable):
@@ -195,7 +145,9 @@ class DownBlock(nn.Module):
         self.down_conv_ab = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
         if use_inverse:
             self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
-        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input, is_inplace, is_separable)
+        
+        inv_block = _base_inv_block(out_channels, norm_layer, use_bias, is_inplace, is_separable)
+        self.core = invertible.InvertibleSequence(inv_block, n_conv_blocks, keep_input)
         self.relu = nn.PReLU(out_channels)
 
     def build_down_conv(self, in_channels, out_channels, norm_layer, use_bias):
@@ -224,7 +176,8 @@ class UpBlock(nn.Module):
         if use_inverse:
             self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
 
-        self.core = InvertibleSequence(out_channels, n_conv_blocks, norm_layer, use_bias, keep_input, is_inplace, is_separable)
+        inv_block = _base_inv_block(out_channels, norm_layer, use_bias, is_inplace, is_separable)
+        self.core = invertible.InvertibleSequence(inv_block, n_conv_blocks, keep_input)
         self.relu = nn.PReLU(out_channels)
     
     def build_up_conv(self, in_channels, out_channels, norm_layer, use_bias):
@@ -262,3 +215,10 @@ class OutBlock(nn.Module):
         out = self.conv2(out)
         res = self.tanh(out)
         return res
+
+def _base_inv_block(n_channels, norm_layer, use_bias, is_inplace, is_separable):
+    n_channels = n_channels // 2  # split across channels for invertible module
+    conv_layer = get_conv_layer_3d(is_separable)
+    return nn.Sequential(conv_layer(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
+                         norm_layer(n_channels),
+                         nn.PReLU(n_channels, is_inplace)) 
