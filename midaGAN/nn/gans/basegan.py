@@ -266,3 +266,37 @@ class BaseGAN(ABC):
     def get_loggable_data(self):
         """Return data that is useful for tracking - learning rates, losses and visuals."""
         return self.get_learning_rates(), self.get_current_losses(), self.get_current_visuals()
+
+    def setup_masking(self, mask_config):
+        """
+        Setup masking!
+        """
+        self.enable_mask = False
+
+        if mask_config:
+            if hasattr(torch, mask_config.operator):
+                self.enable_mask = True
+                self.operator = getattr(torch, mask_config.operator)
+                self.masking_value = torch.tensor(mask_config.masking_value)
+
+            else:
+                logger.warning("No valid operator match found, masking will be disabled!")
+        print(f"Mask set: {self.enable_mask}")
+
+
+    def mask_current_visuals(self):
+        """
+        Mask all items in visuals if they are tensors. This is done to 
+        ignore value updates outside a mask. 
+        
+        Reference: https://forums.fast.ai/t/image-segmentation-leaving-some-pixels-unlabeled/40967/2
+
+        A better way to do it would be to operate directly on loss tensors but this will be quite ugly
+        given the structure of the current codebase. 
+        """
+    
+        if self.enable_mask:
+            out_of_bound_mask = (~self.operator(self.visuals['real_A'], self.masking_value)).float()     
+            for k, v in self.visuals.items():
+                if v is not None:
+                    self.visuals[k] = v * out_of_bound_mask   
