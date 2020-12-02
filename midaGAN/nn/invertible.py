@@ -10,15 +10,16 @@ class InvertibleBlock(nn.Module):
         """The input block should already be split across channels # TODO: explain better
         """
         super().__init__()
-
-        invertible_module = memcnn.AdditiveCoupling(block)
-        self.invertible_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                               keep_input=keep_input, 
-                                                               keep_input_inverse=keep_input)
+        self.invertible_block = memcnn.InvertibleModuleWrapper(
+            fn=memcnn.AdditiveCoupling(block), 
+            keep_input=keep_input, 
+            keep_input_inverse=keep_input
+            # TODO: disable= argument
+        )
+            
 
     
     def forward(self, x, inverse=False):
-        x = x.float()  # TODO: revisit when new memcnn version is released
         if inverse:
             return self.invertible_block.inverse(x)
         else:
