@@ -5,17 +5,17 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: ./checkpoints/cbct_ex2/
+    checkpoint_dir: ./checkpoints/cbct_ex3/
     wandb:
         project: "NKI_CBCT_CT"
-    log_freq: 5
+    log_freq: 50
     checkpoint_freq: 10000
 
 dataset: 
     name: "CBCTtoCTDataset"
     root: /home/rt/workspace_suraj/cervix_resampled
-    hounsfield_units_range: [-1000, 2000]
-    num_workers: 1
+    hounsfield_units_range: [-1024, 2048]
+    num_workers: 4
     patch_size: [16, 128, 128]
     
 gan:  
