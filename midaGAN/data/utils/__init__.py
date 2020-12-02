@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def volume_invalid_check_and_replace(volume, patch_size, replacement_paths=[], original_path=None):
+def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], original_path=None):
     """
     Check if volume loaded is invalid, if so replace with another volume from the same patient. 
 
@@ -28,7 +28,15 @@ def volume_invalid_check_and_replace(volume, patch_size, replacement_paths=[], o
         replacement_paths.remove(original_path)
 
     # Check if volume is smaller than patch size
-    while sitk_utils.is_volume_smaller_than(volume, patch_size):
+    
+    if len(patch_size) == 3:
+        fn = eval(f"sitk_utils.is_volume_smaller_than")
+    elif len(patch_size) == 2:
+        fn = eval(f"sitk_utils.is_image_smaller_than")
+    else:
+        raise NotImplementedError()
+
+    while fn(volume, patch_size):
         logger.warning(f"Volume size smaller than the defined patch size.\
             Volume: {sitk_utils.get_size_zxy(volume)} \npatch_size: {patch_size}. \n \
             Volume path: {original_path}")
