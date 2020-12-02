@@ -10,6 +10,9 @@ from apex import amp
 from midaGAN.nn.utils import get_scheduler
 from midaGAN.utils import communication
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class BaseGAN(ABC):
     """This class is an abstract base class (ABC) for GAN models.
@@ -281,22 +284,36 @@ class BaseGAN(ABC):
 
             else:
                 logger.warning("No valid operator match found, masking will be disabled!")
-        print(f"Mask set: {self.enable_mask}")
+
+        logger.info(f"Masking values enabled: {self.enable_mask}")
 
 
     def mask_current_visuals(self):
         """
         Mask all items in visuals if they are tensors. This is done to 
         ignore value updates outside a mask. 
-        
+
         Reference: https://forums.fast.ai/t/image-segmentation-leaving-some-pixels-unlabeled/40967/2
 
         A better way to do it would be to operate directly on loss tensors but this will be quite ugly
-        given the structure of the current codebase. 
+        given the structure of the current codebase. The issue is scaling of the loss, the mean will consider
+        the masked tensors here as well. 
+
+        But since the sizes are more or less similar across different data instances, this should be okay for now!
         """
     
         if self.enable_mask:
-            out_of_bound_mask = (~self.operator(self.visuals['real_A'], self.masking_value)).float()     
+
+            mask_A = (~self.operator(self.visuals['real_A'], self.masking_value)).float()     
+            mask_B = (~self.operator(self.visuals['real_B'], self.masking_value)).float()       
+
             for k, v in self.visuals.items():
-                if v is not None:
-                    self.visuals[k] = v * out_of_bound_mask   
+
+                # For masked values for A, mask real_A, rec_A and fake_B (Forward cycle)
+                if k in ['real_A', 'rec_A', 'fake_B']:
+                    self.visuals[k] = v * mask_A
+
+                # For masked values for B, mask real_B, rec_B and fake_A (Backward cycle)
+                if k in ['real_B', 'rec_B', 'fake_A']:
+                    self.visuals[k] = v * mask_B
+                                
