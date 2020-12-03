@@ -93,15 +93,12 @@ class CBCTtoCT2DDataset(Dataset):
         # Truncate CBCT based on size of FOV in the image
         CBCT = truncate_CBCT_based_on_fov(CBCT)
 
-
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
             logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
             del CT_truncated
         else:
             CT = CT_truncated
-
-
 
         # Mask and bound is applied on numpy arrays!
         CBCT = sitk_utils.get_npy(CBCT)
@@ -122,17 +119,15 @@ class CBCTtoCT2DDataset(Dataset):
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")        
 
-        
-
         if DEBUG:
             import wandb
 
             logdict = {
-            "CBCT": wandb.Image(CBCT[CBCT.shape[0]//2], caption=str(path_CBCT)),
-            "CT":wandb.Image(CT[CT.shape[0]//2], caption=str(path_CT))
+            "CBCT_3D": wandb.Image(CBCT[CBCT.shape[0]//2], caption=str(path_CBCT)),
+            "CT_3D":wandb.Image(CT[CT.shape[0]//2], caption=str(path_CT))
             }
+            wandb.log(logdict)   
 
-            wandb.log(logdict)
 
         # Convert array to torch tensors
         CBCT = torch.tensor(CBCT)
@@ -140,6 +135,18 @@ class CBCTtoCT2DDataset(Dataset):
 
         CBCT_slice, CT_slice = self.slice_sampler.get_slice_pair(CBCT, CT) 
 
+        
+        if DEBUG:
+            import wandb
+
+            logdict = {
+            "CBCT": wandb.Image(CBCT_slice, caption=str(path_CBCT)),
+            "CT":wandb.Image(CT_slice, caption=str(path_CT))
+            }
+
+            wandb.log(logdict)
+        
+        
         CBCT_slice = torch.tensor(CBCT_slice)
         CT_slice = torch.tensor(CT_slice)
 

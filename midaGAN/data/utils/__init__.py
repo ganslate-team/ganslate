@@ -60,42 +60,46 @@ def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], ori
 
 
 def pad(index, volume):
+    pad_value = volume.min()
 
-        if index[0] > volume.shape[0]:
-            pad = (index[0] - volume.shape[0])
-            if pad % 2 == 0:
-                pad_before = pad // 2
-                pad_after = pad // 2
-
-            else:
-                pad_before = pad // 2
-                pad_after = (pad // 2) + 1
-
-            volume = np.pad(volume, ((pad_before, pad_after), (0, 0), (0, 0)), 'minimum')
-
-        if index[1] > volume.shape[1]:
-
-            pad = (index[1] - volume.shape[1])
-            if pad % 2 == 0:
-                pad_before = pad // 2
-                pad_after = pad // 2
-
-            else:
-                pad_before = pad // 2
-                pad_after = (pad // 2) + 1 
-
-            volume = np.pad(volume, ((0, 0), (pad_before, pad_after), (0, 0)), 'minimum')
+    if index[0] > volume.shape[0]:
         
-        if index[2] > volume.shape[2]:
-            pad = (index[2] - volume.shape[2])
-            if pad % 2 == 0:
-                pad_before = pad // 2
-                pad_after = pad // 2
+        pad = (index[0] - volume.shape[0])
+        if pad % 2 == 0:
+            pad_before = pad // 2
+            pad_after = pad // 2
 
-            else:
-                pad_before = pad // 2
-                pad_after = (pad // 2) + 1    
+        else:
+            pad_before = pad // 2
+            pad_after = (pad // 2) + 1
 
-            volume = np.pad(volume, ((0, 0), (0, 0), (pad_before, pad_after)), 'minimum')
+        volume = np.pad(volume, ((pad_before, pad_after), (0, 0), (0, 0)), 'constant', constant_values=pad_value)
 
-        return volume
+    if index[1] > volume.shape[1]:
+
+        pad = (index[1] - volume.shape[1])
+        if pad % 2 == 0:
+            pad_before = pad // 2
+            pad_after = pad // 2
+
+        else:
+            pad_before = pad // 2
+            pad_after = (pad // 2) + 1 
+
+        volume = np.pad(volume, ((0, 0), (pad_before, pad_after), (0, 0)), 'constant', constant_values=pad_value)
+    
+    if index[2] > volume.shape[2]:
+        
+        pad = (index[2] - volume.shape[2])
+        
+        if pad % 2 == 0:
+            pad_before = pad // 2
+            pad_after = pad // 2
+
+        else:
+            pad_before = pad // 2
+            pad_after = (pad // 2) + 1    
+
+        volume = np.pad(volume, ((0, 0), (0, 0), (pad_before, pad_after)), 'constant', constant_values=pad_value)
+
+    return volume

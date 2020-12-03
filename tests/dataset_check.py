@@ -38,8 +38,15 @@ def main():
         for i, data in enumerate(data_loader):
             print(f"Loading {i}/{len(data_loader)} @ {idx} Pass")
 
-            image_A = data['A'][0, 0, conf.dataset.patch_size[0]//2]
-            image_B = data['B'][0, 0, conf.dataset.patch_size[0]//2]
+            # Check for n NCDHW
+            if data['A'].ndim == 5:
+                image_A = data['A'][0, 0, conf.dataset.patch_size[0]//2]
+                image_B = data['B'][0, 0, conf.dataset.patch_size[0]//2]
+            elif data['A'].ndim == 4:
+                image_A = data['A'][0, 0]
+                image_B = data['B'][0, 0]                
+            else: 
+                return NotImplementedError("Only 2D and 3D datasets are supported")
 
             log_dict = {
 
