@@ -32,6 +32,7 @@ class CBCTtoCT2DDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTDataset"
     load_size:               int = 256
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
+    select_origin_for_axes: Tuple[bool] = (False, True, True)
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
     enable_cache:            bool = False
     image_channels:          int = 1
@@ -39,6 +40,7 @@ class CBCTtoCT2DDatasetConfig(BaseDatasetConfig):
     enable_bounding:         bool = True
     ct_mask_threshold:          int = -300
     cbct_mask_threshold:        int = -700
+
 
 class CBCTtoCT2DDataset(Dataset):
     def __init__(self, conf):
@@ -85,33 +87,13 @@ class CBCTtoCT2DDataset(Dataset):
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
-        # Replace with volumes from replacement paths if the volumes are smaller than patch size
-        CBCT = size_invalid_check_and_replace(CBCT, self.patch_size, \
-                    replacement_paths=paths_CBCT.copy(), original_path=path_CBCT)
-
-        CT = size_invalid_check_and_replace(CT, self.patch_size, \
-                    replacement_paths=paths_CT.copy(), original_path=path_CT)
-
-
-        if CBCT is None or CT is None:
-            raise RuntimeError("Suitable replacement volume could not be found!")
-
         # Subtract 1024 from CBCT to map values from grayscale to HU approx
         CBCT = CBCT - 1024
 
         # Truncate CBCT based on size of FOV in the image
         CBCT = truncate_CBCT_based_on_fov(CBCT)
 
-        # TODO: make a function
-        if (sitk_utils.is_image_smaller_than(CBCT, self.patch_size) 
-                or sitk_utils.is_image_smaller_than(CT, self.patch_size)):
-            raise ValueError("Volume size not smaller than the defined patch size.\
-                              \nCBCT: {} \nCT: {} \npatch_size: {}."\
-                             .format(sitk_utils.get_size_zxy(CBCT),
-                                     sitk_utils.get_size_zxy(CT), 
-                                     self.patch_size))
 
-	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
             logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")

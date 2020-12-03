@@ -280,7 +280,7 @@ class BaseGAN(ABC):
             if hasattr(torch, mask_config.operator):
                 self.enable_mask = True
                 self.operator = getattr(torch, mask_config.operator)
-                self.masking_value = torch.tensor(mask_config.masking_value)
+                self.masking_value = torch.tensor(mask_config.masking_value).to(self.device)
 
             else:
                 logger.warning("No valid operator match found, masking will be disabled!")
@@ -304,16 +304,16 @@ class BaseGAN(ABC):
     
         if self.enable_mask:
 
-            mask_A = (~self.operator(self.visuals['real_A'], self.masking_value)).float()     
-            mask_B = (~self.operator(self.visuals['real_B'], self.masking_value)).float()       
+            mask_A = ~self.operator(self.visuals['real_A'], self.masking_value)
+            mask_B = ~self.operator(self.visuals['real_B'], self.masking_value)  
 
             for k, v in self.visuals.items():
 
                 # For masked values for A, mask real_A, rec_A and fake_B (Forward cycle)
                 if k in ['real_A', 'rec_A', 'fake_B']:
-                    self.visuals[k] = v * mask_A
+                    self.visuals[k] = torch.where(mask_A, v, self.masking_value)
 
                 # For masked values for B, mask real_B, rec_B and fake_A (Backward cycle)
                 if k in ['real_B', 'rec_B', 'fake_A']:
-                    self.visuals[k] = v * mask_B
+                    self.visuals[k] = torch.where(mask_B, v, self.masking_value)
                                 

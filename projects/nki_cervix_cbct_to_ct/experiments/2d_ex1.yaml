@@ -14,25 +14,33 @@ logging:
 
 dataset: 
     name: "CBCTtoCT2DDataset"
-    root: "/repos/Maastro/nki_cervix"
+    root: /home/rt/workspace_suraj/cervix_resampled
+    hounsfield_units_range: [-1024, 2048]
+    select_origin_for_axes: [False, True, True]
     num_workers: 0
-    load_size: 128
+    load_size: 256
     
 gan:  
     name: "CycleGAN"
 
-generator:
-  name: "Unet2D"
-  in_channels: 1
+generator:  
+    name: "Resnet2D"
+    n_residual_blocks: 9
+    in_channels: 1
 
-discriminator:
+discriminator:  
     name: "PatchGAN2D"
+    n_layers: 3
+    in_channels: 1
 
 optimizer:
-  lambda_A: 25.0
-  lambda_B: 25.0
+  lambda_A: 10.0
+  lambda_B: 10.0
   lambda_identity: 0.0
   lambda_inverse: 0.0
-  proportion_ssim: 0.84
-  lr_D: 0.0002
-  lr_G: 0.0004
+  proportion_ssim: 0.0
+  lr_D: 0.0004
+  lr_G: 0.0002
+  loss_mask:
+    masking_value: -1
+    operator: "eq"

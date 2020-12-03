@@ -14,7 +14,7 @@ class SliceSampler:
     The added stochasticity in steps (4) and (5) aims to account for possible differences in positioning 
     of the object between volumes.
     """
-    def __init__(self, patch_size, focal_region_proportion):
+    def __init__(self, patch_size, focal_region_proportion, select_origin_for_axes=(False, True, True)):
         self.patch_size = np.array(patch_size)
         try:
             assert len(self.patch_size) == 2
@@ -23,6 +23,7 @@ class SliceSampler:
             exit()
 
         self.focal_region_proportion = focal_region_proportion
+        self.select_origin_for_axes = select_origin_for_axes
 
     def get_slice_pair(self, volume_A, volume_B):
         """Performs stochasting focal patch sampling. Returns A and B patches."""
@@ -55,7 +56,10 @@ class SliceSampler:
     def pick_random_start(self, volume):
         """Pick a starting point of a patch randomly. Used for patch_A."""
         valid_start_region = self.calculate_valid_start_region(volume)
-        z, x, y = [random.randint(0, v) for v in valid_start_region]
+        start_coordinates = [random.randint(0, v) for v in valid_start_region]
+        
+        z, x, y = np.where(self.select_origin_for_axes, 0, start_coordinates)
+
         return z, x, y
     
     def pick_stochastic_focal_start(self, volume, relative_focal_point):
@@ -67,7 +71,10 @@ class SliceSampler:
         focal_point = relative_focal_point * volume_size  # map relative point to corresponding point in this volume
         valid_start_region = self.calculate_valid_start_region(volume)
 
-        z, x, y = self.apply_stochastic_focal_method(focal_point, focal_region, valid_start_region)
+        start_coordinates = self.apply_stochastic_focal_method(focal_point, focal_region, valid_start_region)
+        
+        z, x, y = np.where(self.select_origin_for_axes, 0, start_coordinates)
+
         return z, x, y
         
     def apply_stochastic_focal_method(self, focal_point, focal_region, valid_start_region):

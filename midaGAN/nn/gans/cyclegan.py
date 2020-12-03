@@ -111,12 +111,14 @@ class CycleGAN(BaseGAN):
         """Calculate losses, gradients, and update network weights. 
         Called in every training iteration.
         """
+        discriminators = [ self.networks['D_A'], self.networks['D_B'] ]
+        
         self.forward()  # compute fake images and reconstruction images.
+
 
         # Mask visuals if masking for certain value enabled
         self.mask_current_visuals()
 
-        discriminators = [ self.networks['D_A'], self.networks['D_B'] ]
         # ------------------------ G (A and B) ----------------------------------------------------
         self.set_requires_grad(discriminators, False)   # Ds require no gradients when optimizing Gs
         self.optimizers['G'].zero_grad()                # set G's gradients to zero
