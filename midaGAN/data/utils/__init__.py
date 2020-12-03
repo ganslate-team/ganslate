@@ -1,5 +1,7 @@
 # coding=utf-8
 # Copyright (c) midaGAN Contributors
+import random 
+import numpy as np
 
 from midaGAN.utils import sitk_utils
 import logging
@@ -55,3 +57,45 @@ def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], ori
         replacement_paths.remove(path)
 
     return volume
+
+
+def pad(index, volume):
+
+        if index[0] > volume.shape[0]:
+            pad = (index[0] - volume.shape[0])
+            if pad % 2 == 0:
+                pad_before = pad // 2
+                pad_after = pad // 2
+
+            else:
+                pad_before = pad // 2
+                pad_after = (pad // 2) + 1
+
+            volume = np.pad(volume, ((pad_before, pad_after), (0, 0), (0, 0)), 'minimum')
+
+        if index[1] > volume.shape[1]:
+
+            pad = (index[1] - volume.shape[1])
+            if pad % 2 == 0:
+                pad_before = pad // 2
+                pad_after = pad // 2
+
+            else:
+                pad_before = pad // 2
+                pad_after = (pad // 2) + 1 
+
+            volume = np.pad(volume, ((0, 0), (pad_before, pad_after), (0, 0)), 'minimum')
+        
+        if index[2] > volume.shape[2]:
+            pad = (index[2] - volume.shape[2])
+            if pad % 2 == 0:
+                pad_before = pad // 2
+                pad_after = pad // 2
+
+            else:
+                pad_before = pad // 2
+                pad_after = (pad // 2) + 1    
+
+            volume = np.pad(volume, ((0, 0), (0, 0), (pad_before, pad_after)), 'minimum')
+
+        return volume

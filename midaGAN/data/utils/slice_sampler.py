@@ -2,6 +2,8 @@ import random
 import numpy as np
 import torch
 
+from midaGAN.data.utils import pad
+
 class SliceSampler:
     """ Stochasting Focal Patching technique achieves spatial correspondance of patches extracted from a pair 
     of volumes by:
@@ -37,7 +39,7 @@ class SliceSampler:
         
         x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)] # start + patch size for each coord
         
-        volume = self._pad((0, x_end, y_end), volume)
+        volume = pad((0, x_end, y_end), volume)
 
         slice = volume[z, x:x_end, y:y_end]
         relative_focal_point = self.calculate_relative_focal_point(z, x, y, volume)
@@ -48,7 +50,7 @@ class SliceSampler:
         z, x, y = self.pick_stochastic_focal_start(volume, relative_focal_point)
         x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)] # start + patch size for each coord
         
-        volume = self._pad((0, x_end, y_end), volume)
+        volume = pad((0, x_end, y_end), volume)
 
         slice = volume[z, x:x_end, y:y_end]
         return slice
@@ -112,21 +114,6 @@ class SliceSampler:
         valid_start_region = np.where(valid_start_region < 0, 0, valid_start_region)
 
         return valid_start_region
-
-
-    def _pad(self, index, volume):
-
-        if index[0] > volume.shape[0]:
-             volume = np.pad(volume, ((0, index[0] - volume.shape[0]), (0, 0), (0, 0)), 'minimum')
-
-        if index[1] > volume.shape[1]:
-            volume = np.pad(volume, ((0, 0), (0, index[1] - volume.shape[1]), (0, 0)), 'minimum')
-        
-        if index[2] > volume.shape[2]:
-            volume = np.pad(volume, ((0, 0), (0, 0), (0, index[2] - volume.shape[2])), 'minimum')
-
-        return volume
-
 
     def get_size(self, volume):
         return np.array(volume.shape[-3:])  # last three dimension (Z,X,Y)
