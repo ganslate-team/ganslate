@@ -305,15 +305,23 @@ class BaseGAN(ABC):
         if self.enable_mask:
 
             mask_A = ~self.operator(self.visuals['real_A'], self.masking_value)
-            mask_B = ~self.operator(self.visuals['real_B'], self.masking_value)  
+            mask_B = ~self.operator(self.visuals['real_B'], self.masking_value)
 
-            for k, v in self.visuals.items():
+            # Visual keys dependent on value of real_A (incl.)
+            # Refer forward() call 
+            visual_keys_A = ['real_A', 'rec_A', 'fake_B', 'idt_B']
 
-                # For masked values for A, mask real_A, rec_A and fake_B (Forward cycle)
-                if k in ['real_A', 'rec_A', 'fake_B']:
-                    self.visuals[k] = torch.where(mask_A, v, self.masking_value)
+            # Visual keys dependent on value of real_B (incl.)
+            # Refer forward() call 
+            visuals_keys_B = ['real_B', 'rec_B', 'fake_A', 'idt_A']
 
-                # For masked values for B, mask real_B, rec_B and fake_A (Backward cycle)
-                if k in ['real_B', 'rec_B', 'fake_A']:
-                    self.visuals[k] = torch.where(mask_B, v, self.masking_value)
+            for key, visual in self.visuals.items():
+
+                # For values dependent on real_A use mask_A
+                if key in visual_keys_A:
+                    self.visuals[key] = torch.where(mask_A, visual, self.masking_value)
+                
+                # For values dependent on real_B use mask_B
+                if key in visuals_keys_B:
+                    self.visuals[key] = torch.where(mask_B, visual, self.masking_value)
                                 
