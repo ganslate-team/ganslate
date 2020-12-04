@@ -60,46 +60,13 @@ def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], ori
 
 
 def pad(index, volume):
-    pad_value = volume.min()
+    assert len(index) == len(volume.shape)
+    pad_width = [(0,0) for _ in range(len(index))]  # by default no padding
 
-    if index[0] > volume.shape[0]:
-        
-        pad = (index[0] - volume.shape[0])
-        if pad % 2 == 0:
-            pad_before = pad // 2
-            pad_after = pad // 2
+    for dim in range(len(index)):
+        if index[dim] > volume.shape[dim]:
+            pad = index[dim] - volume.shape[dim]
+            pad_per_side = pad // 2
+            pad_width[dim] = (pad_per_side, pad % 2 + pad_per_side)  
 
-        else:
-            pad_before = pad // 2
-            pad_after = (pad // 2) + 1
-
-        volume = np.pad(volume, ((pad_before, pad_after), (0, 0), (0, 0)), 'constant', constant_values=pad_value)
-
-    if index[1] > volume.shape[1]:
-
-        pad = (index[1] - volume.shape[1])
-        if pad % 2 == 0:
-            pad_before = pad // 2
-            pad_after = pad // 2
-
-        else:
-            pad_before = pad // 2
-            pad_after = (pad // 2) + 1 
-
-        volume = np.pad(volume, ((0, 0), (pad_before, pad_after), (0, 0)), 'constant', constant_values=pad_value)
-    
-    if index[2] > volume.shape[2]:
-        
-        pad = (index[2] - volume.shape[2])
-        
-        if pad % 2 == 0:
-            pad_before = pad // 2
-            pad_after = pad // 2
-
-        else:
-            pad_before = pad // 2
-            pad_after = (pad // 2) + 1    
-
-        volume = np.pad(volume, ((0, 0), (0, 0), (pad_before, pad_after)), 'constant', constant_values=pad_value)
-
-    return volume
+    return np.pad(volume, pad_width, 'constant', constant_values=volume.min())

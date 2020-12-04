@@ -31,8 +31,14 @@ class PiCycleGAN(BaseGAN):
         super().__init__(conf)
         
         # Inputs and Outputs of the model
-        visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_B', 'real_B', 'fake_A', 'rec_B', 'idt_A']
-        self.visuals = {name: None for name in visual_names}
+        self.visual_names = {
+            'A': ['real_A', 'fake_B', 'rec_A', 'idt_B'], 
+            'B': ['real_B', 'fake_A', 'rec_B', 'idt_A']
+        }
+        # get all the names from the above lists into a single flat list
+        all_visual_names = [name for v in self.visual_names.values() for name in v]
+        # initialize the visuals as None
+        self.visuals = {name: None for name in all_visual_names}
 
         # Losses used by the model
         loss_names = ['D_A', 'G_A', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_B', 'cycle_B', 'idt_B', 'inv_B']
@@ -143,8 +149,14 @@ class PiCycleGAN(BaseGAN):
         fake_A = self.networks['G'](real_B, inverse=True) # G forward is G_A, G inverse forward is G_B
         rec_B  = self.networks['G'](fake_A)
 
-        self.visuals.update({'fake_B': fake_B, 'rec_A': rec_A, 
-                             'fake_A': fake_A, 'rec_B': rec_B})
+        # Visuals for Identity loss
+        idt_A, idt_B = None, None
+        if self.criterion_G.is_using_identity():
+            idt_A = self.networks['G'](real_B)
+            idt_B = self.networks['G'](real_A, inverse=True)
+        
+        self.visuals.update({'fake_B': fake_B, 'rec_A': rec_A, 'idt_B': idt_B,
+                             'fake_A': fake_A, 'rec_B': rec_B, 'idt_A': idt_A})
 
     
     def backward_D(self, discriminator, loss_id=0):
@@ -198,9 +210,6 @@ class PiCycleGAN(BaseGAN):
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity, Inverse) -------------
-        if self.criterion_G.is_using_identity():
-            self.visuals['idt_A'] = self.networks['G'](real_B)
-            self.visuals['idt_B'] = self.networks['G'](real_A, inverse=True)
         losses_G = self.criterion_G(self.visuals)
         self.losses.update(losses_G)
         # ---------------------------------------------------------------

@@ -42,6 +42,7 @@ class BaseGAN(ABC):
         self.device = self._specify_device()
         self.checkpoint_dir = conf.logging.checkpoint_dir
 
+        self.visual_names = {}
         self.visuals = {}
         self.losses = {}
         self.optimizers = {}
@@ -279,7 +280,7 @@ class BaseGAN(ABC):
         if mask_config:
             if hasattr(torch, mask_config.operator):
                 self.enable_mask = True
-                self.operator = getattr(torch, mask_config.operator)
+                self.masking_operator = getattr(torch, mask_config.operator)
                 self.masking_value = torch.tensor(mask_config.masking_value).to(self.device)
 
             else:
@@ -303,25 +304,13 @@ class BaseGAN(ABC):
         """
     
         if self.enable_mask:
+            mask_A = ~self.masking_operator(self.visuals['real_A'], self.masking_value)
+            mask_B = ~self.masking_operator(self.visuals['real_B'], self.masking_value)
+            
+            # Values dependent on real_A use mask_A
+            for name in self.visual_names['A']:
+                self.visuals[name] = torch.where(mask_A, visual, self.masking_value)
 
-            mask_A = ~self.operator(self.visuals['real_A'], self.masking_value)
-            mask_B = ~self.operator(self.visuals['real_B'], self.masking_value)
-
-            # Visual keys dependent on value of real_A (incl.)
-            # Refer forward() call 
-            visual_keys_A = ['real_A', 'rec_A', 'fake_B', 'idt_B']
-
-            # Visual keys dependent on value of real_B (incl.)
-            # Refer forward() call 
-            visuals_keys_B = ['real_B', 'rec_B', 'fake_A', 'idt_A']
-
-            for key, visual in self.visuals.items():
-
-                # For values dependent on real_A use mask_A
-                if key in visual_keys_A:
-                    self.visuals[key] = torch.where(mask_A, visual, self.masking_value)
-                
-                # For values dependent on real_B use mask_B
-                if key in visuals_keys_B:
-                    self.visuals[key] = torch.where(mask_B, visual, self.masking_value)
-                                
+            # Values dependent on real_B use mask_B
+            for name in self.visual_names['B']:
+                self.visuals[name] = torch.where(mask_B, visual, self.masking_value)
