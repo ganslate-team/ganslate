@@ -309,8 +309,8 @@ class BaseGAN(ABC):
             
             # Values dependent on real_A use mask_A
             for name in self.visual_names['A']:
-                self.visuals[name] = torch.where(mask_A, visual, self.masking_value)
+                self.visuals[name] = torch.where(mask_A, self.visuals[name], self.masking_value)
 
             # Values dependent on real_B use mask_B
             for name in self.visual_names['B']:
-                self.visuals[name] = torch.where(mask_B, visual, self.masking_value)
+                self.visuals[name] = torch.where(mask_B, self.visuals[name], self.masking_value)
