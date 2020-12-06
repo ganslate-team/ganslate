@@ -1,6 +1,5 @@
 from pathlib import Path
 import random
-import logging
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -11,7 +10,8 @@ from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-
+from midaGAN.data.utils.body_mask import apply_body_mask_and_bound, get_body_mask_and_bound
+from midaGAN.data.utils import size_invalid_check_and_replace
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -19,6 +19,10 @@ from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf import BaseDatasetConfig
+
+DEBUG = False
+
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,10 @@ class CBCTtoCTDatasetConfig(BaseDatasetConfig):
     patch_size:              Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
+    enable_masking:          bool = True
+    enable_bounding:         bool = True
+    ct_mask_threshold:          int = -300
+    cbct_mask_threshold:        int = -700
 
 
 class CBCTtoCTDataset(Dataset):
@@ -43,7 +51,8 @@ class CBCTtoCTDataset(Dataset):
 
         for patient in root_path.iterdir():
             self.paths_CBCT[patient.stem] = make_recursive_dataset_of_files(patient / "CBCT", EXTENSIONS)
-            self.paths_CT[patient.stem] = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
+            CT_nrrds = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
+            self.paths_CT[patient.stem] = [path for path in CT_nrrds if path.stem == "CT"]
 
         assert len(self.paths_CBCT) == len(self.paths_CT), \
             "Number of patients should match for CBCT and CT"
@@ -57,25 +66,30 @@ class CBCTtoCTDataset(Dataset):
         self.patch_size = np.array(conf.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
+        self.apply_mask = conf.dataset.enable_masking
+        self.apply_bound = conf.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
+        self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+
     def __getitem__(self, index):
         patient_index = list(self.paths_CT)[index]
 
-        path_CBCT = self.paths_CBCT[patient_index]
-        path_CT = self.paths_CT[patient_index]
+        paths_CBCT = self.paths_CBCT[patient_index]
+        paths_CT = self.paths_CT[patient_index]
 
 
-        path_CBCT = path_CBCT[random.randint(0, len(path_CBCT) - 1)]
-        path_CT = path_CT[random.randint(0, len(path_CT) - 1)]
+        path_CBCT = random.choice(paths_CBCT)
+        path_CT = random.choice(paths_CT)
         
         # load nrrd as SimpleITK objects
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
         # Replace with volumes from replacement paths if the volumes are smaller than patch size
-        CBCT = volume_invalid_check_and_replace(CBCT, self.patch_size, \
+        CBCT = size_invalid_check_and_replace(CBCT, self.patch_size, \
                     replacement_paths=paths_CBCT.copy(), original_path=path_CBCT)
 
-        CT = volume_invalid_check_and_replace(CT, self.patch_size, \
+        CT = size_invalid_check_and_replace(CT, self.patch_size, \
                     replacement_paths=paths_CT.copy(), original_path=path_CT)
 
 
@@ -105,8 +119,42 @@ class CBCTtoCTDataset(Dataset):
         else:
             CT = CT_truncated
 
-        CBCT = sitk_utils.get_tensor(CBCT)
-        CT = sitk_utils.get_tensor(CT)
+
+
+        # Mask and bound is applied on numpy arrays!
+        CBCT = sitk_utils.get_npy(CBCT)
+        CT = sitk_utils.get_npy(CT)
+
+        # Apply body masking to the CT and CBCT arrays 
+        # and bound the z, x, y grid to around the mask
+        try: 
+            CBCT = apply_body_mask_and_bound(CBCT, \
+                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, HU_threshold=self.cbct_mask_threshold)
+        except:
+            logger.error(f"Error applying mask and bound in file : {path_CBCT}")
+
+        try:
+            CT = apply_body_mask_and_bound(CT, \
+                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, HU_threshold=self.ct_mask_threshold)
+
+        except:
+            logger.error(f"Error applying mask and bound in file : {path_CT}")        
+
+        
+
+        if DEBUG:
+            import wandb
+
+            logdict = {
+            "CBCT": wandb.Image(CBCT[CBCT.shape[0]//2], caption=str(path_CBCT)),
+            "CT":wandb.Image(CT[CT.shape[0]//2], caption=str(path_CT))
+            }
+
+            wandb.log(logdict)
+
+        # Convert array to torch tensors
+        CBCT = torch.tensor(CBCT)
+        CT = torch.tensor(CT)
 
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT) 
@@ -133,26 +181,69 @@ class CBCTtoCTDataset(Dataset):
 class CBCTtoCTInferenceDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTInferenceDataset"
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
-    
+    enable_masking:          bool = False
+    enable_bounding:         bool = True
+    cbct_mask_threshold:        int = -700    
 
 class CBCTtoCTInferenceDataset(Dataset):
     def __init__(self, conf):
-        self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
+        # self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
+        self.root_path = Path(conf.dataset.root).resolve()
+        
+        self.paths = []
+
+        for patient in self.root_path.iterdir():
+            self.paths.extend(make_recursive_dataset_of_files(patient / "CBCT", EXTENSIONS))
+
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
 
+        self.apply_mask = conf.dataset.enable_masking
+        self.apply_bound = conf.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
+
     def __getitem__(self, index):
-        path = str(Path(self.paths[index]) / 'CT.nrrd')
+        path = str(self.paths[index])
+
+        print(path)
         # load nrrd as SimpleITK objects
         volume = sitk_utils.load(path)
-        metadata = (path, 
+
+
+
+        volume = volume - 1024
+
+        volume = truncate_CBCT_based_on_fov(volume)
+        
+        metadata = [path, 
+                    volume.GetSize(),
                     volume.GetOrigin(), 
                     volume.GetSpacing(), 
                     volume.GetDirection(),
-                    sitk_utils.get_npy_dtype(volume))
+                    sitk_utils.get_npy_dtype(volume)]
 
-        volume = sitk_utils.get_tensor(volume)
+        volume = sitk_utils.get_npy(volume)
+        
+
+        body_mask, ((z_max, z_min), \
+        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(volume, self.cbct_mask_threshold)
+    
+        # Apply mask to the image array 
+        if self.apply_mask:
+            volume = np.where(body_mask, volume, -1024)
+
+         # Index the array within the bounds and return cropped array
+        if self.apply_bound:
+            volume = volume[z_max:z_min, y_max: y_min, x_max: x_min]
+
+
+        metadata.append(((z_max, z_min), (y_max, y_min), (x_max, x_min)))
+
+
+
+        volume = torch.tensor(volume)
+
         # Limits the lowest and highest HU unit
         volume = torch.clamp(volume, self.hu_min, self.hu_max)
         # Normalize Hounsfield units to range [-1,1]
@@ -169,12 +260,23 @@ class CBCTtoCTInferenceDataset(Dataset):
         tensor = tensor.squeeze()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
         
-        datapoint_path, origin, spacing, direction, dtype = metadata
-        sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)
+        datapoint_path, size, origin, spacing, direction, dtype, bounds = metadata
+
+
+        full_tensor = torch.full((size[2], size[1], size[0]), -1024)
+
+        full_tensor[bounds[0][0]: bounds[0][1], bounds[1][0]: bounds[1][1], bounds[2][0]: bounds[2][1]] = tensor
+
+        sitk_image = sitk_utils.tensor_to_sitk_image(full_tensor, origin, spacing, direction, dtype)
 
         # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
-        datapoint_name = Path(str(datapoint_path)).parent.name
-        save_path = Path(output_dir) / Path(datapoint_name).with_suffix('.nrrd')
+        datapoint_path = Path(str(datapoint_path))
+
+        save_path = datapoint_path.relative_to(self.root_path)
+
+        save_path = Path(output_dir) / save_path
+
+        save_path.parent.mkdir(exist_ok=True, parents=True)
 
         sitk_utils.write(sitk_image, save_path)
         

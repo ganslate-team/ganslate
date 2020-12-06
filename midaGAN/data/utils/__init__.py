@@ -1,12 +1,14 @@
 # coding=utf-8
 # Copyright (c) midaGAN Contributors
+import random 
+import numpy as np
 
 from midaGAN.utils import sitk_utils
 import logging
 
 logger = logging.getLogger(__name__)
 
-def volume_invalid_check_and_replace(volume, patch_size, replacement_paths=[], original_path=None):
+def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], original_path=None):
     """
     Check if volume loaded is invalid, if so replace with another volume from the same patient. 
 
@@ -28,7 +30,15 @@ def volume_invalid_check_and_replace(volume, patch_size, replacement_paths=[], o
         replacement_paths.remove(original_path)
 
     # Check if volume is smaller than patch size
-    while sitk_utils.is_volume_smaller_than(volume, patch_size):
+    
+    if len(patch_size) == 3:
+        fn = eval(f"sitk_utils.is_volume_smaller_than")
+    elif len(patch_size) == 2:
+        fn = eval(f"sitk_utils.is_image_smaller_than")
+    else:
+        raise NotImplementedError()
+
+    while fn(volume, patch_size):
         logger.warning(f"Volume size smaller than the defined patch size.\
             Volume: {sitk_utils.get_size_zxy(volume)} \npatch_size: {patch_size}. \n \
             Volume path: {original_path}")
@@ -47,3 +57,16 @@ def volume_invalid_check_and_replace(volume, patch_size, replacement_paths=[], o
         replacement_paths.remove(path)
 
     return volume
+
+
+def pad(index, volume):
+    assert len(index) == len(volume.shape)
+    pad_width = [(0,0) for _ in range(len(index))]  # by default no padding
+
+    for dim in range(len(index)):
+        if index[dim] > volume.shape[dim]:
+            pad = index[dim] - volume.shape[dim]
+            pad_per_side = pad // 2
+            pad_width[dim] = (pad_per_side, pad % 2 + pad_per_side)  
+
+    return np.pad(volume, pad_width, 'constant', constant_values=volume.min())

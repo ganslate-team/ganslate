@@ -39,6 +39,7 @@ class Inferer():
             
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
+            print(data.shape)
             out = self.infer(data)
             self.tracker.end_computation_timer()
             

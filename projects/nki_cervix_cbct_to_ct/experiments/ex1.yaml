@@ -5,18 +5,18 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: ./checkpoints/cbct_ex1/
+    checkpoint_dir: ./checkpoints/cbct_ex3/
     wandb:
         project: "NKI_CBCT_CT"
-    log_freq: 5
+    log_freq: 50
     checkpoint_freq: 10000
 
 dataset: 
     name: "CBCTtoCTDataset"
-    root: "/repos/Maastro/nki_cervix"
-    hounsfield_units_range: [-1000, 2000]
-    num_workers: 1
-    patch_size: [16, 128, 128]
+    root: /home/rt/workspace_suraj/cervix_resampled
+    hounsfield_units_range: [-1024, 2048]
+    num_workers: 4
+    patch_size: [32, 32, 32]
     
 gan:  
     name: "PiCycleGAN"
@@ -41,5 +41,5 @@ optimizer:
   lambda_identity: 0.0
   lambda_inverse: 0.0
   proportion_ssim: 0.84
-  lr_D: 0.0002
-  lr_G: 0.0004
+  lr_D: 0.0001
+  lr_G: 0.0002

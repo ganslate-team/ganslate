@@ -25,6 +25,10 @@ def get_size_zxy(sitk_image):
     n_dims = len(size) 
     if n_dims == 3: 
         return np.array([size[2], size[0], size[1]])
+
+    elif n_dims == 2:
+        return np.array([size[0], size[1]])
+
     else:
         raise NotImplementedError("Not implemented for {} dimensions.".format(n_dims))
 
@@ -39,6 +43,12 @@ def is_volume_smaller_than(sitk_volume, target_shape):
     if (volume_size < target_shape).any():
         return True
     return False
+
+def is_image_smaller_than(sitk_volume, target_shape):
+    image_size = get_size_zxy(sitk_volume[:, :, 0])
+    if (image_size < target_shape).any():
+        return True
+    return False    
 
 def get_npy_dtype(sitk_image):
     return str(sitk.GetArrayFromImage(sitk_image).dtype)

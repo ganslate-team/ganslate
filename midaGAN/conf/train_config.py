@@ -5,6 +5,11 @@ from midaGAN.conf.base_configs import *
 
 
 @dataclass
+class LossMaskingConfig:
+    masking_value:   float = -1
+    operator:        str = "eq"
+
+@dataclass
 class OptimizerConfig:
     beta1:           float = 0.5
     lr_D:            float = 0.0001
@@ -15,6 +20,8 @@ class OptimizerConfig:
     lambda_inverse:  float = 0
     proportion_ssim: float = 0.84
     ssim_type:       str = "SSIM" # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
+    loss_mask:       Optional[LossMaskingConfig] = None
+
 
 @dataclass
 class WandbConfig:

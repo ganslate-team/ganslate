@@ -2,6 +2,7 @@ import torch
 
 
 def min_max_normalize(image, min_value, max_value):
+    image = image.float()
     image = (image - min_value) / (max_value - min_value)
     return 2*image - 1
 

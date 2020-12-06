@@ -10,6 +10,9 @@ from apex import amp
 from midaGAN.nn.utils import get_scheduler
 from midaGAN.utils import communication
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class BaseGAN(ABC):
     """This class is an abstract base class (ABC) for GAN models.
@@ -39,6 +42,7 @@ class BaseGAN(ABC):
         self.device = self._specify_device()
         self.checkpoint_dir = conf.logging.checkpoint_dir
 
+        self.visual_names = {}
         self.visuals = {}
         self.losses = {}
         self.optimizers = {}
@@ -266,3 +270,49 @@ class BaseGAN(ABC):
     def get_loggable_data(self):
         """Return data that is useful for tracking - learning rates, losses and visuals."""
         return self.get_learning_rates(), self.get_current_losses(), self.get_current_visuals()
+
+    def setup_masking(self, mask_config):
+        """
+        Setup masking!
+        """
+        self.enable_mask = False
+
+        if mask_config:
+            if hasattr(torch, mask_config.operator):
+                self.enable_mask = True
+                self.masking_operator = getattr(torch, mask_config.operator)
+                self.masking_value = torch.tensor(mask_config.masking_value).to(self.device)
+
+            else:
+                logger.warning("No valid operator match found, masking will be disabled!")
+
+        logger.info(f"Masking values enabled: {self.enable_mask}")
+
+
+    def mask_current_visuals(self):
+        """
+        Mask all items in visuals if they are tensors. This is done to 
+        ignore value updates outside a mask. 
+
+        Reference: https://forums.fast.ai/t/image-segmentation-leaving-some-pixels-unlabeled/40967/2
+
+        A better way to do it would be to operate directly on loss tensors but this will be quite ugly
+        given the structure of the current codebase. The issue is scaling of the loss, the mean will consider
+        the masked tensors here as well. 
+
+        But since the sizes are more or less similar across different data instances, this should be okay for now!
+        """
+    
+        if self.enable_mask:
+            mask_A = ~self.masking_operator(self.visuals['real_A'], self.masking_value)
+            mask_B = ~self.masking_operator(self.visuals['real_B'], self.masking_value)
+            
+            # Values dependent on real_A use mask_A
+            for name in self.visual_names['A']:
+                if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                    self.visuals[name] = torch.where(mask_A, self.visuals[name], self.masking_value)
+
+            # Values dependent on real_B use mask_B
+            for name in self.visual_names['B']:
+                if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                    self.visuals[name] = torch.where(mask_B, self.visuals[name], self.masking_value)
