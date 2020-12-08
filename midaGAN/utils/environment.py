@@ -103,11 +103,13 @@ def setup_logging(use_stdout: Optional[bool] = True,
 
 
 def set_seed(seed=0):
+    # Inspired also from: https://stackoverflow.com/a/57417097
+    logger.info(f"Reproducible mode ON with seed : {seed}")
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
-    
+    os.environ['PYTHONHASHSEED'] = str(seed)
+
     # https://pytorch.org/docs/stable/notes/randomness.html#cudnn
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    

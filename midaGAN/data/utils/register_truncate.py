@@ -2,6 +2,7 @@ import SimpleITK as sitk
 from numpy import mean
 from itertools import product
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,10 @@ def get_registration_transform(fixed_image, moving_image):
     should be truncated so that it contains only the part of the body that is found in the `fixed_image`. 
     Registration parameters are hardcoded and picked for the specific task of  CBCT to CT translation. 
     TODO: consider making the adjustable in config."""
+
+
+    # Get seed from environment variable if set for registration randomness
+    seed = int(os.environ.get('PYTHONHASHSEED')) if 'PYTHONHASHSEED' in os.environ else sitk.sitkWallClock
     
     # SimpleITK registration's supported pixel types are sitkFloat32 and sitkFloat64
     fixed_image = sitk.Cast(fixed_image, sitk.sitkFloat32)
@@ -70,7 +75,8 @@ def get_registration_transform(fixed_image, moving_image):
     # Similarity metric settings
     registration_method.SetMetricAsMattesMutualInformation(numberOfHistogramBins=200)
     registration_method.SetMetricSamplingStrategy(registration_method.RANDOM)
-    registration_method.SetMetricSamplingPercentage(0.01)
+
+    registration_method.SetMetricSamplingPercentage(0.01, seed)
 
     registration_method.SetInterpolator(sitk.sitkLinear)
 
