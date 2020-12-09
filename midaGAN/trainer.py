@@ -45,8 +45,8 @@ class Trainer():
             self._do_iteration(data)
             self.tracker.end_computation_timer()
             
-            learning_rates, losses, visuals = self.model.get_loggable_data()
-            self.tracker.log_iter(learning_rates, losses, visuals)
+            learning_rates, losses, visuals, metrics = self.model.get_loggable_data()
+            self.tracker.log_iter(learning_rates, losses, visuals, metrics)
 
             self._save_checkpoint()
             self._perform_scheduler_step()

@@ -27,7 +27,7 @@ class TrainingTracker(BaseTracker):
             if conf.logging.tensorboard:
                 self.tensorboard = TensorboardTracker(conf)
 
-    def log_iter(self, learning_rates, losses, visuals):
+    def log_iter(self, learning_rates, losses, visuals, metrics):
         """Parameters: # TODO: update this
             iters (int) -- current training iteration
             losses (tuple/list) -- training losses
@@ -37,6 +37,10 @@ class TrainingTracker(BaseTracker):
         if self.iter_idx % self.log_freq == 0:      
             visuals = {k: v for k, v in visuals.items() if v is not None}
             losses = {k: v for k, v in losses.items() if v is not None}
+            metrics = {k: v for k, v in metrics.items() if v is not None}
+
+
+            metrics = communication.reduce(metrics, average=True, all_reduce=False) # reduce metrics (avg) and send to the process of rank 0
             losses = communication.reduce(losses, average=True, all_reduce=False) # reduce losses (avg) and send to the process of rank 0
 
             self._log_message(learning_rates, losses) 
@@ -46,10 +50,10 @@ class TrainingTracker(BaseTracker):
                 self._save_image(visuals)
 
                 if self.wandb:
-                    self.wandb.log_iter(self.iter_idx, learning_rates, losses, visuals)
+                    self.wandb.log_iter(self.iter_idx, learning_rates, losses, visuals, metrics)
 
                 if self.tensorboard:
-                    self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals)
+                    self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals, metrics)
 
     def _log_message(self, learning_rates, losses):
         lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]

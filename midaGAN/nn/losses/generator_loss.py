@@ -1,15 +1,11 @@
 import torch
 import torch.nn as nn
 import midaGAN.nn.losses.ssim as ssim
+from midaGAN.nn.utils import reshape_to_4D_if_5D
 
 import logging
 logger = logging.getLogger(__name__)
 
-# TODO: place it somewhere better
-def reshape_to_4D_if_5D(tensor):
-    if len(tensor.shape) == 5:
-        return tensor.view(-1, *tensor.shape[2:])
-    return tensor
 
 class GeneratorLoss:
     def __init__(self, conf):

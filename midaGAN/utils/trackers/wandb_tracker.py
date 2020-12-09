@@ -11,7 +11,7 @@ class WandbTracker:
 
         wandb.init(project=project, entity=entity, config=config_dict) # TODO: project and organization from conf
 
-    def log_iter(self, iter_idx, learning_rates, losses, visuals):
+    def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics):
         """TODO"""
         log_dict = {}
 
@@ -25,7 +25,12 @@ class WandbTracker:
         # Losses
         for name, loss in losses.items():
             log_dict[f"loss_{name}"] = loss
-        
+
+
+        # Metrics
+        for name, metric in metrics.items():
+            log_dict[name] = metric
+
         # Image
         name, image = visuals['name'], visuals['image']
         image = image.permute(1,2,0) # CxHxW -> HxWxC
