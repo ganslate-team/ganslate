@@ -37,7 +37,11 @@ class LoggingConfig:
     tensorboard:     bool = False
     wandb:           Optional[WandbConfig] = None
 
-
+@dataclass
+class MetricConfig:
+    output_distributions_D:  bool = True 
+    ssim:                  bool = True
+    
 @dataclass
 class LoadCheckpointConfig:
     iter:             str = MISSING  # Which iteration's checkpoint to load. 
@@ -55,6 +59,7 @@ class TrainConfig(BaseConfig):
     
     optimizer:       OptimizerConfig = OptimizerConfig()
     logging:         LoggingConfig = LoggingConfig()
+    metrics:         MetricConfig = MetricConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None
     seed:            Optional[int] = None  # Seed for reproducibility
 
