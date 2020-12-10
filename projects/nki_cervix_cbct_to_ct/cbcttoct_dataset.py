@@ -28,12 +28,14 @@ logger = logging.getLogger(__name__)
 
 EXTENSIONS = ['.nrrd']
 
+# --------------------------- TRAIN DATASET --------------------------------------------------
+# --------------------------------------------------------------------------------------------
 
 @dataclass
 class CBCTtoCTDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTDataset"
     patch_size:              Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
-    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
+    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
     enable_masking:          bool = True
     enable_bounding:         bool = True
@@ -70,6 +72,7 @@ class CBCTtoCTDataset(Dataset):
         self.apply_bound = conf.dataset.enable_bounding
         self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
         self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+
 
     def __getitem__(self, index):
         patient_index = list(self.paths_CT)[index]
@@ -177,13 +180,18 @@ class CBCTtoCTDataset(Dataset):
         return self.num_datapoints
 
 
+# --------------------------- INFERENCE DATASET ----------------------------------------------
+# --------------------------------------------------------------------------------------------
+
+
 @dataclass
 class CBCTtoCTInferenceDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTInferenceDataset"
-    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
+    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
     enable_masking:          bool = False
     enable_bounding:         bool = True
     cbct_mask_threshold:        int = -700    
+
 
 class CBCTtoCTInferenceDataset(Dataset):
     def __init__(self, conf):
@@ -281,5 +289,111 @@ class CBCTtoCTInferenceDataset(Dataset):
         sitk_utils.write(sitk_image, save_path)
         
 
+# --------------------------- EVALUATION DATASET ---------------------------------------------
+# --------------------------------------------------------------------------------------------
+
+@dataclass
+class CBCTtoCTEvalDatasetConfig(BaseDatasetConfig):
+    name:                    str = "CBCTtoCTEvalDataset"
+    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
+    enable_masking:          bool = False
+    enable_bounding:         bool = True
+    cbct_mask_threshold:        int = -700    
+    ct_mask_threshold:          int = -300
 
 
+class CBCTtoCTEvalDataset(Dataset):
+    def __init__(self, conf):
+        # self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
+        self.root_path = Path(conf.dataset.root).resolve()
+        
+        self.paths = {}
+
+        for patient in self.root_path.iterdir():
+
+            # Sorted list of files is returned, pick the first CBCT volume.
+            first_CBCT = make_recursive_dataset_of_files(patient / "CBCT", EXTENSIONS)[0]
+            CT_nrrds = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
+            planning_CT = sorted([path for path in CT_nrrds if path.stem == "CT"])[0]
+
+            self.paths[patient] = {
+                "CT": planning_CT,
+                "CBCT": first_CBCT
+            }
+
+
+        self.num_datapoints = len(self.paths)
+        # Min and max HU values for clipping and normalization
+        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+
+        self.apply_mask = conf.dataset.enable_masking
+        self.apply_bound = conf.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
+        self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+
+
+    def __getitem__(self, index):
+        patient_index = list(self.paths)[index]
+
+        patient_dict = self.paths[patient_index]
+
+        planning_CT = patient_dict["CT"]
+        first_CBCT = patient_dict["CBCT"]
+
+        # load nrrd as SimpleITK objects
+        CT = sitk_utils.load(planning_CT)
+        CBCT = sitk_utils.load(first_CBCT)
+
+        CBCT = CBCT - 1024
+
+        CBCT = truncate_CBCT_based_on_fov(CBCT)
+        
+
+        CBCT = sitk_utils.get_npy(CBCT)
+        CT = sitk_utils.get_npy(CT)
+        
+
+        body_mask, ((z_max, z_min), \
+        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CBCT, self.cbct_mask_threshold)
+    
+        # Apply mask to the image array 
+        if self.apply_mask:
+            CBCT = np.where(body_mask, CBCT, -1024)
+
+         # Index the array within the bounds and return cropped array
+        if self.apply_bound:
+            CBCT = CBCT[z_max:z_min, y_max: y_min, x_max: x_min]
+
+
+        body_mask, ((z_max, z_min), \
+        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CT, self.ct_mask_threshold)
+    
+        # Apply mask to the image array 
+        if self.apply_mask:
+            CT = np.where(body_mask, CT, -1024)
+
+         # Index the array within the bounds and return cropped array
+        if self.apply_bound:
+            CT = CT[z_max:z_min, y_max: y_min, x_max: x_min]
+
+
+        CT = torch.tensor(CT)
+        CBCT = torch.tensor(CBCT)
+
+        # Limits the lowest and highest HU unit
+        CT = torch.clamp(CT, self.hu_min, self.hu_max)
+        CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
+        # Normalize Hounsfield units to range [-1,1]
+        CT = min_max_normalize(CT, self.hu_min, self.hu_max)
+        CBCT = min_max_normalize(CBCT, self.hu_min, self.hu_max)
+        # Add channel dimension (1 = grayscale)
+        CT = CT.unsqueeze(0)
+        CBCT = CBCT.unsqueeze(0)
+
+        return {
+            "A": CBCT, 
+            "B": CT
+        }
+
+    def __len__(self):
+        return self.num_datapoints

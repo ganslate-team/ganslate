@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def build_loader(conf):
     dataset = build_dataset(conf)
 
-    if conf.gan.is_train:
+    if conf.gan and conf.gan.is_train:
         sampler = InfiniteSampler(size=len(dataset), 
                                   shuffle=conf.dataset.shuffle)
     else:

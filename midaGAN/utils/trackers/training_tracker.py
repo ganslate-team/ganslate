@@ -56,11 +56,14 @@ class TrainingTracker(BaseTracker):
                     self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals, metrics)
 
     def _log_message(self, learning_rates, losses):
-        lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]
         message = '\n' + 20 * '-' + ' '
-        message += '(iter: %d | comp: %.3f, data: %.3f | lr_G: %.7f, lr_D = %.7f)' \
-                       % (self.iter_idx, self.t_comp, self.t_data, lr_G, lr_D)
-        message += ' ' + 20 * '-' +  '\n'
+
+        if learning_rates:
+            lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]
+            message += '(iter: %d | comp: %.3f, data: %.3f | lr_G: %.7f, lr_D = %.7f)' \
+                        % (self.iter_idx, self.t_comp, self.t_data, lr_G, lr_D)
+            message += ' ' + 20 * '-' +  '\n'
+            
         for k, v in losses.items():
             message += '%s: %.3f ' % (k, v)
         self.logger.info(message)

@@ -19,8 +19,10 @@ class WandbTracker:
         log_dict['iter_idx'] = iter_idx
 
         # Learning rates
-        log_dict['lr_G'] = learning_rates['lr_G']
-        log_dict['lr_D'] = learning_rates['lr_D']
+        print(learning_rates)
+        if learning_rates:
+            log_dict['lr_G'] = learning_rates['lr_G']
+            log_dict['lr_D'] = learning_rates['lr_D']
         
         # Losses
         for name, loss in losses.items():

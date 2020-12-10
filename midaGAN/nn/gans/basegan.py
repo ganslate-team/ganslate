@@ -18,7 +18,7 @@ from midaGAN.nn.discriminators import build_D
 from midaGAN.nn.losses.generator_loss import GeneratorLoss
 from midaGAN.nn.losses.gan_loss import GANLoss
 
-from midaGAN.nn.metrics import TrainingMetrics
+from midaGAN.nn.metrics.train_metrics import TrainingMetrics
 
 
 import logging
@@ -289,7 +289,15 @@ class BaseGAN(ABC):
         with torch.no_grad():
             generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
             return self.networks[generator].forward(input)
-            
+
+
+    def infer_backward(self, input):
+        """
+        Needs to be overriden by picyclegan and basegan
+        """
+        pass
+
+
     def get_learning_rates(self):
         """ Return current learning rates of both generator and discriminator"""
         learning_rates = {}

@@ -208,3 +208,12 @@ class CycleGAN(BaseGAN):
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=loss_id)
+
+
+    def infer_backward(self, input):
+        if self.is_train:
+            raise ValueError("Inference cannot be done in training mode.")
+        
+        with torch.no_grad():
+            generator = list(self.networks.keys())[1] # in inference mode only generator is defined # TODO: any nicer way 
+            return self.networks[generator].forward(input)
