@@ -207,6 +207,8 @@ class PiCycleGAN(BaseGAN):
     
     
     def infer_backward(self, input):
+        input = super().infer_backward(input)
+
         if self.is_train:
             raise ValueError("Inference cannot be done in training mode.")
         

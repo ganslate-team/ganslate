@@ -93,6 +93,7 @@ def get_eval_defaults(conf):
         name: {"".join(conf.dataset.name.split("Dataset")) + "EvalDataset"}
         shuffle: True
         root: {conf.dataset.root}
+        num_workers: 0
             
     sliding_window:
         window_size: {window_size}

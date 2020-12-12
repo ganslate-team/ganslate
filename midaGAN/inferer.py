@@ -75,7 +75,7 @@ class Inferer():
             return SlidingWindowInferer(roi_size=self.conf.sliding_window.window_size,
                                         sw_batch_size=self.conf.sliding_window.batch_size,
                                         overlap=self.conf.sliding_window.overlap,
-                                        mode=self.conf.sliding_window.mode)
+                                        mode=self.conf.sliding_window.mode, cval=-1)
         else:
             return None
 
