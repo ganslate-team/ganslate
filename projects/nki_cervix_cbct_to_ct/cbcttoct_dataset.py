@@ -11,7 +11,7 @@ from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormal
 from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.body_mask import apply_body_mask_and_bound, get_body_mask_and_bound
-from midaGAN.data.utils import size_invalid_check_and_replace
+from midaGAN.data.utils import size_invalid_check_and_replace, pad
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -41,6 +41,7 @@ class CBCTtoCTDatasetConfig(BaseDatasetConfig):
     enable_bounding:         bool = True
     ct_mask_threshold:          int = -300
     cbct_mask_threshold:        int = -700
+    pad:                     bool = True
 
 
 class CBCTtoCTDataset(Dataset):
@@ -72,6 +73,7 @@ class CBCTtoCTDataset(Dataset):
         self.apply_bound = conf.dataset.enable_bounding
         self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
         self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+        self.pad = conf.dataset.pad
 
 
     def __getitem__(self, index):
@@ -89,11 +91,13 @@ class CBCTtoCTDataset(Dataset):
         CT = sitk_utils.load(path_CT)
 
         # Replace with volumes from replacement paths if the volumes are smaller than patch size
-        CBCT = size_invalid_check_and_replace(CBCT, self.patch_size, \
-                    replacement_paths=paths_CBCT.copy(), original_path=path_CBCT)
 
-        CT = size_invalid_check_and_replace(CT, self.patch_size, \
-                    replacement_paths=paths_CT.copy(), original_path=path_CT)
+        if not self.pad:
+            CBCT = size_invalid_check_and_replace(CBCT, self.patch_size, \
+                        replacement_paths=paths_CBCT.copy(), original_path=path_CBCT)
+
+            CT = size_invalid_check_and_replace(CT, self.patch_size, \
+                        replacement_paths=paths_CT.copy(), original_path=path_CT)
 
 
         if CBCT is None or CT is None:
@@ -107,7 +111,7 @@ class CBCTtoCTDataset(Dataset):
 
         # TODO: make a function
         if (sitk_utils.is_volume_smaller_than(CBCT, self.patch_size) 
-                or sitk_utils.is_volume_smaller_than(CT, self.patch_size)):
+                or sitk_utils.is_volume_smaller_than(CT, self.patch_size)) and not self.pad:
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nCBCT: {} \nCT: {} \npatch_size: {}."\
                              .format(sitk_utils.get_size_zxy(CBCT),
@@ -116,17 +120,21 @@ class CBCTtoCTDataset(Dataset):
 
 	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
-        if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size):
+        if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size) and not self.pad:
             logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
             del CT_truncated
         else:
             CT = CT_truncated
 
 
-
+            
         # Mask and bound is applied on numpy arrays!
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
+
+        if self.pad:
+            CBCT = pad(self.patch_size, CBCT)
+            CT = pad(self.patch_size, CT)
 
         # Apply body masking to the CT and CBCT arrays 
         # and bound the z, x, y grid to around the mask
