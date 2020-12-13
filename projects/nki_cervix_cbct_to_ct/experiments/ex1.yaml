@@ -13,10 +13,10 @@ logging:
 
 dataset: 
     name: "CBCTtoCTDataset"
-    root: /home/rt/workspace_suraj/cervix_resampled
+    root: /data/train
     hounsfield_units_range: [-1024, 2048]
     num_workers: 4
-    patch_size: [32, 32, 32]
+    patch_size: [32, 320, 320]
     
 gan:  
     name: "PiCycleGAN"

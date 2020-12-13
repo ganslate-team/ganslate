@@ -120,6 +120,7 @@ class CBCTtoCTDataset(Dataset):
 
 	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
+
         if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size) and not self.pad:
             logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
             del CT_truncated
@@ -150,6 +151,11 @@ class CBCTtoCTDataset(Dataset):
 
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")        
+
+
+        if self.pad:
+            CBCT = pad(self.patch_size, CBCT)
+            CT = pad(self.patch_size, CT)
 
         
 
