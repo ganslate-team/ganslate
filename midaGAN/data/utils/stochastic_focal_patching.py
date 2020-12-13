@@ -43,8 +43,6 @@ class StochasticFocalPatchSampler:
     def pick_random_start(self, volume):
         """Pick a starting point of a patch randomly. Used for patch_A."""
         valid_start_region = self.calculate_valid_start_region(volume)
-        print("Start region:", valid_start_region)
-        print("Volume:", volume.shape)
         z, x, y = [random.randint(0, v) for v in valid_start_region]
         return z, x, y
     

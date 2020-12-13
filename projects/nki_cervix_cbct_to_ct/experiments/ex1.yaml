@@ -15,8 +15,8 @@ dataset:
     name: "CBCTtoCTDataset"
     root: /data/train
     hounsfield_units_range: [-1024, 2048]
-    num_workers: 4
-    patch_size: [32, 320, 320]
+    num_workers: 8
+    patch_size: [48, 320, 320]
     
 gan:  
     name: "PiCycleGAN"
@@ -43,3 +43,20 @@ optimizer:
   proportion_ssim: 0.84
   lr_D: 0.0001
   lr_G: 0.0002
+
+  loss_mask:
+    masking_value: -1
+    operator: "eq" 
+
+
+metrics: 
+  output_distributions_D: True
+  ssim: True
+  
+eval:
+  eval_freq: 10000
+  samples: 10
+  metrics:
+    ssim: True
+
+
