@@ -36,8 +36,8 @@ class CBCTtoCT2DDatasetConfig(BaseDatasetConfig):
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
     enable_cache:            bool = False
     image_channels:          int = 1
-    enable_masking:          bool = True
-    enable_bounding:         bool = True
+    enable_masking:          bool = False
+    enable_bounding:         bool = False
     ct_mask_threshold:          int = -300
     cbct_mask_threshold:        int = -700
 
