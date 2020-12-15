@@ -77,3 +77,19 @@ def init_weights(net, weight_init_type='normal', gain=0.02):
             init.normal_(m.weight.data, 1.0, gain)
             init.constant_(m.bias.data, 0.0)
     net.apply(init_func)
+
+
+# TODO: place it somewhere better
+def reshape_to_4D_if_5D(tensor):
+    if len(tensor.shape) == 5:
+        return tensor.view(-1, *tensor.shape[2:])
+    return tensor
+
+# TODO: place it somewhere better
+def reshape_if_2D(tensor):
+    # NCDHW, check if D is 1
+    if tensor.shape[2] == 1:
+        # Reshape to ensure that D is squeezed
+        return tensor.squeeze(axis=2)
+        
+    return tensor

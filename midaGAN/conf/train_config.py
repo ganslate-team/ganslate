@@ -2,6 +2,7 @@ from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf.base_configs import *
+from midaGAN.conf.eval_config import *
 
 
 @dataclass
@@ -37,12 +38,19 @@ class LoggingConfig:
     tensorboard:     bool = False
     wandb:           Optional[WandbConfig] = None
 
-
+    
 @dataclass
 class LoadCheckpointConfig:
     iter:             str = MISSING  # Which iteration's checkpoint to load. 
     count_start_iter: int = 1  # Continue the count of epochs from this value. [Default: 1] # TODO: make training not need this by loading the epoch from the checkpoint (?)
     reset_optimizers: bool = False  # If true, the checkpoint optimizer state_dict won't be loaded and optimizers will start from scratch.
+
+
+@dataclass
+class MetricConfig:
+    output_distributions_D:  bool = False
+    ssim:                  bool = False
+
 
 @dataclass
 class TrainConfig(BaseConfig):
@@ -57,4 +65,8 @@ class TrainConfig(BaseConfig):
     logging:         LoggingConfig = LoggingConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None
     seed:            Optional[int] = None  # Seed for reproducibility
+    metrics:         MetricConfig = MetricConfig() # Metrics to log while training! 
 
+    # Separate evaluation config that will be run with a full-volume dataloader. 
+    # Can be used for intermittent SSIM, dose calcs etc
+    eval:            EvalConfig = EvalConfig() # Evaluation config

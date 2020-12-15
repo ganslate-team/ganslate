@@ -7,8 +7,20 @@ import logging
 import torch
 from torch.nn.parallel import DistributedDataParallel
 from apex import amp
-from midaGAN.nn.utils import get_scheduler
 from midaGAN.utils import communication
+
+# midaGAN.nn imports
+from midaGAN.nn.utils import get_scheduler
+from midaGAN.nn.utils import reshape_if_2D
+
+from midaGAN.nn.generators import build_G
+from midaGAN.nn.discriminators import build_D
+
+from midaGAN.nn.losses.generator_loss import GeneratorLoss
+from midaGAN.nn.losses.gan_loss import GANLoss
+
+from midaGAN.nn.metrics.train_metrics import TrainingMetrics
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -44,9 +56,34 @@ class BaseGAN(ABC):
 
         self.visual_names = {}
         self.visuals = {}
+        self.metrics = {}
         self.losses = {}
         self.optimizers = {}
         self.networks = {}
+
+
+    def init_networks(self, conf):
+        for name in self.networks.keys():
+            if name.startswith('G'):
+                self.networks[name] = build_G(conf, self.device)
+            elif name.startswith('D'):
+                self.networks[name] = build_D(conf, self.device)
+            else:
+                raise ValueError('Network\'s name has to begin with either "G" if it is a generator, \
+                                  or "D" if it is a discriminator.')
+
+
+    def init_criterions(self, conf):
+        # Standard GAN loss 
+        self.criterion_gan = GANLoss(conf.gan.loss_type).to(self.device)
+        # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
+        self.criterion_G = GeneratorLoss(conf)
+
+
+    def init_metrics(self, conf):
+        # Intialize training metrics
+        self.training_metrics = TrainingMetrics(conf)
+
     
     def _specify_device(self):
         if torch.distributed.is_initialized():
@@ -248,12 +285,23 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
+        input = reshape_if_2D(input)
+
         if self.is_train:
             raise ValueError("Inference cannot be done in training mode.")
         with torch.no_grad():
             generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
             return self.networks[generator].forward(input)
-            
+
+
+    def infer_backward(self, input):
+        """
+        Needs to be overriden by picyclegan and basegan
+        """
+        input = reshape_if_2D(input)
+        return input
+
+
     def get_learning_rates(self):
         """ Return current learning rates of both generator and discriminator"""
         learning_rates = {}
@@ -267,11 +315,17 @@ class BaseGAN(ABC):
     def get_current_losses(self):
         return self.losses
 
+    def get_current_metrics(self):
+        return self.metrics        
+
     def get_loggable_data(self):
         """Return data that is useful for tracking - learning rates, losses and visuals."""
-        return self.get_learning_rates(), self.get_current_losses(), self.get_current_visuals()
+        return ( 
+            self.get_learning_rates(), self.get_current_losses(), 
+            self.get_current_visuals(), self.get_current_metrics()
+        )
 
-    def setup_masking(self, mask_config):
+    def setup_loss_masking(self, mask_config):
         """
         Setup masking!
         """

@@ -8,7 +8,7 @@ class TensorboardTracker:
     def close(self):
         self.writer.close()
 
-    def log_iter(self, iter_idx, learning_rates, losses, visuals):
+    def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics):
         # Learning rates
         lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]
         self.writer.add_scalar('Learning Rates/lr_G', lr_G, iter_idx)
