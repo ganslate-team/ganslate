@@ -20,7 +20,7 @@ class SlidingWindowConfig:
 
 @dataclass
 class EvalConfig(BaseConfig):
-    enable:          bool = True # Enable eval mode
+    enable:          bool = False # Enable eval mode
     eval_freq:       int = 1 # Every n iterations to run eval
     metrics:         MetricConfig = MetricConfig()
     samples:         int = 4 # Number of samples from the data to run evaluation for
