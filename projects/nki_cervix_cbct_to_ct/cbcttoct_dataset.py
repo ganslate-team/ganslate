@@ -311,7 +311,7 @@ class CBCTtoCTEvalDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTEvalDataset"
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
     enable_masking:          bool = False
-    enable_bounding:         bool = True
+    enable_bounding:         bool = False
     cbct_mask_threshold:        int = -700    
     ct_mask_threshold:          int = -300
 

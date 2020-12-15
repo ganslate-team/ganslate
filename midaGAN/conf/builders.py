@@ -36,6 +36,10 @@ def build_eval_conf(conf):
 
     #TODO: Make this more elegant but OmegaConf is a pain while overriding.
     """
+
+    if not conf.eval.enable:
+        return None
+
     eval_defaults = get_eval_defaults(conf)
     eval_conf = OmegaConf.select(conf, "eval")
 
