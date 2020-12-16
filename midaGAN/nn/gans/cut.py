@@ -1,13 +1,13 @@
 import numpy as np
 import torch
-from midaGAN.nn.gans.basegan import BaseGAN
-from . import networks
-from .patchnce import PatchNCELoss
-import util.util as util
+from torch import nn
 
+from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.losses.patch_nce import PatchNCELoss
 
 # Config imports
 from dataclasses import dataclass, field
+from typing import Tuple
 from omegaconf import MISSING
 from midaGAN.conf import BaseGANConfig
 
@@ -44,13 +44,10 @@ class CUT(BaseGAN):
     Contrastive Learning for Unpaired Image-to-Image Translation
     Taesung Park, Alexei A. Efros, Richard Zhang, Jun-Yan Zhu
     ECCV, 2020
-
-    The code borrows heavily from the PyTorch implementation of CycleGAN
-    https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix
     """
 
-    def __init__(self, opt):
-        BaseModel.__init__(self, opt)
+    def __init__(self, conf):
+        super().__init__(conf)
 
         # specify the training losses you want to print out.
         # The training/test scripts will call <BaseModel.get_current_losses>
