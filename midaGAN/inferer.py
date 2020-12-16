@@ -15,11 +15,16 @@ class Inferer():
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
-        self.tracker = InferenceTracker(conf)
-
         self.data_loader = build_loader(self.conf)
-        self.model = build_gan(self.conf)
-        self.device = self.model.device
+
+        # Build tracker if logging is defined
+        if self.conf.logging:
+            self.tracker = InferenceTracker(self.conf)
+
+        # Build GAN if it is defined. Otherwise only build dataloader.
+        if self.conf.gan: 
+            self.model = build_gan(self.conf)
+
         self.sliding_window_inferer = self._init_sliding_window_inferer()
 
     def run(self):
@@ -54,20 +59,23 @@ class Inferer():
             self.tracker.log_message(i, self.data_loader)
             self.tracker.start_dataloading_timer()
 
-    def infer(self, data):
-        data = data.to(self.device)
+    def infer(self, data, infer_fn='infer'):
+
+        infer_fn = getattr(self.model, infer_fn) if hasattr(self.model, infer_fn) else None
+
+        data = data.to(self.model.device)
         # Sliding window (i.e. patch-wise) inference
         if self.sliding_window_inferer:
-            return self.sliding_window_inferer(data, self.model.infer)
+            return self.sliding_window_inferer(data, infer_fn)
         else:
-            return self.model.infer(data)
+            return infer_fn(data)
 
     def _init_sliding_window_inferer(self):
         if self.conf.sliding_window:
             return SlidingWindowInferer(roi_size=self.conf.sliding_window.window_size,
                                         sw_batch_size=self.conf.sliding_window.batch_size,
                                         overlap=self.conf.sliding_window.overlap,
-                                        mode=self.conf.sliding_window.mode)
+                                        mode=self.conf.sliding_window.mode, cval=-1)
         else:
             return None
 

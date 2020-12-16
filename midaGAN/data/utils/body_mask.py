@@ -2,6 +2,9 @@ from scipy import ndimage
 import cv2
 import numpy as np
 
+import logging
+logger = logging.getLogger(__name__)
+
 def get_connected_components(binary_array: np.ndarray, structuring_element: np.ndarray=None) -> np.ndarray:
     """
     Returns a label map with a unique integer label for each connected geometrical object in the given binary array.
@@ -84,8 +87,12 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
         binary_slice = np.uint8(binarized_image[z])
     
         # Find contours for each binary slice
-        contours, hierarchy = cv2.findContours(binary_slice, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        try:
+            contours, hierarchy = cv2.findContours(binary_slice, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         
+        except:
+            logger.error("OpenCV could not find contours: Most likely this is a completely black image")
+            continue
         # Get the largest contour based on its area and find the convex hull of it
         # Convex hull tutorial: https://www.learnopencv.com/convex-hull-using-opencv-in-python-and-c/
         max_cnt = max(contours, key=cv2.contourArea)

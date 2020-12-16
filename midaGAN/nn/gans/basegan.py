@@ -11,6 +11,7 @@ from midaGAN.utils import communication
 
 # midaGAN.nn imports
 from midaGAN.nn.utils import get_scheduler
+from midaGAN.nn.utils import reshape_if_2D
 
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
@@ -18,7 +19,7 @@ from midaGAN.nn.discriminators import build_D
 from midaGAN.nn.losses.generator_loss import GeneratorLoss
 from midaGAN.nn.losses.gan_loss import GANLoss
 
-from midaGAN.nn.metrics import TrainingMetrics
+from midaGAN.nn.metrics.train_metrics import TrainingMetrics
 
 
 import logging
@@ -284,12 +285,23 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
+        input = reshape_if_2D(input)
+
         if self.is_train:
             raise ValueError("Inference cannot be done in training mode.")
         with torch.no_grad():
             generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
             return self.networks[generator].forward(input)
-            
+
+
+    def infer_backward(self, input):
+        """
+        Needs to be overriden by picyclegan and basegan
+        """
+        input = reshape_if_2D(input)
+        return input
+
+
     def get_learning_rates(self):
         """ Return current learning rates of both generator and discriminator"""
         learning_rates = {}

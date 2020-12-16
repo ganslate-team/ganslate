@@ -1,22 +1,24 @@
 project_dir: "./projects/nki_cervix_cbct_to_ct"
 use_cuda: True
-n_iters: 200000
+n_iters: 40000
 n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: ./checkpoints/cbct_ex3/
+    checkpoint_dir: /midagan/checkpoints/cbct_ex1/
     wandb:
         project: "NKI_CBCT_CT"
     log_freq: 50
-    checkpoint_freq: 10000
+    checkpoint_freq: 1000
 
 dataset: 
     name: "CBCTtoCTDataset"
     root: /data/train
     hounsfield_units_range: [-1024, 2048]
-    num_workers: 8
-    patch_size: [48, 320, 320]
+    num_workers: 12
+    patch_size: [56, 312, 312]
+    enable_masking: False
+    enable_bounding: False
     
 gan:  
     name: "PiCycleGAN"
@@ -44,19 +46,16 @@ optimizer:
   lr_D: 0.0001
   lr_G: 0.0002
 
-  loss_mask:
-    masking_value: -1
-    operator: "eq" 
-
 
 metrics: 
-  output_distributions_D: True
-  ssim: True
-  
-eval:
-  eval_freq: 10000
-  samples: 10
-  metrics:
     ssim: True
+    output_distributions_D: True
+
+load_checkpoint:
+    iter: 2000
+    count_start_iter: 2000
+
+eval:
+    enable: False
 
 
