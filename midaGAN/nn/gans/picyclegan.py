@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 
 import itertools
-from apex import amp
 
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
@@ -17,6 +16,7 @@ from midaGAN.conf import BaseGANConfig
 class PiCycleGANConfig(BaseGANConfig):
     """Partially-invertible CycleGAN"""
     name: str = "PiCycleGAN"
+    pool_size: int = 50
 
 
 class PiCycleGAN(BaseGAN):

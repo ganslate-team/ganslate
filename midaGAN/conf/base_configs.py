@@ -20,7 +20,6 @@ class BaseGANConfig:
     norm_type:        str = "instance"
     weight_init_type: str = "normal"
     weight_init_gain: float = 0.02
-    pool_size:        int = 50
 
 
 @dataclass
