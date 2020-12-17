@@ -4,23 +4,6 @@ from omegaconf import MISSING
 from midaGAN.conf.base_configs import *
 
 
-@dataclass
-class LossMaskingConfig:
-    masking_value:   float = -1
-    operator:        str = "eq"
-
-@dataclass
-class OptimizerConfig:
-    beta1:           float = 0.5
-    lr_D:            float = 0.0001
-    lr_G:            float = 0.0002
-    lambda_A:        float = 10.0
-    lambda_B:        float = 10.0
-    lambda_identity: float = 0
-    lambda_inverse:  float = 0
-    proportion_ssim: float = 0.84
-    ssim_type:       str = "SSIM" # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
-    loss_mask:       Optional[LossMaskingConfig] = None
 
 
 @dataclass
@@ -55,11 +38,10 @@ class TrainConfig(BaseConfig):
     n_iters_decay:   int = MISSING  # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
     
     # gan and generator already specified in BaseConfig as these are used in inference too
-    discriminator:   BaseDiscriminatorConfig = MISSING
+    #discriminator:   BaseDiscriminatorConfig = MISSING
     
-    optimizer:       OptimizerConfig = OptimizerConfig()
+    #optimizer:       OptimizerConfig = OptimizerConfig()
     logging:         LoggingConfig = LoggingConfig()
     metrics:         MetricConfig = MetricConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None
     seed:            Optional[int] = None  # Seed for reproducibility
-

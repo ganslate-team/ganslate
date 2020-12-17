@@ -5,11 +5,11 @@ from midaGAN.nn.utils import init_weights
 
 def build_D(conf, device):
     # TODO: Abstract away for both G and D?
-    name = conf.discriminator.name
+    name = conf.gan.discriminator.name
     import_locations = midaGAN.conf.IMPORT_LOCATIONS
     discriminator_class = import_class_from_dirs_and_modules(name, import_locations["discriminator"])
 
-    discriminator_args = dict(conf.discriminator)
+    discriminator_args = dict(conf.gan.discriminator)
     discriminator_args.pop("name") # used only to select the model class
     norm_type = conf.gan.norm_type # TODO: interpolate both to G and D from GAN
 

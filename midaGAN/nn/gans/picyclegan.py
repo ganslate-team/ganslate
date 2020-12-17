@@ -64,9 +64,9 @@ class PiCycleGAN(BaseGAN):
 
 
     def init_optimizers(self, conf):
-        lr_G = conf.optimizer.lr_G
-        lr_D = conf.optimizer.lr_D
-        beta1 = conf.optimizer.beta1
+        lr_G = conf.gan.optimizer.lr_G
+        lr_D = conf.gan.optimizer.lr_D
+        beta1 = conf.gan.optimizer.beta1
 
         params_G = self.networks['G'].parameters()
         params_D = itertools.chain(self.networks['D_A'].parameters(), 
@@ -75,7 +75,7 @@ class PiCycleGAN(BaseGAN):
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, 0.999)) 
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, 0.999))                            
 
-        self.setup_loss_masking(conf.optimizer.loss_mask)
+        self.setup_loss_masking(conf.gan.optimizer.loss_mask)
 
     def set_input(self, input):
         """Unpack input data from the dataloader.

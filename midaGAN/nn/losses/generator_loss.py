@@ -9,12 +9,12 @@ logger = logging.getLogger(__name__)
 
 class GeneratorLoss:
     def __init__(self, conf):
-        lambda_A = conf.optimizer.lambda_A
-        lambda_B = conf.optimizer.lambda_B
-        lambda_identity = conf.optimizer.lambda_identity
-        lambda_inverse = conf.optimizer.lambda_inverse
-        proportion_ssim = conf.optimizer.proportion_ssim
-        ssim_type = conf.optimizer.ssim_type
+        lambda_A = conf.gan.optimizer.lambda_A
+        lambda_B = conf.gan.optimizer.lambda_B
+        lambda_identity = conf.gan.optimizer.lambda_identity
+        lambda_inverse = conf.gan.optimizer.lambda_inverse
+        proportion_ssim = conf.gan.optimizer.proportion_ssim
+        ssim_type = conf.gan.optimizer.ssim_type
 
         # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
         # so the number of channels equals to the number of slices in sampled patches.

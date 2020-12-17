@@ -65,9 +65,9 @@ class CycleGAN(BaseGAN):
 
 
     def init_optimizers(self, conf):
-        lr_G = conf.optimizer.lr_G
-        lr_D = conf.optimizer.lr_D
-        beta1 = conf.optimizer.beta1
+        lr_G = conf.gan.optimizer.lr_G
+        lr_D = conf.gan.optimizer.lr_D
+        beta1 = conf.gan.optimizer.beta1
 
         params_G = itertools.chain(self.networks['G_A'].parameters(), 
                                    self.networks['G_B'].parameters()) 
@@ -77,7 +77,7 @@ class CycleGAN(BaseGAN):
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, 0.999)) 
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, 0.999))                            
 
-        self.setup_loss_masking(conf.optimizer.loss_mask)
+        self.setup_loss_masking(conf.gan.optimizer.loss_mask)
 
 
     def set_input(self, input):

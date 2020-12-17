@@ -74,7 +74,7 @@ class BaseGAN(ABC):
 
     def init_criterions(self, conf):
         # Standard GAN loss 
-        self.criterion_gan = GANLoss(conf.gan.loss_type).to(self.device)
+        self.criterion_gan = GANLoss(conf.gan.optimizer.gan_loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
         self.criterion_G = GeneratorLoss(conf)
 
