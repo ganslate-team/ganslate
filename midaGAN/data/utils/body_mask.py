@@ -44,6 +44,45 @@ def get_connected_components(binary_array: np.ndarray, structuring_element: np.n
     return connected_component_array
 
 
+def smooth_contour_points(contour: np.ndarray, radius: int = 3, sigma: int = 10) -> np.ndarray:
+    """
+    Function that smooths contour points using the approach from 
+    https://stackoverflow.com/a/37536310
+    
+    Simple explanation: Convolve 1D gaussian filter over the points to smoothen the curve
+    """
+    neighbourhood = 2 * radius + 1;
+
+    # Contour length is the total number of points + extra points
+    # to ensure circularity. 
+    contour_length = len(contour) + 2 * radius 
+    # Last group of points. 
+    offset = (len(contour) - radius)
+
+    x_filtered, y_filtered = [], []
+
+
+    for idx in range(contour_length):
+        x_filtered.append(contour[(offset + idx) \
+                                          % len(contour)][0][0])
+
+        y_filtered.append(contour[(offset + idx) \
+                                          % len(contour)][0][1])
+
+    # Gaussian blur from opencv is basically applying gaussian convolution
+    # filter over these points.
+    x_smooth = cv2.GaussianBlur(np.array(x_filtered), (radius, 1), sigma)
+    y_smooth = cv2.GaussianBlur(np.array(y_filtered), (radius, 1), sigma)
+
+    # Add smoothened point for 
+    smooth_contours = []
+    for idx, (x, y) in enumerate(zip(x_smooth, y_smooth)):
+        if idx < len(contour) + radius:
+            smooth_contours.append(np.array([x, y]))
+
+    return np.array(smooth_contours)
+                        
+
 
 def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
     """
@@ -82,6 +121,7 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
     # Get bound of the largest possible voxel range in the binary mask
     bound = [(np.min(coord), np.max(coord)) for coord in label_coordinates]
     
+    
     for z in range(binarized_image.shape[0]):
     
         binary_slice = np.uint8(binarized_image[z])
@@ -89,22 +129,19 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
         # Find contours for each binary slice
         try:
             contours, hierarchy = cv2.findContours(binary_slice, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        
         except:
             logger.error("OpenCV could not find contours: Most likely this is a completely black image")
             continue
-        # Get the largest contour based on its area and find the convex hull of it
-        # Convex hull tutorial: https://www.learnopencv.com/convex-hull-using-opencv-in-python-and-c/
-        max_cnt = max(contours, key=cv2.contourArea)
-        hull = cv2.convexHull(max_cnt)
+            
+        # Get the largest contour based on its area
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        # Smooth contour so that surface irregularities are removed better
+        smoothed_contour = smooth_contour_points(largest_contour)
 
-        # Project the hull onto the body_mask image, everything 
-        # inside the hull is set to 1. 
-        cv2.drawContours(body_mask[z], [hull], -1,  1, -1)
-
-        # # Blurring the mask for smoother edges, this will also smooth out the jagged contours
-        # # found in the sagittal view
-        # body_mask[z] = cv2.GaussianBlur(body_mask[z], (5,5), 0)
+        # Project the points onto the body_mask image, everything 
+        # inside the points is set to 1. 
+        cv2.drawContours(body_mask[z], [smoothed_contour], -1,  1, -1)
 
     return body_mask, bound
 
@@ -143,8 +180,3 @@ def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
         array = array[z_max:z_min, y_max: y_min, x_max: x_min]
 
     return array
-
-    
-
-
-

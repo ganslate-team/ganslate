@@ -11,6 +11,12 @@ class WandbTracker:
 
         wandb.init(project=project, entity=entity, config=config_dict) # TODO: project and organization from conf
 
+        self.image_filter = conf.logging.wandb.image_filter
+
+        if self.image_filter:
+            self.filter_min = conf.logging.wandb.image_filter.min
+            self.filter_max = conf.logging.wandb.image_filter.max
+
     def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics):
         """TODO"""
         log_dict = {}
@@ -36,5 +42,10 @@ class WandbTracker:
         name, image = visuals['name'], visuals['image']
         image = image.permute(1,2,0) # CxHxW -> HxWxC
         log_dict[name] = [wandb.Image(image.cpu().detach().numpy())]
+
+        if self.image_filter:
+            image = image.clamp(self.filter_min, self.filter_max)
+            image = (image - self.filter_min )/ self.filter_max - self.filter_min
+            log_dict[f"{name}_filtered"] = [wandb.Image(image.cpu().detach().numpy())]
 
         wandb.log(log_dict)

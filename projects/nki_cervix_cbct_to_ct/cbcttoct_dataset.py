@@ -120,6 +120,10 @@ class CBCTtoCTDataset(Dataset):
 
 	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
+<<<<<<< HEAD
+=======
+
+>>>>>>> 451034ffb84e19f7d4b6eb4391ee6297f67950b8
         if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size) and not self.pad:
             logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
             del CT_truncated
@@ -150,6 +154,11 @@ class CBCTtoCTDataset(Dataset):
 
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")        
+
+
+        if self.pad:
+            CBCT = pad(self.patch_size, CBCT)
+            CT = pad(self.patch_size, CT)
 
         
 
@@ -305,7 +314,7 @@ class CBCTtoCTEvalDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTEvalDataset"
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
     enable_masking:          bool = False
-    enable_bounding:         bool = True
+    enable_bounding:         bool = False
     cbct_mask_threshold:        int = -700    
     ct_mask_threshold:          int = -300
 
