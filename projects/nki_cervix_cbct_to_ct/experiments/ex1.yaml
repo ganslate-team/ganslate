@@ -1,8 +1,13 @@
+# 3D CycleGAN
+# Default parameters from 2D CycleGAN but with 3D input, VNet3D and PatchGAN 3D
+
 project_dir: "./projects/nki_cervix_cbct_to_ct"
 use_cuda: True
 n_iters: 200000
 n_iters_decay: 0
 batch_size: 1
+
+
 
 logging:
     checkpoint_dir: ./checkpoints/cbct_ex3/
@@ -16,16 +21,19 @@ dataset:
     root: /home/rt/workspace_suraj/cervix_resampled
     hounsfield_units_range: [-1024, 2048]
     num_workers: 4
-    patch_size: [32, 32, 32]
+    patch_size: [56, 312, 312]
+    
+    enable_masking: True
+    enable_bounding: True
     
 gan:  
-    name: "PiCycleGAN"
+    name: "CycleGAN"
 
 generator:
   name: Vnet3D
   in_channels: 1
   use_memory_saving: False
-  use_inverse: True
+  use_inverse: False
   is_separable: False
   down_blocks: [2, 2, 3]
   up_blocks: [3, 3, 3]
@@ -41,5 +49,5 @@ optimizer:
   lambda_identity: 0.0
   lambda_inverse: 0.0
   proportion_ssim: 0.84
-  lr_D: 0.0001
-  lr_G: 0.0002
+  lr_D: 0.0002
+  lr_G: 0.0004
