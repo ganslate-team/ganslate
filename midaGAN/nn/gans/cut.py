@@ -13,16 +13,19 @@ from midaGAN.conf import BaseGANConfig
 
 
 @dataclass
-class CUTConfig(BaseGANConfig):
-    """Contrastive Unpaired Translation (CUT)"""
-    name: str = "CUT"
+class OptimizerConfig(BaseOptimizerConfig):
     lambda_GAN: float = 1  # weight for GAN loss：GAN(G(X))
     lambda_NCE: float = 1  # weight for NCE loss: NCE(G(X), X)
     nce_idt: bool = True  # use NCE loss for identity mapping: NCE(G(Y), Y))
+    nce_T: float = 0.07  # temperature for NCE loss
+
+@dataclass
+class CUTConfig(BaseGANConfig):
+    """Contrastive Unpaired Translation (CUT)"""
+    name: str = "CUT"
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)  # compute NCE loss on which layers
     netF: str = 'mlp_sample'
     netF_nc: int = 256
-    nce_T: float = 0.07  # temperature for NCE loss
     num_patches: int = 256  # number of patches per layer
     flip_equivariance: bool = True  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
 
@@ -49,40 +52,71 @@ class CUT(BaseGAN):
     def __init__(self, conf):
         super().__init__(conf)
 
-        # specify the training losses you want to print out.
-        # The training/test scripts will call <BaseModel.get_current_losses>
-        self.loss_names = ['G_GAN', 'D_real', 'D_fake', 'G', 'NCE']
-        self.visual_names = ['real_A', 'fake_B', 'real_B']
-        self.nce_layers = nce_layers
+        # Inputs and Outputs of the model
+        self.visual_names = {
+            'A': ['real_A', 'fake_B', 'idt_B'], 
+            'B': ['real_B']
+        }
+        # get all the names from the above lists into a single flat list
+        all_visual_names = [name for v in self.visual_names.values() for name in v]
+        # initialize the visuals as None
+        self.visuals = {name: None for name in all_visual_names}
 
-        if opt.nce_idt and self.isTrain:
-            self.loss_names += ['NCE_Y']
-            self.visual_names += ['idt_B']
+        # if opt.nce_idt and self.isTrain:
+        #     self.loss_names += ['NCE_Y']
+        #     self.visual_names += ['idt_B']
 
-        if self.isTrain:
-            self.model_names = ['G', 'F', 'D']
-        else:  # during test time, only load G
-            self.model_names = ['G']
+        # Losses used by the model
+        self.loss_names = ['G_GAN', 'D_real', 'D_fake', 'G', 'NCE', 'NCE_Y']
+        self.losses = {name: None for name in loss_names}
+
+        # if self.isTrain:
+        #     self.model_names = ['G', 'F', 'D']
+        # else:  # during test time, only load G
+        #     self.model_names = ['G']
+
+        # Generators and Discriminators
+        network_names = ['G', 'F', 'D'] if self.is_train else ['G'] # during test time, only G
+        self.networks = {name: None for name in network_names}
 
         # define networks (both generator and discriminator)
-        self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.normG, not opt.no_dropout, opt.init_type, opt.init_gain, opt.no_antialias, opt.no_antialias_up, self.gpu_ids, opt)
-        self.netF = networks.define_F(opt.input_nc, opt.netF, opt.normG, not opt.no_dropout, opt.init_type, opt.init_gain, opt.no_antialias, self.gpu_ids, opt)
+        # self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.normG, not opt.no_dropout, opt.init_type, opt.init_gain, opt.no_antialias, opt.no_antialias_up, self.gpu_ids, opt)
+        # self.netF = networks.define_F(opt.input_nc, opt.netF, opt.normG, not opt.no_dropout, opt.init_type, opt.init_gain, opt.no_antialias, self.gpu_ids, opt)
 
-        if self.isTrain:
-            self.netD = networks.define_D(opt.output_nc, opt.ndf, opt.netD, opt.n_layers_D, opt.normD, opt.init_type, opt.init_gain, opt.no_antialias, self.gpu_ids, opt)
+        # if self.isTrain:
+        #     self.netD = networks.define_D(opt.output_nc, opt.ndf, opt.netD, opt.n_layers_D, opt.normD, opt.init_type, opt.init_gain, opt.no_antialias, self.gpu_ids, opt)
 
-            # define loss functions
-            self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
-            self.criterionNCE = []
+        #     # define loss functions
+        #     self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
+        #     self.criterionNCE = []
 
-            for nce_layer in self.nce_layers:
-                self.criterionNCE.append(PatchNCELoss(opt).to(self.device))
+        #     for nce_layer in self.nce_layers:
+        #         self.criterionNCE.append(PatchNCELoss(opt).to(self.device))
 
-            self.criterionIdt = torch.nn.L1Loss().to(self.device)
-            self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, opt.beta2))
-            self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, opt.beta2))
-            self.optimizers.append(self.optimizer_G)
-            self.optimizers.append(self.optimizer_D)
+        #     self.criterionIdt = torch.nn.L1Loss().to(self.device)
+        #     self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, opt.beta2))
+        #     self.optimizer_D = torch.optim.Adam(self.netD.parameters(), lr=opt.lr, betas=(opt.beta1, opt.beta2))
+        #     self.optimizers.append(self.optimizer_G)
+        #     self.optimizers.append(self.optimizer_D)
+
+        self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
+    
+    def init_optimizers(self, conf):
+        lr_G = conf.optimizer.lr_G
+        lr_D = conf.optimizer.lr_D
+        beta1 = conf.optimizer.beta1
+        beta2 = conf.gan.optimizer.beta2   
+
+        self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(), lr=lr_G, betas=(beta1, beta2)) 
+        self.optimizers['D'] = torch.optim.Adam(self.networks['D'].parameters(), lr=lr_D, betas=(beta1, beta2))                            
+
+        self.setup_loss_masking(conf.optimizer.loss_mask)
+
+    def init_criterions(self, conf):
+        # Standard GAN loss 
+        self.criterion_gan = GANLoss(conf.gan.optimizer.gan_loss_type).to(self.device)
+        self.criterion_nce = [PatchNCELoss(conf).to(self.device) for _ in conf.gan.nce_layers]
+        self.criterion_idt = torch.nn.L1Loss().to(self.device)
 
     def data_dependent_initialize(self, data):
         """
@@ -126,14 +160,12 @@ class CUT(BaseGAN):
             self.optimizer_F.step()
 
     def set_input(self, input):
-        """Unpack input data from the dataloader and perform necessary pre-processing steps.
+        """Unpack input data from the dataloader.
         Parameters:
-            input (dict): include the data itself and its metadata information.
-        The option 'direction' can be used to swap domain A and domain B.
+            input (dict) -- a pair of data samples from domain A and domain B.
         """
-        AtoB = self.opt.direction == 'AtoB'
-        self.real_A = input['A'].to(self.device)
-        self.real_B = input['B'].to(self.device)
+        self.visuals['real_A'] = input['A'].to(self.device)
+        self.visuals['real_B'] = input['B'].to(self.device)
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""

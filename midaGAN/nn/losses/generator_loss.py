@@ -7,7 +7,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class GeneratorLoss:
+class GeneratorLoss: # TODO: rename to something related to CycleGAN
     def __init__(self, conf):
         lambda_A = conf.gan.optimizer.lambda_A
         lambda_B = conf.gan.optimizer.lambda_B

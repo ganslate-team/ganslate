@@ -5,18 +5,26 @@ import itertools
 
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.losses.generator_loss import GeneratorLoss
+from midaGAN.nn.losses.gan_loss import GANLoss
 
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf import BaseGANConfig
 
+from midaGAN.nn.gans import cyclegan
+
+@dataclass
+class OptimizerConfig(cyclegan.OptimizerConfig):
+    pass  # the same as CycleGAN, kept here for consistency and for possible future changes
 
 @dataclass
 class PiCycleGANConfig(BaseGANConfig):
     """Partially-invertible CycleGAN"""
     name: str = "PiCycleGAN"
     pool_size: int = 50
+    optimizer: OptimizerConfig = OptimizerConfig
 
 
 class PiCycleGAN(BaseGAN):
@@ -47,33 +55,32 @@ class PiCycleGAN(BaseGAN):
         network_names = ['G', 'D_A', 'D_B'] if self.is_train else ['G'] # during test time, only G
         self.networks = {name: None for name in network_names}
 
-        # Initialize Generators and Discriminators
-        self.init_networks(conf)
-
         if self.is_train:
-            # Intialize loss functions (criterions) and optimizers
-            self.init_criterions(conf)
-            self.init_optimizers(conf)
-            self.init_metrics(conf)
-
             # Create image buffer to store previously generated images
             self.fake_A_pool = ImagePool(conf.gan.pool_size)
             self.fake_B_pool = ImagePool(conf.gan.pool_size)
 
-        self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
+        # Set up networks, optimizers, schedulers, mixed precision, checkpoint loading, network parallelization...
+        self.setup(conf) 
 
+    def init_criterions(self, conf):
+        # Standard GAN loss 
+        self.criterion_gan = GANLoss(conf.gan.optimizer.gan_loss_type).to(self.device)
+        # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
+        self.criterion_G = GeneratorLoss(conf)
 
     def init_optimizers(self, conf):
         lr_G = conf.gan.optimizer.lr_G
         lr_D = conf.gan.optimizer.lr_D
         beta1 = conf.gan.optimizer.beta1
+        beta2 = conf.gan.optimizer.beta2
 
         params_G = self.networks['G'].parameters()
         params_D = itertools.chain(self.networks['D_A'].parameters(), 
                                    self.networks['D_B'].parameters())         
 
-        self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, 0.999)) 
-        self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, 0.999))                            
+        self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2)) 
+        self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))                            
 
         self.setup_loss_masking(conf.gan.optimizer.loss_mask)
 

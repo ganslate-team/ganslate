@@ -22,25 +22,25 @@ dataset:
     flip: True
     
 gan:  
-    name: "CycleGAN"
+    name: "PiCycleGAN"
 
-generator:  
-    name: "Vnet2D"
-    use_memory_saving: False
-    use_inverse: False
-    in_channels: 3
-    first_layer_channels: 24
+    optimizer:
+        lambda_A: 10.0
+        lambda_B: 10.0
+        lambda_identity: 0.0
+        lambda_inverse: 0.0
+        proportion_ssim: 0.84
+        lr_D: 0.0002
+        lr_G: 0.0002
 
-discriminator:  
-    name: "PatchGAN2D"
-    n_layers: 3
-    in_channels: 3
+    generator:  
+        name: "Vnet2D"
+        use_memory_saving: False
+        use_inverse: True
+        in_channels: 3
+        first_layer_channels: 24
 
-optimizer:
-  lambda_A: 10.0
-  lambda_B: 10.0
-  lambda_identity: 0.0
-  lambda_inverse: 0.0
-  proportion_ssim: 0.0
-  lr_D: 0.0002
-  lr_G: 0.0002
+    discriminator:  
+        name: "PatchGAN2D"
+        n_layers: 3
+        in_channels: 3

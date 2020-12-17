@@ -15,9 +15,6 @@ from midaGAN.nn.utils import get_scheduler
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
 
-from midaGAN.nn.losses.generator_loss import GeneratorLoss
-from midaGAN.nn.losses.gan_loss import GANLoss
-
 from midaGAN.nn.metrics import TrainingMetrics
 
 
@@ -60,7 +57,6 @@ class BaseGAN(ABC):
         self.optimizers = {}
         self.networks = {}
 
-
     def init_networks(self, conf):
         for name in self.networks.keys():
             if name.startswith('G'):
@@ -71,18 +67,9 @@ class BaseGAN(ABC):
                 raise ValueError('Network\'s name has to begin with either "G" if it is a generator, \
                                   or "D" if it is a discriminator.')
 
-
-    def init_criterions(self, conf):
-        # Standard GAN loss 
-        self.criterion_gan = GANLoss(conf.gan.optimizer.gan_loss_type).to(self.device)
-        # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterion_G = GeneratorLoss(conf)
-
-
     def init_metrics(self, conf):
         # Intialize training metrics
         self.training_metrics = TrainingMetrics(conf)
-
     
     def _specify_device(self):
         if torch.distributed.is_initialized():
@@ -114,22 +101,29 @@ class BaseGAN(ABC):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         pass
 
-    def setup(self):
-        """Final step of initializing a GAN model. Does following:
-            (1) Converts the model to mixed precision, if specified
-            (2) Sets up schedulers 
+    def setup(self, conf):
+        """Set up a GAN model. Does the following:
+            (1) Initialize its networks, critetions, optimizers, metrics ad schedulers
+            (2) Converts the networks to mixed precision, if specified
             (3) Loads a checkpoint if continuing training or inferencing            
             (4) Applies parallelization to the model if possible
         """
-        if self.conf.mixed_precision:
-            self.convert_to_mixed_precision()
-        
+        # Initialize Generators and Discriminators
+        self.init_networks(conf)
+
         if self.is_train:
+            # Intialize loss functions (criterions) and optimizers
+            self.init_criterions(conf)
+            self.init_optimizers(conf)
+            self.init_metrics(conf)
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
         else:
             self.eval()
             if len(self.networks.keys()) != 1: # TODO: any nicer way? look at infer() as well
                 raise ValueError("When inferring there should be only one network initialized - generator.")
+            
+        if self.conf.mixed_precision:
+            self.convert_to_mixed_precision()
         
         if self.conf.load_checkpoint:
             self.load_networks(self.conf.load_checkpoint.iter)

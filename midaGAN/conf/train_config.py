@@ -36,11 +36,7 @@ class TrainConfig(BaseConfig):
     # TODO: add git hash? will help when re-running or inferencing old runs
     n_iters:         int = MISSING  # Number of iters without linear decay of learning rates. [Default: 200]
     n_iters_decay:   int = MISSING  # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
-    
-    # gan and generator already specified in BaseConfig as these are used in inference too
-    #discriminator:   BaseDiscriminatorConfig = MISSING
-    
-    #optimizer:       OptimizerConfig = OptimizerConfig()
+
     logging:         LoggingConfig = LoggingConfig()
     metrics:         MetricConfig = MetricConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None

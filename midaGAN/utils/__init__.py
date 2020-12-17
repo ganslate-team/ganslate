@@ -39,6 +39,7 @@ def import_class_from_dirs_and_modules(class_name, dirs_modules):
 def iterate_nested_dict_keys(dictionary):
     """Returns an iterator that returns all keys of a 
     nested dictionary ordered from shallowest to deepest key.
+    The nested keys have are in dot-list format, e.g. "gan.discriminator.name".
     """
     if isinstance(dictionary, dict):
         current_level_keys = []

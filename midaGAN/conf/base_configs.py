@@ -11,14 +11,9 @@ class LossMaskingConfig:
 class BaseOptimizerConfig:
     gan_loss_type:   str = "lsgan"
     beta1:           float = 0.5
+    beta2:           float = 0.999
     lr_D:            float = 0.0001
     lr_G:            float = 0.0002
-    lambda_A:        float = 10.0
-    lambda_B:        float = 10.0
-    lambda_identity: float = 0
-    lambda_inverse:  float = 0
-    proportion_ssim: float = 0.84
-    ssim_type:       str = "SSIM" # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
     loss_mask:       Optional[LossMaskingConfig] = None
 
 @dataclass
@@ -50,9 +45,9 @@ class BaseGANConfig:
     weight_init_type: str = "normal"
     weight_init_gain: float = 0.02
 
-    optimizer: BaseOptimizerConfig = MISSING # BaseOptimizerConfig()
-    discriminator: BaseDiscriminatorConfig = MISSING
+    optimizer: BaseOptimizerConfig = MISSING
     generator: BaseGeneratorConfig = MISSING
+    discriminator: Optional[BaseDiscriminatorConfig] = None # discriminator optional as it is not used in inference
 
 
 @dataclass 
@@ -67,4 +62,3 @@ class BaseConfig:
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING
-    #generator:       BaseGeneratorConfig = MISSING
