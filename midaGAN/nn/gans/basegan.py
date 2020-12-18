@@ -135,7 +135,7 @@ class BaseGAN(ABC):
         """Run backward pass in a regular or mixed precision mode; called by methods <backward_D_basic> and <backward_G>.
         Parameters:
             loss (loss class) -- loss on which to perform backward pass
-            optimizer (optimizer class) -- mixed precision scales the loss with its optimizer
+            optimizer (optimizer or a list of optimizers) -- mixed precision scales the loss with its optimizer
             retain_graph (bool) -- specify if the backward pass should retain the graph
             loss_id (int) -- when used in conjunction with the `num_losses` argument to amp.initialize, 
                              enables Amp to use a different loss scale per loss. 

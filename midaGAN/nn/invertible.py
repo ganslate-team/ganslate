@@ -15,15 +15,12 @@ class InvertibleBlock(nn.Module):
             keep_input_inverse=keep_input
             # TODO: disable= argument
         )
-            
 
-    
     def forward(self, x, inverse=False):
         if inverse:
             return self.invertible_block.inverse(x)
         else:
             return self.invertible_block(x)
-
 
 
 class InvertibleSequence(nn.Module):

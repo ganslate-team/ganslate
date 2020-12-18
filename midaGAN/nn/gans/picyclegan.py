@@ -110,17 +110,17 @@ class PiCycleGAN(BaseGAN):
         # ------------------------ G (A and B) ----------------------------------------------------
         self.set_requires_grad(discriminators, False)   # Ds require no gradients when optimizing Gs
         self.optimizers['G'].zero_grad()                # set G's gradients to zero
-        self.backward_G(loss_id=0)                      # calculate gradients for G
+        self.backward_G()                               # calculate gradients for G
         self.optimizers['G'].step()                     # update G's weights
         # ------------------------ D_A and D_B ----------------------------------------------------
         self.set_requires_grad(discriminators, True)
         self.optimizers['D'].zero_grad()                #set D_A and D_B's gradients to zero
-        self.backward_D('D_A', loss_id=1)               # calculate gradients for D_A
+        self.backward_D('D_A')                          # calculate gradients for D_A
         
         # Update metrics for D_A
         self.metrics.update(self.training_metrics.compute_metrics_D('D_A', self.pred_real, self.pred_fake))
         
-        self.backward_D('D_B', loss_id=2)               # calculate gradients for D_B
+        self.backward_D('D_B')                          # calculate gradients for D_B
         
         # Update metrics for D_B
         self.metrics.update(self.training_metrics.compute_metrics_D('D_B', self.pred_real, self.pred_fake))
@@ -152,7 +152,7 @@ class PiCycleGAN(BaseGAN):
                              'fake_A': fake_A, 'rec_B': rec_B, 'idt_A': idt_A})
 
 
-    def backward_D(self, discriminator, loss_id=0):
+    def backward_D(self, discriminator):
         """Calculate GAN loss for the discriminator
 
         Parameters:
@@ -167,11 +167,13 @@ class PiCycleGAN(BaseGAN):
             real = self.visuals['real_B']
             fake = self.visuals['fake_B']
             fake = self.fake_B_pool.query(fake)
+            loss_id = 0
             
         elif discriminator == 'D_B':
             real = self.visuals['real_A']
             fake = self.visuals['fake_A']
             fake = self.fake_A_pool.query(fake)
+            loss_id = 1
         else:
             raise ValueError('The discriminator has to be either "D_A" or "D_B".')
 
@@ -188,7 +190,7 @@ class PiCycleGAN(BaseGAN):
 
 
 
-    def backward_G(self, loss_id=0):
+    def backward_G(self):
         """Calculate the loss for generators G_A and G_B using all specified losses"""        
 
         real_A = self.visuals['real_A']        
@@ -210,4 +212,4 @@ class PiCycleGAN(BaseGAN):
 
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
-        self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=loss_id)
+        self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
