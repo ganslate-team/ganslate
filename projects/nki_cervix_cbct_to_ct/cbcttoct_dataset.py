@@ -488,7 +488,5 @@ class CBCTtoCTEvalDataset(Dataset):
 
         sitk_utils.write(sitk_image, save_path)
 
-
-
     def __len__(self):
         return self.num_datapoints
