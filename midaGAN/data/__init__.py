@@ -1,6 +1,7 @@
 import importlib
 import logging
 
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -14,7 +15,11 @@ logger = logging.getLogger(__name__)
 def build_loader(conf):
     dataset = build_dataset(conf)
 
+<<<<<<< HEAD
     if conf.gan and conf.gan.is_train:
+=======
+    if conf.is_train:
+>>>>>>> e12b23b0ddd49bb52b6c7ca61b1a58a1204be971
         sampler = InfiniteSampler(size=len(dataset), 
                                   shuffle=conf.dataset.shuffle)
     else:

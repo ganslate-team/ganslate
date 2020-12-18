@@ -1,4 +1,3 @@
-
 import os
 import logging
 import torch
@@ -11,9 +10,13 @@ from midaGAN.utils.trackers.training_tracker import TrainingTracker
 from midaGAN.utils.summary import gan_summary
 
 # Imports for evaluation.
+<<<<<<< HEAD
 from midaGAN.conf.builders import build_eval_conf
 from midaGAN.inferer import Inferer as Evaluator
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
+=======
+from midaGAN.evaluator import Evaluator
+>>>>>>> e12b23b0ddd49bb52b6c7ca61b1a58a1204be971
 
 class Trainer():
     def __init__(self, conf):
@@ -86,6 +89,7 @@ class Trainer():
         """
         Intitialize evaluation parameters from training conf.
         """
+<<<<<<< HEAD
 
         # Eval conf is built from training conf + override from inference conf
         self.eval_conf = build_eval_conf(conf)
@@ -131,9 +135,23 @@ class Trainer():
             # Renable training mode. Does this affect anything dynamically? Check
             self.model.is_train = True
 
+=======
+        # Eval conf is built from training conf
+        self.evaluator = Evaluator(conf)
+        self.evaluator.set_model(self.model)
+
+    def evaluate(self):
+        if self.iter_idx % self.conf.evaluation.freq == 0:
+            self.evaluator.run()
+>>>>>>> e12b23b0ddd49bb52b6c7ca61b1a58a1204be971
 
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
+        self.evaluator.set_trainer_idx(iter_idx)
 
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> e12b23b0ddd49bb52b6c7ca61b1a58a1204be971

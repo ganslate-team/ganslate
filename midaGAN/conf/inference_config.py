@@ -26,6 +26,8 @@ class SlidingWindowConfig:
 
 @dataclass
 class InferenceConfig(BaseConfig):
+    is_train:        bool = False # Training mode is False for framework
+    batch_size:      int = 1
     load_checkpoint: LoadCheckpointConfig = LoadCheckpointConfig()
     logging:         LoggingConfig = LoggingConfig()
     sliding_window:  Optional[SlidingWindowConfig] = None

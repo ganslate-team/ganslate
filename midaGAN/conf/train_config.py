@@ -2,6 +2,8 @@ from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf.base_configs import *
+from midaGAN.conf.common_configs import *
+
 from midaGAN.conf.eval_config import *
 
 
@@ -29,12 +31,6 @@ class ImageFilterConfig:  # Filtering for images uploaded to wandb to show windo
     max: float = 1
 
 @dataclass
-class WandbConfig:
-    project: str = "my-project"
-    entity: Optional[str] = None
-    image_filter: Optional[ImageFilterConfig] = None
-
-@dataclass
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
     checkpoint_dir:  str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode
@@ -52,13 +48,15 @@ class LoadCheckpointConfig:
 
 
 @dataclass
-class MetricConfig:
+class TrainMetricConfig:
     output_distributions_D:  bool = False
     ssim:                  bool = False
 
 
 @dataclass
 class TrainConfig(BaseConfig):
+    is_train:        bool = True
+
     # TODO: add git hash? will help when re-running or inferencing old runs
     n_iters:         int = MISSING  # Number of iters without linear decay of learning rates. [Default: 200]
     n_iters_decay:   int = MISSING  # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
@@ -70,8 +68,8 @@ class TrainConfig(BaseConfig):
     logging:         LoggingConfig = LoggingConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None
     seed:            Optional[int] = None  # Seed for reproducibility
-    metrics:         MetricConfig = MetricConfig() # Metrics to log while training! 
+    metrics:         TrainMetricConfig = TrainMetricConfig() # Metrics to log while training! 
 
     # Separate evaluation config that will be run with a full-volume dataloader. 
     # Can be used for intermittent SSIM, dose calcs etc
-    eval:            EvalConfig = EvalConfig() # Evaluation config
+    evaluation:            Optional[EvalConfig] = None
