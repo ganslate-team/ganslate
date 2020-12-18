@@ -16,15 +16,8 @@ class Inferer():
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
         self.data_loader = build_loader(self.conf)
-
-        # Build tracker if logging is defined
-        if self.conf.logging:
-            self.tracker = InferenceTracker(self.conf)
-
-        # Build GAN if it is defined. Otherwise only build dataloader.
-        if self.conf.gan: 
-            self.model = build_gan(self.conf)
-
+        self.tracker = InferenceTracker(self.conf)
+        self.model = build_gan(self.conf)
         self.sliding_window_inferer = self._init_sliding_window_inferer()
 
     def run(self):
@@ -37,14 +30,16 @@ class Inferer():
             # Sometimes, metadata is necessary to be able to store the generated outputs.
             # E.g. origin, spacing and direction is required in order to properly save medical images.
             if isinstance(data, list): # dataloader yields a list when passing multiple values at once
+                has_metadata = True
                 data, metadata = data
                 # TODO: make better, not great that elem[0] for strings
-                metadata = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in metadata]
-                has_metadata = True
-            
+                if isinstance(metadata, list):
+                    metadata = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in metadata]
+                elif isinstance(metadata, dict):
+                    metadata = {k:v[0] if isinstance(v[0], str) else np.array(v) for k, v in metadata.items()}
+
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
-            print(data.shape)
             out = self.infer(data)
             self.tracker.end_computation_timer()
             

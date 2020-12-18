@@ -168,6 +168,9 @@ def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
 
     """
 
+    if not apply_mask and not apply_bound:
+        return array
+
     body_mask, ((z_max, z_min), \
         (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(array, HU_threshold)
     

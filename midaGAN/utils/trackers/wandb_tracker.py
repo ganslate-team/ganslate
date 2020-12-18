@@ -17,7 +17,7 @@ class WandbTracker:
             self.filter_min = conf.logging.wandb.image_filter.min
             self.filter_max = conf.logging.wandb.image_filter.max
 
-    def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics):
+    def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics, batch=None):
         """TODO"""
         log_dict = {}
 
@@ -48,4 +48,7 @@ class WandbTracker:
             image = (image - self.filter_min )/ self.filter_max - self.filter_min
             log_dict[f"{name}_filtered"] = [wandb.Image(image.cpu().detach().numpy())]
 
+        if batch:
+            log_dict["batch"] = batch
+            
         wandb.log(log_dict)
