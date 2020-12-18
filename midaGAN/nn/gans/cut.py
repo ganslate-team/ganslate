@@ -27,20 +27,16 @@ class CUTConfig(BaseGANConfig):
     netF: str = 'mlp_sample'
     netF_nc: int = 256
     num_patches: int = 256  # number of patches per layer
-    flip_equivariance: bool = True  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
+    flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
+    optimizer: OptimizerConfig = OptimizerConfig
 
-        #parser.add_argument('--CUT_mode', type=str, default="CUT", choices='(CUT, cut, FastCUT, fastcut)')
-        #parser.add_argument('--nce_includes_all_negatives_from_minibatch',
-        #                    type=util.str2bool, nargs='?', const=True, default=False,
-        #                    help='(used for single image translation) If True, include the negatives from the other samples of the minibatch when computing the contrastive loss. Please see models/patchnce.py for more details.')
-
-        # Set default parameters for CUT and FastCUT
-        # if opt.CUT_mode.lower() == "cut":
-        #     parser.set_defaults(nce_idt=True, lambda_NCE=1.0)
-        # elif opt.CUT_mode.lower() == "fastcut":
-        #     parser.set_defaults(
-        #         nce_idt=False, lambda_NCE=10.0, flip_equivariance=True,
-        #         n_epochs=150, n_epochs_decay=50)
+@dataclass
+class FastCUTConfig(CUTConfig):
+    """Fast Contrastive Unpaired Translation (FastCUT)"""
+    name: str = "FastCUT"
+    # FastCUT defaults
+    flip_equivariance: bool = False
+    optimizer: OptimizerConfig = OptimizerConfig(nce_idt=False, lambda_NCE=10) 
 
 class CUT(BaseGAN):
     """ This class implements CUT and FastCUT model, described in the paper
@@ -48,7 +44,6 @@ class CUT(BaseGAN):
     Taesung Park, Alexei A. Efros, Richard Zhang, Jun-Yan Zhu
     ECCV, 2020
     """
-
     def __init__(self, conf):
         super().__init__(conf)
 
@@ -76,7 +71,7 @@ class CUT(BaseGAN):
         #     self.model_names = ['G']
 
         # Generators and Discriminators
-        network_names = ['G', 'F', 'D'] if self.is_train else ['G'] # during test time, only G
+        network_names = ['G', 'D', 'mlp'] if self.is_train else ['G'] # during test time, only G
         self.networks = {name: None for name in network_names}
 
         # define networks (both generator and discriminator)
@@ -101,6 +96,14 @@ class CUT(BaseGAN):
 
         self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
     
+    def init_networks(self, conf):
+        """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
+        super().init_networks(conf)
+
+        mlp = PatchSampleF(conf)
+        self.networks['mlp'] = init_net(conf, mlp, self.device)
+
+
     def init_optimizers(self, conf):
         lr_G = conf.optimizer.lr_G
         lr_D = conf.optimizer.lr_D
@@ -237,11 +240,17 @@ class CUT(BaseGAN):
 
         return total_nce_loss / n_layers
 
+class FastCUT(CUT):
+    """Necessary to be able to build the mode lwith midaGAN.nn.gans.build_gan() 
+    when its specified name is "FastCUT."
+    """
+    def __init__(self, conf):
+        super().__init__(conf)
 
 class PatchSampleF(nn.Module):
-    def __init__(self, use_mlp=False, init_type='normal', init_gain=0.02, nc=256, gpu_ids=[]):
+    def __init__(self, use_mlp=False, nc=256, init_type='normal', init_gain=0.02, gpu_ids=[]):
         # potential issues: currently, we use the same patch_ids for multiple images in the batch
-        super(PatchSampleF, self).__init__()
+        super().__init__()
         self.l2norm = Normalize(2)
         self.use_mlp = use_mlp
         self.nc = nc  # hard-coded

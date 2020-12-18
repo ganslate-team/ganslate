@@ -2,7 +2,49 @@ import functools
 import torch.nn as nn
 from torch.nn import init
 from torch.optim import lr_scheduler
+import midaGAN
 from midaGAN.nn import separable
+from midaGAN.utils import import_class_from_dirs_and_modules
+
+def build_network_by_role(conf, role, device):
+    """Builds a discriminator or generator. TODO: document """
+    assert role in ['discriminator', 'generator']
+            
+    name = conf.gan[role].name
+    import_locations = midaGAN.conf.IMPORT_LOCATIONS
+    network_class = import_class_from_dirs_and_modules(name, import_locations[role])
+
+    network_args = dict(conf.gan[role])
+    network_args.pop("name")
+    network_args["norm_type"] = conf.gan.norm_type
+
+    network = network_class(**network_args)
+    return init_net(conf, network, device)
+
+def init_net(conf, network, device):
+    init_weights(network, conf.gan.weight_init_type, conf.gan.weight_init_gain)
+    return network.to(device)
+
+def init_weights(net, weight_init_type='normal', gain=0.02):
+    def init_func(m):
+        classname = m.__class__.__name__
+        if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
+            if weight_init_type == 'normal':
+                init.normal_(m.weight.data, 0.0, gain)
+            elif weight_init_type == 'xavier':
+                init.xavier_normal_(m.weight.data, gain=gain)
+            elif weight_init_type == 'kaiming':
+                init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
+            elif weight_init_type == 'orthogonal':
+                init.orthogonal_(m.weight.data, gain=gain)
+            else:
+                raise NotImplementedError(f"initialization method `{weight_init_type}` is not implemented")
+            if hasattr(m, 'bias') and m.bias is not None:
+                init.constant_(m.bias.data, 0.0)
+        elif classname.find('BatchNorm3d') != -1:
+            init.normal_(m.weight.data, 1.0, gain)
+            init.constant_(m.bias.data, 0.0)
+    net.apply(init_func)
 
 def get_conv_layer_3d(is_separable=False):
     if is_separable:
@@ -57,30 +99,7 @@ def get_scheduler(optimizer, conf):
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
 
 
-def init_weights(net, weight_init_type='normal', gain=0.02):
-    def init_func(m):
-        classname = m.__class__.__name__
-        if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
-            if weight_init_type == 'normal':
-                init.normal_(m.weight.data, 0.0, gain)
-            elif weight_init_type == 'xavier':
-                init.xavier_normal_(m.weight.data, gain=gain)
-            elif weight_init_type == 'kaiming':
-                init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
-            elif weight_init_type == 'orthogonal':
-                init.orthogonal_(m.weight.data, gain=gain)
-            else:
-                raise NotImplementedError(f"initialization method `{weight_init_type}` is not implemented")
-            if hasattr(m, 'bias') and m.bias is not None:
-                init.constant_(m.bias.data, 0.0)
-        elif classname.find('BatchNorm3d') != -1:
-            init.normal_(m.weight.data, 1.0, gain)
-            init.constant_(m.bias.data, 0.0)
-    net.apply(init_func)
-
-
-# TODO: place it somewhere better
-def reshape_to_4D_if_5D(tensor):
+def reshape_to_4D_if_5D(tensor):  # TODO: place it somewhere better
     if len(tensor.shape) == 5:
         return tensor.view(-1, *tensor.shape[2:])
     return tensor
