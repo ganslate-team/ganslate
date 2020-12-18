@@ -79,9 +79,6 @@ class BaseGAN(ABC):
             return torch.device('cuda:0')  # non-distributed GPU training
         else:
             return torch.device('cpu')
-            
-    def _count_devices(self):
-        return int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
 
     @abstractmethod
     def set_input(self, input):
@@ -128,7 +125,8 @@ class BaseGAN(ABC):
         if self.conf.load_checkpoint:
             self.load_networks(self.conf.load_checkpoint.iter)
         
-        if self._count_devices() > 1:
+        num_devices = int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
+        if num_devices > 1:
             self.parallelize_networks()
 
         torch.cuda.empty_cache()

@@ -22,7 +22,7 @@ class Resnet3D(nn.Module):
     def __init__(self, in_channels, norm_type, n_residual_blocks=9):
         super().__init__()
 
-        in_channels = out_channels
+        out_channels = in_channels
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
