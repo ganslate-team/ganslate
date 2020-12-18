@@ -50,7 +50,7 @@ class BaseGAN(ABC):
 
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
-        self.is_train = conf.gan.is_train
+        self.is_train = conf.is_train
         self.device = self._specify_device()
         self.checkpoint_dir = conf.logging.checkpoint_dir
 

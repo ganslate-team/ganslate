@@ -31,68 +31,56 @@ def build_inference_conf():
 
 def build_eval_conf(conf):
     """
-    Evaluation conf works slightly differently from other builders.
-    It takes the training conf and modifies it to include evaluation parameters.
-
     #TODO: Make this more elegant but OmegaConf is a pain while overriding.
     """
-
-    if not conf.eval.enable:
-        return None
-
+    
     eval_defaults = get_eval_defaults(conf)
-    eval_conf = OmegaConf.select(conf, "eval")
 
-    train_to_eval_options = ["project_dir", \
-                    "use_cuda", "mixed_precision", "opt_level"]
+    eval_conf = OmegaConf.select(conf, "evaluation")
 
-    conf = OmegaConf.masked_copy(conf, train_to_eval_options)
-    eval_conf = OmegaConf.merge(eval_conf, conf, eval_defaults)
-    
     try:
-        dataset = init_dataclass("dataset", OmegaConf.select(eval_conf, "dataset"))
-    
+        dataset = init_dataclass("dataset", OmegaConf.select(eval_defaults, "dataset"))
     except ValueError as e:
-        # If eval dataset not found in the datasets module, 
-        # eval mode will be disabled
-        logger.warning(e)
-        logger.warning("Evaluation mode turned OFF")
+        logger.warning("Evaluation mode turned OFF: {e.message}")
         return None
 
     OmegaConf.update(eval_conf, "dataset", dataset, merge=True)
-
-    eval_conf = OmegaConf.merge(eval_conf, eval_defaults)
+    
+    eval_conf = OmegaConf.merge(eval_conf, eval_defaults)    
 
     return eval_conf
 
 
 def get_inference_defaults(conf):
     inference_defaults = f"""
-    batch_size: 1
     dataset: 
         shuffle: False
 
-    gan:
-        is_train: False
-    
     logging:
         checkpoint_dir: {conf.logging.checkpoint_dir}
 
     """
-
     return OmegaConf.create(inference_defaults)
 
 
 
 def get_eval_defaults(conf):
+    # Copy wandb and tensorboard config to eval
+    wandb_config = OmegaConf.masked_copy(conf.logging, "wandb")
+    tensorboard_config = conf.logging.tensorboard
+
     if "patch_size" in conf.dataset:
         window_size = conf.dataset.patch_size 
     elif "load_size" in conf.dataset:
         # Type will be auto-inferred later
         window_size = str([1, int(conf.dataset.load_size), int(conf.dataset.load_size)])
 
+
     eval_defaults = f"""
-    batch_size: 1
+    logging:
+        inference_dir: {conf.logging.checkpoint_dir}
+        tensorboard: {tensorboard_config}
+
     dataset:
         name: {"".join(conf.dataset.name.split("Dataset")) + "EvalDataset"}
         shuffle: True
@@ -103,4 +91,8 @@ def get_eval_defaults(conf):
         window_size: {window_size}
     """
 
-    return OmegaConf.create(eval_defaults)    
+    eval_defaults = OmegaConf.create(eval_defaults)
+
+    OmegaConf.update(eval_defaults, "logging", wandb_config, merge=True) 
+
+    return eval_defaults

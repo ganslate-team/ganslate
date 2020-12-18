@@ -25,7 +25,7 @@ def main():
     environment.setup_logging_with_config(conf)
     
     # Load limited entries in the dataloader
-    conf.gan.is_train = False 
+    conf.is_train = False 
     data_loader = build_loader(conf)
 
     project = conf.logging.wandb.project

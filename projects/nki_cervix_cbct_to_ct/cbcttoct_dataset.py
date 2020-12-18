@@ -238,31 +238,34 @@ class CBCTtoCTInferenceDataset(Dataset):
 
         volume = truncate_CBCT_based_on_fov(volume)
         
-        metadata = [path, 
-                    volume.GetSize(),
-                    volume.GetOrigin(), 
-                    volume.GetSpacing(), 
-                    volume.GetDirection(),
-                    sitk_utils.get_npy_dtype(volume)]
+        metadata = {
+            'path':   str(path), 
+            'size':   volume.GetSize(),
+            'origin': volume.GetOrigin(), 
+            'spacing': volume.GetSpacing(), 
+            'direction': volume.GetDirection(),
+            'dtype': sitk_utils.get_npy_dtype(volume)
+        }
+
 
         volume = sitk_utils.get_npy(volume)
         
+        if self.apply_mask or self.apply_bound:
+            body_mask, ((z_max, z_min), \
+            (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(volume, self.cbct_mask_threshold)
+        
+            # Apply mask to the image array 
+            if self.apply_mask:
+                volume = np.where(body_mask, volume, -1024)
+                metadata.update({'mask': 
+                                        body_mask})
 
-        body_mask, ((z_max, z_min), \
-        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(volume, self.cbct_mask_threshold)
-    
-        # Apply mask to the image array 
-        if self.apply_mask:
-            volume = np.where(body_mask, volume, -1024)
-
-         # Index the array within the bounds and return cropped array
-        if self.apply_bound:
-            volume = volume[z_max:z_min, y_max: y_min, x_max: x_min]
-
-
-        metadata.append(((z_max, z_min), (y_max, y_min), (x_max, x_min)))
-
-
+            # Index the array within the bounds and return cropped array
+            if self.apply_bound:
+                volume = volume[z_max:z_min, y_max: y_min, x_max: x_min]
+                metadata.update({'bounds': 
+                                        ((z_max, z_min), (y_max, y_min), (x_max, x_min))})
+     
 
         volume = torch.tensor(volume)
 
@@ -279,20 +282,31 @@ class CBCTtoCTInferenceDataset(Dataset):
         return self.num_datapoints
 
     def save(self, tensor, metadata, output_dir):
-        tensor = tensor.squeeze()
+        tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
+
+        masking_value = torch.tensor(-1024, dtype=torch.float)
+
+        if 'mask' in metadata or 'bounds' in metadata:
+
+            full_tensor = torch.full((metadata['size'][2], metadata['size'][1], metadata['size'][0]), masking_value, dtype=torch.float)
+
+
+            if 'bounds' in metadata:
+                bounds = metadata['bounds']
+                full_tensor[bounds[0][0]: bounds[0][1], bounds[1][0]: bounds[1][1], bounds[2][0]: bounds[2][1]] = tensor
+
+            if 'mask' in metadata:
+                mask = torch.tensor(metadata['mask'], dtype=bool).squeeze()
+                full_tensor = torch.where(mask, full_tensor, masking_value)  
         
-        datapoint_path, size, origin, spacing, direction, dtype, bounds = metadata
+        else:
+            full_tensor = tensor
 
-
-        full_tensor = torch.full((size[2], size[1], size[0]), -1024)
-
-        full_tensor[bounds[0][0]: bounds[0][1], bounds[1][0]: bounds[1][1], bounds[2][0]: bounds[2][1]] = tensor
-
-        sitk_image = sitk_utils.tensor_to_sitk_image(full_tensor, origin, spacing, direction, dtype)
+        sitk_image = sitk_utils.tensor_to_sitk_image(full_tensor, metadata['origin'], metadata['spacing'], metadata['direction'], metadata['dtype'])
 
         # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
-        datapoint_path = Path(str(datapoint_path))
+        datapoint_path = Path(str(metadata['path']))
 
         save_path = datapoint_path.relative_to(self.root_path)
 
@@ -301,7 +315,6 @@ class CBCTtoCTInferenceDataset(Dataset):
         save_path.parent.mkdir(exist_ok=True, parents=True)
 
         sitk_utils.write(sitk_image, save_path)
-        
 
 # --------------------------- EVALUATION DATASET ---------------------------------------------
 # --------------------------------------------------------------------------------------------
@@ -310,8 +323,8 @@ class CBCTtoCTInferenceDataset(Dataset):
 class CBCTtoCTEvalDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTEvalDataset"
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
-    enable_masking:          bool = False
-    enable_bounding:         bool = False
+    enable_masking:          bool = True
+    enable_bounding:         bool = True
     cbct_mask_threshold:        int = -700    
     ct_mask_threshold:          int = -300
 
@@ -362,33 +375,62 @@ class CBCTtoCTEvalDataset(Dataset):
 
         CBCT = truncate_CBCT_based_on_fov(CBCT)
         
+ 
+        metadata_CBCT = {
+            'path':   str(first_CBCT), 
+            'size':   CBCT.GetSize(),
+            'origin': CBCT.GetOrigin(), 
+            'spacing': CBCT.GetSpacing(), 
+            'direction': CBCT.GetDirection(),
+            'dtype': sitk_utils.get_npy_dtype(CBCT)
+            }
+
+        metadata_CT = {
+            'path':   str(planning_CT), 
+            'size':   CT.GetSize(),
+            'origin': CT.GetOrigin(), 
+            'spacing': CT.GetSpacing(), 
+            'direction': CT.GetDirection(),
+            'dtype': sitk_utils.get_npy_dtype(CT)
+            }
+
 
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
         
 
-        body_mask, ((z_max, z_min), \
-        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CBCT, self.cbct_mask_threshold)
-    
-        # Apply mask to the image array 
-        if self.apply_mask:
-            CBCT = np.where(body_mask, CBCT, -1024)
+        if self.apply_mask or self.apply_bound:
 
-         # Index the array within the bounds and return cropped array
-        if self.apply_bound:
-            CBCT = CBCT[z_max:z_min, y_max: y_min, x_max: x_min]
+            body_mask, ((z_max, z_min), \
+            (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CBCT, self.cbct_mask_threshold)
+        
+            # Apply mask to the image array 
+            if self.apply_mask:
+                CBCT = np.where(body_mask, CBCT, -1024)
+                metadata_CBCT.update({'mask': 
+                                        body_mask})
+     
+            # Index the array within the bounds and return cropped array
+            if self.apply_bound:
+                CBCT = CBCT[z_max:z_min, y_max: y_min, x_max: x_min]
+                metadata_CBCT.update({'bounds': 
+                                        ((z_max, z_min), (y_max, y_min), (x_max, x_min))})
+     
 
+            body_mask, ((z_max, z_min), \
+            (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CT, self.ct_mask_threshold)
+        
+            # Apply mask to the image array 
+            if self.apply_mask:
+                CT = np.where(body_mask, CT, -1024)
+                metadata_CT.update({'mask': 
+                                        body_mask})
 
-        body_mask, ((z_max, z_min), \
-        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CT, self.ct_mask_threshold)
-    
-        # Apply mask to the image array 
-        if self.apply_mask:
-            CT = np.where(body_mask, CT, -1024)
-
-         # Index the array within the bounds and return cropped array
-        if self.apply_bound:
-            CT = CT[z_max:z_min, y_max: y_min, x_max: x_min]
+            # Index the array within the bounds and return cropped array
+            if self.apply_bound:
+                CT = CT[z_max:z_min, y_max: y_min, x_max: x_min]
+                metadata_CT.update({'bounds': 
+                                        ((z_max, z_min), (y_max, y_min), (x_max, x_min))})
 
 
         CT = torch.tensor(CT)
@@ -406,8 +448,46 @@ class CBCTtoCTEvalDataset(Dataset):
 
         return {
             "A": CBCT, 
-            "B": CT
+            "B": CT,
+            "metadata_A": metadata_CBCT,
+            "metadata_B": metadata_CT
         }
+
+
+    def save(self, tensor, metadata, output_dir):
+        tensor = tensor.squeeze().cpu()
+        tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
+
+        masking_value = torch.tensor(-1024, dtype=torch.float)
+
+        if 'mask' in metadata or 'bounds' in metadata:
+
+            full_tensor = torch.full((metadata['size'][2], metadata['size'][1], metadata['size'][0]), masking_value, dtype=torch.float)
+
+
+            if 'bounds' in metadata:
+                bounds = metadata['bounds']
+                full_tensor[bounds[0][0]: bounds[0][1], bounds[1][0]: bounds[1][1], bounds[2][0]: bounds[2][1]] = tensor
+
+            if 'mask' in metadata:
+                mask = torch.tensor(metadata['mask'], dtype=bool).squeeze()
+                full_tensor = torch.where(mask, full_tensor, masking_value)  
+        
+        else:
+            full_tensor = tensor
+
+        sitk_image = sitk_utils.tensor_to_sitk_image(full_tensor, metadata['origin'], metadata['spacing'], metadata['direction'], metadata['dtype'])
+
+        # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
+        datapoint_path = Path(str(metadata['path']))
+
+        save_path = datapoint_path.relative_to(self.root_path)
+
+        save_path = Path(output_dir) / save_path
+
+        save_path.parent.mkdir(exist_ok=True, parents=True)
+
+        sitk_utils.write(sitk_image, save_path)
 
     def __len__(self):
         return self.num_datapoints

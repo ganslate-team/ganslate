@@ -8,7 +8,7 @@ class BaseTracker:
     """"Base for training and inference trackers."""
     def __init__(self, conf):
         self.batch_size = conf.batch_size
-        self.output_dir = conf.logging.checkpoint_dir if conf.gan.is_train else conf.logging.inference_dir
+        self.output_dir = conf.logging.checkpoint_dir if conf.is_train else conf.logging.inference_dir
         self.iter_idx = None
         self.iter_end_time = None
         self.iter_start_time = None
@@ -19,7 +19,7 @@ class BaseTracker:
 
     def save_config(self, conf):
         if communication.get_local_rank() == 0:
-            mode = "training" if conf.gan.is_train else "inference"
+            mode = "training" if conf.is_train else "inference"
             config_path = Path(self.output_dir) / f"{mode}_config.yaml"
             with open(config_path, "w") as file:
                 file.write(OmegaConf.to_yaml(conf))
