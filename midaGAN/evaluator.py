@@ -29,7 +29,6 @@ class Evaluator():
             self.sliding_window_inferer = self._init_sliding_window_inferer()
             self.metrics = EvaluationMetrics(self.conf)
 
-        self.eval_iter_idx = 1
         self.trainer_idx = 0
 
     def set_trainer_idx(self, idx):
@@ -42,6 +41,8 @@ class Evaluator():
         inference_dir = Path(self.conf.logging.inference_dir) / "eval_nrrds"
 
         if self.eval_enabled:
+            self.eval_iter_idx = 1
+
             self.model.is_train = False
             self.logger.info(f"Evaluation started, running with {self.conf.samples} samples")
             for i, data in zip(range(self.conf.samples + 1), self.data_loader):
@@ -55,15 +56,15 @@ class Evaluator():
                 visuals['fake_B'] = self.infer(visuals['real_A'])
                 visuals['rec_A'] = self.infer(visuals['fake_B'], infer_fn='infer_backward')
                 
-                self.data_loader.dataset.save(visuals['real_A'], metadata, inference_dir / str(self.eval_iter_idx))
+                self.data_loader.dataset.save(visuals['fake_B'], metadata, inference_dir / f"{self.trainer_idx}_{self.eval_iter_idx}")
 
-                has_metadata = True
                 metrics = self.calculate_metrics(visuals)
                 self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, visuals, metrics)
+                self.eval_iter_idx += 1
 
             self.model.is_train = True
-        self.eval_iter_idx += 1
 
+            
     def calculate_metrics(self, visuals):
         metrics = self.metrics.get_metric_dict(visuals['real_A'], visuals['rec_A'])
         return metrics

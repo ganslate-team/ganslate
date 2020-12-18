@@ -285,17 +285,26 @@ class CBCTtoCTInferenceDataset(Dataset):
         return self.num_datapoints
 
     def save(self, tensor, metadata, output_dir):
-        tensor = tensor.squeeze()
+        tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
+
+        masking_value = torch.tensor(-1024, dtype=torch.float)
+
+        if 'mask' in metadata or 'bounds' in metadata:
+
+            full_tensor = torch.full((metadata['size'][2], metadata['size'][1], metadata['size'][0]), masking_value, dtype=torch.float)
+
+
+            if 'bounds' in metadata:
+                bounds = metadata['bounds']
+                full_tensor[bounds[0][0]: bounds[0][1], bounds[1][0]: bounds[1][1], bounds[2][0]: bounds[2][1]] = tensor
+
+            if 'mask' in metadata:
+                mask = torch.tensor(metadata['mask'], dtype=bool).squeeze()
+                full_tensor = torch.where(mask, full_tensor, masking_value)  
         
-        full_tensor = torch.full((metadata['size'][2], metadata['size'][1], metadata['size'][0]), -1024, dtype=tensor.dtype)
-
-        if 'mask' in metadata:
-            tensor = torch.where(torch.tensor(metadata['mask']), tensor, -1024)
-
-        if 'bounds' in metadata:
-            bounds = metadata['bounds']
-            full_tensor[bounds[0][0]: bounds[0][1], bounds[1][0]: bounds[1][1], bounds[2][0]: bounds[2][1]] = tensor
+        else:
+            full_tensor = tensor
 
         sitk_image = sitk_utils.tensor_to_sitk_image(full_tensor, metadata['origin'], metadata['spacing'], metadata['direction'], metadata['dtype'])
 
@@ -309,7 +318,6 @@ class CBCTtoCTInferenceDataset(Dataset):
         save_path.parent.mkdir(exist_ok=True, parents=True)
 
         sitk_utils.write(sitk_image, save_path)
-        
 
 # --------------------------- EVALUATION DATASET ---------------------------------------------
 # --------------------------------------------------------------------------------------------
@@ -318,8 +326,8 @@ class CBCTtoCTInferenceDataset(Dataset):
 class CBCTtoCTEvalDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTEvalDataset"
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
-    enable_masking:          bool = False
-    enable_bounding:         bool = False
+    enable_masking:          bool = True
+    enable_bounding:         bool = True
     cbct_mask_threshold:        int = -700    
     ct_mask_threshold:          int = -300
 
@@ -450,20 +458,25 @@ class CBCTtoCTEvalDataset(Dataset):
 
 
     def save(self, tensor, metadata, output_dir):
-        tensor = tensor.squeeze()
+        tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
-        
-        if 'mask' in metadata or 'bounds' in metadata:
-            full_tensor = torch.full((metadata['size'][2], metadata['size'][1], metadata['size'][0]), -1024, dtype=tensor.dtype)
 
-            if 'mask' in metadata:
-                tensor = torch.where(torch.tensor(metadata['mask']), tensor, -1024)
+        masking_value = torch.tensor(-1024, dtype=torch.float)
+
+        if 'mask' in metadata or 'bounds' in metadata:
+
+            full_tensor = torch.full((metadata['size'][2], metadata['size'][1], metadata['size'][0]), masking_value, dtype=torch.float)
+
 
             if 'bounds' in metadata:
                 bounds = metadata['bounds']
                 full_tensor[bounds[0][0]: bounds[0][1], bounds[1][0]: bounds[1][1], bounds[2][0]: bounds[2][1]] = tensor
+
+            if 'mask' in metadata:
+                mask = torch.tensor(metadata['mask'], dtype=bool).squeeze()
+                full_tensor = torch.where(mask, full_tensor, masking_value)  
+        
         else:
-            print("Using full tensor ...")
             full_tensor = tensor
 
         sitk_image = sitk_utils.tensor_to_sitk_image(full_tensor, metadata['origin'], metadata['spacing'], metadata['direction'], metadata['dtype'])
@@ -478,8 +491,6 @@ class CBCTtoCTEvalDataset(Dataset):
         save_path.parent.mkdir(exist_ok=True, parents=True)
 
         sitk_utils.write(sitk_image, save_path)
-
-
 
     def __len__(self):
         return self.num_datapoints

@@ -16,20 +16,9 @@ class Inferer():
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
         self.data_loader = build_loader(self.conf)
-<<<<<<< HEAD
-
-        # Build tracker if logging is defined
-        if self.conf.logging:
-            self.tracker = InferenceTracker(self.conf)
-
-        # Build GAN if it is defined. Otherwise only build dataloader.
-        if self.conf.gan: 
-            self.model = build_gan(self.conf)
-
-=======
         self.tracker = InferenceTracker(self.conf)
         self.model = build_gan(self.conf)
->>>>>>> e12b23b0ddd49bb52b6c7ca61b1a58a1204be971
+
         self.sliding_window_inferer = self._init_sliding_window_inferer()
 
     def run(self):
