@@ -1,4 +1,3 @@
-
 import os
 import logging
 import torch
@@ -9,6 +8,9 @@ from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication, environment
 from midaGAN.utils.trackers.training_tracker import TrainingTracker
 from midaGAN.utils.summary import gan_summary
+
+# Imports for evaluation.
+from midaGAN.evaluator import Evaluator
 
 class Trainer():
     def __init__(self, conf):
@@ -24,7 +26,11 @@ class Trainer():
         self.tracker = TrainingTracker(self.conf)
 
         self.data_loader = build_loader(self.conf)
+
         self.model = build_gan(self.conf)
+
+        # Evaluation configuration and evaluation dataloader specified. 
+        self._init_evaluation(self.conf)
 
         start_iter = 1 if not self.conf.load_checkpoint else self.conf.load_checkpoint.count_start_iter
         end_iter = 1 + self.conf.n_iters + self.conf.n_iters_decay
@@ -51,6 +57,8 @@ class Trainer():
             self._save_checkpoint()
             self._perform_scheduler_step()
             
+            self.evaluate()
+
             self.tracker.start_dataloading_timer()
         self.tracker.close()
 
@@ -68,8 +76,22 @@ class Trainer():
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx)
 
+
+    def _init_evaluation(self, conf):
+        """
+        Intitialize evaluation parameters from training conf.
+        """
+        # Eval conf is built from training conf
+        self.evaluator = Evaluator(conf)
+        self.evaluator.set_model(self.model)
+
+    def evaluate(self):
+        if self.iter_idx % self.conf.evaluation.freq == 0:
+            self.evaluator.run()
+
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
+        self.evaluator.set_trainer_idx(iter_idx)
 
-    
+

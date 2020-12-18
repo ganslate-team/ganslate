@@ -15,11 +15,9 @@ class Inferer():
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
-        self.tracker = InferenceTracker(conf)
-
         self.data_loader = build_loader(self.conf)
+        self.tracker = InferenceTracker(self.conf)
         self.model = build_gan(self.conf)
-        self.device = self.model.device
         self.sliding_window_inferer = self._init_sliding_window_inferer()
 
     def run(self):
@@ -32,14 +30,16 @@ class Inferer():
             # Sometimes, metadata is necessary to be able to store the generated outputs.
             # E.g. origin, spacing and direction is required in order to properly save medical images.
             if isinstance(data, list): # dataloader yields a list when passing multiple values at once
+                has_metadata = True
                 data, metadata = data
                 # TODO: make better, not great that elem[0] for strings
-                metadata = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in metadata]
-                has_metadata = True
-            
+                if isinstance(metadata, list):
+                    metadata = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in metadata]
+                elif isinstance(metadata, dict):
+                    metadata = {k:v[0] if isinstance(v[0], str) else np.array(v) for k, v in metadata.items()}
+
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
-            print(data.shape)
             out = self.infer(data)
             self.tracker.end_computation_timer()
             
@@ -54,20 +54,23 @@ class Inferer():
             self.tracker.log_message(i, self.data_loader)
             self.tracker.start_dataloading_timer()
 
-    def infer(self, data):
-        data = data.to(self.device)
+    def infer(self, data, infer_fn='infer'):
+
+        infer_fn = getattr(self.model, infer_fn) if hasattr(self.model, infer_fn) else None
+
+        data = data.to(self.model.device)
         # Sliding window (i.e. patch-wise) inference
         if self.sliding_window_inferer:
-            return self.sliding_window_inferer(data, self.model.infer)
+            return self.sliding_window_inferer(data, infer_fn)
         else:
-            return self.model.infer(data)
+            return infer_fn(data)
 
     def _init_sliding_window_inferer(self):
         if self.conf.sliding_window:
             return SlidingWindowInferer(roi_size=self.conf.sliding_window.window_size,
                                         sw_batch_size=self.conf.sliding_window.batch_size,
                                         overlap=self.conf.sliding_window.overlap,
-                                        mode=self.conf.sliding_window.mode)
+                                        mode=self.conf.sliding_window.mode, cval=-1)
         else:
             return None
 

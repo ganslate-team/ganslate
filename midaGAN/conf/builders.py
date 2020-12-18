@@ -1,6 +1,9 @@
 from pathlib import Path
 from omegaconf import OmegaConf
-from midaGAN.conf import init_config, InferenceConfig
+from midaGAN.conf import init_config, InferenceConfig, EvalConfig, init_dataclass
+import logging
+
+logger = logging.getLogger(__name__)
 
 def build_training_conf():
     cli = OmegaConf.from_cli()
@@ -26,19 +29,70 @@ def build_inference_conf():
     return init_config(conf, InferenceConfig)
 
 
+def build_eval_conf(conf):
+    """
+    #TODO: Make this more elegant but OmegaConf is a pain while overriding.
+    """
+    
+    eval_defaults = get_eval_defaults(conf)
+
+    eval_conf = OmegaConf.select(conf, "evaluation")
+
+    try:
+        dataset = init_dataclass("dataset", OmegaConf.select(eval_defaults, "dataset"))
+    except ValueError as e:
+        logger.warning("Evaluation mode turned OFF: {e.message}")
+        return None
+
+    OmegaConf.update(eval_conf, "dataset", dataset, merge=True)
+    
+    eval_conf = OmegaConf.merge(eval_conf, eval_defaults)    
+
+    return eval_conf
+
 
 def get_inference_defaults(conf):
     inference_defaults = f"""
-    batch_size: 1
     dataset: 
         shuffle: False
 
-    gan:
-        is_train: False
-    
     logging:
         checkpoint_dir: {conf.logging.checkpoint_dir}
 
     """
-
     return OmegaConf.create(inference_defaults)
+
+
+
+def get_eval_defaults(conf):
+    # Copy wandb and tensorboard config to eval
+    wandb_config = OmegaConf.masked_copy(conf.logging, "wandb")
+    tensorboard_config = conf.logging.tensorboard
+
+    if "patch_size" in conf.dataset:
+        window_size = conf.dataset.patch_size 
+    elif "load_size" in conf.dataset:
+        # Type will be auto-inferred later
+        window_size = str([1, int(conf.dataset.load_size), int(conf.dataset.load_size)])
+
+
+    eval_defaults = f"""
+    logging:
+        inference_dir: {conf.logging.checkpoint_dir}
+        tensorboard: {tensorboard_config}
+
+    dataset:
+        name: {"".join(conf.dataset.name.split("Dataset")) + "EvalDataset"}
+        shuffle: True
+        root: {conf.dataset.root}
+        num_workers: 0
+            
+    sliding_window:
+        window_size: {window_size}
+    """
+
+    eval_defaults = OmegaConf.create(eval_defaults)
+
+    OmegaConf.update(eval_defaults, "logging", wandb_config, merge=True) 
+
+    return eval_defaults

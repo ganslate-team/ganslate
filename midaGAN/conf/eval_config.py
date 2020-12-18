@@ -3,18 +3,23 @@ from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf.base_configs import *
-
+from midaGAN.conf.common_configs import *
 
 @dataclass
 class LoggingConfig:
     inference_dir:  str = MISSING  # Path where the inference will store the results
-    checkpoint_dir: str = MISSING  # Where the checkpoints and training config yaml were saved
-
+    tensorboard:     bool = False
+    wandb:           Optional[WandbConfig] = None
 
 @dataclass
-class LoadCheckpointConfig:
-    iter: str = MISSING 
+class MetricConfig:
+    ssim:                       bool = True
+    psnr:                       bool = True
+    nmse:                       bool = True
+    mse:                        bool = True
 
+    hu_accuracy:                bool = False
+    dosimetric_calculations:    bool = False
 
 @dataclass
 class SlidingWindowConfig:
@@ -25,11 +30,12 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class InferenceConfig(BaseConfig):
+class EvalConfig:
     is_train:        bool = False # Training mode is False for framework
     batch_size:      int = 1
-    load_checkpoint: LoadCheckpointConfig = LoadCheckpointConfig()
-    logging:         LoggingConfig = LoggingConfig()
+    freq:            int = 1 # Every n iterations to run eval
+    metrics:         MetricConfig = MetricConfig()
+    samples:         int = 4 # Number of samples from the data to run evaluation for
     sliding_window:  Optional[SlidingWindowConfig] = None
-
-
+    logging:         LoggingConfig = LoggingConfig()
+    dataset:         BaseDatasetConfig = MISSING
