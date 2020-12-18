@@ -56,9 +56,8 @@ class Evaluator():
                 visuals['fake_B'] = self.infer(visuals['real_A'])
                 visuals['rec_A'] = self.infer(visuals['fake_B'], infer_fn='infer_backward')
                 
-                self.data_loader.dataset.save(visuals['fake_B'], metadata, inference_dir / str(self.eval_iter_idx))
+                self.data_loader.dataset.save(visuals['fake_B'], metadata, inference_dir / f"{self.trainer_idx}_{self.eval_iter_idx}")
 
-                has_metadata = True
                 metrics = self.calculate_metrics(visuals)
                 self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, visuals, metrics)
                 self.eval_iter_idx += 1
