@@ -54,7 +54,7 @@ class EvalTracker(BaseTracker):
 
         metrics = communication.reduce(metrics, average=True, all_reduce=False) # reduce metrics (avg) and send to the process of rank 0
         
-        self._log_message(index, metrics) 
+        self._log_message(self.iter_idx, metrics) 
 
         if communication.get_local_rank() == 0:
             visuals = visuals_to_combined_2d_grid(visuals)
