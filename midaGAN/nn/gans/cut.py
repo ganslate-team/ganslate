@@ -57,12 +57,8 @@ class CUT(BaseGAN):
         # initialize the visuals as None
         self.visuals = {name: None for name in all_visual_names}
 
-        # if opt.nce_idt and self.isTrain:
-        #     self.loss_names += ['NCE_Y']
-        #     self.visual_names += ['idt_B']
-
         # Losses used by the model
-        self.loss_names = ['D', 'G', 'NCE', 'NCE_idt'] # 'G_GAN' 
+        self.loss_names = ['D', 'G', 'NCE', 'NCE_idt']
         self.losses = {name: None for name in loss_names}
 
         # Generators and Discriminators
@@ -74,11 +70,9 @@ class CUT(BaseGAN):
     def init_networks(self, conf):
         """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
         super().init_networks(conf)
-        
         if self.is_train:
             mlp = PatchSampleF(conf)
             self.networks['mlp'] = init_net(conf, mlp, self.device)
-
 
     def init_optimizers(self, conf):
         lr_G = conf.gan.optimizer.lr_G
@@ -88,9 +82,7 @@ class CUT(BaseGAN):
 
         self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(), lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(self.networks['D'].parameters(), lr=lr_D, betas=(beta1, beta2))
-        self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))                           
-
-        self.setup_loss_masking(conf.gan.optimizer.loss_mask)
+        self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))
 
     def init_criterions(self, conf):
         # Standard GAN loss 
@@ -126,16 +118,22 @@ class CUT(BaseGAN):
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
-        self.real = torch.cat((self.real_A, self.real_B), dim=0) if self.opt.nce_idt and self.opt.isTrain else self.real_A
-        if self.opt.flip_equivariance:
-            self.flipped_for_equivariance = self.opt.isTrain and (np.random.random() < 0.5)
-            if self.flipped_for_equivariance:
-                self.real = torch.flip(self.real, [3])
+        real_A = self.visuals['real_A']
+        # if nce_idt
+            real_B = self.visuals['real_B']
 
-        self.fake = self.netG(self.real)
-        self.fake_B = self.fake[:self.real_A.size(0)]
-        if self.opt.nce_idt:
-            self.idt_B = self.fake[self.real_A.size(0):]
+        self.is_equivariance_flipped = False
+        if self.is_train and conf.gan.flip_equivariance and (np.random.random() < 0.5):
+            self.is_equivariance_flipped = True
+            # flip the last dimension
+            real_A = real_A.flip(-1)  
+            # if nce_idt
+                real_B = real_B.flip(-1)
+        
+        # concat for joint forward?
+        self.visuals['fake_B'] = self.networks['G'](real_A)
+        # if nce_idt
+            self.visuals['idt_B'] = self.networks['G'](real_B)
 
     def backward_D():
         real = self.visuals['real_B']
@@ -166,11 +164,11 @@ class CUT(BaseGAN):
         # if lambda_nce > 0
         nce_loss = self.calculate_NCE_loss(real_A, fake_B)
         self.losses['NCE'] = nce_loss
-        # if above and nce_idt
-        nce_idt_loss = self.calculate_NCE_loss(real_B, idt_B)
+            # if above and nce_idt
+                nce_idt_loss = self.calculate_NCE_loss(real_B, idt_B)
         self.losses['NCE_idt'] = nce_idt_loss
         # if above and nce_idt
-        nce_loss = 0.5 * (nce_loss + nce_idt_loss)
+            nce_loss = 0.5 * (nce_loss + nce_idt_loss)
         # ---------------------------------------------------------------
 
         combined_loss = nce_loss + self.losses['G']
@@ -194,7 +192,7 @@ class CUT(BaseGAN):
         return total_nce_loss / len(self.nce_layers)
 
 class FastCUT(CUT):
-    """Necessary to be able to build the mode lwith midaGAN.nn.gans.build_gan() 
+    """Necessary to be able to build the model with midaGAN.nn.gans.build_gan() 
     when its specified name is "FastCUT."
     """
     def __init__(self, conf):

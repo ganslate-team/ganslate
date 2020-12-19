@@ -43,8 +43,8 @@ def init_config(conf, config_class=TrainConfig):
 
 def instantiate_dataclasses_from_yaml(conf):
     """Goes through a config and instantiates the fields that are dataclasses. 
-    A field is a dataclass if it's key can be found in the keys of the IMPORT_LOCATIONS.
-    Each such dataclass should have an entry "name" which is used to import it's dataclass
+    A field is a dataclass if its key can be found in the keys of the IMPORT_LOCATIONS.
+    Each such dataclass should have an entry "name" which is used to import its dataclass
     class using that "name" + "Config" as class name.
     Instantiates the deepest dataclasses first as otherwise OmegaConf would throw an error.
     """
