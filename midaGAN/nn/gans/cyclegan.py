@@ -5,8 +5,8 @@ import itertools
 
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
-from midaGAN.nn.losses.generator_loss import GeneratorLoss
-from midaGAN.nn.losses.gan_loss import GANLoss
+from midaGAN.nn.losses.cyclegan_generator_losses import CycleGANGeneratorLosses
+from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 
 # Config imports
 from dataclasses import dataclass, field
@@ -69,9 +69,9 @@ class CycleGAN(BaseGAN):
 
     def init_criterions(self, conf):
         # Standard GAN loss 
-        self.criterion_gan = GANLoss(conf.gan.optimizer.gan_loss_type).to(self.device)
+        self.criterion_advers = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterion_G = GeneratorLoss(conf)
+        self.criterion_G = CycleGANGeneratorLosses(conf)
 
     def init_optimizers(self, conf):
         lr_G = conf.gan.optimizer.lr_G
@@ -188,8 +188,8 @@ class CycleGAN(BaseGAN):
         # Detaching fake: https://github.com/pytorch/examples/issues/116
         self.pred_fake = self.networks[discriminator](fake.detach())
 
-        loss_real = self.criterion_gan(self.pred_real, target_is_real=True)
-        loss_fake = self.criterion_gan(self.pred_fake, target_is_real=False)
+        loss_real = self.criterion_advers(self.pred_real, target_is_real=True)
+        loss_fake = self.criterion_advers(self.pred_fake, target_is_real=False)
         self.losses[discriminator] = loss_real + loss_fake
 
         # backprop
@@ -207,8 +207,8 @@ class CycleGAN(BaseGAN):
         # ------------------------- GAN Loss ----------------------------
         pred_A = self.networks['D_A'](fake_B)  # D_A(G_A(A))
         pred_B = self.networks['D_B'](fake_A)  # D_B(G_B(B))
-        self.losses['G_A'] = self.criterion_gan(pred_A, target_is_real=True) # Forward GAN loss D_A(G_A(A))
-        self.losses['G_B'] = self.criterion_gan(pred_B, target_is_real=True) # Backward GAN loss D_B(G_B(B))
+        self.losses['G_A'] = self.criterion_advers(pred_A, target_is_real=True) # Forward GAN loss D_A(G_A(A))
+        self.losses['G_B'] = self.criterion_advers(pred_B, target_is_real=True) # Backward GAN loss D_B(G_B(B))
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity, Inverse) -------------

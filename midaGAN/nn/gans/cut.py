@@ -9,7 +9,7 @@ from midaGAN.nn.losses.patch_nce import PatchNCELoss
 from dataclasses import dataclass, field
 from typing import Tuple
 from omegaconf import MISSING
-from midaGAN.conf import BaseGANConfig
+from midaGAN.conf import BaseGANConfig, BaseOptimizerConfig
 
 
 @dataclass
@@ -24,8 +24,8 @@ class CUTConfig(BaseGANConfig):
     """Contrastive Unpaired Translation (CUT)"""
     name: str = "CUT"
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)  # compute NCE loss on which layers
-    netF: str = 'mlp_sample'
-    netF_nc: int = 256
+    netF: str = 'mlp_sample' # TODO: remove
+    netF_nc: int = 256 # TODO: same as num_patches?
     num_patches: int = 256  # number of patches per layer
     flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
     optimizer: OptimizerConfig = OptimizerConfig
@@ -35,8 +35,8 @@ class FastCUTConfig(CUTConfig):
     """Fast Contrastive Unpaired Translation (FastCUT)"""
     name: str = "FastCUT"
     # FastCUT defaults
-    flip_equivariance: bool = False
-    optimizer: OptimizerConfig = OptimizerConfig(nce_idt=False, lambda_NCE=10) 
+    flip_equivariance: bool = True
+    optimizer: OptimizerConfig = OptimizerConfig(nce_idt=False, lambda_nce=10) 
 
 class CUT(BaseGAN):
     """ This class implements CUT and FastCUT model, described in the paper
@@ -94,7 +94,7 @@ class CUT(BaseGAN):
 
     def init_criterions(self, conf):
         # Standard GAN loss 
-        self.criterion_gan = GANLoss(conf.gan.optimizer.gan_loss_type).to(self.device)
+        self.criterion_advers = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
         self.criterion_nce = [PatchNCELoss(conf).to(self.device) for _ in conf.gan.nce_layers]
         self.criterion_idt = torch.nn.L1Loss().to(self.device)
 
@@ -144,8 +144,8 @@ class CUT(BaseGAN):
         pred_real = self.networks['D'](real)
         pred_fake = self.networks['D'](fake.detach())
 
-        loss_real = self.criterion_gan(pred_real, False).mean()
-        loss_fake = self.criterion_gan(pred_fake, False).mean()
+        loss_real = self.criterion_advers(pred_real, False).mean()
+        loss_fake = self.criterion_advers(pred_fake, False).mean()
         self.losses['D'] = loss_real + loss_fake
 
         self.backward(loss=self.losses['D'], optimizer=self.optimizers['D'], loss_id=0)
@@ -156,10 +156,13 @@ class CUT(BaseGAN):
         fake_B = self.visuals['fake_B']
         idt_B = self.visuals['idt_B']
 
+        # ------------------------- GAN Loss ----------------------------
         # if lambda_gan > 0
         pred_fake = self.networks['D'](fake_B)
-        self.losses['G'] = self.criterion_gan(pred_fake, True).mean() * self.gan.optimizer.lambda_gan
+        self.losses['G'] = self.criterion_advers(pred_fake, True).mean() * self.gan.optimizer.lambda_gan
+        # ---------------------------------------------------------------
 
+        # ------------------------- NCE Loss ----------------------------
         # if lambda_nce > 0
         nce_loss = self.calculate_NCE_loss(real_A, fake_B)
         self.losses['NCE'] = nce_loss
@@ -168,15 +171,14 @@ class CUT(BaseGAN):
         self.losses['NCE_idt'] = nce_idt_loss
         # if above and nce_idt
         nce_loss = 0.5 * (nce_loss + nce_idt_loss)
+        # ---------------------------------------------------------------
 
         combined_loss = nce_loss + self.losses['G']
         optimizers = [self.optimizers['G'], self.optimizers['mlp']]
         self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
 
     def calculate_NCE_loss(self, src, tgt):
-        n_layers = len(self.nce_layers)
         feat_q = self.netG(tgt, self.nce_layers, encode_only=True)
-
         if self.opt.flip_equivariance and self.flipped_for_equivariance:
             feat_q = [torch.flip(fq, [3]) for fq in feat_q]
 
@@ -189,7 +191,7 @@ class CUT(BaseGAN):
             loss = crit(f_q, f_k) * self.opt.lambda_NCE
             total_nce_loss += loss.mean()
 
-        return total_nce_loss / n_layers
+        return total_nce_loss / len(self.nce_layers)
 
 class FastCUT(CUT):
     """Necessary to be able to build the mode lwith midaGAN.nn.gans.build_gan() 

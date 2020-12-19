@@ -9,7 +9,7 @@ class LossMaskingConfig:
 
 @dataclass
 class BaseOptimizerConfig:
-    gan_loss_type:   str = "lsgan"
+    adversarial_loss_type:   str = "lsgan"
     beta1:           float = 0.5
     beta2:           float = 0.999
     lr_D:            float = 0.0001
