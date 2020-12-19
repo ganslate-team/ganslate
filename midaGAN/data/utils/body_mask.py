@@ -129,13 +129,13 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
         # Find contours for each binary slice
         try:
             contours, hierarchy = cv2.findContours(binary_slice, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            # Get the largest contour based on its area
+            largest_contour = max(contours, key=cv2.contourArea)
+        
         except:
             logger.error("OpenCV could not find contours: Most likely this is a completely black image")
             continue
             
-        # Get the largest contour based on its area
-        largest_contour = max(contours, key=cv2.contourArea)
-        
         # Smooth contour so that surface irregularities are removed better
         smoothed_contour = smooth_contour_points(largest_contour)
 

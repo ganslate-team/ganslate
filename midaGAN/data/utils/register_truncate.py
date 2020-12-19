@@ -3,6 +3,7 @@ from numpy import mean
 from itertools import product
 import logging
 import os
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -16,13 +17,9 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     try:
         registration_transform = get_registration_transform(fixed_image=CBCT, 
                                                             moving_image=CT)
-    except Exception as e:
-        if "Too many samples map outside moving image buffer" in e.message:
-            logger.info("Registration failed due to poor initial overlap. Passing the whole CT volume.") # happens extremely rarely
-            return CT
-        else:
-            logger.error(e.message)
-            return CT
+    except BaseException as e:
+        logger.error(f"Registration failed with error: {traceback.print_exc()}")
+        return CT
 
     # Start and end positions of CBCT volume
     start_position = [0,0,0]
