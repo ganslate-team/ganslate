@@ -1,13 +1,20 @@
 import torch
 import torch.nn as nn
-import midaGAN.nn.losses.ssim as ssim
+import midaGAN.nn.losses.utils.ssim as ssim
 from midaGAN.nn.utils import reshape_to_4D_if_5D
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-class CycleGANGeneratorLosses:
+class CycleGANLosses:
+    """Defines losses used for optiming the generators in CycleGAN setup.
+    Consists of:
+        (1) Cycle-consistency  loss (weighted combination of L1 and, optionally, SSIM)
+        (2) Identity loss
+        (3) Inverse loss (experimental, similar to Identity loss but to be used when the 
+            two domains are not too different - e.g. CBCT and CT images.)
+    """
     def __init__(self, conf):
         lambda_A = conf.gan.optimizer.lambda_A
         lambda_B = conf.gan.optimizer.lambda_B

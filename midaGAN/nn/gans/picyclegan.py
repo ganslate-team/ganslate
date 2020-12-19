@@ -5,7 +5,7 @@ import itertools
 
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
-from midaGAN.nn.losses.cyclegan_generator_losses import CycleGANGeneratorLosses
+from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 
 # Config imports
@@ -67,7 +67,7 @@ class PiCycleGAN(BaseGAN):
         # Standard GAN loss 
         self.criterion_advers = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterion_G = CycleGANGeneratorLosses(conf)
+        self.criterion_G = CycleGANLosses(conf)
 
     def init_optimizers(self, conf):
         lr_G = conf.gan.optimizer.lr_G
