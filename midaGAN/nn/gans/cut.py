@@ -31,13 +31,6 @@ class CUTConfig(BaseGANConfig):
     use_flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
     optimizer: OptimizerConfig = OptimizerConfig
 
-@dataclass
-class FastCUTConfig(CUTConfig):
-    """Fast Contrastive Unpaired Translation (FastCUT)"""
-    name: str = "FastCUT"
-    # FastCUT defaults
-    use_flip_equivariance: bool = True
-    optimizer: OptimizerConfig = OptimizerConfig(nce_idt=False, lambda_nce=10) 
 
 class CUT(BaseGAN):
     """ This class implements CUT and FastCUT model, described in the paper
@@ -80,7 +73,10 @@ class CUT(BaseGAN):
         """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
         super().init_networks(conf)
         if self.is_train:
-            mlp = PatchSampleF()
+            channels_per_feature_level = probe_network_channels(self.networks['G'],
+                                                                self.nce_layers, 
+                                                                input_channels=3)
+            mlp = PatchSampleF(channels_per_feature_level)
             self.networks['mlp'] = init_net(mlp, conf, self.device)
 
     def init_optimizers(self, conf):
@@ -91,7 +87,7 @@ class CUT(BaseGAN):
 
         self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(), lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(self.networks['D'].parameters(), lr=lr_D, betas=(beta1, beta2))
-        # !!!!!!! self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))
+        self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))
 
     def init_criterions(self, conf):
         self.criterion_adv = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
@@ -110,11 +106,11 @@ class CUT(BaseGAN):
         # ------------------------ Generator and MLP ----------------------------------------------
         self.set_requires_grad(self.networks['D'], False)
         self.optimizers['G'].zero_grad()
-        # !!!!!!! self.optimizers['mlp'].zero_grad()
+        self.optimizers['mlp'].zero_grad()
 
         self.backward_G_and_mlp()
         self.optimizers['G'].step()
-        # !!!!!!! self.optimizers['mlp'].step()
+        self.optimizers['mlp'].step()
         # -----------------------------------------------------------------------------------------
 
     def set_input(self, input):
@@ -163,12 +159,15 @@ class CUT(BaseGAN):
         idt_B = self.visuals['idt_B']
 
         # ------------------------- GAN Loss ----------------------------
+        adversarial_loss = 0
         if self.lambda_adv > 0:
             pred_fake = self.networks['D'](fake_B)
-            self.losses['G'] = self.criterion_adv(pred_fake, True).mean() * self.lambda_adv
+            adversarial_loss = self.criterion_adv(pred_fake, True).mean() * self.lambda_adv
+            self.losses['G'] = adversarial_loss
         # ---------------------------------------------------------------
 
         # ------------------------- NCE Loss ----------------------------
+        nce_loss = 0
         if self.lambda_nce > 0:
             nce_loss = self.calculate_nce_loss(real_A, fake_B)
             self.losses['NCE'] = nce_loss
@@ -179,10 +178,10 @@ class CUT(BaseGAN):
                 nce_loss = 0.5 * (nce_loss + nce_idt_loss)
         # ---------------------------------------------------------------
         
-        combined_loss = nce_loss + self.losses['G']
+        combined_loss = nce_loss + adversarial_loss
         
-        # !!!!!!! optimizers = (self.optimizers['G'], self.optimizers['mlp'])
-        # !!!!!!! self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
+        optimizers = (self.optimizers['G'], self.optimizers['mlp'])
+        self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
     
     def calculate_nce_loss(self, source, target):
         nce_layers = self.nce_layers
@@ -212,35 +211,28 @@ class CUT(BaseGAN):
             nce_loss = nce_loss + loss.mean()
         return nce_loss / len(nce_layers)
 
-class FastCUT(CUT):
-    """Necessary to be able to build the model with midaGAN.nn.gans.build_gan() 
-    when its specified name is "FastCUT."
-    """
-    def __init__(self, conf):
-        super().__init__(conf)
 
 class PatchSampleF(nn.Module):
-    def __init__(self, nc=256):
+    def __init__(self, channels_per_feature, nc=256):
         # potential issues: currently, we use the same patch_ids for multiple images in the batch
         super().__init__()
         self.l2norm = Normalize(2)
         self.nc = nc
-        self.mlp_per_layer = {}
 
-    def init_mlp(self, feats):
-        for i, feat in enumerate(feats):
-            input_nc = feat.shape[1]
+        self.init_mlp(channels_per_feature)
+
+    def init_mlp(self, channels_per_feature):
+        mlps = []
+        for input_nc in channels_per_feature:
             mlp = nn.Sequential(nn.Linear(input_nc, self.nc), 
                                 nn.ReLU(), 
                                 nn.Linear(self.nc, self.nc)).to(torch.device('cuda:0')) #  !!!!!!! 
-            self.mlp_per_layer[i] = mlp
+            mlps.append(mlp)
+        self.mlps = nn.ModuleList(mlps)
 
     def forward(self, feats, num_patches=64, patch_ids=None):
         return_feats = []
         return_ids = []
-
-        if not self.mlp_per_layer:
-            self.init_mlp(feats)
 
         for i, feat in enumerate(feats):
             B, H, W = feat.shape[0], feat.shape[2], feat.shape[3]
@@ -256,7 +248,7 @@ class PatchSampleF(nn.Module):
                 x_sample = feat_reshape
                 patch_id = []
                 
-            mlp = self.mlp_per_layer[i]
+            mlp = self.mlps[i]
             x_sample = mlp(x_sample)
             x_sample = self.l2norm(x_sample)
             return_ids.append(patch_id)
@@ -294,3 +286,19 @@ def extract_features(input, network, layers_to_extract_from):
             features.append(feat)
 
     return features
+
+def probe_network_channels(network, layers_of_interest, input_channels=3):
+    channels_per_layer = []
+
+    with torch.no_grad():
+        if '3d' in str(network):
+            feat = torch.Tensor(1, input_channels, 64, 256, 256).to(torch.device('cuda:0'))
+        else:
+            feat = torch.Tensor(1, input_channels, 256, 256).to(torch.device('cuda:0'))
+            
+        for i, layer in enumerate(network.encoder):
+            feat = layer(feat)
+            if i in layers_of_interest:
+                channels_per_layer.append(feat.shape[1])
+
+        return channels_per_layer
