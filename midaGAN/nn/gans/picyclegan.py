@@ -35,8 +35,8 @@ class PiCycleGAN(BaseGAN):
         
         # Inputs and Outputs of the model
         self.visual_names = {
-            'A': ['real_A', 'fake_B', 'rec_A', 'idt_B'], 
-            'B': ['real_B', 'fake_A', 'rec_B', 'idt_A']
+            'A': ['real_A', 'fake_B', 'rec_A', 'idt_A'], 
+            'B': ['real_B', 'fake_A', 'rec_B', 'idt_B']
         }
         # get all the names from the above lists into a single flat list
         all_visual_names = [name for v in self.visual_names.values() for name in v]
@@ -145,11 +145,11 @@ class PiCycleGAN(BaseGAN):
         # Visuals for Identity loss
         idt_A, idt_B = None, None
         if self.criterion_G.is_using_identity():
-            idt_A = self.networks['G'](real_B)
-            idt_B = self.networks['G'](real_A, inverse=True)
+            idt_A = self.networks['G'](real_A, inverse=True)
+            idt_B = self.networks['G'](real_B)
         
-        self.visuals.update({'fake_B': fake_B, 'rec_A': rec_A, 'idt_B': idt_B,
-                             'fake_A': fake_A, 'rec_B': rec_B, 'idt_A': idt_A})
+        self.visuals.update({'fake_B': fake_B, 'rec_A': rec_A, 'idt_A': idt_A,
+                             'fake_A': fake_A, 'rec_B': rec_B, 'idt_B': idt_B})
 
 
     def backward_D(self, discriminator):

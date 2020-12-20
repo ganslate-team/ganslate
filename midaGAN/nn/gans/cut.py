@@ -51,13 +51,15 @@ class CUT(BaseGAN):
         self.lambda_adv = conf.gan.optimizer.lambda_adv
         self.lambda_nce = conf.gan.optimizer.lambda_nce
         self.nce_idt = conf.gan.optimizer.nce_idt
+        self.nce_layers = conf.gan.nce_layers
+        self.num_patches = conf.gan.num_patches
         self.use_flip_equivariance = conf.gan.use_flip_equivariance
         self.is_equivariance_flipped = False
 
         # Inputs and Outputs of the model
         self.visual_names = {
-            'A': ['real_A', 'fake_B', 'idt_B'], 
-            'B': ['real_B']
+            'A': ['real_A', 'fake_B'], 
+            'B': ['real_B', 'idt_B']
         }
         # get all the names from the above lists into a single flat list
         all_visual_names = [name for v in self.visual_names.values() for name in v]
@@ -78,8 +80,8 @@ class CUT(BaseGAN):
         """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
         super().init_networks(conf)
         if self.is_train:
-            mlp = PatchSampleF(conf)
-            self.networks['mlp'] = init_net(conf, mlp, self.device)
+            mlp = PatchSampleF()
+            self.networks['mlp'] = init_net(mlp, conf, self.device)
 
     def init_optimizers(self, conf):
         lr_G = conf.gan.optimizer.lr_G
@@ -89,7 +91,7 @@ class CUT(BaseGAN):
 
         self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(), lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(self.networks['D'].parameters(), lr=lr_D, betas=(beta1, beta2))
-        self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))
+        # !!!!!!! self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))
 
     def init_criterions(self, conf):
         self.criterion_adv = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
@@ -102,17 +104,17 @@ class CUT(BaseGAN):
 
         # ------------------------ Discriminator --------------------------------------------------
         self.set_requires_grad(self.networks['D'], True)
-        self.optimizer['D'].zero_grad()
+        self.optimizers['D'].zero_grad()
         self.backward_D()
-        self.optimizer['D'].step()
+        self.optimizers['D'].step()
         # ------------------------ Generator and MLP ----------------------------------------------
         self.set_requires_grad(self.networks['D'], False)
-        self.optimizer['G'].zero_grad()
-        self.optimizer['mlp'].zero_grad()
+        self.optimizers['G'].zero_grad()
+        # !!!!!!! self.optimizers['mlp'].zero_grad()
 
         self.backward_G_and_mlp()
-        self.optimizer['G'].step()
-        self.optimizer['mlp'].step()
+        self.optimizers['G'].step()
+        # !!!!!!! self.optimizers['mlp'].step()
         # -----------------------------------------------------------------------------------------
 
     def set_input(self, input):
@@ -141,7 +143,7 @@ class CUT(BaseGAN):
         if self.nce_idt:
             self.visuals['idt_B'] = self.networks['G'](real_B)
 
-    def backward_D():
+    def backward_D(self):
         real = self.visuals['real_B']
         fake = self.visuals['fake_B']
 
@@ -154,7 +156,7 @@ class CUT(BaseGAN):
 
         self.backward(loss=self.losses['D'], optimizer=self.optimizers['D'], loss_id=0)
 
-    def backward_G_and_mlp():
+    def backward_G_and_mlp(self):
         real_A = self.visuals['real_A']
         real_B = self.visuals['real_B']
         fake_B = self.visuals['fake_B']
@@ -163,7 +165,7 @@ class CUT(BaseGAN):
         # ------------------------- GAN Loss ----------------------------
         if self.lambda_adv > 0:
             pred_fake = self.networks['D'](fake_B)
-            self.losses['G'] = self.criterion_adv(pred_fake, True).mean() * self.gan.optimizer.lambda_gan
+            self.losses['G'] = self.criterion_adv(pred_fake, True).mean() * self.lambda_adv
         # ---------------------------------------------------------------
 
         # ------------------------- NCE Loss ----------------------------
@@ -179,8 +181,8 @@ class CUT(BaseGAN):
         
         combined_loss = nce_loss + self.losses['G']
         
-        optimizers = (self.optimizers['G'], self.optimizers['mlp'])
-        self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
+        # !!!!!!! optimizers = (self.optimizers['G'], self.optimizers['mlp'])
+        # !!!!!!! self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
     
     def calculate_nce_loss(self, source, target):
         nce_layers = self.nce_layers
@@ -188,11 +190,17 @@ class CUT(BaseGAN):
         generator = self.networks['G']
         mlp = self.networks['mlp']
 
-        feat_q = generator(target, nce_layers, encode_only=True) ##### TODO: NCE_LAYERS, ENCODE ONLY
+        feat_q = extract_features(input=target, 
+                                  network=generator, 
+                                  layers_to_extract_from=nce_layers)
+
         if self.use_flip_equivariance and self.is_equivariance_flipped:
             feat_q = [fq.flip(-1) for fq in feat_q]
 
-        feat_k = generator(source, nce_layers, encode_only=True)
+        feat_k = extract_features(input=source, 
+                                  network=generator, 
+                                  layers_to_extract_from=nce_layers)
+
         feat_k_pool, patch_ids = mlp(feat_k, num_patches, patch_ids=None)
         feat_q_pool, _ = mlp(feat_q, num_patches, patch_ids)
 
@@ -200,9 +208,9 @@ class CUT(BaseGAN):
         per_level_iterator = zip(feat_q_pool, feat_k_pool, self.criterion_nce, nce_layers)
 
         for f_q, f_k, criterion, nce_layer in per_level_iterator:
-            loss = criterion(f_q, f_k) * self.lambda_nce
-            nce_loss = nce_loss + loss.mean()
-
+            continue #  !!!!!!! 
+            # !!!!!!! loss = criterion(f_q, f_k) * self.lambda_nce
+            # !!!!!!! nce_loss = nce_loss + loss.mean()
         return nce_loss / len(nce_layers)
 
 class FastCUT(CUT):
@@ -225,7 +233,7 @@ class PatchSampleF(nn.Module):
             input_nc = feat.shape[1]
             mlp = nn.Sequential(nn.Linear(input_nc, self.nc), 
                                 nn.ReLU(), 
-                                nn.Linear(self.nc, self.nc))
+                                nn.Linear(self.nc, self.nc)).to(torch.device('cuda:0')) #  !!!!!!! 
             self.mlp_per_layer[i] = mlp
 
     def forward(self, feats, num_patches=64, patch_ids=None):
@@ -269,3 +277,21 @@ class Normalize(nn.Module):
         norm = x.pow(self.power).sum(1, keepdim=True).pow(1. / self.power)
         out = x.div(norm + 1e-7)
         return out
+
+
+def extract_features(input, network, layers_to_extract_from):
+    """Extracts features from specified layers for a given input. Assumes that 
+    the given network has an attribute `encoder` with the layers of the encoder
+    part of the network."""
+    assert len(network.encoder) >= max(layers_to_extract_from), \
+        f"The encoder has {len(network.encoder)} layers, \cannot extract features from layers that do not exist."
+
+    features = []
+    feat = input
+
+    for i, layer in enumerate(network.encoder):
+        feat = layer(feat)
+        if i in layers_to_extract_from:
+            features.append(feat)
+
+    return features

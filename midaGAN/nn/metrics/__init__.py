@@ -1,6 +1,6 @@
 import torch
 import midaGAN.nn.losses.utils.ssim as ssim
-from midaGAN.nn.utils import reshape_to_4D_if_5D
+from midaGAN.nn.losses import reshape_to_4D_if_5D
 
 
 class TrainingMetrics:

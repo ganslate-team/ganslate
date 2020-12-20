@@ -32,10 +32,17 @@ gan:
     #     lr_G: 0.0002
     #     ssim_type: "ThreeComponentSSIM"
 
+    # generator:  
+    #     name: "Resnet2D"
+    #     n_residual_blocks: 9
+    #     in_channels: 3
+
     generator:  
-        name: "Resnet2D"
-        n_residual_blocks: 9
+        name: "Vnet2D"
+        use_memory_saving: False
+        use_inverse: True
         in_channels: 3
+        first_layer_channels: 24
 
     discriminator:  
         name: "PatchGAN2D"

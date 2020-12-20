@@ -54,7 +54,15 @@ class Vnet2D(nn.Module):
             downs += [DownBlock(first_layer_channels * factor, num_convs, norm_layer, 
                                 use_bias, keep_input, use_inverse, is_inplace)]
             down_channel_factors.append(factor)
-        self.downs = nn.ModuleList(downs)    
+
+        self.downs = nn.ModuleList(downs)
+        
+        # NOTE: in order to be able to use an architecture for CUT, it is necessary to
+        # have self.encoder which contains all the layers of the encoder part of the network
+        # and that is iterable chronologically. It's a PyTorch limitation as .children() 
+        # on a network won't yield the layers in the order in which they are called in the forward 
+        # pass, but rather in the order in which they were initialized.
+        self.encoder = nn.ModuleList([self.in_ab]).extend(self.downs) 
 
         # Upblocks
         up_channel_factors = [factor*2 for factor in reversed(down_channel_factors)]

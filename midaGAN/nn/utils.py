@@ -6,7 +6,7 @@ import midaGAN
 from midaGAN.nn import separable
 from midaGAN.utils import import_class_from_dirs_and_modules
 
-def build_network_by_role(conf, role, device):
+def build_network_by_role(role, conf, device):
     """Builds a discriminator or generator. TODO: document """
     assert role in ['discriminator', 'generator']
             
@@ -19,9 +19,9 @@ def build_network_by_role(conf, role, device):
     network_args["norm_type"] = conf.gan.norm_type
 
     network = network_class(**network_args)
-    return init_net(conf, network, device)
+    return init_net(network, conf, device)
 
-def init_net(conf, network, device):
+def init_net(network, conf, device):
     init_weights(network, conf.gan.weight_init_type, conf.gan.weight_init_gain)
     return network.to(device)
 
@@ -97,9 +97,3 @@ def get_scheduler(optimizer, conf):
         lr_l = 1.0 - max(0, iter_idx + start_iter - conf.n_iters) / float(conf.n_iters_decay + 1)
         return lr_l
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
-
-
-def reshape_to_4D_if_5D(tensor):  # TODO: place it somewhere better
-    if len(tensor.shape) == 5:
-        return tensor.view(-1, *tensor.shape[2:])
-    return tensor
