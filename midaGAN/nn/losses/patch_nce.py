@@ -4,50 +4,42 @@ from torch import nn
 
 
 class PatchNCELoss(nn.Module):
-    def __init__(self, opt):
+    def __init__(self, conf):
         super().__init__()
-        self.opt = opt
+        self.batch_size = conf.batch_size
+        self.nce_T = conf.gan.optimizer.nce_T
+
         self.cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction='none')
 
     def forward(self, feat_q, feat_k):
-        batchSize = feat_q.shape[0]
-        dim = feat_q.shape[1]
+        bs, dim = feat_q.shape[:2]
         feat_k = feat_k.detach()
 
         # pos logit
-        l_pos = torch.bmm(feat_q.view(batchSize, 1, -1), feat_k.view(batchSize, -1, 1))
-        l_pos = l_pos.view(batchSize, 1)
+        l_pos = torch.bmm(feat_q.view(bs, 1, -1), 
+                          feat_k.view(bs, -1, 1))
+        l_pos = l_pos.view(bs, 1)
 
         # neg logit
-
-        # Should the negatives from the other samples of a minibatch be utilized?
-        # In CUT and FastCUT, we found that it's best to only include negatives
-        # from the same image. Therefore, we set
-        # --nce_includes_all_negatives_from_minibatch as False
-        # However, for single-image translation, the minibatch consists of
-        # crops from the "same" high-resolution image.
-        # Therefore, we will include the negatives from the entire minibatch.
-        if self.opt.nce_includes_all_negatives_from_minibatch:
-            # reshape features as if they are all negatives of minibatch of size 1.
-            batch_dim_for_bmm = 1
-        else:
-            batch_dim_for_bmm = self.opt.batch_size
+        batch_dim_for_bmm = self.batch_size
 
         # reshape features to batch size
         feat_q = feat_q.view(batch_dim_for_bmm, -1, dim)
         feat_k = feat_k.view(batch_dim_for_bmm, -1, dim)
-        npatches = feat_q.size(1)
+
+        num_patches = feat_q.size(1)
         l_neg_curbatch = torch.bmm(feat_q, feat_k.transpose(2, 1))
 
         # diagonal entries are similarity between same features, and hence meaningless.
         # just fill the diagonal with very small number, which is exp(-10) and almost zero
-        diagonal = torch.eye(npatches, device=feat_q.device, dtype=torch.bool)[None, :, :]
+        diagonal = torch.eye(num_patches, device=feat_q.device, dtype=torch.bool)[None, :, :]
         l_neg_curbatch.masked_fill_(diagonal, -10.0)
-        l_neg = l_neg_curbatch.view(-1, npatches)
+        l_neg = l_neg_curbatch.view(-1, num_patches)
 
-        out = torch.cat((l_pos, l_neg), dim=1) / self.opt.nce_T
+        out = torch.cat((l_pos, l_neg), dim=1) / self.nce_T
 
-        loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), dtype=torch.long,
+        loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), 
+                                                        dtype=torch.long,
                                                         device=feat_q.device))
 
         return loss

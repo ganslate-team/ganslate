@@ -128,7 +128,6 @@ class PiCycleGAN(BaseGAN):
         self.optimizers['D'].step()                     # update D_A and D_B's weights
         # -----------------------------------------------------------------------------------------
 
-    
     def forward(self):
         """Run forward pass; called by both methods <optimize_parameters> and <test>."""
         real_A = self.visuals['real_A']
@@ -187,8 +186,6 @@ class PiCycleGAN(BaseGAN):
         # backprop
         self.backward(loss=self.losses[discriminator], optimizer=self.optimizers['D'], 
                       retain_graph=True, loss_id=loss_id)
-
-
 
     def backward_G(self):
         """Calculate the loss for generators G_A and G_B using all specified losses"""        

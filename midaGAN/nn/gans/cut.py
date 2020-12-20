@@ -208,9 +208,8 @@ class CUT(BaseGAN):
         per_level_iterator = zip(feat_q_pool, feat_k_pool, self.criterion_nce, nce_layers)
 
         for f_q, f_k, criterion, nce_layer in per_level_iterator:
-            continue #  !!!!!!! 
-            # !!!!!!! loss = criterion(f_q, f_k) * self.lambda_nce
-            # !!!!!!! nce_loss = nce_loss + loss.mean()
+            loss = criterion(f_q, f_k) * self.lambda_nce
+            nce_loss = nce_loss + loss.mean()
         return nce_loss / len(nce_layers)
 
 class FastCUT(CUT):
@@ -284,7 +283,7 @@ def extract_features(input, network, layers_to_extract_from):
     the given network has an attribute `encoder` with the layers of the encoder
     part of the network."""
     assert len(network.encoder) >= max(layers_to_extract_from), \
-        f"The encoder has {len(network.encoder)} layers, \cannot extract features from layers that do not exist."
+        f"The encoder has {len(network.encoder)} layers, cannot extract features from layers that do not exist."
 
     features = []
     feat = input
