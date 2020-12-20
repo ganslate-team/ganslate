@@ -65,7 +65,7 @@ class PiCycleGAN(BaseGAN):
 
     def init_criterions(self, conf):
         # Standard GAN loss 
-        self.criterion_advers = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
+        self.criterion_adv = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
         self.criterion_G = CycleGANLosses(conf)
 
@@ -180,8 +180,8 @@ class PiCycleGAN(BaseGAN):
         self.pred_real = self.networks[discriminator](real)
         self.pred_fake = self.networks[discriminator](fake.detach())
 
-        loss_real = self.criterion_advers(self.pred_real, target_is_real=True)
-        loss_fake = self.criterion_advers(self.pred_fake, target_is_real=False)
+        loss_real = self.criterion_adv(self.pred_real, target_is_real=True)
+        loss_fake = self.criterion_adv(self.pred_fake, target_is_real=False)
         self.losses[discriminator] = loss_real + loss_fake
 
         # backprop
@@ -201,8 +201,8 @@ class PiCycleGAN(BaseGAN):
         # ------------------------- GAN Loss ----------------------------
         pred_A = self.networks['D_A'](fake_B)  # D_A(G_A(A))
         pred_B = self.networks['D_B'](fake_A)  # D_B(G_B(B))
-        self.losses['G_A'] = self.criterion_advers(pred_A, target_is_real=True) # Forward GAN loss D_A(G_A(A))
-        self.losses['G_B'] = self.criterion_advers(pred_B, target_is_real=True) # Backward GAN loss D_B(G_B(B))
+        self.losses['G_A'] = self.criterion_adv(pred_A, target_is_real=True) # Forward GAN loss D_A(G_A(A))
+        self.losses['G_B'] = self.criterion_adv(pred_B, target_is_real=True) # Backward GAN loss D_B(G_B(B))
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity, Inverse) -------------

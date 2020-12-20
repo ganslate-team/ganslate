@@ -14,7 +14,7 @@ from midaGAN.conf import BaseGANConfig, BaseOptimizerConfig
 
 @dataclass
 class OptimizerConfig(BaseOptimizerConfig):
-    lambda_gan: float = 1  # weight for GAN loss：GAN(G(X))
+    lambda_adv: float = 1  # weight for Adversarial loss： Adv(G(X))
     lambda_nce: float = 1  # weight for NCE loss: NCE(G(X), X)
     nce_idt: bool = True  # use NCE loss for identity mapping: NCE(G(Y), Y))
     nce_T: float = 0.07  # temperature for NCE loss
@@ -27,7 +27,7 @@ class CUTConfig(BaseGANConfig):
     netF: str = 'mlp_sample' # TODO: remove
     netF_nc: int = 256 # TODO: same as num_patches?
     num_patches: int = 256  # number of patches per layer
-    flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
+    use_flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
     optimizer: OptimizerConfig = OptimizerConfig
 
 @dataclass
@@ -35,7 +35,7 @@ class FastCUTConfig(CUTConfig):
     """Fast Contrastive Unpaired Translation (FastCUT)"""
     name: str = "FastCUT"
     # FastCUT defaults
-    flip_equivariance: bool = True
+    use_flip_equivariance: bool = True
     optimizer: OptimizerConfig = OptimizerConfig(nce_idt=False, lambda_nce=10) 
 
 class CUT(BaseGAN):
@@ -46,6 +46,12 @@ class CUT(BaseGAN):
     """
     def __init__(self, conf):
         super().__init__(conf)
+
+        self.lambda_adv = conf.gan.optimizer.lambda_adv
+        self.lambda_nce = conf.gan.optimizer.lambda_nce
+        self.nce_idt = conf.gan.optimizer.nce_idt
+        self.use_flip_equivariance = conf.gan.use_flip_equivariance
+        self.is_equivariance_flipped = False
 
         # Inputs and Outputs of the model
         self.visual_names = {
@@ -85,10 +91,10 @@ class CUT(BaseGAN):
         self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))
 
     def init_criterions(self, conf):
-        # Standard GAN loss 
-        self.criterion_advers = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
-        self.criterion_nce = [PatchNCELoss(conf).to(self.device) for _ in conf.gan.nce_layers]
-        self.criterion_idt = torch.nn.L1Loss().to(self.device)
+        self.criterion_adv = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
+        self.criterion_nce = [PatchNCELoss(conf).to(self.device) for _ in conf.gan.nce_layers]        
+        if self.nce_idt:
+            self.criterion_nce_idt = torch.nn.L1Loss().to(self.device)
 
     def optimize_parameters(self):
         self.forward()
@@ -117,22 +123,21 @@ class CUT(BaseGAN):
         self.visuals['real_B'] = input['B'].to(self.device)
 
     def forward(self):
-        """Run forward pass; called by both functions <optimize_parameters> and <test>."""
         real_A = self.visuals['real_A']
-        # if nce_idt
+        if self.nce_idt:
             real_B = self.visuals['real_B']
 
         self.is_equivariance_flipped = False
-        if self.is_train and conf.gan.flip_equivariance and (np.random.random() < 0.5):
+        if self.is_train and self.use_flip_equivariance and np.random.random() < 0.5:
             self.is_equivariance_flipped = True
-            # flip the last dimension
-            real_A = real_A.flip(-1)  
-            # if nce_idt
+
+            real_A = real_A.flip(-1)  # flip the last dimension
+            if self.nce_idt:
                 real_B = real_B.flip(-1)
         
         # concat for joint forward?
         self.visuals['fake_B'] = self.networks['G'](real_A)
-        # if nce_idt
+        if self.nce_idt:
             self.visuals['idt_B'] = self.networks['G'](real_B)
 
     def backward_D():
@@ -142,8 +147,8 @@ class CUT(BaseGAN):
         pred_real = self.networks['D'](real)
         pred_fake = self.networks['D'](fake.detach())
 
-        loss_real = self.criterion_advers(pred_real, False).mean()
-        loss_fake = self.criterion_advers(pred_fake, False).mean()
+        loss_real = self.criterion_adv(pred_real, False).mean()
+        loss_fake = self.criterion_adv(pred_fake, False).mean()
         self.losses['D'] = loss_real + loss_fake
 
         self.backward(loss=self.losses['D'], optimizer=self.optimizers['D'], loss_id=0)
@@ -155,41 +160,50 @@ class CUT(BaseGAN):
         idt_B = self.visuals['idt_B']
 
         # ------------------------- GAN Loss ----------------------------
-        # if lambda_gan > 0
-        pred_fake = self.networks['D'](fake_B)
-        self.losses['G'] = self.criterion_advers(pred_fake, True).mean() * self.gan.optimizer.lambda_gan
+        if self.lambda_adv > 0
+            pred_fake = self.networks['D'](fake_B)
+            self.losses['G'] = self.criterion_adv(pred_fake, True).mean() * self.gan.optimizer.lambda_gan
         # ---------------------------------------------------------------
 
         # ------------------------- NCE Loss ----------------------------
-        # if lambda_nce > 0
-        nce_loss = self.calculate_NCE_loss(real_A, fake_B)
-        self.losses['NCE'] = nce_loss
-            # if above and nce_idt
-                nce_idt_loss = self.calculate_NCE_loss(real_B, idt_B)
-        self.losses['NCE_idt'] = nce_idt_loss
-        # if above and nce_idt
-            nce_loss = 0.5 * (nce_loss + nce_idt_loss)
+        if self.lambda_nce > 0
+            nce_loss = self.calculate_nce_loss(real_A, fake_B)
+            self.losses['NCE'] = nce_loss
+            
+            if self.nce_idt
+                nce_idt_loss = self.calculate_nce_loss(real_B, idt_B)
+                self.losses['NCE_idt'] = nce_idt_loss
+                nce_loss = 0.5 * (nce_loss + nce_idt_loss)
         # ---------------------------------------------------------------
-
+        
         combined_loss = nce_loss + self.losses['G']
-        optimizers = [self.optimizers['G'], self.optimizers['mlp']]
+        
+        optimizers = (self.optimizers['G'], self.optimizers['mlp'])
         self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
+    
+    def calculate_nce_loss(self, source, target):
+        nce_layers = self.nce_layers
+        num_patches = self.num_patches
+        generator = self.networks['G']
+        mlp = self.networks['mlp']
 
-    def calculate_NCE_loss(self, src, tgt):
-        feat_q = self.netG(tgt, self.nce_layers, encode_only=True)
-        if self.opt.flip_equivariance and self.flipped_for_equivariance:
-            feat_q = [torch.flip(fq, [3]) for fq in feat_q]
+        feat_q = generator(target, nce_layers, encode_only=True) ##### TODO: NCE_LAYERS, ENCODE ONLY
+        if self.use_flip_equivariance and self.is_equivariance_flipped:
+            feat_q = [fq.flip(-1) for fq in feat_q]
 
-        feat_k = self.netG(src, self.nce_layers, encode_only=True)
-        feat_k_pool, sample_ids = self.netF(feat_k, self.opt.num_patches, None)
-        feat_q_pool, _ = self.netF(feat_q, self.opt.num_patches, sample_ids)
+        feat_k = generator(source, nce_layers, encode_only=True)
 
-        total_nce_loss = 0.0
-        for f_q, f_k, crit, nce_layer in zip(feat_q_pool, feat_k_pool, self.criterionNCE, self.nce_layers):
-            loss = crit(f_q, f_k) * self.opt.lambda_NCE
-            total_nce_loss += loss.mean()
+        feat_k_pool, patch_ids = mlp(feat_k, num_patches, patch_ids=None)
+        feat_q_pool, _ = mlp(feat_q, num_patches, patch_ids)
 
-        return total_nce_loss / len(self.nce_layers)
+        nce_loss = 0
+        per_level_iterator = zip(feat_q_pool, feat_k_pool, self.criterion_nce, nce_layers)
+
+        for f_q, f_k, criterion, nce_layer in per_level_iterator:
+            loss = criterion(f_q, f_k) * self.lambda_nce
+            nce_loss = nce_loss + loss.mean()
+
+        return nce_loss / len(nce_layers)
 
 class FastCUT(CUT):
     """Necessary to be able to build the model with midaGAN.nn.gans.build_gan() 
