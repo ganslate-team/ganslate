@@ -3,7 +3,9 @@ import torch
 from torch import nn
 
 from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.patch_nce import PatchNCELoss
+from midaGAN.nn.utils import init_net
 
 # Config imports
 from dataclasses import dataclass, field
@@ -24,8 +26,7 @@ class CUTConfig(BaseGANConfig):
     """Contrastive Unpaired Translation (CUT)"""
     name: str = "CUT"
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)  # compute NCE loss on which layers
-    netF: str = 'mlp_sample' # TODO: remove
-    netF_nc: int = 256 # TODO: same as num_patches?
+    mlp_nc: int = 256 # TODO: same as num_patches?
     num_patches: int = 256  # number of patches per layer
     use_flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
     optimizer: OptimizerConfig = OptimizerConfig
@@ -64,14 +65,14 @@ class CUT(BaseGAN):
         self.visuals = {name: None for name in all_visual_names}
 
         # Losses used by the model
-        self.loss_names = ['D', 'G', 'NCE', 'NCE_idt']
+        loss_names = ['D', 'G', 'NCE', 'NCE_idt']
         self.losses = {name: None for name in loss_names}
 
         # Generators and Discriminators
         network_names = ['G', 'D', 'mlp'] if self.is_train else ['G'] # during test time, only G
         self.networks = {name: None for name in network_names}
 
-        self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
+        self.setup(conf) # schedulers, mixed precision, checkpoint loading and network parallelization
     
     def init_networks(self, conf):
         """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
@@ -160,17 +161,17 @@ class CUT(BaseGAN):
         idt_B = self.visuals['idt_B']
 
         # ------------------------- GAN Loss ----------------------------
-        if self.lambda_adv > 0
+        if self.lambda_adv > 0:
             pred_fake = self.networks['D'](fake_B)
             self.losses['G'] = self.criterion_adv(pred_fake, True).mean() * self.gan.optimizer.lambda_gan
         # ---------------------------------------------------------------
 
         # ------------------------- NCE Loss ----------------------------
-        if self.lambda_nce > 0
+        if self.lambda_nce > 0:
             nce_loss = self.calculate_nce_loss(real_A, fake_B)
             self.losses['NCE'] = nce_loss
             
-            if self.nce_idt
+            if self.nce_idt:
                 nce_idt_loss = self.calculate_nce_loss(real_B, idt_B)
                 self.losses['NCE_idt'] = nce_idt_loss
                 nce_loss = 0.5 * (nce_loss + nce_idt_loss)
@@ -192,7 +193,6 @@ class CUT(BaseGAN):
             feat_q = [fq.flip(-1) for fq in feat_q]
 
         feat_k = generator(source, nce_layers, encode_only=True)
-
         feat_k_pool, patch_ids = mlp(feat_k, num_patches, patch_ids=None)
         feat_q_pool, _ = mlp(feat_q, num_patches, patch_ids)
 
@@ -213,38 +213,34 @@ class FastCUT(CUT):
         super().__init__(conf)
 
 class PatchSampleF(nn.Module):
-    def __init__(self, use_mlp=False, nc=256, init_type='normal', init_gain=0.02, gpu_ids=[]):
+    def __init__(self, nc=256):
         # potential issues: currently, we use the same patch_ids for multiple images in the batch
         super().__init__()
         self.l2norm = Normalize(2)
-        self.use_mlp = use_mlp
-        self.nc = nc  # hard-coded
-        self.mlp_init = False
-        self.init_type = init_type
-        self.init_gain = init_gain
-        self.gpu_ids = gpu_ids
+        self.nc = nc
+        self.mlp_per_layer = {}
 
-    def create_mlp(self, feats):
-        for mlp_id, feat in enumerate(feats):
+    def init_mlp(self, feats):
+        for i, feat in enumerate(feats):
             input_nc = feat.shape[1]
-            mlp = nn.Sequential(*[nn.Linear(input_nc, self.nc), nn.ReLU(), nn.Linear(self.nc, self.nc)])
-            if len(self.gpu_ids) > 0:
-                mlp.cuda()
-            setattr(self, 'mlp_%d' % mlp_id, mlp)
-        init_net(self, self.init_type, self.init_gain, self.gpu_ids)
-        self.mlp_init = True
+            mlp = nn.Sequential(nn.Linear(input_nc, self.nc), 
+                                nn.ReLU(), 
+                                nn.Linear(self.nc, self.nc))
+            self.mlp_per_layer[i] = mlp
 
     def forward(self, feats, num_patches=64, patch_ids=None):
-        return_ids = []
         return_feats = []
-        if self.use_mlp and not self.mlp_init:
-            self.create_mlp(feats)
-        for feat_id, feat in enumerate(feats):
+        return_ids = []
+
+        if not self.mlp_per_layer:
+            self.init_mlp(feats)
+
+        for i, feat in enumerate(feats):
             B, H, W = feat.shape[0], feat.shape[2], feat.shape[3]
             feat_reshape = feat.permute(0, 2, 3, 1).flatten(1, 2)
             if num_patches > 0:
                 if patch_ids is not None:
-                    patch_id = patch_ids[feat_id]
+                    patch_id = patch_ids[i]
                 else:
                     patch_id = torch.randperm(feat_reshape.shape[1], device=feats[0].device)
                     patch_id = patch_id[:int(min(num_patches, patch_id.shape[0]))]  # .to(patch_ids.device)
@@ -252,13 +248,24 @@ class PatchSampleF(nn.Module):
             else:
                 x_sample = feat_reshape
                 patch_id = []
-            if self.use_mlp:
-                mlp = getattr(self, 'mlp_%d' % feat_id)
-                x_sample = mlp(x_sample)
-            return_ids.append(patch_id)
+                
+            mlp = self.mlp_per_layer[i]
+            x_sample = mlp(x_sample)
             x_sample = self.l2norm(x_sample)
+            return_ids.append(patch_id)
 
             if num_patches == 0:
                 x_sample = x_sample.permute(0, 2, 1).reshape([B, x_sample.shape[-1], H, W])
             return_feats.append(x_sample)
         return return_feats, return_ids
+
+
+class Normalize(nn.Module):
+    def __init__(self, power=2):
+        super(Normalize, self).__init__()
+        self.power = power
+
+    def forward(self, x):
+        norm = x.pow(self.power).sum(1, keepdim=True).pow(1. / self.power)
+        out = x.div(norm + 1e-7)
+        return out

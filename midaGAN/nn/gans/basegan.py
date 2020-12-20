@@ -63,9 +63,6 @@ class BaseGAN(ABC):
                 self.networks[name] = build_G(conf, self.device)
             elif name.startswith('D'):
                 self.networks[name] = build_D(conf, self.device)
-            else:
-                raise ValueError('Network\'s name has to begin with either "G" if it is a generator, \
-                                  or "D" if it is a discriminator.')
 
     def init_metrics(self, conf):
         # Intialize training metrics
