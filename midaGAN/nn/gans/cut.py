@@ -5,7 +5,7 @@ from torch import nn
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.patch_nce import PatchNCELoss
-from midaGAN.nn.utils import init_net
+from midaGAN.nn.utils import init_net, get_network_device
 
 # Config imports
 from dataclasses import dataclass, field
@@ -76,7 +76,7 @@ class CUT(BaseGAN):
             channels_per_feature_level = probe_network_channels(self.networks['G'],
                                                                 self.nce_layers, 
                                                                 input_channels=3)
-            mlp = PatchSampleF(channels_per_feature_level)
+            mlp = FeaturePatchMLP(channels_per_feature_level)
             self.networks['mlp'] = init_net(mlp, conf, self.device)
 
     def init_optimizers(self, conf):
@@ -146,7 +146,7 @@ class CUT(BaseGAN):
         pred_real = self.networks['D'](real)
         pred_fake = self.networks['D'](fake.detach())
 
-        loss_real = self.criterion_adv(pred_real, False).mean()
+        loss_real = self.criterion_adv(pred_real, True).mean()
         loss_fake = self.criterion_adv(pred_fake, False).mean()
         self.losses['D'] = loss_real + loss_fake
 
@@ -184,51 +184,44 @@ class CUT(BaseGAN):
         self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
     
     def calculate_nce_loss(self, source, target):
-        nce_layers = self.nce_layers
-        num_patches = self.num_patches
-        generator = self.networks['G']
-        mlp = self.networks['mlp']
+        source_feats = extract_features(input=source, 
+                                        network=self.networks['G'], 
+                                        layers_to_extract_from=self.nce_layers)
 
-        feat_q = extract_features(input=target, 
-                                  network=generator, 
-                                  layers_to_extract_from=nce_layers)
+        target_feats = extract_features(input=target, 
+                                        network=self.networks['G'], 
+                                        layers_to_extract_from=self.nce_layers)
 
-        if self.use_flip_equivariance and self.is_equivariance_flipped:
-            feat_q = [fq.flip(-1) for fq in feat_q]
+        if self.is_equivariance_flipped:
+            target_feats = [feat.flip(-1) for feat in target_feats]
 
-        feat_k = extract_features(input=source, 
-                                  network=generator, 
-                                  layers_to_extract_from=nce_layers)
+        source_feats_pool, patch_ids = self.networks['mlp'](source_feats, self.num_patches)
+        target_feats_pool, _ = self.networks['mlp'](target_feats, self.num_patches, patch_ids)
 
-        feat_k_pool, patch_ids = mlp(feat_k, num_patches, patch_ids=None)
-        feat_q_pool, _ = mlp(feat_q, num_patches, patch_ids)
-
+        per_level_iterator = zip(target_feats_pool, source_feats_pool, self.criterion_nce, self.nce_layers)
         nce_loss = 0
-        per_level_iterator = zip(feat_q_pool, feat_k_pool, self.criterion_nce, nce_layers)
-
-        for f_q, f_k, criterion, nce_layer in per_level_iterator:
-            loss = criterion(f_q, f_k) * self.lambda_nce
+        for target_feat, source_feat, criterion, nce_layer in per_level_iterator:
+            loss = criterion(target_feat, source_feat) * self.lambda_nce
             nce_loss = nce_loss + loss.mean()
-        return nce_loss / len(nce_layers)
+        return nce_loss / len(self.nce_layers)
 
 
-class PatchSampleF(nn.Module):
+class FeaturePatchMLP(nn.Module):
     def __init__(self, channels_per_feature, nc=256):
         # potential issues: currently, we use the same patch_ids for multiple images in the batch
         super().__init__()
-        self.l2norm = Normalize(2)
-        self.nc = nc
+        self.l2norm = LNorm(2)
+        self._init_mlp(channels_per_feature, nc)
 
-        self.init_mlp(channels_per_feature)
+    def _init_mlp(self, channels_per_feature, mlp_nc):
+        self.mlps = nn.ModuleList()
 
-    def init_mlp(self, channels_per_feature):
-        mlps = []
         for input_nc in channels_per_feature:
-            mlp = nn.Sequential(nn.Linear(input_nc, self.nc), 
+            mlp = nn.Sequential(nn.Linear(input_nc, mlp_nc), 
                                 nn.ReLU(), 
-                                nn.Linear(self.nc, self.nc)).to(torch.device('cuda:0')) #  !!!!!!! 
-            mlps.append(mlp)
-        self.mlps = nn.ModuleList(mlps)
+                                nn.Linear(mlp_nc, mlp_nc)) 
+            self.mlps.append(mlp)
+        
 
     def forward(self, feats, num_patches=64, patch_ids=None):
         return_feats = []
@@ -243,25 +236,26 @@ class PatchSampleF(nn.Module):
                 else:
                     patch_id = torch.randperm(feat_reshape.shape[1], device=feats[0].device)
                     patch_id = patch_id[:int(min(num_patches, patch_id.shape[0]))]  # .to(patch_ids.device)
-                x_sample = feat_reshape[:, patch_id, :].flatten(0, 1)  # reshape(-1, x.shape[1])
+                feat_patch = feat_reshape[:, patch_id, :].flatten(0, 1)  # reshape(-1, x.shape[1])
             else:
-                x_sample = feat_reshape
+                feat_patch = feat_reshape
                 patch_id = []
-                
-            mlp = self.mlps[i]
-            x_sample = mlp(x_sample)
-            x_sample = self.l2norm(x_sample)
-            return_ids.append(patch_id)
+
+            feat_patch = self.mlps[i](feat_patch)
+            feat_patch = self.l2norm(feat_patch)
 
             if num_patches == 0:
-                x_sample = x_sample.permute(0, 2, 1).reshape([B, x_sample.shape[-1], H, W])
-            return_feats.append(x_sample)
+                feat_patch = feat_patch.permute(0, 2, 1).reshape([B, feat_patch.shape[-1], H, W])
+
+            return_feats.append(feat_patch)
+            return_ids.append(patch_id)
+
         return return_feats, return_ids
 
 
-class Normalize(nn.Module):
+class LNorm(nn.Module):
     def __init__(self, power=2):
-        super(Normalize, self).__init__()
+        super().__init__()
         self.power = power
 
     def forward(self, x):
@@ -288,13 +282,18 @@ def extract_features(input, network, layers_to_extract_from):
     return features
 
 def probe_network_channels(network, layers_of_interest, input_channels=3):
-    channels_per_layer = []
+    assert len(network.encoder) >= max(layers_of_interest), \
+        f"The encoder has {len(network.encoder)} layers, cannot extract features from layers that do not exist."
 
+
+    channels_per_layer = []
+    device = get_network_device(network)
+    
     with torch.no_grad():
         if '3d' in str(network):
-            feat = torch.Tensor(1, input_channels, 64, 256, 256).to(torch.device('cuda:0'))
+            feat = torch.Tensor(1, input_channels, 64, 256, 256).to(device)
         else:
-            feat = torch.Tensor(1, input_channels, 256, 256).to(torch.device('cuda:0'))
+            feat = torch.Tensor(1, input_channels, 256, 256).to(device)
             
         for i, layer in enumerate(network.encoder):
             feat = layer(feat)

@@ -45,6 +45,8 @@ class Resnet2D(nn.Module):
         for _ in range(n_residual_blocks):
             model += [ResidualBlock(in_features, norm_type)]
 
+        self.encoder = nn.ModuleList(model)
+
         # Upsampling
         out_features = in_features//2
         for _ in range(2):

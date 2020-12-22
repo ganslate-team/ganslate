@@ -97,3 +97,7 @@ def get_scheduler(optimizer, conf):
         lr_l = 1.0 - max(0, iter_idx + start_iter - conf.n_iters) / float(conf.n_iters_decay + 1)
         return lr_l
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
+
+def get_network_device(network):
+    """Returns the device of the network. Assumes that the whole network is on a single device."""
+    return next(network.parameters()).device
