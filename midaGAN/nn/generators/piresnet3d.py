@@ -29,6 +29,7 @@ class Piresnet3DConfig(BaseGeneratorConfig):
 class Piresnet3D(nn.Module):
     def __init__(self, in_channels, norm_type, depth, first_layer_channels=64, use_memory_saving=True, use_inverse=True):
         super().__init__()
+        # TODO: implement disable_invertibles as in Vnet
 
         keep_input = not use_memory_saving
         is_inplace = not use_inverse  # activations in invertible blocks are not inplace when invertibility is used

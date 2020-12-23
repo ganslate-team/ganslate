@@ -80,6 +80,7 @@ class CUT(BaseGAN):
                                   conf.gan.num_patches,
                                   conf.gan.mlp_nc)
             self.networks['mlp'] = init_net(mlp, conf, self.device)
+            print(self.networks['G'])
 
     def init_optimizers(self, conf):
         lr_G = conf.gan.optimizer.lr_G
@@ -231,12 +232,12 @@ class FeaturePatchMLP(nn.Module):
         return_ids = []
 
         for i, feat in enumerate(feats):
-            # If 3D data (BxCxDxHxW)
+            # If 3D data (BxCxDxHxW), otherwise 2D (BxCxHxW)
             if len(feat.shape) == 5:
-                # flatten to B, F, C, where F is the flattened D, H and W 
+                # Permute and flatten to B, F, C, where F is the flattened D, H and W 
                 feat = feat.permute(0, 2, 3, 4, 1).flatten(1, 2, 3)
             else:
-                # flatten to B, F, C, where F is the flattened H and W 
+                # Permute and flatten to B, F, C, where F is the flattened H and W 
                 feat = feat.permute(0, 2, 3, 1).flatten(1, 2)
 
             if self.num_patches > 0:
