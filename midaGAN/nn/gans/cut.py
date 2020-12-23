@@ -230,12 +230,13 @@ class FeaturePatchMLP(nn.Module):
         return_ids = []
 
         for i, feat in enumerate(feats):
-            B, H, W = feat.shape[0], feat.shape[2], feat.shape[3]
-            #B, D, H, W = feat.shape[0], feat.shape[2], feat.shape[3], feat.shape[4]
-
-            # flatten to B, X, C, where X is the flattened H and W (and D if 3D)
-            feat_reshape = feat.permute(0, 2, 3, 1).flatten(1, 2)
-            #feat_reshape = feat.permute(0, 2, 3, 4, 1).flatten(1, 2, 3)
+            # If 3D data (BxCxDxHxW)
+            if len(feat.shape) == 5:
+                # flatten to B, X, C, where X is the flattened D, H and W 
+                feat_reshape = feat.permute(0, 2, 3, 4, 1).flatten(1, 2, 3)
+            else:
+                # flatten to B, X, C, where X is the flattened H and W 
+                feat_reshape = feat.permute(0, 2, 3, 1).flatten(1, 2)
 
             if self.num_patches > 0:
                 if patch_ids is not None:
