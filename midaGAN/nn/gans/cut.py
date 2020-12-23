@@ -76,7 +76,9 @@ class CUT(BaseGAN):
             channels_per_feature_level = probe_network_channels(self.networks['G'],
                                                                 self.nce_layers, 
                                                                 input_channels=3)
-            mlp = FeaturePatchMLP(channels_per_feature_level)
+            mlp = FeaturePatchMLP(channels_per_feature_level, 
+                                  conf.gan.num_patches,
+                                  conf.gan.mlp_nc)
             self.networks['mlp'] = init_net(mlp, conf, self.device)
 
     def init_optimizers(self, conf):
@@ -195,8 +197,8 @@ class CUT(BaseGAN):
         if self.is_equivariance_flipped:
             target_feats = [feat.flip(-1) for feat in target_feats]
 
-        source_feats_pool, patch_ids = self.networks['mlp'](source_feats, self.num_patches)
-        target_feats_pool, _ = self.networks['mlp'](target_feats, self.num_patches, patch_ids)
+        source_feats_pool, patch_ids = self.networks['mlp'](source_feats)
+        target_feats_pool, _ = self.networks['mlp'](target_feats, patch_ids)
 
         per_level_iterator = zip(target_feats_pool, source_feats_pool, self.criterion_nce, self.nce_layers)
         nce_loss = 0
@@ -207,9 +209,10 @@ class CUT(BaseGAN):
 
 
 class FeaturePatchMLP(nn.Module):
-    def __init__(self, channels_per_feature, nc=256):
+    def __init__(self, channels_per_feature, num_patches=256, nc=256):
         # potential issues: currently, we use the same patch_ids for multiple images in the batch
         super().__init__()
+        self.num_patches = num_patches
         self.l2norm = LNorm(2)
         self._init_mlp(channels_per_feature, nc)
 
@@ -221,37 +224,42 @@ class FeaturePatchMLP(nn.Module):
                                 nn.ReLU(), 
                                 nn.Linear(mlp_nc, mlp_nc)) 
             self.mlps.append(mlp)
-        
 
-    def forward(self, feats, num_patches=64, patch_ids=None):
+    def forward(self, feats, patch_ids=None):
         return_feats = []
         return_ids = []
 
         for i, feat in enumerate(feats):
             B, H, W = feat.shape[0], feat.shape[2], feat.shape[3]
+
+            # flatten to B, X, C, where X is the flattened H and W (and D if 3D)
             feat_reshape = feat.permute(0, 2, 3, 1).flatten(1, 2)
             if num_patches > 0:
+
+            if self.num_patches > 0:
                 if patch_ids is not None:
                     patch_id = patch_ids[i]
                 else:
+                    # Randomized indices of the X dimension. If X is 512, it will be 
+                    # a list with length 512 and will look like, e.g., [511, 3, 275, 303, ...]
                     patch_id = torch.randperm(feat_reshape.shape[1], device=feats[0].device)
-                    patch_id = patch_id[:int(min(num_patches, patch_id.shape[0]))]  # .to(patch_ids.device)
-                feat_patch = feat_reshape[:, patch_id, :].flatten(0, 1)  # reshape(-1, x.shape[1])
+                    # Limit the X dimension to `num_patches` if necessary
+                    patch_id = patch_id[:int(min(self.num_patches, patch_id.shape[0]))]
+                # Select the patches from the feature space
+                feat_patch = feat_reshape[:, patch_id, :]
             else:
                 feat_patch = feat_reshape
                 patch_id = []
-
+            
+            # Flatten B and X dimensions
+            feat_patch = feat_patch.flatten(0, 1)
             feat_patch = self.mlps[i](feat_patch)
             feat_patch = self.l2norm(feat_patch)
-
-            if num_patches == 0:
-                feat_patch = feat_patch.permute(0, 2, 1).reshape([B, feat_patch.shape[-1], H, W])
 
             return_feats.append(feat_patch)
             return_ids.append(patch_id)
 
         return return_feats, return_ids
-
 
 class LNorm(nn.Module):
     def __init__(self, power=2):
@@ -284,7 +292,6 @@ def extract_features(input, network, layers_to_extract_from):
 def probe_network_channels(network, layers_of_interest, input_channels=3):
     assert len(network.encoder) >= max(layers_of_interest), \
         f"The encoder has {len(network.encoder)} layers, cannot extract features from layers that do not exist."
-
 
     channels_per_layer = []
     device = get_network_device(network)
