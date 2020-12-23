@@ -226,34 +226,35 @@ class FeaturePatchMLP(nn.Module):
             self.mlps.append(mlp)
 
     def forward(self, feats, patch_ids=None):
+        device = feats[0].device
         return_feats = []
         return_ids = []
 
         for i, feat in enumerate(feats):
             # If 3D data (BxCxDxHxW)
             if len(feat.shape) == 5:
-                # flatten to B, X, C, where X is the flattened D, H and W 
-                feat_reshape = feat.permute(0, 2, 3, 4, 1).flatten(1, 2, 3)
+                # flatten to B, F, C, where F is the flattened D, H and W 
+                feat = feat.permute(0, 2, 3, 4, 1).flatten(1, 2, 3)
             else:
-                # flatten to B, X, C, where X is the flattened H and W 
-                feat_reshape = feat.permute(0, 2, 3, 1).flatten(1, 2)
+                # flatten to B, F, C, where F is the flattened H and W 
+                feat = feat.permute(0, 2, 3, 1).flatten(1, 2)
 
             if self.num_patches > 0:
                 if patch_ids is not None:
                     patch_id = patch_ids[i]
                 else:
-                    # Randomized indices of the X dimension. If X is 512, it will be 
-                    # a list with length 512 and will look like, e.g., [511, 3, 275, 303, ...]
-                    patch_id = torch.randperm(feat_reshape.shape[1], device=feats[0].device)
-                    # Limit the X dimension to `num_patches` if necessary
-                    patch_id = patch_id[:int(min(self.num_patches, patch_id.shape[0]))]
+                    # Randomized indices of the F dimension for selecting patches. If F is 512, it 
+                    # will be a list with length 512 and will look like, e.g., [511, 3, 275, 303, ...]
+                    patch_id = torch.randperm(feat.shape[1], device=device)
+                    # Limit the number of patches to `num_patches` if necessary
+                    patch_id = patch_id[:int(min(self.num_patches, len(patch_id)))]
                 # Select the patches from the feature space
-                feat_patch = feat_reshape[:, patch_id, :]
+                feat_patch = feat[:, patch_id, :]
             else:
-                feat_patch = feat_reshape
+                feat_patch = feat
                 patch_id = []
             
-            # Flatten B and X dimensions
+            # Flatten B and F dimensions of the (B, F, C) tensor
             feat_patch = feat_patch.flatten(0, 1)
             feat_patch = self.mlps[i](feat_patch)
             feat_patch = self.l2norm(feat_patch)
