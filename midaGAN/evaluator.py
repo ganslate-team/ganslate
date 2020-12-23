@@ -11,6 +11,7 @@ from midaGAN.nn.gans import build_gan
 from midaGAN.utils import io
 from midaGAN.utils.trackers.eval_tracker import EvalTracker
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
+from midaGAN.data.utils import decollate
 
 from midaGAN.conf.builders import build_eval_conf
 
@@ -48,9 +49,7 @@ class Evaluator():
             for i, data in zip(range(self.conf.samples + 1), self.data_loader):
 
                 visuals = {}
-                metadata = data['metadata_A']
-
-                metadata = {k:v[0] if isinstance(v[0], str) else np.array(v) for k, v in metadata.items()}
+                metadata = decollate(data['metadata_A'])
                 
                 visuals['real_A'] = data['A'].to(self.model.device)
                 visuals['fake_B'] = self.infer(visuals['real_A'])

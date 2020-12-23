@@ -20,22 +20,22 @@ class EvaluationMetrics:
 
         if self.conf.metrics.ssim:
             metrics.update({
-                'SSIM_A': ssim(target, input)
+                'SSIM': ssim(target, input)
             })
 
         if self.conf.metrics.mse:
             metrics.update({
-                'MSE_A': mse(target, input)
+                'MSE': mse(target, input)
             })
 
         if self.conf.metrics.nmse:
             metrics.update({
-                'NMSE_A': nmse(target, input)
+                'NMSE': nmse(target, input)
             })
 
         if self.conf.metrics.psnr:
             metrics.update({
-                'PSNR_A': psnr(target, input)
+                'PSNR': psnr(target, input)
             })                 
 
         return metrics

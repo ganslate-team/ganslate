@@ -10,6 +10,8 @@ from midaGAN.nn.gans import build_gan
 from midaGAN.utils import io
 from midaGAN.utils.trackers.inference_tracker import InferenceTracker
 
+from midaGAN.data.utils import decollate
+
 
 class Inferer():
     def __init__(self, conf):
@@ -32,11 +34,7 @@ class Inferer():
             if isinstance(data, list): # dataloader yields a list when passing multiple values at once
                 has_metadata = True
                 data, metadata = data
-                # TODO: make better, not great that elem[0] for strings
-                if isinstance(metadata, list):
-                    metadata = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in metadata]
-                elif isinstance(metadata, dict):
-                    metadata = {k:v[0] if isinstance(v[0], str) else np.array(v) for k, v in metadata.items()}
+                metadata = decollate(metadata)
 
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()

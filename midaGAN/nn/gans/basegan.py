@@ -285,7 +285,7 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
-        input = reshape_if_2D(input)
+        input = reshape_to_2D_if_3D(input)
 
         if self.is_train:
             raise ValueError("Inference cannot be done in training mode.")
@@ -298,7 +298,7 @@ class BaseGAN(ABC):
         """
         Needs to be overriden by picyclegan and basegan
         """
-        input = reshape_if_2D(input)
+        input = reshape_to_2D_if_3D(input)
         return input
 
 
