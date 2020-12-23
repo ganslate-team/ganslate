@@ -94,5 +94,7 @@ def get_registration_transform(fixed_image, moving_image):
                                                           sitk.CenteredTransformInitializerFilter.GEOMETRY)
     registration_method.SetInitialTransform(initial_transform) 
 
+    registration_method.SetNumberOfThreads(1)
+
     final_transform = registration_method.Execute(fixed_image, moving_image)
     return final_transform
