@@ -285,7 +285,7 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
-        input = reshape_if_2D(input)
+        input = reshape_to_2D_if_3D(input)
 
         if self.is_train:
             raise ValueError("Inference cannot be done in training mode.")
@@ -298,7 +298,7 @@ class BaseGAN(ABC):
         """
         Needs to be overriden by picyclegan and basegan
         """
-        input = reshape_if_2D(input)
+        input = reshape_to_2D_if_3D(input)
         return input
 
 
@@ -356,17 +356,25 @@ class BaseGAN(ABC):
 
         But since the sizes are more or less similar across different data instances, this should be okay for now!
         """
+
+
+        # Type needs to be casted for mixed_precision
     
         if self.enable_mask:
+
             mask_A = ~self.masking_operator(self.visuals['real_A'], self.masking_value)
             mask_B = ~self.masking_operator(self.visuals['real_B'], self.masking_value)
             
             # Values dependent on real_A use mask_A
             for name in self.visual_names['A']:
                 if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                    cast_type = self.visuals[name].type()
+                    self.masking_value = self.masking_value.type(cast_type)
                     self.visuals[name] = torch.where(mask_A, self.visuals[name], self.masking_value)
 
             # Values dependent on real_B use mask_B
             for name in self.visual_names['B']:
                 if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                    cast_type = self.visuals[name].type()
+                    self.masking_value = self.masking_value.type(cast_type)
                     self.visuals[name] = torch.where(mask_B, self.visuals[name], self.masking_value)

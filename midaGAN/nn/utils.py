@@ -79,14 +79,12 @@ def init_weights(net, weight_init_type='normal', gain=0.02):
     net.apply(init_func)
 
 
-# TODO: place it somewhere better
 def reshape_to_4D_if_5D(tensor):
     if len(tensor.shape) == 5:
         return tensor.view(-1, *tensor.shape[2:])
     return tensor
 
-# TODO: place it somewhere better
-def reshape_if_2D(tensor):
+def reshape_to_2D_if_3D(tensor):
     # NCDHW, check if D is 1
     if tensor.shape[2] == 1:
         # Reshape to ensure that D is squeezed

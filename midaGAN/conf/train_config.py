@@ -25,6 +25,10 @@ class OptimizerConfig:
     ssim_type:       str = "SSIM" # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
     loss_mask:       Optional[LossMaskingConfig] = None
 
+@dataclass
+class ImageFilterConfig:  # Filtering for images uploaded to wandb to show windowing
+    min: float = -1
+    max: float = 1
 
 @dataclass
 class LoggingConfig:
