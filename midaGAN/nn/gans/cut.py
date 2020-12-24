@@ -26,7 +26,7 @@ class CUTConfig(BaseGANConfig):
     """Contrastive Unpaired Translation (CUT)"""
     name: str = "CUT"
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)  # compute NCE loss on which layers
-    mlp_nc: int = 256 # TODO: same as num_patches?
+    mlp_nc: int = 256  # num of features in MLP
     num_patches: int = 256  # number of patches per layer
     use_flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
     optimizer: OptimizerConfig = OptimizerConfig
@@ -75,12 +75,11 @@ class CUT(BaseGAN):
         if self.is_train:
             channels_per_feature_level = probe_network_channels(self.networks['G'],
                                                                 self.nce_layers, 
-                                                                input_channels=3)
+                                                                conf.gan.generator.in_channels)
             mlp = FeaturePatchMLP(channels_per_feature_level, 
                                   conf.gan.num_patches,
                                   conf.gan.mlp_nc)
             self.networks['mlp'] = init_net(mlp, conf, self.device)
-            print(self.networks['G'])
 
     def init_optimizers(self, conf):
         lr_G = conf.gan.optimizer.lr_G
@@ -235,7 +234,7 @@ class FeaturePatchMLP(nn.Module):
             # If 3D data (BxCxDxHxW), otherwise 2D (BxCxHxW)
             if len(feat.shape) == 5:
                 # Permute and flatten to B, F, C, where F is the flattened D, H and W 
-                feat = feat.permute(0, 2, 3, 4, 1).flatten(1, 2, 3)
+                feat = feat.permute(0, 2, 3, 4, 1).flatten(1, 3)
             else:
                 # Permute and flatten to B, F, C, where F is the flattened H and W 
                 feat = feat.permute(0, 2, 3, 1).flatten(1, 2)

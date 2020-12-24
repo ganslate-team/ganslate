@@ -40,7 +40,7 @@ gan:
     generator:  
         name: "Vnet2D"
         use_memory_saving: False
-        use_inverse: True
+        use_inverse: False
         in_channels: 3
         first_layer_channels: 24
 
