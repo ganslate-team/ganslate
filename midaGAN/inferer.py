@@ -10,6 +10,8 @@ from midaGAN.nn.gans import build_gan
 from midaGAN.utils import io
 from midaGAN.utils.trackers.inference_tracker import InferenceTracker
 
+from midaGAN.data.utils import decollate
+
 
 class Inferer():
     def __init__(self, conf):
@@ -18,7 +20,6 @@ class Inferer():
         self.data_loader = build_loader(self.conf)
         self.tracker = InferenceTracker(self.conf)
         self.model = build_gan(self.conf)
-
         self.sliding_window_inferer = self._init_sliding_window_inferer()
 
     def run(self):
@@ -33,11 +34,7 @@ class Inferer():
             if isinstance(data, list): # dataloader yields a list when passing multiple values at once
                 has_metadata = True
                 data, metadata = data
-                # TODO: make better, not great that elem[0] for strings
-                if isinstance(metadata, list):
-                    metadata = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in metadata]
-                elif isinstance(metadata, dict):
-                    metadata = {k:v[0] if isinstance(v[0], str) else np.array(v) for k, v in metadata.items()}
+                metadata = decollate(metadata)
 
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
@@ -55,16 +52,13 @@ class Inferer():
             self.tracker.log_message(i, self.data_loader)
             self.tracker.start_dataloading_timer()
 
-    def infer(self, data, infer_fn='infer'):
-
-        infer_fn = getattr(self.model, infer_fn) if hasattr(self.model, infer_fn) else None
-
+    def infer(self, data):
         data = data.to(self.model.device)
         # Sliding window (i.e. patch-wise) inference
         if self.sliding_window_inferer:
-            return self.sliding_window_inferer(data, infer_fn)
+            return self.sliding_window_inferer(data, self.model.infer)
         else:
-            return infer_fn(data)
+            return self.model.infer(data)
 
     def _init_sliding_window_inferer(self):
         if self.conf.sliding_window:

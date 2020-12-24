@@ -2,7 +2,6 @@
 from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-
 from midaGAN.conf.base_configs import *
 from midaGAN.conf.common_configs import *
 
@@ -29,8 +28,6 @@ class SlidingWindowConfig:
     overlap:     float = 0.25
     mode:        str = 'gaussian' # 'constant' or 'gaussian', https://docs.monai.io/en/latest/inferers.html#monai.inferers.SlidingWindowInferer
 
-
-
 @dataclass
 class EvalConfig:
     is_train:        bool = False # Training mode is False for framework
@@ -41,4 +38,3 @@ class EvalConfig:
     sliding_window:  Optional[SlidingWindowConfig] = None
     logging:         LoggingConfig = LoggingConfig()
     dataset:         BaseDatasetConfig = MISSING
-

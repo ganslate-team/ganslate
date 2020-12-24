@@ -26,6 +26,11 @@ class OptimizerConfig:
     loss_mask:       Optional[LossMaskingConfig] = None
 
 @dataclass
+class ImageFilterConfig:  # Filtering for images uploaded to wandb to show windowing
+    min: float = -1
+    max: float = 1
+
+@dataclass
 class LoggingConfig:
     #experiment_name:  str = now() # Name of the experiment. [Default: current date and time] 
     checkpoint_dir:  str = "./checkpoints/" + "nesto" # TODO: make it datatime. make sure it work in distributed mode

@@ -8,7 +8,7 @@ import midaGAN
 from midaGAN.utils.io import make_recursive_dataset_of_files, load_json
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
+from midaGAN.data.utils.registration_methods import register_CT_to_CBCT, truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.body_mask import apply_body_mask_and_bound, get_body_mask_and_bound
 from midaGAN.data.utils import size_invalid_check_and_replace, pad
@@ -120,10 +120,7 @@ class CBCTtoCTDataset(Dataset):
 
 	    # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
-<<<<<<< HEAD
 
-=======
->>>>>>> e12b23b0ddd49bb52b6c7ca61b1a58a1204be971
         if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size) and not self.pad:
             logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
             del CT_truncated
@@ -327,7 +324,7 @@ class CBCTtoCTEvalDatasetConfig(BaseDatasetConfig):
     name:                    str = "CBCTtoCTEvalDataset"
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
     enable_masking:          bool = True
-    enable_bounding:         bool = True
+    enable_bounding:         bool = False
     cbct_mask_threshold:        int = -700    
     ct_mask_threshold:          int = -300
 
@@ -377,8 +374,9 @@ class CBCTtoCTEvalDataset(Dataset):
         CBCT = CBCT - 1024
 
         CBCT = truncate_CBCT_based_on_fov(CBCT)
-        
- 
+
+        CT = register_CT_to_CBCT(CT, CBCT)
+
         metadata_CBCT = {
             'path':   str(first_CBCT), 
             'size':   CBCT.GetSize(),
@@ -449,11 +447,12 @@ class CBCTtoCTEvalDataset(Dataset):
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
 
+        print(CBCT.shape, CT.shape)
+
         return {
             "A": CBCT, 
             "B": CT,
-            "metadata_A": metadata_CBCT,
-            "metadata_B": metadata_CT
+            "metadata": metadata_CBCT
         }
 
 

@@ -68,13 +68,19 @@ def get_eval_defaults(conf):
     # Copy wandb and tensorboard config to eval
     wandb_config = OmegaConf.masked_copy(conf.logging, "wandb")
     tensorboard_config = conf.logging.tensorboard
-
-    if "patch_size" in conf.dataset:
+    
+    if OmegaConf.select(conf, "dataset.patch_size"):
         window_size = conf.dataset.patch_size 
-    elif "load_size" in conf.dataset:
+    elif OmegaConf.select(conf, "dataset.load_size"):
         # Type will be auto-inferred later
         window_size = str([1, int(conf.dataset.load_size), int(conf.dataset.load_size)])
 
+    dataset = OmegaConf.select(conf.evaluation, "dataset")
+
+    if dataset and OmegaConf.select(dataset, "root"):
+        dataset_root = OmegaConf.select(dataset, "root")
+    else:
+        dataset_root = conf.dataset.root
 
     eval_defaults = f"""
     logging:
@@ -84,7 +90,7 @@ def get_eval_defaults(conf):
     dataset:
         name: {"".join(conf.dataset.name.split("Dataset")) + "EvalDataset"}
         shuffle: True
-        root: {conf.dataset.root}
+        root: {dataset_root}
         num_workers: 0
             
     sliding_window:
