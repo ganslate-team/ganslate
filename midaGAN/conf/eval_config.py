@@ -28,7 +28,6 @@ class SlidingWindowConfig:
     overlap:     float = 0.25
     mode:        str = 'gaussian' # 'constant' or 'gaussian', https://docs.monai.io/en/latest/inferers.html#monai.inferers.SlidingWindowInferer
 
-
 @dataclass
 class EvalConfig:
     is_train:        bool = False # Training mode is False for framework

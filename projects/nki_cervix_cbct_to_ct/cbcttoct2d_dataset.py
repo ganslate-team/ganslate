@@ -10,7 +10,7 @@ import midaGAN
 from midaGAN.utils.io import make_recursive_dataset_of_files, load_json
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
+from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.body_mask import apply_body_mask_and_bound, get_body_mask_and_bound
 from midaGAN.data.utils import size_invalid_check_and_replace

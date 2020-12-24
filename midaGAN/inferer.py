@@ -52,16 +52,13 @@ class Inferer():
             self.tracker.log_message(i, self.data_loader)
             self.tracker.start_dataloading_timer()
 
-    def infer(self, data, infer_fn='infer'):
-
-        infer_fn = getattr(self.model, infer_fn) if hasattr(self.model, infer_fn) else None
-
+    def infer(self, data):
         data = data.to(self.model.device)
         # Sliding window (i.e. patch-wise) inference
         if self.sliding_window_inferer:
-            return self.sliding_window_inferer(data, infer_fn)
+            return self.sliding_window_inferer(data, self.model.infer)
         else:
-            return infer_fn(data)
+            return self.model.infer(data)
 
     def _init_sliding_window_inferer(self):
         if self.conf.sliding_window:

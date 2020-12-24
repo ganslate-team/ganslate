@@ -11,7 +11,7 @@ from midaGAN.utils import communication
 
 # midaGAN.nn imports
 from midaGAN.nn.utils import get_scheduler
-from midaGAN.nn.utils import reshape_if_2D
+from midaGAN.nn.utils import reshape_to_2D_if_3D
 
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
@@ -292,15 +292,6 @@ class BaseGAN(ABC):
         with torch.no_grad():
             generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
             return self.networks[generator].forward(input)
-
-
-    def infer_backward(self, input):
-        """
-        Needs to be overriden by picyclegan and basegan
-        """
-        input = reshape_to_2D_if_3D(input)
-        return input
-
 
     def get_learning_rates(self):
         """ Return current learning rates of both generator and discriminator"""

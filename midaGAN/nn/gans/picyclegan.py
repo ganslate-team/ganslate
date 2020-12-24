@@ -206,12 +206,18 @@ class PiCycleGAN(BaseGAN):
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=loss_id)
     
     
-    def infer_backward(self, input):
-        input = super().infer_backward(input)
+    def infer(self, input, direction='AB'):
+        if direction == "AB":
+            return super().infer(input)
 
-        if self.is_train:
-            raise ValueError("Inference cannot be done in training mode.")
-        
-        with torch.no_grad():
-            generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
-            return self.networks[generator].forward(input, inverse=True)
+        elif direction == "BA":
+            if self.is_train:
+                raise ValueError("Inference cannot be done in training mode.")
+            
+            with torch.no_grad():
+                generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
+                return self.networks[generator].forward(input, inverse=True)
+
+        else:
+            raise NotImplementedError(f"Direction specified as {direction}, which is unsupported")                
+
