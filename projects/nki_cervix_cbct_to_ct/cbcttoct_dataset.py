@@ -339,14 +339,16 @@ class CBCTtoCTEvalDataset(Dataset):
         for patient in self.root_path.iterdir():
 
             # Sorted list of files is returned, pick the first CBCT volume.
-            first_CBCT = make_recursive_dataset_of_files(patient / "CBCT", EXTENSIONS)[0]
-            CT_nrrds = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
-            planning_CT = sorted([path for path in CT_nrrds if path.stem == "CT"])[0]
 
-            self.paths[patient] = {
-                "CT": planning_CT,
-                "CBCT": first_CBCT
-            }
+            if (patient / "registered").is_dir():
+
+                first_CBCT = (patient / "registered" / "target").with_suffix(".nrrd")
+                dpCT =  (patient / "registered" / "deformed").with_suffix(".nrrd")
+
+                self.paths[patient] = {
+                    "CT": dpCT,
+                    "CBCT": first_CBCT
+                }
 
 
         self.num_datapoints = len(self.paths)
@@ -373,11 +375,11 @@ class CBCTtoCTEvalDataset(Dataset):
 
         CBCT = CBCT - 1024
 
-        CBCT = truncate_CBCT_based_on_fov(CBCT)
+        # Truncate CBCT based on FOV and apply the same transform to CT
+        CBCT, truncate_filter = truncate_CBCT_based_on_fov(CBCT, return_filter=True)
+        CT = truncate_filter.Execute(CT)
 
-        CT = register_CT_to_CBCT(CT, CBCT)
-
-        metadata_CBCT = {
+        metadata = {
             'path':   str(first_CBCT), 
             'size':   CBCT.GetSize(),
             'origin': CBCT.GetOrigin(), 
@@ -386,20 +388,9 @@ class CBCTtoCTEvalDataset(Dataset):
             'dtype': sitk_utils.get_npy_dtype(CBCT)
             }
 
-        metadata_CT = {
-            'path':   str(planning_CT), 
-            'size':   CT.GetSize(),
-            'origin': CT.GetOrigin(), 
-            'spacing': CT.GetSpacing(), 
-            'direction': CT.GetDirection(),
-            'dtype': sitk_utils.get_npy_dtype(CT)
-            }
-
-
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
         
-
         if self.apply_mask or self.apply_bound:
 
             body_mask, ((z_max, z_min), \
@@ -408,13 +399,13 @@ class CBCTtoCTEvalDataset(Dataset):
             # Apply mask to the image array 
             if self.apply_mask:
                 CBCT = np.where(body_mask, CBCT, -1024)
-                metadata_CBCT.update({'mask': 
+                metadata.update({'mask': 
                                         body_mask})
      
             # Index the array within the bounds and return cropped array
             if self.apply_bound:
                 CBCT = CBCT[z_max:z_min, y_max: y_min, x_max: x_min]
-                metadata_CBCT.update({'bounds': 
+                metadata.update({'bounds': 
                                         ((z_max, z_min), (y_max, y_min), (x_max, x_min))})
      
 
@@ -424,14 +415,11 @@ class CBCTtoCTEvalDataset(Dataset):
             # Apply mask to the image array 
             if self.apply_mask:
                 CT = np.where(body_mask, CT, -1024)
-                metadata_CT.update({'mask': 
-                                        body_mask})
-
+        
             # Index the array within the bounds and return cropped array
             if self.apply_bound:
                 CT = CT[z_max:z_min, y_max: y_min, x_max: x_min]
-                metadata_CT.update({'bounds': 
-                                        ((z_max, z_min), (y_max, y_min), (x_max, x_min))})
+            
 
 
         CT = torch.tensor(CT)
@@ -452,7 +440,7 @@ class CBCTtoCTEvalDataset(Dataset):
         return {
             "A": CBCT, 
             "B": CT,
-            "metadata": metadata_CBCT
+            "metadata": metadata
         }
 
 

@@ -1,22 +1,27 @@
+# Weigh discriminator loss higher by reducing both lambda_A and lambda_B
 project_dir: "./projects/nki_cervix_cbct_to_ct"
 use_cuda: True
-n_iters: 20
+n_iters: 40000
 n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: ./checkpoints/cbct_ex3/
+    checkpoint_dir: /midagan/checkpoints/cbct_ex5/
     wandb:
         project: "NKI_CBCT_CT"
+        image_filter: 
+            min: 0.289 # Corresponds to HU window of W:350, L: 40 between [0, 1]
+            max: 0.40
+
     log_freq: 1
-    checkpoint_freq: 10000
+    checkpoint_freq: 1000
 
 dataset: 
     name: "CBCTtoCTDataset"
-    root: /repos/Maastro/nki_cervix
+    root: /data/train
     hounsfield_units_range: [-1024, 2048]
-    num_workers: 0
-    patch_size: [32, 32, 32]
+    num_workers: 12
+    patch_size: [48, 400, 400]
     enable_masking: True
     enable_bounding: True
     
@@ -36,30 +41,25 @@ discriminator:
     name: "PatchGAN3D"
     n_layers: 2
     in_channels: 1
-    kernel_size: [2, 4, 4]
 
 optimizer:
-  lambda_A: 25.0
-  lambda_B: 25.0
+  lambda_A: 10.0
+  lambda_B: 10.0
   lambda_identity: 0.0
   lambda_inverse: 0.0
   proportion_ssim: 0.84
-  lr_D: 0.0001
-  lr_G: 0.0002
-
-  loss_mask:
-    masking_value: -1
-    operator: "eq" 
+  lr_D: 0.0002
+  lr_G: 0.0004
 
 
 metrics: 
-  output_distributions_D: True
-  ssim: True
-  
+    ssim: True
+    output_distributions_D: True
+
 evaluation:
   freq: 2
-  samples: 5
+  samples: 10
   dataset: 
-      name: CBCTtoCTEvalDataset
-      root: /repos/Maastro/nki_cervix
+    name: "CBCTtoCTEvalDataset"
+    root: /data/valid
 

@@ -1,7 +1,7 @@
 import SimpleITK as sitk
 import numpy as np
 
-def truncate_CBCT_based_on_fov(image: sitk.Image):
+def truncate_CBCT_based_on_fov(image: sitk.Image, return_filter=False):
     """
     Truncates the CBCT to consider full FOV in the scans. First few and last few slices
     generally have small FOV that is around 25-50% of the axial slice. Ignore this 
@@ -45,4 +45,8 @@ def truncate_CBCT_based_on_fov(image: sitk.Image):
     slice_filter.SetStop((*image.GetSize()[:-1], end_idx))
 
     filtered_image = slice_filter.Execute(image)
-    return filtered_image
+
+    if return_filter:
+        return filtered_image, slice_filter
+    else:
+        return filtered_image

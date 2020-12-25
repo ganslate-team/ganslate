@@ -1,3 +1,4 @@
+from typing import Tuple
 import torch
 import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
@@ -14,16 +15,17 @@ class PatchGAN2DConfig(BaseDiscriminatorConfig):
     in_channels: int = 1
     ndf:         int = 64
     n_layers:    int = 3
+    kernel_size: Tuple[int] = (4,)
 
 
 class PatchGAN2D(nn.Module):
-    def __init__(self, in_channels, ndf, n_layers, norm_type):
+    def __init__(self, in_channels, ndf, n_layers, kernel_size, norm_type):
         super().__init__()
         
         norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
-        kw = 4
+        kw = kernel_size
         padw = 1
         sequence = [
             # TODO: instead of 1, give image_channel

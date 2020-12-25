@@ -1,3 +1,4 @@
+from midaGAN.utils.summary import gan_summary
 import os
 import logging
 import torch
@@ -7,7 +8,6 @@ from midaGAN.nn.gans import build_gan
 
 from midaGAN.utils import communication, environment
 from midaGAN.utils.trackers.training_tracker import TrainingTracker
-from midaGAN.utils.summary import gan_summary
 
 # Imports for evaluation.
 from midaGAN.evaluator import Evaluator
@@ -37,9 +37,12 @@ class Trainer():
         self.iters = range(start_iter, end_iter)
         self.iter_idx = 0
         self.checkpoint_freq = self.conf.logging.checkpoint_freq
+        
 
     def run(self):
-        # self.logger.info(gan_summary(self.model, self.data_loader)) TODO: breaks 3D training with num_workers>0
+        #TODO: breaks 3D training with num_workers>0
+        # self.logger.info(gan_summary(self.model, self.data_loader)) 
+
         self.logger.info('Training started.')
 
         self.tracker.start_dataloading_timer()
