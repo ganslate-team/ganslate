@@ -57,16 +57,16 @@ class BaseGAN(ABC):
         self.optimizers = {}
         self.networks = {}
 
-    def init_networks(self, conf):
+    def init_networks(self):
         for name in self.networks.keys():
             if name.startswith('G'):
-                self.networks[name] = build_G(conf, self.device)
+                self.networks[name] = build_G(self.conf, self.device)
             elif name.startswith('D'):
-                self.networks[name] = build_D(conf, self.device)
+                self.networks[name] = build_D(self.conf, self.device)
 
-    def init_metrics(self, conf):
+    def init_metrics(self):
         # Intialize training metrics
-        self.training_metrics = TrainingMetrics(conf)
+        self.training_metrics = TrainingMetrics(self.conf)
     
     def _specify_device(self):
         if torch.distributed.is_initialized():
@@ -95,21 +95,21 @@ class BaseGAN(ABC):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         pass
 
-    def setup(self, conf):
+    def setup(self):
         """Set up a GAN model. Does the following:
-            (1) Initialize its networks, critetions, optimizers, metrics ad schedulers
+            (1) Initialize its networks, criterions, optimizers, metrics and schedulers
             (2) Converts the networks to mixed precision, if specified
             (3) Loads a checkpoint if continuing training or inferencing            
             (4) Applies parallelization to the model if possible
         """
         # Initialize Generators and Discriminators
-        self.init_networks(conf)
+        self.init_networks()
 
         if self.is_train:
             # Intialize loss functions (criterions) and optimizers
-            self.init_criterions(conf)
-            self.init_optimizers(conf)
-            self.init_metrics(conf)
+            self.init_criterions()
+            self.init_optimizers()
+            self.init_metrics()
             self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
         else:
             self.eval()

@@ -67,33 +67,33 @@ class CUT(BaseGAN):
         network_names = ['G', 'D', 'mlp'] if self.is_train else ['G'] # during test time, only G
         self.networks = {name: None for name in network_names}
 
-        self.setup(conf) # schedulers, mixed precision, checkpoint loading and network parallelization
+        self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
     
-    def init_networks(self, conf):
+    def init_networks(self):
         """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
-        super().init_networks(conf)
+        super().init_networks()
         if self.is_train:
             channels_per_feature_level = probe_network_channels(self.networks['G'],
                                                                 self.nce_layers, 
-                                                                conf.gan.generator.in_channels)
+                                                                self.conf.gan.generator.in_channels)
             mlp = FeaturePatchMLP(channels_per_feature_level, 
-                                  conf.gan.num_patches,
-                                  conf.gan.mlp_nc)
-            self.networks['mlp'] = init_net(mlp, conf, self.device)
+                                  self.conf.gan.num_patches,
+                                  self.conf.gan.mlp_nc)
+            self.networks['mlp'] = init_net(mlp, self.conf, self.device)
 
-    def init_optimizers(self, conf):
-        lr_G = conf.gan.optimizer.lr_G
-        lr_D = conf.gan.optimizer.lr_D
-        beta1 = conf.gan.optimizer.beta1
-        beta2 = conf.gan.optimizer.beta2   
+    def init_optimizers(self):
+        lr_G = self.conf.gan.optimizer.lr_G
+        lr_D = self.conf.gan.optimizer.lr_D
+        beta1 = self.conf.gan.optimizer.beta1
+        beta2 = self.conf.gan.optimizer.beta2   
 
         self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(), lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(self.networks['D'].parameters(), lr=lr_D, betas=(beta1, beta2))
-        self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_D, betas=(beta1, beta2))
+        self.optimizers['mlp'] = torch.optim.Adam(self.networks['mlp'].parameters(), lr=lr_G, betas=(beta1, beta2))
 
-    def init_criterions(self, conf):
-        self.criterion_adv = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
-        self.criterion_nce = [PatchNCELoss(conf).to(self.device) for _ in conf.gan.nce_layers]        
+    def init_criterions(self):
+        self.criterion_adv = AdversarialLoss(self.conf.gan.optimizer.adversarial_loss_type).to(self.device)
+        self.criterion_nce = [PatchNCELoss(self.conf).to(self.device) for _ in self.conf.gan.nce_layers]        
         if self.nce_idt:
             self.criterion_nce_idt = torch.nn.L1Loss().to(self.device)
 

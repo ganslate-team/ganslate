@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class CycleGANLosses:
     """Defines losses used for optiming the generators in CycleGAN setup.
     Consists of:
-        (1) Cycle-consistency  loss (weighted combination of L1 and, optionally, SSIM)
+        (1) Cycle-consistency loss (weighted combination of L1 and, optionally, SSIM)
         (2) Identity loss
         (3) Inverse loss (experimental, similar to Identity loss but to be used when the 
             two domains are not too different - e.g. CBCT and CT images.)
@@ -75,8 +75,6 @@ class CycleLoss:
     def __init__(self, lambda_A, lambda_B, proportion_ssim, channels_ssim, ssim_type):
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B
-
-
 
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
