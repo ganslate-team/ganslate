@@ -53,7 +53,7 @@ class GeneratorLoss:
 
         # identity loss
         if self.criterion_idt:
-            if idt_A and idt_B:
+            if idt_A is not None:
                 losses['idt_A'], losses['idt_B'] = self.criterion_idt(real_A, real_B, idt_A, idt_B)
             else:
                 raise ValueError("idt_A and/or idt_B is not computed but the identity loss is defined.")
