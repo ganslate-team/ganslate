@@ -1,4 +1,4 @@
-# Weigh discriminator loss higher by reducing both lambda_A and lambda_B
+#Train without SSIM
 project_dir: "./projects/nki_cervix_cbct_to_ct"
 use_cuda: True
 n_iters: 30000
@@ -6,7 +6,7 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: /midagan/checkpoints/cbct_ex9/
+    checkpoint_dir: /midagan/checkpoints/cbct_ex10/
     wandb:
         project: "Cervix_CBCT"
         image_filter: 
@@ -43,17 +43,13 @@ discriminator:
     in_channels: 1
 
 optimizer:
-  lambda_A: 10.0
-  lambda_B: 10.0
+  lambda_A: 25.0
+  lambda_B: 25.0
   lambda_identity: 0.0
   lambda_inverse: 0.0
   proportion_ssim: 0.84
   lr_D: 0.0002
   lr_G: 0.0004
-  loss_mask:
-    masking_value: -1
-    operator: "eq" 
-
 
 metrics: 
     ssim: True

@@ -47,6 +47,7 @@ def truncate_CBCT_based_on_fov(image: sitk.Image, return_filter=False):
     filtered_image = slice_filter.Execute(image)
 
     if return_filter:
-        return filtered_image, slice_filter
+        return slice_filter
+ 
     else:
         return filtered_image

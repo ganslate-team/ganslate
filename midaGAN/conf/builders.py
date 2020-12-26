@@ -80,4 +80,6 @@ def override_defaults(conf, eval_conf):
         window_size: {window_size}
     """)
 
+
+    OmegaConf.update(eval_defaults, "logging.wandb", conf.logging.wandb, merge=True)
     return OmegaConf.merge(eval_conf, eval_defaults)

@@ -16,7 +16,7 @@ class Discrim3DConfig(BaseDiscriminatorConfig):
     input_size:  Tuple[int, int, int] = (MISSING, MISSING, MISSING)
     ndf:         int = 64
     n_layers:    int = 3
-    kernel_size: Tuple[int] = (4,)
+    kernel_size: Tuple[int] = (4, 4, 4)
 
 
 class Discrim3D(nn.Module):

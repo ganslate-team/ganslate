@@ -8,6 +8,12 @@ import traceback
 
 logger = logging.getLogger(__name__)
 
+
+REGISTRATION_MAP = {
+    "Affine": sitk.AffineTransform(3),
+    "Rigid": sitk.Euler3DTransform()
+}
+
 def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     """CBCT scans are usually focused on smaller part of the body compared to what is
     represented in CT. This function limits a CT to the part of the body that is found
@@ -52,11 +58,11 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     return CT[:, :, start_slice:end_slice]
 
 
-def register_CT_to_CBCT(CT, CBCT):
+def register_CT_to_CBCT(CT, CBCT, registration_type="Rigid"):
     try:
         registration_transform = get_registration_transform(fixed_image=CBCT, 
                                                             moving_image=CT, 
-                                                            registration_type=sitk.AffineTransform(3))
+                                                            registration_type=registration_type)
         return sitk.Resample(CT, CBCT, registration_transform,
                                 sitk.sitkLinear, -1024, CT.GetPixelID())
 
@@ -70,10 +76,9 @@ def register_CT_to_CBCT(CT, CBCT):
         return CT
 
 
-def get_registration_transform(fixed_image, moving_image, registration_type=sitk.Euler3DTransform()):
+def get_registration_transform(fixed_image, moving_image, registration_type="Rigid"):
     """Performs the registration and returns a SimpleITK's `Transform` class which can be
     used to resample an image so that it is registered to another one. However, in our code
-    we do not resample images but only use this information to find where the `moving_image` 
     should be truncated so that it contains only the part of the body that is found in the `fixed_image`. 
     Registration parameters are hardcoded and picked for the specific task of  CBCT to CT translation. 
     TODO: consider making the adjustable in config.
@@ -115,10 +120,16 @@ def get_registration_transform(fixed_image, moving_image, registration_type=sitk
     registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=[2,1,0])
     registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
 
+    if registration_type in REGISTRATION_MAP:
+        registration_transform = REGISTRATION_MAP[registration_type]
+    else:
+        logger.warning("Unsupported transform provided, falling back to Rigid transformation")
+        registration_transform = REGISTRATION_MAP["Rigid"]
+
     # Align the centers of the two volumes and set the center of rotation to the center of the fixed image
     initial_transform = sitk.CenteredTransformInitializer(fixed_image, 
                                                           moving_image, 
-                                                          registration_type,
+                                                          registration_transform,
                                                           sitk.CenteredTransformInitializerFilter.GEOMETRY)
     registration_method.SetInitialTransform(initial_transform) 
 

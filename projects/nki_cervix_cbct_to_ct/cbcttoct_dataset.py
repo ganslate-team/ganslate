@@ -38,10 +38,11 @@ class CBCTtoCTDatasetConfig(BaseDatasetConfig):
     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1024, 2048)) #TODO: what should be the default range
     focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
     enable_masking:          bool = True
-    enable_bounding:         bool = True
+    
+    enable_bounding:         bool = False # Retained for legacy support. has no effect
+
     ct_mask_threshold:          int = -300
     cbct_mask_threshold:        int = -700
-    pad:                     bool = True
 
 
 class CBCTtoCTDataset(Dataset):
@@ -70,10 +71,8 @@ class CBCTtoCTDataset(Dataset):
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
         self.apply_mask = conf.dataset.enable_masking
-        self.apply_bound = conf.dataset.enable_bounding
         self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
         self.ct_mask_threshold = conf.dataset.ct_mask_threshold
-        self.pad = conf.dataset.pad
 
 
     def __getitem__(self, index):
@@ -90,74 +89,38 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
-        # Replace with volumes from replacement paths if the volumes are smaller than patch size
-
-        if not self.pad:
-            CBCT = size_invalid_check_and_replace(CBCT, self.patch_size, \
-                        replacement_paths=paths_CBCT.copy(), original_path=path_CBCT)
-
-            CT = size_invalid_check_and_replace(CT, self.patch_size, \
-                        replacement_paths=paths_CT.copy(), original_path=path_CT)
-
-
-        if CBCT is None or CT is None:
-            raise RuntimeError("Suitable replacement volume could not be found!")
-
         # Subtract 1024 from CBCT to map values from grayscale to HU approx
         CBCT = CBCT - 1024
 
         # Truncate CBCT based on size of FOV in the image
         CBCT = truncate_CBCT_based_on_fov(CBCT)
 
-        # TODO: make a function
-        if (sitk_utils.is_volume_smaller_than(CBCT, self.patch_size) 
-                or sitk_utils.is_volume_smaller_than(CT, self.patch_size)) and not self.pad:
-            raise ValueError("Volume size not smaller than the defined patch size.\
-                              \nCBCT: {} \nCT: {} \npatch_size: {}."\
-                             .format(sitk_utils.get_size_zxy(CBCT),
-                                     sitk_utils.get_size_zxy(CT), 
-                                     self.patch_size))
+	    # Register CT to CBCT using rigid registration
+        CT = register_CT_to_CBCT(CT, CBCT)
 
-	    # limit CT so that it only contains part of the body shown in CBCT
-        CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
-
-        if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size) and not self.pad:
-            logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
-            del CT_truncated
-        else:
-            CT = CT_truncated
-
-
-            
         # Mask and bound is applied on numpy arrays!
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
-
-        if self.pad:
-            CBCT = pad(self.patch_size, CBCT)
-            CT = pad(self.patch_size, CT)
 
         # Apply body masking to the CT and CBCT arrays 
         # and bound the z, x, y grid to around the mask
         try: 
             CBCT = apply_body_mask_and_bound(CBCT, \
-                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, HU_threshold=self.cbct_mask_threshold)
+                    apply_mask=self.apply_mask, HU_threshold=self.cbct_mask_threshold)
         except:
             logger.error(f"Error applying mask and bound in file : {path_CBCT}")
 
         try:
             CT = apply_body_mask_and_bound(CT, \
-                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, HU_threshold=self.ct_mask_threshold)
+                    apply_mask=self.apply_mask, HU_threshold=self.ct_mask_threshold)
 
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")        
 
 
-        if self.pad:
-            CBCT = pad(self.patch_size, CBCT)
-            CT = pad(self.patch_size, CT)
+        CBCT = pad(self.patch_size, CBCT)
+        CT = pad(self.patch_size, CT)
 
-        
 
         if DEBUG:
             import wandb
@@ -373,12 +336,6 @@ class CBCTtoCTEvalDataset(Dataset):
         CT = sitk_utils.load(planning_CT)
         CBCT = sitk_utils.load(first_CBCT)
 
-        CBCT = CBCT - 1024
-
-        # Truncate CBCT based on FOV and apply the same transform to CT
-        CBCT, truncate_filter = truncate_CBCT_based_on_fov(CBCT, return_filter=True)
-        CT = truncate_filter.Execute(CT)
-
         metadata = {
             'path':   str(first_CBCT), 
             'size':   CBCT.GetSize(),
@@ -391,37 +348,6 @@ class CBCTtoCTEvalDataset(Dataset):
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
         
-        if self.apply_mask or self.apply_bound:
-
-            body_mask, ((z_max, z_min), \
-            (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CBCT, self.cbct_mask_threshold)
-        
-            # Apply mask to the image array 
-            if self.apply_mask:
-                CBCT = np.where(body_mask, CBCT, -1024)
-                metadata.update({'mask': 
-                                        body_mask})
-     
-            # Index the array within the bounds and return cropped array
-            if self.apply_bound:
-                CBCT = CBCT[z_max:z_min, y_max: y_min, x_max: x_min]
-                metadata.update({'bounds': 
-                                        ((z_max, z_min), (y_max, y_min), (x_max, x_min))})
-     
-
-            body_mask, ((z_max, z_min), \
-            (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(CT, self.ct_mask_threshold)
-        
-            # Apply mask to the image array 
-            if self.apply_mask:
-                CT = np.where(body_mask, CT, -1024)
-        
-            # Index the array within the bounds and return cropped array
-            if self.apply_bound:
-                CT = CT[z_max:z_min, y_max: y_min, x_max: x_min]
-            
-
-
         CT = torch.tensor(CT)
         CBCT = torch.tensor(CBCT)
 
@@ -435,14 +361,15 @@ class CBCTtoCTEvalDataset(Dataset):
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
 
-        print(CBCT.shape, CT.shape)
-
         return {
             "A": CBCT, 
             "B": CT,
             "metadata": metadata
         }
 
+
+    def scale_to_HU(self, tensor):
+        return min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
 
     def save(self, tensor, metadata, output_dir):
         tensor = tensor.squeeze().cpu()

@@ -15,7 +15,7 @@ class PatchGAN2DConfig(BaseDiscriminatorConfig):
     in_channels: int = 1
     ndf:         int = 64
     n_layers:    int = 3
-    kernel_size: Tuple[int] = (4,)
+    kernel_size: Tuple[int] = (4, 4)
 
 
 class PatchGAN2D(nn.Module):
