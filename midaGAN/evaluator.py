@@ -50,7 +50,7 @@ class Evaluator():
                 
                 metadata = decollate(data['metadata'])
                 predicted = self.infer(data['A'])
-                metrics = self.metrics.get_metric_dict(predicted, data['B'])
+                metrics = self.calculate_metrics(predicted, data['B'])
                 
                 self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, {"A": data['A'].to(self.model.device), 
                                                                                 "B": data['B'].to(self.model.device),
@@ -81,5 +81,15 @@ class Evaluator():
                                         mode=self.conf.sliding_window.mode, cval=-1)
         else:
             return None
+
+    def calculate_metrics(self, pred, target):
+        # Check if dataset has scale_to_HU method defined, 
+        # if not, compute the metrics in [0, 1] space
+        if hasattr(self.data_loader.dataset, "scale_to_HU"):
+            pred = self.data_loader.dataset.scale_to_HU(pred)
+            target =  self.data_loader.dataset.scale_to_HU(target)
+
+        metrics = self.metrics.get_metric_dict(pred, target)
+        return metrics
 
     

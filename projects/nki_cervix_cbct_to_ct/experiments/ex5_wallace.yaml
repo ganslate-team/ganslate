@@ -7,20 +7,20 @@ batch_size: 1
 logging:
     checkpoint_dir: /midagan/checkpoints/cbct_ex5/
     wandb:
-        project: "NKI_CBCT_CT"
+        project: "Cervix_CBCT"
         image_filter: 
             min: 0.289 # Corresponds to HU window of W:350, L: 40 between [0, 1]
             max: 0.40
 
-    log_freq: 1
+    log_freq: 50
     checkpoint_freq: 1000
 
 dataset: 
     name: "CBCTtoCTDataset"
     root: /data/train
     hounsfield_units_range: [-1024, 2048]
-    num_workers: 12
-    patch_size: [48, 400, 400]
+    num_workers: 4
+    patch_size: [32, 384, 384]
     enable_masking: True
     enable_bounding: True
     
@@ -38,7 +38,7 @@ generator:
 
 discriminator:
     name: "PatchGAN3D"
-    n_layers: 5
+    n_layers: 2
     in_channels: 1
 
 optimizer:
@@ -46,18 +46,20 @@ optimizer:
   lambda_B: 25.0
   lambda_identity: 0.0
   lambda_inverse: 0.0
-  proportion_ssim: 0.84
+  proportion_ssim: 1.0
   lr_D: 0.0002
   lr_G: 0.0004
 
+  loss_mask:
+    masking_value: -1
+    operator: "eq" 
 
 metrics: 
     ssim: True
     output_distributions_D: True
 
-
 evaluation:
-  freq: 2
+  freq: 1000
   samples: 10
 
 

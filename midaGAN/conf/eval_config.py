@@ -30,6 +30,7 @@ class SlidingWindowConfig:
 
 @dataclass
 class EvalConfig:
+    project_dir:     Optional[str] = None  # Needed if project-specific classes are to be imported 
     is_train:        bool = False # Training mode is False for framework
     batch_size:      int = 1
     freq:            int = 1 # Every n iterations to run eval
