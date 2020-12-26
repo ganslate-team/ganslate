@@ -5,7 +5,7 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: /midagan/checkpoints/cbct_ex5/
+    checkpoint_dir: /midagan/checkpoints/cbct_ex6/
     wandb:
         project: "Cervix_CBCT"
         image_filter: 
@@ -46,7 +46,7 @@ optimizer:
   lambda_B: 25.0
   lambda_identity: 0.0
   lambda_inverse: 0.0
-  proportion_ssim: 1.0
+  proportion_ssim: 0.0
   lr_D: 0.0002
   lr_G: 0.0004
 
