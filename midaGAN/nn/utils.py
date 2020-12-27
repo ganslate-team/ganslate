@@ -101,3 +101,16 @@ def get_scheduler(optimizer, conf):
 def get_network_device(network):
     """Returns the device of the network. Assumes that the whole network is on a single device."""
     return next(network.parameters()).device
+
+def reshape_to_4D_if_5D(tensor):
+    if len(tensor.shape) == 5:
+        return tensor.view(-1, *tensor.shape[2:])
+    return tensor
+
+def squeeze_z_axis_if_2D(tensor):
+    # NCDHW, check if D is 1
+    if tensor.shape[2] == 1:
+        # Reshape to ensure that D is squeezed
+        return tensor.squeeze(axis=2)
+        
+    return tensor

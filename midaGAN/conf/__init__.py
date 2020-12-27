@@ -10,6 +10,8 @@ import midaGAN
 from midaGAN.utils import import_class_from_dirs_and_modules, iterate_nested_dict_keys
 from midaGAN.conf.train_config import TrainConfig
 from midaGAN.conf.inference_config import InferenceConfig
+from midaGAN.conf.eval_config import EvalConfig
+
 from midaGAN.conf.base_configs import *
 
 

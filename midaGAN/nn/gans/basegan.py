@@ -10,12 +10,12 @@ from apex import amp
 from midaGAN.utils import communication
 
 # midaGAN.nn imports
-from midaGAN.nn.utils import get_scheduler
+from midaGAN.nn.utils import get_scheduler, squeeze_z_axis_if_2D
 
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
 
-from midaGAN.nn.metrics import TrainingMetrics
+from midaGAN.nn.metrics.train_metrics import TrainingMetrics
 
 
 import logging
@@ -46,7 +46,7 @@ class BaseGAN(ABC):
 
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
-        self.is_train = conf.gan.is_train
+        self.is_train = conf.is_train
         self.device = self._specify_device()
         self.checkpoint_dir = conf.logging.checkpoint_dir
 
@@ -273,12 +273,14 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
+        input = squeeze_z_axis_if_2D(input)
+
         if self.is_train:
             raise ValueError("Inference cannot be done in training mode.")
         with torch.no_grad():
             generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
             return self.networks[generator].forward(input)
-            
+
     def get_learning_rates(self):
         """ Return current learning rates of both generator and discriminator"""
         learning_rates = {}
@@ -333,17 +335,25 @@ class BaseGAN(ABC):
 
         But since the sizes are more or less similar across different data instances, this should be okay for now!
         """
+
+
+        # Type needs to be casted for mixed_precision
     
         if self.enable_mask:
+
             mask_A = ~self.masking_operator(self.visuals['real_A'], self.masking_value)
             mask_B = ~self.masking_operator(self.visuals['real_B'], self.masking_value)
             
             # Values dependent on real_A use mask_A
             for name in self.visual_names['A']:
                 if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                    cast_type = self.visuals[name].type()
+                    self.masking_value = self.masking_value.type(cast_type)
                     self.visuals[name] = torch.where(mask_A, self.visuals[name], self.masking_value)
 
             # Values dependent on real_B use mask_B
             for name in self.visual_names['B']:
                 if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                    cast_type = self.visuals[name].type()
+                    self.masking_value = self.masking_value.type(cast_type)
                     self.visuals[name] = torch.where(mask_B, self.visuals[name], self.masking_value)

@@ -7,6 +7,7 @@ from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
+from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 # Config imports
 from dataclasses import dataclass, field
@@ -61,19 +62,19 @@ class PiCycleGAN(BaseGAN):
             self.fake_B_pool = ImagePool(conf.gan.pool_size)
 
         # Set up networks, optimizers, schedulers, mixed precision, checkpoint loading, network parallelization...
-        self.setup(conf) 
+        self.setup() 
 
-    def init_criterions(self, conf):
+    def init_criterions(self):
         # Standard GAN loss 
-        self.criterion_adv = AdversarialLoss(conf.gan.optimizer.adversarial_loss_type).to(self.device)
+        self.criterion_adv = AdversarialLoss(self.conf.gan.optimizer.adversarial_loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
-        self.criterion_G = CycleGANLosses(conf)
+        self.criterion_G = CycleGANLosses(self.conf)
 
     def init_optimizers(self, conf):
-        lr_G = conf.gan.optimizer.lr_G
-        lr_D = conf.gan.optimizer.lr_D
-        beta1 = conf.gan.optimizer.beta1
-        beta2 = conf.gan.optimizer.beta2
+        lr_G = self.conf.gan.optimizer.lr_G
+        lr_D = self.conf.gan.optimizer.lr_D
+        beta1 = self.conf.gan.optimizer.beta1
+        beta2 = self.conf.gan.optimizer.beta2
 
         params_G = self.networks['G'].parameters()
         params_D = itertools.chain(self.networks['D_A'].parameters(), 
@@ -82,7 +83,7 @@ class PiCycleGAN(BaseGAN):
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2)) 
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))                            
 
-        self.setup_loss_masking(conf.gan.optimizer.loss_mask)
+        self.setup_loss_masking(self.conf.gan.optimizer.loss_mask)
 
     def set_input(self, input):
         """Unpack input data from the dataloader.
@@ -210,3 +211,21 @@ class PiCycleGAN(BaseGAN):
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
+    
+    def infer(self, input, direction='AB'):
+        if direction == "AB":
+            return super().infer(input)
+
+        elif direction == "BA":
+            input = squeeze_z_axis_if_2D(input)
+
+            if self.is_train:
+                raise ValueError("Inference cannot be done in training mode.")
+            
+            with torch.no_grad():
+                generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
+                return self.networks[generator].forward(input, inverse=True)
+
+        else:
+            raise NotImplementedError(f"Direction specified as {direction}, which is unsupported")                
+

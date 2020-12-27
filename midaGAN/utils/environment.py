@@ -10,10 +10,11 @@ from pathlib import Path
 
 import numpy as np
 import random
+import cv2
 
 import torch
 from omegaconf import OmegaConf
-
+import SimpleITK as sitk
 from midaGAN.utils import io, communication
 
 
@@ -23,7 +24,7 @@ def setup_logging_with_config(conf, debug=False):
     use_stdout = communication.get_local_rank() == 0 or debug
     log_level = 'INFO' if not debug else 'DEBUG'
 
-    if conf.gan.is_train:
+    if conf.is_train:
         output_dir = Path(conf.logging.checkpoint_dir).resolve()
         saving_to_message = f'Saving checkpoints, logs and config to: {output_dir}'
         filename = Path(output_dir) / 'training_log.txt'
@@ -113,3 +114,22 @@ def set_seed(seed=0):
     # https://pytorch.org/docs/stable/notes/randomness.html#cudnn
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+def threading_setup():
+    """
+    Sets max threads for SimpleITK and Opencv.
+    For numpy etc. set OMP_NUM_THREADS=1 as an env var while 
+    running the training script 
+    E.g 
+    OMP_NUM_THREADS=1 python tools/train.py ...
+    """
+    logger.warning( """
+    Max threads for SimpleITK and Opencv set to 1
+    For numpy etc. set OMP_NUM_THREADS=1 as an env var while 
+    running the training script 
+    E.g 
+    OMP_NUM_THREADS=1 python tools/train.py ...
+    """)
+    MAX_THREADS = 1
+    sitk.ProcessObject_SetGlobalDefaultNumberOfThreads(MAX_THREADS)
+    cv2.setNumThreads(MAX_THREADS)

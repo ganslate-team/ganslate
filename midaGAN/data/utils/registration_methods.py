@@ -1,11 +1,18 @@
 import SimpleITK as sitk
+from SimpleITK.SimpleITK import Not
 from numpy import mean
 from itertools import product
 import logging
 import os
+import traceback
 
 logger = logging.getLogger(__name__)
 
+
+REGISTRATION_MAP = {
+    "Affine": sitk.AffineTransform(3),
+    "Rigid": sitk.Euler3DTransform()
+}
 
 def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     """CBCT scans are usually focused on smaller part of the body compared to what is
@@ -16,12 +23,9 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     try:
         registration_transform = get_registration_transform(fixed_image=CBCT, 
                                                             moving_image=CT)
-    except RuntimeError as e:
-        if "Too many samples map outside moving image buffer" in e.message:
-            logger.info("Registration failed due to poor initial overlap. Passing the whole CT volume.") # happens extremely rarely
-            return CT
-        else:
-            raise e                                            
+    except BaseException as e:
+        logger.error(f"Registration failed with error: {traceback.print_exc()}")
+        return CT
 
     # Start and end positions of CBCT volume
     start_position = [0,0,0]
@@ -54,13 +58,40 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     return CT[:, :, start_slice:end_slice]
 
 
-def get_registration_transform(fixed_image, moving_image):
+def register_CT_to_CBCT(CT, CBCT, registration_type="Rigid"):
+    try:
+        registration_transform = get_registration_transform(fixed_image=CBCT, 
+                                                            moving_image=CT, 
+                                                            registration_type=registration_type)
+        return sitk.Resample(CT, CBCT, registration_transform,
+                                sitk.sitkLinear, -1024, CT.GetPixelID())
+
+    except BaseException as e:
+        logger.debug(f"Registration failed with error: {traceback.print_exc()}")
+
+        # If Registration failed, then center crop CT: Last resort
+        start_point = [(v1 - v2)//2 for v1, v2 in zip(CT.GetSize(), CBCT.GetSize())]
+        end_point = [v1 + v2 for v1, v2 in zip(start_point, CBCT.GetSize())]
+        CT = CT[start_point[0]:end_point[0], start_point[1]:end_point[1], start_point[2]:end_point[2]]
+        return CT
+
+
+def get_registration_transform(fixed_image, moving_image, registration_type="Rigid"):
     """Performs the registration and returns a SimpleITK's `Transform` class which can be
     used to resample an image so that it is registered to another one. However, in our code
-    we do not resample images but only use this information to find where the `moving_image` 
     should be truncated so that it contains only the part of the body that is found in the `fixed_image`. 
     Registration parameters are hardcoded and picked for the specific task of  CBCT to CT translation. 
-    TODO: consider making the adjustable in config."""
+    TODO: consider making the adjustable in config.
+    
+    
+    Parameters:
+    ------------------------
+    fixed_image:
+    moving_image: 
+    registration_type: Type of transformation to be applied to the moving image
+    http://insightsoftwareconsortium.github.io/SimpleITK-Notebooks/Python_html/22_Transforms.html
+    
+    """
 
 
     # Get seed from environment variable if set for registration randomness
@@ -89,12 +120,20 @@ def get_registration_transform(fixed_image, moving_image):
     registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=[2,1,0])
     registration_method.SmoothingSigmasAreSpecifiedInPhysicalUnitsOn()
 
+    if registration_type in REGISTRATION_MAP:
+        registration_transform = REGISTRATION_MAP[registration_type]
+    else:
+        logger.warning("Unsupported transform provided, falling back to Rigid transformation")
+        registration_transform = REGISTRATION_MAP["Rigid"]
+
     # Align the centers of the two volumes and set the center of rotation to the center of the fixed image
     initial_transform = sitk.CenteredTransformInitializer(fixed_image, 
                                                           moving_image, 
-                                                          sitk.Euler3DTransform(),
+                                                          registration_transform,
                                                           sitk.CenteredTransformInitializerFilter.GEOMETRY)
     registration_method.SetInitialTransform(initial_transform) 
+
+    registration_method.SetNumberOfThreads(1)
 
     final_transform = registration_method.Execute(fixed_image, moving_image)
     return final_transform

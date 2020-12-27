@@ -52,6 +52,8 @@ class BaseGANConfig:
 
 @dataclass 
 class BaseConfig:
+    is_train:        bool = MISSING
+
     batch_size:      int = MISSING
     project_dir:     Optional[str] = None  # Needed if project-specific classes are to be imported 
 
