@@ -84,7 +84,7 @@ def reshape_to_4D_if_5D(tensor):
         return tensor.view(-1, *tensor.shape[2:])
     return tensor
 
-def reshape_to_2D_if_3D(tensor):
+def squeeze_z_axis_if_2D(tensor):
     # NCDHW, check if D is 1
     if tensor.shape[2] == 1:
         # Reshape to ensure that D is squeezed

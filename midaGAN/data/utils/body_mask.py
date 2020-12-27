@@ -133,7 +133,7 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
             largest_contour = max(contours, key=cv2.contourArea)
         
         except:
-            logger.error("OpenCV could not find contours: Most likely this is a completely black image")
+            logger.debug("OpenCV could not find contours: Most likely this is a completely black image")
             continue
             
         # Smooth contour so that surface irregularities are removed better
@@ -167,8 +167,7 @@ def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
     the patient body and will be cropped to fit the bounds.
 
     """
-
-    if not apply_mask and not apply_bound:
+    if not(apply_mask or apply_bound):
         return array
 
     body_mask, ((z_max, z_min), \

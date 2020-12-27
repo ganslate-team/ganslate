@@ -6,6 +6,7 @@ from apex import amp
 
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 # Config imports
 from dataclasses import dataclass, field
@@ -216,6 +217,8 @@ class CycleGAN(BaseGAN):
             return super().infer(input)
         
         elif direction == "BA":
+            input = squeeze_z_axis_if_2D(input)
+
             if self.is_train:
                 raise ValueError("Inference cannot be done in training mode.")
             

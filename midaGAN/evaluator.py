@@ -48,16 +48,18 @@ class Evaluator():
             self.logger.info(f"Evaluation started, running with {self.conf.samples} samples")
             for i, data in zip(range(self.conf.samples + 1), self.data_loader):
                 
+                # Move elements from data that are visuals
+                visuals = {
+                    "A": data['A'].to(self.model.device),
+                    "B": data['B'].to(self.model.device)
+                }
+
+                visuals['fake_B'] = self.infer(visuals['A'])
+                metrics = self.calculate_metrics(visuals['fake_B'], visuals['B'])
+
+                self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, visuals, metrics)
                 metadata = decollate(data['metadata'])
-                predicted = self.infer(data['A'])
-                metrics = self.calculate_metrics(predicted, data['B'])
-                
-                self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, {"A": data['A'].to(self.model.device), 
-                                                                                "B": data['B'].to(self.model.device),
-                                                                                "fake_B": predicted
-                                                                                }, metrics)
-                
-                self.data_loader.dataset.save(predicted, metadata, inference_dir / f"{self.trainer_idx}_{self.eval_iter_idx}")
+                self.data_loader.dataset.save(visuals['fake_B'], metadata, inference_dir / f"{self.trainer_idx}_{self.eval_iter_idx}")
                 
                 self.eval_iter_idx += 1
 

@@ -67,12 +67,12 @@ def register_CT_to_CBCT(CT, CBCT, registration_type="Rigid"):
                                 sitk.sitkLinear, -1024, CT.GetPixelID())
 
     except BaseException as e:
-        logger.error(f"Registration failed with error: {traceback.print_exc()}")
+        logger.debug(f"Registration failed with error: {traceback.print_exc()}")
 
         # If Registration failed, then center crop CT: Last resort
         start_point = [(v1 - v2)//2 for v1, v2 in zip(CT.GetSize(), CBCT.GetSize())]
         end_point = [v1 + v2 for v1, v2 in zip(start_point, CBCT.GetSize())]
-        CT = CT[start_point[0]: end_point[0], start_point[1]: end_point[1], start_point[2]: end_point[2]]
+        CT = CT[start_point[0]:end_point[0], start_point[1]:end_point[1], start_point[2]:end_point[2]]
         return CT
 
 

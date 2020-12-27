@@ -9,17 +9,8 @@ from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication, environment
 from midaGAN.utils.trackers.training_tracker import TrainingTracker
 
-<<<<<<< HEAD
-
-from midaGAN.conf.builders import build_eval_conf
-from midaGAN.inferer import Inferer as Evaluator
-from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
-from midaGAN.evaluator import Evaluator
-
-=======
 # Imports for evaluation.
 from midaGAN.evaluator import Evaluator
->>>>>>> c3f0b7d3111fddb5d5ea3f0c8933cee01c16dfae
 
 class Trainer():
     def __init__(self, conf):
@@ -105,8 +96,4 @@ class Trainer():
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
         self.evaluator.set_trainer_idx(iter_idx)
-<<<<<<< HEAD
-=======
-
->>>>>>> c3f0b7d3111fddb5d5ea3f0c8933cee01c16dfae
 

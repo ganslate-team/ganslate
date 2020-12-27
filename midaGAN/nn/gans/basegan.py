@@ -10,8 +10,7 @@ from apex import amp
 from midaGAN.utils import communication
 
 # midaGAN.nn imports
-from midaGAN.nn.utils import get_scheduler
-from midaGAN.nn.utils import reshape_to_2D_if_3D
+from midaGAN.nn.utils import get_scheduler, squeeze_z_axis_if_2D
 
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
@@ -285,7 +284,7 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
-        input = reshape_to_2D_if_3D(input)
+        input = squeeze_z_axis_if_2D(input)
 
         if self.is_train:
             raise ValueError("Inference cannot be done in training mode.")

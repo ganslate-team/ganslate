@@ -14,41 +14,32 @@ class EvaluationMetrics:
 
     def get_metric_dict(self, input, target):
         
-        input, target = torch2np(input, target)
+        input, target = tensor_to_3D_numpy(input, target)
 
         metrics = {}
 
         if self.conf.metrics.ssim:
-            metrics.update({
-                'SSIM': ssim(target, input)
-            })
+            metrics['SSIM'] =  ssim(target, input)
 
         if self.conf.metrics.mse:
-            metrics.update({
-                'MSE': mse(target, input)
-            })
+            metrics['MSE'] = mse(target, input)
 
         if self.conf.metrics.nmse:
-            metrics.update({
-                'NMSE': nmse(target, input)
-            })
+            metrics['NMSE'] =  nmse(target, input)
 
         if self.conf.metrics.psnr:
-            metrics.update({
-                'PSNR': psnr(target, input)
-            })                 
+            metrics['PSNR'] =  psnr(target, input)
 
         return metrics
 
 
-def torch2np(input, target):
-    input = reshape_to_4D_if_5D(input)
+def tensor_to_3D_numpy(input, target):
+    input = input.squeeze()
     input = input.detach().cpu().numpy()
         
-    target = reshape_to_4D_if_5D(target)
+    target = target.squeeze()
     target = target.detach().cpu().numpy()
-    
-    # FastMRI metrics use target, input ordering
+
     return input, target
 
 
