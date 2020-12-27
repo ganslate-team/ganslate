@@ -7,7 +7,8 @@
 
 import torch
 import torch.nn as nn
-import memcnn
+
+from midaGAN.nn import invertible
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 # Config imports
@@ -28,6 +29,7 @@ class Piresnet3DConfig(BaseGeneratorConfig):
 class Piresnet3D(nn.Module):
     def __init__(self, in_channels, norm_type, depth, first_layer_channels=64, use_memory_saving=True, use_inverse=True):
         super().__init__()
+        # TODO: implement disable_invertibles as in Vnet
 
         keep_input = not use_memory_saving
         is_inplace = not use_inverse  # activations in invertible blocks are not inplace when invertibility is used
@@ -42,10 +44,9 @@ class Piresnet3D(nn.Module):
             self.downconv_ba = self.build_downconv(in_channels, norm_layer, first_layer_channels, use_bias)
             self.upconv_ba = self.build_upconv(out_channels, norm_layer, first_layer_channels, use_bias)
 
-        core = []
-        for _ in range(depth):
-            core += [InvertibleBlock(first_layer_channels * 2, norm_layer, use_bias, keep_input, is_inplace)]
-        self.core = nn.Sequential(*core)
+        inv_block = _base_inv_block(first_layer_channels * 2, norm_layer, use_bias, is_inplace)
+        self.core = invertible.InvertibleSequence(inv_block, depth, keep_input)
+        
 
     def build_downconv(self, in_channels, norm_layer, first_layer_channels, use_bias):
         return nn.Sequential(nn.ReplicationPad3d(2),
@@ -74,43 +75,20 @@ class Piresnet3D(nn.Module):
             if not self.use_inverse:
                 raise ValueError("Trying to perform inverse forward while `use_inverse` flag is turned off.")
             downconv = self.downconv_ba
-            core = reversed(self.core)
             upconv = self.upconv_ba
         else:
             downconv = self.downconv_ab
-            core = self.core
             upconv = self.upconv_ab
 
         out = downconv(out)
-        for block in core:
-            out = block(out, inverse)
+        out = self.core(out, inverse)
         return upconv(out)
 
 
-
-class InvertibleBlock(nn.Module):
-    def __init__(self, n_channels, norm_layer, use_bias, keep_input, is_inplace):
-        super().__init__()
-
-        invertible_module = memcnn.AdditiveCoupling(
-            Fm=self.build_conv_block(n_channels//2, norm_layer, use_bias, is_inplace),
-            Gm=self.build_conv_block(n_channels//2, norm_layer, use_bias, is_inplace)
-        )
-        self.invertible_block = memcnn.InvertibleModuleWrapper(fn=invertible_module, 
-                                                               keep_input=keep_input, 
-                                                               keep_input_inverse=keep_input)
-
-
-    def build_conv_block(self, n_channels, norm_layer, use_bias,is_inplace):
-        return nn.Sequential(norm_layer(n_channels),
-                             nn.ReplicationPad3d(1),
-                             nn.Conv3d(n_channels, n_channels, kernel_size=3, padding=0, bias=use_bias),
-                             norm_layer(n_channels),
-                             nn.ReLU(is_inplace))
-                             # his ZeroInit used to be here
-
-    def forward(self, x, inverse=False):
-        if inverse:
-            return self.invertible_block.inverse(x)
-        else:
-            return self.invertible_block(x)
+def _base_inv_block(n_channels, norm_layer, use_bias, is_inplace):
+    n_channels = n_channels // 2  # split across channels for invertible module
+    return nn.Sequential(norm_layer(n_channels),
+                         nn.ReplicationPad3d(1),
+                         nn.Conv3d(n_channels, n_channels, kernel_size=3, padding=0, bias=use_bias),
+                         norm_layer(n_channels),
+                         nn.ReLU(is_inplace))

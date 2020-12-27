@@ -23,23 +23,23 @@ dataset:
     
 gan:  
     name: "CycleGAN"
+    
+    optimizer:
+        lambda_A: 10.0
+        lambda_B: 10.0
+        lambda_identity: 0.0
+        lambda_inverse: 0.0
+        proportion_ssim: 0.84
+        lr_D: 0.0002
+        lr_G: 0.0002
+        ssim_type: "ThreeComponentSSIM"
 
-generator:  
-    name: "Resnet2D"
-    n_residual_blocks: 9
-    in_channels: 3
+    generator:  
+        name: "Resnet2D"
+        n_residual_blocks: 9
+        in_channels: 3
 
-discriminator:  
-    name: "PatchGAN2D"
-    n_layers: 3
-    in_channels: 3
-
-optimizer:
-  lambda_A: 10.0
-  lambda_B: 10.0
-  lambda_identity: 0.0
-  lambda_inverse: 0.0
-  proportion_ssim: 0.84
-  lr_D: 0.0002
-  lr_G: 0.0002
-  ssim_type: "ThreeComponentSSIM"
+    discriminator:  
+        name: "PatchGAN2D"
+        n_layers: 3
+        in_channels: 3

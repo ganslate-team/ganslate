@@ -35,3 +35,18 @@ def import_class_from_dirs_and_modules(class_name, dirs_modules):
                 
     raise ValueError(f"Class with name `{class_name}`` not found in any of the given directories or modules.\
                        If it is located in a project folder, set `project_dir` in config as the project's path.")
+
+def iterate_nested_dict_keys(dictionary):
+    """Returns an iterator that returns all keys of a 
+    nested dictionary ordered from shallowest to deepest key.
+    The nested keys have are in dot-list format, e.g. "gan.discriminator.name".
+    """
+    if isinstance(dictionary, dict):
+        current_level_keys = []
+        for key in dictionary.keys():
+            current_level_keys.append(key)
+            yield key
+        for key in current_level_keys:
+            value = dictionary[key]
+            for ret in iterate_nested_dict_keys(value):
+                yield f"{key}.{ret}"

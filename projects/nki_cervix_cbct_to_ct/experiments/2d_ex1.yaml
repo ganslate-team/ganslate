@@ -1,7 +1,7 @@
 project_dir: "./projects/nki_cervix_cbct_to_ct"
 use_cuda: True
-n_iters: 20000
-n_iters_decay: 20000
+n_iters: 200000
+n_iters_decay: 200000
 batch_size: 1
 mixed_precision: False
 
@@ -16,9 +16,9 @@ dataset:
     name: "CBCTtoCT2DDataset"
     root: /home/rt/workspace_suraj/cervix_resampled
     hounsfield_units_range: [-1024, 2048]
-    select_origin_for_axes: [False, True, True]
-    num_workers: 0
-    load_size: 256
+    select_origin_for_axes: [False, False, False]
+    num_workers: 8
+    load_size: 312
     
 gan:  
     name: "CycleGAN"
@@ -33,14 +33,19 @@ discriminator:
     n_layers: 3
     in_channels: 1
 
+
 optimizer:
   lambda_A: 10.0
   lambda_B: 10.0
+
   lambda_identity: 0.0
   lambda_inverse: 0.0
   proportion_ssim: 0.0
-  lr_D: 0.0004
+
+  lr_D: 0.0001
   lr_G: 0.0002
-  loss_mask:
-    masking_value: -1
-    operator: "eq"
+
+
+metrics: 
+    ssim: True
+    output_distributions_D: True

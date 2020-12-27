@@ -1,20 +1,27 @@
 import torch
 import torch.nn as nn
-import midaGAN.nn.losses.ssim as ssim
-from midaGAN.nn.utils import reshape_to_4D_if_5D
+import midaGAN.nn.losses.utils.ssim as ssim
+from midaGAN.nn.losses import reshape_to_4D_if_5D
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-class GeneratorLoss:
+class CycleGANLosses:
+    """Defines losses used for optiming the generators in CycleGAN setup.
+    Consists of:
+        (1) Cycle-consistency loss (weighted combination of L1 and, optionally, SSIM)
+        (2) Identity loss
+        (3) Inverse loss (experimental, similar to Identity loss but to be used when the 
+            two domains are not too different - e.g. CBCT and CT images.)
+    """
     def __init__(self, conf):
-        lambda_A = conf.optimizer.lambda_A
-        lambda_B = conf.optimizer.lambda_B
-        lambda_identity = conf.optimizer.lambda_identity
-        lambda_inverse = conf.optimizer.lambda_inverse
-        proportion_ssim = conf.optimizer.proportion_ssim
-        ssim_type = conf.optimizer.ssim_type
+        lambda_A = conf.gan.optimizer.lambda_A
+        lambda_B = conf.gan.optimizer.lambda_B
+        lambda_identity = conf.gan.optimizer.lambda_identity
+        lambda_inverse = conf.gan.optimizer.lambda_inverse
+        proportion_ssim = conf.gan.optimizer.proportion_ssim
+        ssim_type = conf.gan.optimizer.ssim_type
 
         # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
         # so the number of channels equals to the number of slices in sampled patches.
@@ -53,7 +60,7 @@ class GeneratorLoss:
 
         # identity loss
         if self.criterion_idt:
-            if idt_A and idt_B:
+            if idt_A is not None and idt_B is not None:
                 losses['idt_A'], losses['idt_B'] = self.criterion_idt(real_A, real_B, idt_A, idt_B)
             else:
                 raise ValueError("idt_A and/or idt_B is not computed but the identity loss is defined.")
@@ -69,8 +76,6 @@ class CycleLoss:
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B
 
-
-
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
             
@@ -82,8 +87,9 @@ class CycleLoss:
                 logger.warning("Specified SSIM type not found, reverting to using default SSIM")
                 ssim_module = ssim.SSIM
 
-            self.ssim_criterion = ssim_module(data_range=1, 
-                                       channel=channels_ssim, nonnegative_ssim=True)
+            self.ssim_criterion = ssim_module(data_range=1,
+                                              channel=channels_ssim, 
+                                              nonnegative_ssim=True)
 
             # weights for addition of SSIM and L1 losses
             self.alpha = proportion_ssim

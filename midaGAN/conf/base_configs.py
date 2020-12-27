@@ -2,6 +2,19 @@ from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 
+@dataclass
+class LossMaskingConfig:
+    masking_value:   float = -1
+    operator:        str = "eq"
+
+@dataclass
+class BaseOptimizerConfig:
+    adversarial_loss_type:   str = "lsgan"
+    beta1:           float = 0.5
+    beta2:           float = 0.999
+    lr_D:            float = 0.0001
+    lr_G:            float = 0.0002
+    loss_mask:       Optional[LossMaskingConfig] = None
 
 @dataclass
 class BaseDatasetConfig:
@@ -9,18 +22,6 @@ class BaseDatasetConfig:
     root:         str = MISSING
     shuffle:      bool = True
     num_workers:  int = 4
-
-
-@dataclass
-class BaseGANConfig:
-    """Base GAN config."""
-    is_train:         bool = True
-    name:             str = MISSING
-    loss_type:        str = "lsgan"
-    norm_type:        str = "instance"
-    weight_init_type: str = "normal"
-    weight_init_gain: float = 0.02
-    pool_size:        int = 50
 
 
 @dataclass
@@ -35,8 +36,23 @@ class BaseGeneratorConfig:
     in_channels: int = MISSING # TODO: put in GAN config since both G and D use `in_channels`?
 
 
+@dataclass
+class BaseGANConfig:
+    """Base GAN config."""
+    name:             str = MISSING
+    norm_type:        str = "instance"
+    weight_init_type: str = "normal"
+    weight_init_gain: float = 0.02
+
+    optimizer: BaseOptimizerConfig = MISSING
+    generator: BaseGeneratorConfig = MISSING
+    discriminator: Optional[BaseDiscriminatorConfig] = None # discriminator optional as it is not used in inference
+
+
 @dataclass 
 class BaseConfig:
+    is_train:        bool = MISSING
+
     batch_size:      int = MISSING
     project_dir:     Optional[str] = None  # Needed if project-specific classes are to be imported 
 
@@ -47,4 +63,3 @@ class BaseConfig:
 
     dataset:         BaseDatasetConfig = MISSING
     gan:             BaseGANConfig = MISSING
-    generator:       BaseGeneratorConfig = MISSING

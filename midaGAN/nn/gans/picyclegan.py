@@ -2,21 +2,30 @@ import torch
 import torch.nn.functional as F
 
 import itertools
-from apex import amp
 
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
+from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
+from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf import BaseGANConfig
 
+from midaGAN.nn.gans import cyclegan
+
+@dataclass
+class OptimizerConfig(cyclegan.OptimizerConfig):
+    pass  # the same as CycleGAN, kept here for consistency and for possible future changes
 
 @dataclass
 class PiCycleGANConfig(BaseGANConfig):
     """Partially-invertible CycleGAN"""
     name: str = "PiCycleGAN"
+    pool_size: int = 50
+    optimizer: OptimizerConfig = OptimizerConfig
 
 
 class PiCycleGAN(BaseGAN):
@@ -27,8 +36,8 @@ class PiCycleGAN(BaseGAN):
         
         # Inputs and Outputs of the model
         self.visual_names = {
-            'A': ['real_A', 'fake_B', 'rec_A', 'idt_B'], 
-            'B': ['real_B', 'fake_A', 'rec_B', 'idt_A']
+            'A': ['real_A', 'fake_B', 'rec_A', 'idt_A'], 
+            'B': ['real_B', 'fake_A', 'rec_B', 'idt_B']
         }
         # get all the names from the above lists into a single flat list
         all_visual_names = [name for v in self.visual_names.values() for name in v]
@@ -47,35 +56,34 @@ class PiCycleGAN(BaseGAN):
         network_names = ['G', 'D_A', 'D_B'] if self.is_train else ['G'] # during test time, only G
         self.networks = {name: None for name in network_names}
 
-        # Initialize Generators and Discriminators
-        self.init_networks(conf)
-
         if self.is_train:
-            # Intialize loss functions (criterions) and optimizers
-            self.init_criterions(conf)
-            self.init_optimizers(conf)
-            self.init_metrics(conf)
-
             # Create image buffer to store previously generated images
             self.fake_A_pool = ImagePool(conf.gan.pool_size)
             self.fake_B_pool = ImagePool(conf.gan.pool_size)
 
-        self.setup() # schedulers, mixed precision, checkpoint loading and network parallelization
+        # Set up networks, optimizers, schedulers, mixed precision, checkpoint loading, network parallelization...
+        self.setup() 
 
+    def init_criterions(self):
+        # Standard GAN loss 
+        self.criterion_adv = AdversarialLoss(self.conf.gan.optimizer.adversarial_loss_type).to(self.device)
+        # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
+        self.criterion_G = CycleGANLosses(self.conf)
 
-    def init_optimizers(self, conf):
-        lr_G = conf.optimizer.lr_G
-        lr_D = conf.optimizer.lr_D
-        beta1 = conf.optimizer.beta1
+    def init_optimizers(self):
+        lr_G = self.conf.gan.optimizer.lr_G
+        lr_D = self.conf.gan.optimizer.lr_D
+        beta1 = self.conf.gan.optimizer.beta1
+        beta2 = self.conf.gan.optimizer.beta2
 
         params_G = self.networks['G'].parameters()
         params_D = itertools.chain(self.networks['D_A'].parameters(), 
                                    self.networks['D_B'].parameters())         
 
-        self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, 0.999)) 
-        self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, 0.999))                            
+        self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2)) 
+        self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))                            
 
-        self.setup_loss_masking(conf.optimizer.loss_mask)
+        self.setup_loss_masking(self.conf.gan.optimizer.loss_mask)
 
     def set_input(self, input):
         """Unpack input data from the dataloader.
@@ -103,17 +111,17 @@ class PiCycleGAN(BaseGAN):
         # ------------------------ G (A and B) ----------------------------------------------------
         self.set_requires_grad(discriminators, False)   # Ds require no gradients when optimizing Gs
         self.optimizers['G'].zero_grad()                # set G's gradients to zero
-        self.backward_G(loss_id=0)                      # calculate gradients for G
+        self.backward_G()                               # calculate gradients for G
         self.optimizers['G'].step()                     # update G's weights
         # ------------------------ D_A and D_B ----------------------------------------------------
         self.set_requires_grad(discriminators, True)
         self.optimizers['D'].zero_grad()                #set D_A and D_B's gradients to zero
-        self.backward_D('D_A', loss_id=1)               # calculate gradients for D_A
+        self.backward_D('D_A')                          # calculate gradients for D_A
         
         # Update metrics for D_A
         self.metrics.update(self.training_metrics.compute_metrics_D('D_A', self.pred_real, self.pred_fake))
         
-        self.backward_D('D_B', loss_id=2)               # calculate gradients for D_B
+        self.backward_D('D_B')                          # calculate gradients for D_B
         
         # Update metrics for D_B
         self.metrics.update(self.training_metrics.compute_metrics_D('D_B', self.pred_real, self.pred_fake))
@@ -121,7 +129,6 @@ class PiCycleGAN(BaseGAN):
         self.optimizers['D'].step()                     # update D_A and D_B's weights
         # -----------------------------------------------------------------------------------------
 
-    
     def forward(self):
         """Run forward pass; called by both methods <optimize_parameters> and <test>."""
         real_A = self.visuals['real_A']
@@ -138,14 +145,14 @@ class PiCycleGAN(BaseGAN):
         # Visuals for Identity loss
         idt_A, idt_B = None, None
         if self.criterion_G.is_using_identity():
-            idt_A = self.networks['G'](real_B)
-            idt_B = self.networks['G'](real_A, inverse=True)
+            idt_A = self.networks['G'](real_A, inverse=True)
+            idt_B = self.networks['G'](real_B)
         
-        self.visuals.update({'fake_B': fake_B, 'rec_A': rec_A, 'idt_B': idt_B,
-                             'fake_A': fake_A, 'rec_B': rec_B, 'idt_A': idt_A})
+        self.visuals.update({'fake_B': fake_B, 'rec_A': rec_A, 'idt_A': idt_A,
+                             'fake_A': fake_A, 'rec_B': rec_B, 'idt_B': idt_B})
 
 
-    def backward_D(self, discriminator, loss_id=0):
+    def backward_D(self, discriminator):
         """Calculate GAN loss for the discriminator
 
         Parameters:
@@ -160,28 +167,28 @@ class PiCycleGAN(BaseGAN):
             real = self.visuals['real_B']
             fake = self.visuals['fake_B']
             fake = self.fake_B_pool.query(fake)
+            loss_id = 0
             
         elif discriminator == 'D_B':
             real = self.visuals['real_A']
             fake = self.visuals['fake_A']
             fake = self.fake_A_pool.query(fake)
+            loss_id = 1
         else:
             raise ValueError('The discriminator has to be either "D_A" or "D_B".')
 
         self.pred_real = self.networks[discriminator](real)
         self.pred_fake = self.networks[discriminator](fake.detach())
 
-        loss_real = self.criterion_gan(self.pred_real, target_is_real=True)
-        loss_fake = self.criterion_gan(self.pred_fake, target_is_real=False)
+        loss_real = self.criterion_adv(self.pred_real, target_is_real=True)
+        loss_fake = self.criterion_adv(self.pred_fake, target_is_real=False)
         self.losses[discriminator] = loss_real + loss_fake
 
         # backprop
         self.backward(loss=self.losses[discriminator], optimizer=self.optimizers['D'], 
                       retain_graph=True, loss_id=loss_id)
 
-
-
-    def backward_G(self, loss_id=0):
+    def backward_G(self):
         """Calculate the loss for generators G_A and G_B using all specified losses"""        
 
         real_A = self.visuals['real_A']        
@@ -192,8 +199,8 @@ class PiCycleGAN(BaseGAN):
         # ------------------------- GAN Loss ----------------------------
         pred_A = self.networks['D_A'](fake_B)  # D_A(G_A(A))
         pred_B = self.networks['D_B'](fake_A)  # D_B(G_B(B))
-        self.losses['G_A'] = self.criterion_gan(pred_A, target_is_real=True) # Forward GAN loss D_A(G_A(A))
-        self.losses['G_B'] = self.criterion_gan(pred_B, target_is_real=True) # Backward GAN loss D_B(G_B(B))
+        self.losses['G_A'] = self.criterion_adv(pred_A, target_is_real=True) # Forward GAN loss D_A(G_A(A))
+        self.losses['G_B'] = self.criterion_adv(pred_B, target_is_real=True) # Backward GAN loss D_B(G_B(B))
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity, Inverse) -------------
@@ -203,4 +210,22 @@ class PiCycleGAN(BaseGAN):
 
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
-        self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=loss_id)
+        self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
+    
+    def infer(self, input, direction='AB'):
+        if direction == "AB":
+            return super().infer(input)
+
+        elif direction == "BA":
+            input = squeeze_z_axis_if_2D(input)
+
+            if self.is_train:
+                raise ValueError("Inference cannot be done in training mode.")
+            
+            with torch.no_grad():
+                generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
+                return self.networks[generator].forward(input, inverse=True)
+
+        else:
+            raise NotImplementedError(f"Direction specified as {direction}, which is unsupported")                
+
