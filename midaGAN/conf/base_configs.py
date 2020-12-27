@@ -39,7 +39,6 @@ class BaseGeneratorConfig:
 @dataclass
 class BaseGANConfig:
     """Base GAN config."""
-    is_train:         bool = True
     name:             str = MISSING
     norm_type:        str = "instance"
     weight_init_type: str = "normal"
