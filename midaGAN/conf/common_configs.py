@@ -9,6 +9,7 @@ class ImageFilterConfig:  # Filtering for images uploaded to wandb to show windo
 
 @dataclass
 class WandbConfig:
-    project: str = "my-project"
-    entity: Optional[str] = None
+    project:      str = "my-project"
+    entity:       Optional[str] = None
+    run:          Optional[str] = None
     image_filter: Optional[ImageFilterConfig] = None

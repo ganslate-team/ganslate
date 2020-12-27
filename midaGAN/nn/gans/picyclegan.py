@@ -70,7 +70,7 @@ class PiCycleGAN(BaseGAN):
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
         self.criterion_G = CycleGANLosses(self.conf)
 
-    def init_optimizers(self, conf):
+    def init_optimizers(self):
         lr_G = self.conf.gan.optimizer.lr_G
         lr_D = self.conf.gan.optimizer.lr_D
         beta1 = self.conf.gan.optimizer.beta1

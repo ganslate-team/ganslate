@@ -8,6 +8,9 @@ logging:
     checkpoint_dir: ./checkpoints/cbct_ex3/
     wandb:
         project: "NKI_CBCT_CT"
+        image_filter: 
+            min: 0.289 # Corresponds to HU window of W:350, L: 40 between [0, 1]
+            max: 0.40
     log_freq: 1
     checkpoint_freq: 10000
 
@@ -21,35 +24,35 @@ dataset:
     enable_bounding: True
     
 gan:  
-    name: "PiCycleGAN"
+  name: "PiCycleGAN"
 
-generator:
-  name: Vnet3D
-  in_channels: 1
-  use_memory_saving: False
-  use_inverse: True
-  is_separable: False
-  down_blocks: [2, 2, 3]
-  up_blocks: [3, 3, 3]
-
-discriminator:
-    name: "PatchGAN3D"
-    n_layers: 2
+  generator:
+    name: Vnet3D
     in_channels: 1
-    kernel_size: [2, 4, 4]
+    use_memory_saving: False
+    use_inverse: True
+    is_separable: False
+    down_blocks: [2, 2, 3]
+    up_blocks: [3, 3, 3]
 
-optimizer:
-  lambda_A: 25.0
-  lambda_B: 25.0
-  lambda_identity: 0.0
-  lambda_inverse: 0.0
-  proportion_ssim: 0.84
-  lr_D: 0.0001
-  lr_G: 0.0002
+  discriminator:
+      name: "PatchGAN3D"
+      n_layers: 2
+      in_channels: 1
+      kernel_size: [2, 4, 4]
 
-  loss_mask:
-    masking_value: -1
-    operator: "eq" 
+  optimizer:
+    lambda_A: 25.0
+    lambda_B: 25.0
+    lambda_identity: 0.0
+    lambda_inverse: 0.0
+    proportion_ssim: 0.84
+    lr_D: 0.0001
+    lr_G: 0.0002
+
+    loss_mask:
+      masking_value: -1
+      operator: "eq" 
 
 
 metrics: 
