@@ -19,13 +19,11 @@ def init_distributed():
         num_gpu = int(os.environ.get('WORLD_SIZE', 1))
         if num_gpu > 1:
             torch.cuda.set_device(int(os.environ['LOCAL_RANK']))
-            torch.distributed.init_process_group(
-                backend='nccl', init_method='env://'
-            )
+            torch.distributed.init_process_group(backend='nccl', init_method='env://')
             synchronize()
             logger.info(f'Number of GPUs available in world: {num_gpu}.')
         else:
-            raise ValueError("Distributed ON but but running single process") # TODO make nicer
+            raise ValueError("Distributed ON but but running single process")  # TODO make nicer
 
 
 def synchronize():
@@ -106,10 +104,10 @@ def shared_random_seed() -> int:
     -------
     A random number that is the same across all workers. If workers need a shared RNG, 
     they can use this shared seed to create one.
-    """ 
+    """
     # torch.Generator advises to use a high values as seed, hence 2**31
     # The seed is reproducible when torch seed is set with `torch.manual_seed()`
-    seed = torch.randint(2 ** 31, (1,))  
+    seed = torch.randint(2**31, (1,))
     if torch.distributed.is_initialized():
         device = get_backend_compatible_device()
         seed = seed.to(device)
@@ -118,6 +116,7 @@ def shared_random_seed() -> int:
 
 
 # ------------ Reduce and All Reduce --------------
+
 
 def reduce(input_data, average=False, all_reduce=False):
     """
@@ -138,21 +137,21 @@ def reduce(input_data, average=False, all_reduce=False):
     """
     if get_world_size() < 2:
         return input_data
-    
+
     device = get_backend_compatible_device()
     with torch.no_grad():
         if isinstance(input_data, torch.Tensor):
             reduced_data = reduce_tensor(input_data, average, all_reduce, device)
-        
+
         elif isinstance(input_data, dict):
             reduced_data = reduce_dict(input_data, average, all_reduce, device)
-        
+
         elif isinstance(input_data, list) or isinstance(input_data, tuple):
             reduced_data = reduce_list_tuple(input_data, average, all_reduce, device)
-        
+
         elif isinstance(input_data, int) or isinstance(input_data, float):
             reduced_data = reduce_int_float(input_data, average, all_reduce, device)
-        
+
         else:
             data_type = str(type(data))
             raise NotImplementedError(f"Reduction on data type `{data_type}` is not implemented.")
@@ -201,14 +200,14 @@ def reduce_dict(input_dict, average, all_reduce, device):
         value = input_dict[k]
         # if float or integer and not tensor, convert to tensor
         if is_not_tensor(value):
-            if is_float_or_int(value): 
-                value = torch.Tensor([value])  
+            if is_float_or_int(value):
+                value = torch.Tensor([value])
             else:
                 raise NotImplementedError("Dictionary reduction supported only if \
                                            its values are tensors, floats or integers.")
         values.append(value)
 
-    values = torch.stack(values, dim=0).to(device) # convert the list of tensors to a single tensor 
+    values = torch.stack(values, dim=0).to(device)  # convert the list of tensors to a single tensor
 
     if all_reduce:
         torch.distributed.all_reduce(values)
@@ -216,7 +215,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
         torch.distributed.reduce(values, dst=0)
 
     if average and (get_rank() == 0 or all_reduce):
-        values /= get_world_size()  
+        values /= get_world_size()
 
     reduced_dict = {k: v for k, v in zip(names, values)}
     return reduced_dict
@@ -231,13 +230,14 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
     for i in range(len(input_data)):
         value = input_data[i]
         if is_not_tensor(value):
-            if is_float_or_int(value): 
+            if is_float_or_int(value):
                 input_data[i] = torch.Tensor([value])
             else:
                 raise NotImplementedError("List/tuple reduction supported only if \
                                             its values are tensors, floats or integers.")
-    values = torch.stack(input_data, dim=0).to(device) # convert list/tuple of tensors to a single tensor
-    
+    values = torch.stack(input_data,
+                         dim=0).to(device)  # convert list/tuple of tensors to a single tensor
+
     if all_reduce:
         torch.distributed.all_reduce(values)
     else:

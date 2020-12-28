@@ -13,12 +13,13 @@ DUMMY_PATCH_SIZE = [32, 32, 32]
 
 @dataclass
 class DummyDatasetConfig(BaseDatasetConfig):
-    name:         str = "DummyDataset"
+    name: str = "DummyDataset"
     patch_size: Tuple[int, int, int] = field(default_factory=lambda: DUMMY_PATCH_SIZE)
 
 
 class DummyDataset(Dataset):
     """Dummy dataset for quick testing purposes"""
+
     def __init__(self, conf):
         self.root = conf.dataset.root
         self.A_size = 4

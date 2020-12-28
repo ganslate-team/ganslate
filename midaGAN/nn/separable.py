@@ -1,9 +1,9 @@
-
 from torch import nn
 from torch.nn.modules.utils import _triple
 
 
 class SeparableConv3d(nn.Module):
+
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True):
         super().__init__()
         kernel_size = _triple(kernel_size)
@@ -20,13 +20,15 @@ class SeparableConv3d(nn.Module):
         pointwise_padding = (padding[0], 0, 0)
 
         # construct the layers
-        self.conv_depthwise = nn.Conv3d(in_channels, out_channels, 
+        self.conv_depthwise = nn.Conv3d(in_channels,
+                                        out_channels,
                                         kernel_size=depthwise_kernel,
                                         stride=depthwise_stride,
                                         padding=depthwise_padding,
                                         bias=bias)
 
-        self.conv_pointwise = nn.Conv3d(out_channels, out_channels, 
+        self.conv_pointwise = nn.Conv3d(out_channels,
+                                        out_channels,
                                         kernel_size=pointwise_kernel,
                                         stride=pointwise_stride,
                                         padding=pointwise_padding,
@@ -39,6 +41,7 @@ class SeparableConv3d(nn.Module):
 
 
 class SeparableConvTranspose3d(nn.Module):
+
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, bias=True):
         super().__init__()
         kernel_size = _triple(kernel_size)
@@ -55,13 +58,15 @@ class SeparableConvTranspose3d(nn.Module):
         pointwise_padding = (padding[0], 0, 0)
 
         # construct the layers
-        self.conv_transp_depthwise = nn.ConvTranspose3d(in_channels, out_channels, 
+        self.conv_transp_depthwise = nn.ConvTranspose3d(in_channels,
+                                                        out_channels,
                                                         kernel_size=depthwise_kernel,
                                                         stride=depthwise_stride,
                                                         padding=depthwise_padding,
                                                         bias=bias)
 
-        self.conv_transp_pointwise = nn.ConvTranspose3d(out_channels, out_channels, 
+        self.conv_transp_pointwise = nn.ConvTranspose3d(out_channels,
+                                                        out_channels,
                                                         kernel_size=pointwise_kernel,
                                                         stride=pointwise_stride,
                                                         padding=pointwise_padding,

@@ -4,6 +4,7 @@ from torch import nn
 
 
 class PatchNCELoss(nn.Module):
+
     def __init__(self, conf):
         super().__init__()
         self.batch_size = conf.batch_size
@@ -16,8 +17,7 @@ class PatchNCELoss(nn.Module):
         feat_k = feat_k.detach()
 
         # pos logit
-        l_pos = torch.bmm(feat_q.view(bs, 1, -1), 
-                          feat_k.view(bs, -1, 1))
+        l_pos = torch.bmm(feat_q.view(bs, 1, -1), feat_k.view(bs, -1, 1))
         l_pos = l_pos.view(bs, 1)
 
         # neg logit
@@ -38,8 +38,7 @@ class PatchNCELoss(nn.Module):
 
         out = torch.cat((l_pos, l_neg), dim=1) / self.nce_T
 
-        loss = self.cross_entropy_loss(out, torch.zeros(out.size(0), 
-                                                        dtype=torch.long,
-                                                        device=feat_q.device))
+        loss = self.cross_entropy_loss(
+            out, torch.zeros(out.size(0), dtype=torch.long, device=feat_q.device))
 
         return loss

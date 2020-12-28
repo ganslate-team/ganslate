@@ -1,7 +1,6 @@
 import importlib
 import logging
 
-
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -12,19 +11,21 @@ from midaGAN.utils import import_class_from_dirs_and_modules, communication
 
 logger = logging.getLogger(__name__)
 
+
 def build_loader(conf):
     dataset = build_dataset(conf)
 
     if conf.is_train:
-        sampler = InfiniteSampler(size=len(dataset), 
-                                  shuffle=conf.dataset.shuffle)
+        sampler = InfiniteSampler(size=len(dataset), shuffle=conf.dataset.shuffle)
     else:
         sampler = None
         if torch.distributed.is_initialized():
-            sampler = DistributedSampler(dataset,
-                                         shuffle=False,
-                                         num_replicas=communication.get_world_size(),
-                                         rank=communication.get_local_rank()) # TODO: verify that this indeed should be local rank and not rank
+            sampler = DistributedSampler(
+                dataset,
+                shuffle=False,
+                num_replicas=communication.get_world_size(),
+                rank=communication.get_local_rank(
+                ))  # TODO: verify that this indeed should be local rank and not rank
 
     loader = DataLoader(dataset,
                         batch_size=conf.batch_size,
@@ -32,6 +33,7 @@ def build_loader(conf):
                         num_workers=conf.dataset.num_workers,
                         pin_memory=True)
     return loader
+
 
 def build_dataset(conf):
     name = conf.dataset.name

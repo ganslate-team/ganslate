@@ -14,6 +14,7 @@ from midaGAN.data.utils import decollate
 
 
 class Inferer():
+
     def __init__(self, conf):
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
@@ -31,7 +32,8 @@ class Inferer():
         for i, data in enumerate(self.data_loader, start=1):
             # Sometimes, metadata is necessary to be able to store the generated outputs.
             # E.g. origin, spacing and direction is required in order to properly save medical images.
-            if isinstance(data, list): # dataloader yields a list when passing multiple values at once
+            if isinstance(data,
+                          list):  # dataloader yields a list when passing multiple values at once
                 has_metadata = True
                 data, metadata = data
                 metadata = decollate(metadata)
@@ -40,7 +42,7 @@ class Inferer():
             self.tracker.end_dataloading_timer()
             out = self.infer(data)
             self.tracker.end_computation_timer()
-            
+
             self.tracker.start_saving_timer()
             # Inference-time dataset class has to have a `save()` method
             if has_metadata:
@@ -65,8 +67,7 @@ class Inferer():
             return SlidingWindowInferer(roi_size=self.conf.sliding_window.window_size,
                                         sw_batch_size=self.conf.sliding_window.batch_size,
                                         overlap=self.conf.sliding_window.overlap,
-                                        mode=self.conf.sliding_window.mode, cval=-1)
+                                        mode=self.conf.sliding_window.mode,
+                                        cval=-1)
         else:
             return None
-
-    

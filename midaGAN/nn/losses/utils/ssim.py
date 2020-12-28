@@ -11,7 +11,6 @@
 # Taken from DIRECT https://github.com/directgroup/direct
 # Added support for mixed precision by allowing one image to be of type `half` and the other `float`.
 
-
 # ----------------------------------------------------
 # Changes added by Maastro-CDS-Imaging-Group : https://github.com/Maastro-CDS-Imaging-Group/midaGAN
 # Add support for 3-component SSIM to improve edge structures aceoss images
@@ -19,11 +18,18 @@
 import torch
 import torch.nn.functional as F
 
-__all__ = ('batch_ssim', 'ms_ssim', 'SSIM', 'MS_SSIM',)
+__all__ = (
+    'batch_ssim',
+    'ms_ssim',
+    'SSIM',
+    'MS_SSIM',
+)
+
 
 def are_tensors_half_or_float(*args):
     for tensor in args:
-        if not isinstance(tensor, torch.cuda.FloatTensor ) and not isinstance(tensor, torch.cuda.HalfTensor):
+        if not isinstance(tensor, torch.cuda.FloatTensor) and not isinstance(
+                tensor, torch.cuda.HalfTensor):
             return False
     return True
 
@@ -31,22 +37,19 @@ def are_tensors_half_or_float(*args):
 def gradient_image(input):
     input = input.permute(1, 0, 2, 3)
 
-    kernel_x = torch.Tensor([[1, 0, -1],
-        [2, 0, -2],
-        [1, 0, -1]])
+    kernel_x = torch.Tensor([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
 
-    kernel_x = kernel_x.view((1,1,3,3)).to(input.device)
+    kernel_x = kernel_x.view((1, 1, 3, 3)).to(input.device)
     G_x = F.conv2d(input, kernel_x)
 
-    kernel_y = torch.Tensor([[1, 2, 1],
-        [0, 0, 0],
-        [-1, -2, -1]])
+    kernel_y = torch.Tensor([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
 
-    kernel_y = kernel_y.view((1,1,3,3)).to(input.device)
+    kernel_y = kernel_y.view((1, 1, 3, 3)).to(input.device)
     G_y = F.conv2d(input, kernel_y)
 
-    G = torch.sqrt(torch.pow(G_x,2)+ torch.pow(G_y,2))
+    G = torch.sqrt(torch.pow(G_x, 2) + torch.pow(G_y, 2))
     return G.permute(1, 0, 2, 3)
+
 
 def _fspecial_gauss_1d(size, sigma):
     """
@@ -67,7 +70,7 @@ def _fspecial_gauss_1d(size, sigma):
     coords = torch.arange(size).float()
     coords -= size // 2
 
-    g = torch.exp(-(coords ** 2) / (2 * sigma ** 2))
+    g = torch.exp(-(coords**2) / (2 * sigma**2))
     g /= g.sum()
 
     return g.unsqueeze(0).unsqueeze(0)
@@ -93,11 +96,8 @@ def gaussian_filter(input, win):
     out = F.conv2d(out, win.transpose(2, 3), stride=1, padding=0, groups=C)
     return out
 
-def _ssim(X, Y,
-          data_range,
-          win,
-          size_average=True,
-          K=(0.01, 0.03)):
+
+def _ssim(X, Y, data_range, win, size_average=True, K=(0.01, 0.03)):
     """
     Calculate the SSIM for input and target.
 
@@ -120,8 +120,8 @@ def _ssim(X, Y,
     batch, channel, height, width = X.shape
     compensation = 1.0
 
-    C1 = (K1 * data_range) ** 2
-    C2 = (K2 * data_range) ** 2
+    C1 = (K1 * data_range)**2
+    C2 = (K2 * data_range)**2
 
     win = win.to(X.device, dtype=X.dtype)
 
@@ -149,7 +149,8 @@ def _ssim(X, Y,
     return D_per_channel, cs, D_map
 
 
-def batch_ssim(input, target,
+def batch_ssim(input,
+               target,
                data_range=255,
                win_size=11,
                win_sigma=1.5,
@@ -192,11 +193,12 @@ def batch_ssim(input, target,
         win = _fspecial_gauss_1d(win_size, win_sigma)
         win = win.repeat(input.shape[1], 1, 1, 1)
 
-    ssim_per_channel, cs, ssim_map = _ssim(input, target,
-                                 data_range=data_range,
-                                 win=win,
-                                 size_average=False,
-                                 K=K)
+    ssim_per_channel, cs, ssim_map = _ssim(input,
+                                           target,
+                                           data_range=data_range,
+                                           win=win,
+                                           size_average=False,
+                                           K=K)
 
     if nonnegative_ssim:
         ssim_per_channel = torch.relu(ssim_per_channel)
@@ -208,7 +210,8 @@ def batch_ssim(input, target,
         return ssim_map
 
 
-def ms_ssim(X, Y,
+def ms_ssim(X,
+            Y,
             data_range=255,
             win_size=11,
             win_sigma=1.5,
@@ -260,11 +263,7 @@ def ms_ssim(X, Y,
     levels = weights.shape[0]
     mcs = []
     for i in range(levels):
-        ssim_per_channel, cs = _ssim(X, Y,
-                                     win=win,
-                                     data_range=data_range,
-                                     size_average=False,
-                                     K=K)
+        ssim_per_channel, cs = _ssim(X, Y, win=win, data_range=data_range, size_average=False, K=K)
 
         if i < levels - 1:
             mcs.append(torch.relu(cs))
@@ -274,7 +273,7 @@ def ms_ssim(X, Y,
 
     ssim_per_channel = torch.relu(ssim_per_channel)  # (batch, channel)
     mcs_and_ssim = torch.stack(mcs + [ssim_per_channel], dim=0)  # (level, batch, channel)
-    ms_ssim_val = torch.prod(mcs_and_ssim ** weights.view(-1, 1, 1), dim=0)
+    ms_ssim_val = torch.prod(mcs_and_ssim**weights.view(-1, 1, 1), dim=0)
 
     if reduction == 'mean':
         return ms_ssim_val.mean()
@@ -283,6 +282,7 @@ def ms_ssim(X, Y,
 
 
 class SSIM(torch.nn.Module):
+
     def __init__(self,
                  data_range=255,
                  win_size=11,
@@ -311,7 +311,8 @@ class SSIM(torch.nn.Module):
         self.nonnegative_ssim = nonnegative_ssim
 
     def forward(self, X, Y):
-        return batch_ssim(X, Y,
+        return batch_ssim(X,
+                          Y,
                           data_range=self.data_range,
                           win=self.win,
                           K=self.K,
@@ -320,6 +321,7 @@ class SSIM(torch.nn.Module):
 
 
 class MS_SSIM(torch.nn.Module):
+
     def __init__(self,
                  data_range=255,
                  win_size=11,
@@ -347,7 +349,8 @@ class MS_SSIM(torch.nn.Module):
         self.K = K
 
     def forward(self, X, Y):
-        return ms_ssim(X, Y,
+        return ms_ssim(X,
+                       Y,
                        data_range=self.data_range,
                        win=self.win,
                        weights=self.weights,
@@ -356,15 +359,17 @@ class MS_SSIM(torch.nn.Module):
 
 
 class ThreeComponentSSIM(torch.nn.Module):
-    def __init__(self,
-                    data_range=255,
-                    win_size=11,
-                    win_sigma=1.5,
-                    channel=3,
-                    weights=None,
-                    K=(0.01, 0.03),
-                    reduction=None, multiscale=False, nonnegative_ssim=False):
 
+    def __init__(self,
+                 data_range=255,
+                 win_size=11,
+                 win_sigma=1.5,
+                 channel=3,
+                 weights=None,
+                 K=(0.01, 0.03),
+                 reduction=None,
+                 multiscale=False,
+                 nonnegative_ssim=False):
         r""" class for 3-Component SSIM
         Args:
             data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
@@ -402,25 +407,26 @@ class ThreeComponentSSIM(torch.nn.Module):
         http://utw10503.utweb.utexas.edu/publications/2009/cl_spie09.pdf
         """
         if self.multiscale:
-            SSIM_map = ms_ssim(X, Y,
-                    data_range=self.data_range,
-                    win=self.win,
-                    weights=self.weights,
-                    K=self.K,
-                    reduction=self.reduction)
+            SSIM_map = ms_ssim(X,
+                               Y,
+                               data_range=self.data_range,
+                               win=self.win,
+                               weights=self.weights,
+                               K=self.K,
+                               reduction=self.reduction)
         else:
-            SSIM_map = batch_ssim(X, Y,
-                        data_range=self.data_range,
-                        win=self.win,
-                        K=self.K,
-                        nonnegative_ssim=self.nonnegative_ssim,
-                        reduction=self.reduction)
-        
+            SSIM_map = batch_ssim(X,
+                                  Y,
+                                  data_range=self.data_range,
+                                  win=self.win,
+                                  K=self.K,
+                                  nonnegative_ssim=self.nonnegative_ssim,
+                                  reduction=self.reduction)
 
         X_grad = gradient_image(X)
         Y_grad = gradient_image(Y)
 
-        # SSIM_map changes shape due to convolution. Crop the values 
+        # SSIM_map changes shape due to convolution. Crop the values
         X_grad = X_grad[..., :SSIM_map.shape[-2], :SSIM_map.shape[-1]]
         Y_grad = Y_grad[..., :SSIM_map.shape[-2], :SSIM_map.shape[-1]]
 
@@ -428,10 +434,9 @@ class ThreeComponentSSIM(torch.nn.Module):
         th1 = 0.12 * gmax
         th2 = 0.06 * gmax
 
-        edge_mask = (X_grad > th1 ) | (Y_grad> th1)
+        edge_mask = (X_grad > th1) | (Y_grad > th1)
         smooth_mask = (X_grad < th2) & (Y_grad <= th1)
         texture_mask = ~(edge_mask | smooth_mask)
-
 
         edge_map = edge_mask * SSIM_map
         smooth_map = smooth_mask * SSIM_map
@@ -440,5 +445,3 @@ class ThreeComponentSSIM(torch.nn.Module):
         return .5 * edge_map[edge_mask != 0].mean() + \
                 .25 * smooth_map[smooth_mask != 0].mean() + \
                     .25 * texture_map[texture_mask != 0].mean()
-                
-

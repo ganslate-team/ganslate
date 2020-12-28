@@ -18,4 +18,3 @@ try:
     del os.environ['PASSWORD']
 except KeyError:
     pass
-

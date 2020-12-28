@@ -8,6 +8,7 @@ from midaGAN.utils import import_class_from_dirs_and_modules
 
 logger = logging.getLogger(__name__)
 
+
 def build_gan(conf):
     name = conf.gan.name
     import_locations = midaGAN.conf.IMPORT_LOCATIONS
