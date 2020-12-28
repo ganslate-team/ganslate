@@ -9,4 +9,4 @@ jobs:
     - name: run YAPF to test if python code is correctly formatted
       uses: AlexanderMelde/yapf-action@master
       with:
-        args: --verbose --based_on_style=google --column_limit=100
+        args: --verbose --style=/home/runner/work/midaGAN/setup.cfg
