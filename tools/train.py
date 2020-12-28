@@ -22,7 +22,7 @@ def main():
 
     conf = build_training_conf()
     environment.setup_logging_with_config(conf)
-    
+
     trainer = Trainer(conf)
     trainer.run()
 

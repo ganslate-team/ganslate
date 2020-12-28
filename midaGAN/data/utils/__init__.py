@@ -1,6 +1,6 @@
 # coding=utf-8
 # Copyright (c) midaGAN Contributors
-import random 
+import random
 import numpy as np
 
 from midaGAN.utils import sitk_utils
@@ -8,6 +8,7 @@ import logging
 from typing import Union
 
 logger = logging.getLogger(__name__)
+
 
 def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], original_path=None):
     """
@@ -31,7 +32,7 @@ def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], ori
         replacement_paths.remove(original_path)
 
     # Check if volume is smaller than patch size
-    
+
     if len(patch_size) == 3:
         fn = eval(f"sitk_utils.is_volume_smaller_than")
     elif len(patch_size) == 2:
@@ -45,14 +46,14 @@ def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], ori
             Volume path: {original_path}")
 
         logger.warning(f"Replacing with random choice from: {replacement_paths}")
-        
+
         if len(replacement_paths) == 0:
             return None
 
         # Load volume randomly from replacement paths
         path = random.choice(replacement_paths)
         logger.warning(f"Loading replacement scan from {path}")
-        volume = sitk_utils.load(path)  
+        volume = sitk_utils.load(path)
 
         # Remove current path from replacement paths
         replacement_paths.remove(path)
@@ -62,13 +63,13 @@ def size_invalid_check_and_replace(volume, patch_size, replacement_paths=[], ori
 
 def pad(index, volume):
     assert len(index) == len(volume.shape)
-    pad_width = [(0,0) for _ in range(len(index))]  # by default no padding
+    pad_width = [(0, 0) for _ in range(len(index))]  # by default no padding
 
     for dim in range(len(index)):
         if index[dim] > volume.shape[dim]:
             pad = index[dim] - volume.shape[dim]
             pad_per_side = pad // 2
-            pad_width[dim] = (pad_per_side, pad % 2 + pad_per_side)  
+            pad_width[dim] = (pad_per_side, pad % 2 + pad_per_side)
 
     return np.pad(volume, pad_width, 'constant', constant_values=volume.min())
 
@@ -84,6 +85,6 @@ def decollate(batch: Union[dict, list]):
     if isinstance(batch, list):
         batch = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in batch]
     elif isinstance(batch, dict):
-        batch = {k:v[0] if isinstance(v[0], str) else np.array(v) for k, v in batch.items()}
+        batch = {k: v[0] if isinstance(v[0], str) else np.array(v) for k, v in batch.items()}
 
     return batch

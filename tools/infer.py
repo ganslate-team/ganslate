@@ -15,6 +15,7 @@ from midaGAN.conf.builders import build_inference_conf
 from midaGAN.utils import communication, environment
 # -------------------------------------
 
+
 def main():
     communication.init_distributed()  # inits distributed mode if ran with torch.distributed.launch
 
@@ -23,6 +24,7 @@ def main():
 
     inferer = Inferer(conf)
     inferer.run()
+
 
 if __name__ == '__main__':
     main()

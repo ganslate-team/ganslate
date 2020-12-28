@@ -17,7 +17,6 @@ from midaGAN.nn.discriminators import build_D
 
 from midaGAN.nn.metrics.train_metrics import TrainingMetrics
 
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -67,12 +66,15 @@ class BaseGAN(ABC):
     def init_metrics(self):
         # Intialize training metrics
         self.training_metrics = TrainingMetrics(self.conf)
-    
+
+    def init_schedulers(self):
+        self.schedulers = [get_scheduler(optim, self.conf) for optim in self.optimizers.values()]
+
     def _specify_device(self):
         if torch.distributed.is_initialized():
             rank = communication.get_local_rank()
             return torch.device(f"cuda:{rank}")  # distributed GPU training
-        elif self.conf.use_cuda: 
+        elif self.conf.use_cuda:
             return torch.device('cuda:0')  # non-distributed GPU training
         else:
             return torch.device('cpu')
@@ -102,6 +104,9 @@ class BaseGAN(ABC):
             (3) Loads a checkpoint if continuing training or inferencing            
             (4) Applies parallelization to the model if possible
         """
+        assert 'G' or 'G_A' in self.networks.keys(), \
+            "The (main) generator has to be named `G` or `G_A`."
+
         # Initialize Generators and Discriminators
         self.init_networks()
 
@@ -110,18 +115,19 @@ class BaseGAN(ABC):
             self.init_criterions()
             self.init_optimizers()
             self.init_metrics()
-            self.schedulers = [get_scheduler(optimizer, self.conf) for optimizer in self.optimizers.values()]
+            self.init_schedulers()
         else:
             self.eval()
-            if len(self.networks.keys()) != 1: # TODO: any nicer way? look at infer() as well
-                raise ValueError("When inferring there should be only one network initialized - generator.")
-            
+            if len(self.networks.keys()) != 1:  # TODO: any nicer way? look at infer() as well
+                raise ValueError(
+                    "When inferring there should be only one network initialized - generator.")
+
         if self.conf.mixed_precision:
             self.convert_to_mixed_precision()
-        
+
         if self.conf.load_checkpoint:
             self.load_networks(self.conf.load_checkpoint.iter)
-        
+
         num_devices = int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
         if num_devices > 1:
             self.parallelize_networks()
@@ -151,15 +157,17 @@ class BaseGAN(ABC):
         """
         for name in self.networks.keys():
             if torch.distributed.is_initialized():
-                # if using batchnorm, broadcast_buffer=True will use batch stats from rank 0, 
+                # if using batchnorm, broadcast_buffer=True will use batch stats from rank 0,
                 # otherwise each process keeps its own stats
                 self.networks[name] = DistributedDataParallel(self.networks[name],
-                                                              device_ids=[self.device], 
+                                                              device_ids=[self.device],
                                                               output_device=self.device,
                                                               broadcast_buffers=False)
             elif self.conf.use_cuda and torch.cuda.device_count() > 0:
-                message = ("Multi-GPU runs must be launched in distributed mode using `torch.distributed.launch`."
-                           " Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID> to use a single GPU if multiple are present.")
+                message = (
+                    "Multi-GPU runs must be launched in distributed mode using `torch.distributed.launch`."
+                    " Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID> to use a single GPU if multiple are present."
+                )
                 raise RuntimeError(message)
 
     def convert_to_mixed_precision(self):
@@ -174,14 +182,16 @@ class BaseGAN(ABC):
                           but use a single global loss scale for all of them.
         """
         opt_level = self.conf.opt_level
-        networks = list(self.networks.values()) # fetch the networks
+        networks = list(self.networks.values())  # fetch the networks
 
         # initialize mixed precision on networks and, if training, on optimizers
         if self.is_train:
-            num_losses = len(self.networks) # each network has its own backward pass
+            num_losses = len(self.networks)  # each network has its own backward pass
             optimizers = list(self.optimizers.values())
-            networks, optimizers = amp.initialize(networks, optimizers, 
-                                                  opt_level=opt_level, num_losses=num_losses)
+            networks, optimizers = amp.initialize(networks,
+                                                  optimizers,
+                                                  opt_level=opt_level,
+                                                  num_losses=num_losses)
         else:
             networks = amp.initialize(networks, opt_level=opt_level)
 
@@ -220,7 +230,7 @@ class BaseGAN(ABC):
             checkpoint['amp'] = amp.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
-    
+
     def load_networks(self, iter_idx):
         """Load all the networks, optimizers and, if used, apex mixed precision's state_dict from the disk.
         Parameters:
@@ -229,31 +239,33 @@ class BaseGAN(ABC):
         checkpoint_path = Path(self.checkpoint_dir).resolve() / f"{iter_idx}_checkpoint.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.logger.info(f"Loaded the checkpoint from `{checkpoint_path}`")
-        
+
         # load networks
         for name in self.networks.keys():
             self.networks[name].load_state_dict(checkpoint[name])
 
-        # load amp state    
+        # load amp state
         # TODO: what about opt_level, does it matter if it's different from before?
         # TODO: what if trained per-loss loss-scale and now using global or vice versa? Just reset it, i.e. ignore the amp state_dict?
         if self.conf.mixed_precision:
             if "amp" not in checkpoint:
-                self.logger.warning("This checkpoint was not trained using mixed precision.") 
+                self.logger.warning("This checkpoint was not trained using mixed precision.")
             else:
                 amp.load_state_dict(checkpoint['amp'])
         else:
             if "amp" in checkpoint:
-                self.logger.warning("Loading a model trained with mixed precision without having initiliazed mixed precision")  # logger warning
-        
-        # load optimizers   
+                self.logger.warning("Loading a model trained with mixed precision "
+                                    "without having initiliazed mixed precision")
+
+        # load optimizers
         if self.is_train:
             if self.conf.load_checkpoint.reset_optimizers:
-                self.logger.info("Optimizers' state_dicts were not loaded. Optimizers starting from scratch.")
+                self.logger.info(
+                    "Optimizers' state_dicts were not loaded. Optimizers starting from scratch.")
             else:
                 self.logger.info("Optimizers' state_dicts are loaded from the checkpoint.")
-                self.optimizers['G'].load_state_dict(checkpoint['optimizer_G']) 
-                self.optimizers['D'].load_state_dict(checkpoint['optimizer_D']) 
+                self.optimizers['G'].load_state_dict(checkpoint['optimizer_G'])
+                self.optimizers['D'].load_state_dict(checkpoint['optimizer_D'])
 
     def set_requires_grad(self, networks, requires_grad=False):
         """Set requies_grad=False for all the networks to avoid unnecessary computations
@@ -273,40 +285,26 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
-        input = squeeze_z_axis_if_2D(input)
+        assert 'G' or 'G_A' in self.networks.keys(), \
+            "The network used for inference is either `G` or `G_A`."
 
-        if self.is_train:
-            raise ValueError("Inference cannot be done in training mode.")
+        generator = 'G' if 'G' in self.networks.keys() else 'G_A'
+
         with torch.no_grad():
-            generator = list(self.networks.keys())[0] # in inference mode only generator is defined # TODO: any nicer way 
+            input = squeeze_z_axis_if_2D(input)
             return self.networks[generator].forward(input)
-
-    def get_learning_rates(self):
-        """ Return current learning rates of both generator and discriminator"""
-        learning_rates = {}
-        learning_rates["lr_G"] = self.optimizers['G'].param_groups[0]['lr']
-        learning_rates["lr_D"] = self.optimizers['D'].param_groups[0]['lr']
-        return learning_rates 
-
-    def get_current_visuals(self):
-        return self.visuals
-        
-    def get_current_losses(self):
-        return self.losses
-
-    def get_current_metrics(self):
-        return self.metrics        
 
     def get_loggable_data(self):
         """Return data that is useful for tracking - learning rates, losses and visuals."""
-        return ( 
-            self.get_learning_rates(), self.get_current_losses(), 
-            self.get_current_visuals(), self.get_current_metrics()
-        )
+        learning_rates = {}
+        for name, optim in self.optimizers.items():
+            learning_rates[f"lr_{name}"] = optim.param_groups[0]['lr']
+
+        return learning_rates, self.losses, self.visuals, self.metrics
 
     def setup_loss_masking(self, mask_config):
         """
-        Setup masking!
+        Setup masking
         """
         self.enable_mask = False
 
@@ -320,7 +318,6 @@ class BaseGAN(ABC):
                 logger.warning("No valid operator match found, masking will be disabled!")
 
         logger.info(f"Masking values enabled: {self.enable_mask}")
-
 
     def mask_current_visuals(self):
         """
@@ -336,24 +333,23 @@ class BaseGAN(ABC):
         But since the sizes are more or less similar across different data instances, this should be okay for now!
         """
 
-
         # Type needs to be casted for mixed_precision
-    
+
         if self.enable_mask:
 
             mask_A = ~self.masking_operator(self.visuals['real_A'], self.masking_value)
             mask_B = ~self.masking_operator(self.visuals['real_B'], self.masking_value)
-            
+
             # Values dependent on real_A use mask_A
             for name in self.visual_names['A']:
-                if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                if self.visuals[name] is not None:  # Check if the visual is enabled for this run
                     cast_type = self.visuals[name].type()
                     self.masking_value = self.masking_value.type(cast_type)
                     self.visuals[name] = torch.where(mask_A, self.visuals[name], self.masking_value)
 
             # Values dependent on real_B use mask_B
             for name in self.visual_names['B']:
-                if self.visuals[name] is not None: # Check if the visual is enabled for this run
+                if self.visuals[name] is not None:  # Check if the visual is enabled for this run
                     cast_type = self.visuals[name].type()
                     self.masking_value = self.masking_value.type(cast_type)
                     self.visuals[name] = torch.where(mask_B, self.visuals[name], self.masking_value)

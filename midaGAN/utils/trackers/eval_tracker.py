@@ -13,8 +13,8 @@ from midaGAN.utils.trackers.wandb_tracker import WandbTracker
 from midaGAN.utils.trackers import visuals_to_combined_2d_grid
 
 
-
 class EvalTracker(BaseTracker):
+
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
@@ -37,14 +37,13 @@ class EvalTracker(BaseTracker):
 
     def _log_message(self, index, metrics):
         message = '\n' + 20 * '-' + ' '
-        message += f'(sample: {index})' 
-        message += ' ' + 20 * '-' +  '\n'
-            
+        message += f'(sample: {index})'
+        message += ' ' + 20 * '-' + '\n'
+
         for k, v in metrics.items():
             message += '%s: %.3f ' % (k, v)
 
         self.logger.info(message)
-
 
     def log_sample(self, train_index, index, visuals, metrics):
         """Parameters: # TODO: update this
@@ -53,9 +52,11 @@ class EvalTracker(BaseTracker):
         visuals = {k: v for k, v in visuals.items() if v is not None}
         metrics = {k: v for k, v in metrics.items() if v is not None}
 
-        metrics = communication.reduce(metrics, average=True, all_reduce=False) # reduce metrics (avg) and send to the process of rank 0
-        
-        self._log_message(self.iter_idx, metrics) 
+        metrics = communication.reduce(
+            metrics, average=True,
+            all_reduce=False)  # reduce metrics (avg) and send to the process of rank 0
+
+        self._log_message(self.iter_idx, metrics)
 
         if communication.get_local_rank() == 0:
             visuals = visuals_to_combined_2d_grid(visuals)
@@ -67,8 +68,7 @@ class EvalTracker(BaseTracker):
             if self.tensorboard:
                 self.tensorboard.log_iter(train_index, {}, {}, visuals, metrics, batch=index)
 
-
     def _save_image(self, visuals):
         name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"eval_images/{self.iter_idx}_{name}.png" 
-        torchvision.utils.save_image(image, file_path)             
+        file_path = Path(self.output_dir) / f"eval_images/{self.iter_idx}_{name}.png"
+        torchvision.utils.save_image(image, file_path)

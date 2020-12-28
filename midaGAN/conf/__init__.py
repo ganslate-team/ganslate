@@ -1,4 +1,3 @@
-
 import os
 import sys
 import logging
@@ -14,7 +13,6 @@ from midaGAN.conf.eval_config import EvalConfig
 
 from midaGAN.conf.base_configs import *
 
-
 logger = logging.getLogger(__name__)
 
 IMPORT_LOCATIONS = {
@@ -24,24 +22,28 @@ IMPORT_LOCATIONS = {
     "discriminator": [midaGAN.nn.discriminators],
 }
 
+
 def init_config(conf, config_class=TrainConfig):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 
-    # Run-specific config 
+    # Run-specific config
     if not isinstance(conf, DictConfig):
         conf = OmegaConf.load(str(conf))
 
     # Allows the framework to find user-defined, project-specific, dataset classes and their configs
     if conf.project_dir:
         IMPORT_LOCATIONS["dataset"].append(conf.project_dir)
-        logger.info(f"Project directory {conf.project_dir} added to path to allow imports of modules from it.")
+        logger.info(
+            f"Project directory {conf.project_dir} added to path to allow imports of modules from it."
+        )
 
     # Make yaml mergeable by instantiating the dataclasses
-    conf = instantiate_dataclasses_from_yaml(conf) 
-    
+    conf = instantiate_dataclasses_from_yaml(conf)
+
     # Merge default and run-specifig config
     return OmegaConf.merge(base_conf, conf)
+
 
 def instantiate_dataclasses_from_yaml(conf):
     """Goes through a config and instantiates the fields that are dataclasses. 
@@ -62,6 +64,7 @@ def instantiate_dataclasses_from_yaml(conf):
             OmegaConf.update(conf, key, OmegaConf.merge(dataclass, field), merge=False)
     return conf
 
+
 def init_dataclass(key, field):
     """Initialize a dataclass. Requires the field to have a "name" entry and a dataclass class
     whose destination can be found with IMPORT_LOCATIONS. Assumes that the class name is of
@@ -71,12 +74,14 @@ def init_dataclass(key, field):
     dataclass = import_class_from_dirs_and_modules(dataclass_name, IMPORT_LOCATIONS[key])
     return OmegaConf.structured(dataclass)
 
+
 def is_dataclass(key, field):
     """If a key is in the keys of IMPORT_LOCATIONS, it is a dataclass."""
     if isinstance(field, DictConfig):
         if key in IMPORT_LOCATIONS.keys():
             return True
     return False
+
 
 def get_all_conf_keys(conf):
     """Get all keys from a conf and order from them the deepest to the shallowest."""

@@ -1,9 +1,11 @@
 from pathlib import Path
 import json
 
+
 def mkdirs(*paths):
     for path in paths:
         Path(path).mkdir(parents=True, exist_ok=True)
+
 
 def make_dataset_of_files(root, extensions=['.npy']):
     """The root of dataset contains files of the given extension."""
@@ -21,10 +23,12 @@ def make_recursive_dataset_of_files(root, extensions=['.npy']):
         paths.extend([file for file in root.rglob(f"*{ext}")])
     return sorted(paths)
 
+
 def has_extension(file, extensions):
-    suffix = Path(file).suffixes 
+    suffix = Path(file).suffixes
     suffix = "".join(suffix)  # join necessary to get ".nii.gz" and similar suffixes properly
     return any(ext in suffix for ext in extensions)
+
 
 def make_dataset_of_directories(root, extensions=['.npy']):
     """The root of dataset contains folders for each data point. Each data point folder has to have
@@ -38,6 +42,7 @@ def make_dataset_of_directories(root, extensions=['.npy']):
     paths = [folder for folder in paths if has_files_with_extension(folder, extensions)]
     return sorted(paths)
 
+
 def has_files_with_extension(folder, extensions):
     for ext in extensions:
         if not ext.startswith("."):
@@ -46,6 +51,7 @@ def has_files_with_extension(folder, extensions):
         if files_in_folder:
             return True
     return False
+
 
 def load_json(file):
     with open(file, 'r') as f:

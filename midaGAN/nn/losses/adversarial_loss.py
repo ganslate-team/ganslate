@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class AdversarialLoss(nn.Module):
     """Define different GAN objectives.
     The AdversarialLoss class abstracts away the need to create the target label tensor

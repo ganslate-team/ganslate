@@ -37,29 +37,28 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
             ext = "." + ext
         partial_file_list = list(dataset_path.glob(f"**/*{ext}"))
         file_list.extend(partial_file_list)
-    
+
     # Go through all files and store the information into the dataframe
     for file in file_list:
         volume = sitk_load(str(file))
         num_slices = volume.GetSize()[2]
-        volume = sitk_get_tensor(volume) # because torch is used in dataloader to perform normalization
+        volume = sitk_get_tensor(
+            volume)  # because torch is used in dataloader to perform normalization
 
         # Add as many rows to dataframe as there are slices in the volume, along with the useful data
         rows = []
         for i in range(num_slices):
-            rows.append(
-                {
-                    'slice': i, 
-                    'volume_filename': str(file.relative_to(dataset_path)), 
-                    'volume_mean': float(volume.mean()), 
-                    'volume_std': float(volume.std()),
-                    'volume_min': float(volume.min()),
-                    'volume_max': float(volume.max()), 
-                    'volume_num_slices': int(num_slices),
-                    'slice_resolution': f"{volume.shape[1]}, {volume.shape[2]}"
-                }
-            )
-            
+            rows.append({
+                'slice': i,
+                'volume_filename': str(file.relative_to(dataset_path)),
+                'volume_mean': float(volume.mean()),
+                'volume_std': float(volume.std()),
+                'volume_min': float(volume.min()),
+                'volume_max': float(volume.max()),
+                'volume_num_slices': int(num_slices),
+                'slice_resolution': f"{volume.shape[1]}, {volume.shape[2]}"
+            })
+
         df = df.append(rows, ignore_index=True)
 
     if len(df) == 0:
@@ -67,7 +66,7 @@ def dataset_summary_for_2d_training(dataset_path, *extensions):
         return
 
     csv_path = dataset_path / 'dataset_summary.csv'
-    df.to_csv(csv_path, index=False) 
+    df.to_csv(csv_path, index=False)
     print(f'Dataset summary saved as { pathlib.Path(csv_path).absolute() }')
     resolution_info_for_padding_cropping_to_json(df, dataset_path)
     return df
@@ -88,10 +87,7 @@ def resolution_info_for_padding_cropping_to_json(df, outpath):
     x = [int(res.split(', ')[0]) for res in resolutions]
     y = [int(res.split(', ')[1]) for res in resolutions]
 
-    info = {
-        'biggest_x_y': (max(x), max(y)),
-        'smallest_x_y': (min(x), min(y))
-        }
+    info = {'biggest_x_y': (max(x), max(y)), 'smallest_x_y': (min(x), min(y))}
     with open(str(outpath / 'pad_crop_info.json'), "w") as outfile:
         json.dump(info, outfile)
     print(info)

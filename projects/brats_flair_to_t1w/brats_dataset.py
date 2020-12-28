@@ -18,9 +18,9 @@ from midaGAN.conf import BaseDatasetConfig
 
 @dataclass
 class BratsDatasetConfig(BaseDatasetConfig):
-    name:         str = "BratsDataset"
-    patch_size:   Tuple[int, int, int] = (32, 32, 32)
-    focal_region_proportion: float = 0    # Proportion of focal region size compared to original volume size
+    name: str = "BratsDataset"
+    patch_size: Tuple[int, int, int] = (32, 32, 32)
+    focal_region_proportion: float = 0  # Proportion of focal region size compared to original volume size
     source_sequence: str = "flair"
     target_sequence: str = "t1w"
 
@@ -28,10 +28,8 @@ class BratsDatasetConfig(BaseDatasetConfig):
 EXTENSIONS = ['.nii.gz']
 
 # MRI sequences z-axis indices in Brats
-SEQUENCE_MAP = {"flair": 0,
-                "t1w":   1,
-                "t1gd":  2,
-                "t2w":   3}
+SEQUENCE_MAP = {"flair": 0, "t1w": 1, "t1gd": 2, "t2w": 3}
+
 
 def get_mri_sequence(sitk_image, sequence_name):
     z_index = SEQUENCE_MAP[sequence_name.lower()]
@@ -47,6 +45,7 @@ def get_mri_sequence(sitk_image, sequence_name):
 
 
 class BratsDataset(Dataset):
+
     def __init__(self, conf):
         dir_brats = conf.dataset.root
         self.paths_brats = make_dataset_of_files(dir_brats, EXTENSIONS)
@@ -65,7 +64,7 @@ class BratsDataset(Dataset):
 
         path_A = self.paths_brats[index_A]
         path_B = self.paths_brats[index_B]
-        
+
         # load nrrd as SimpleITK objects
         A = sitk_utils.load(path_A)
         B = sitk_utils.load(path_B)
@@ -73,23 +72,23 @@ class BratsDataset(Dataset):
         A = get_mri_sequence(A, self.source_sequence)
         B = get_mri_sequence(B, self.target_sequence)
 
-        if (sitk_utils.is_volume_smaller_than(A, self.patch_size) 
-                or sitk_utils.is_volume_smaller_than(B, self.patch_size)):
+        if (sitk_utils.is_volume_smaller_than(A, self.patch_size) or
+                sitk_utils.is_volume_smaller_than(B, self.patch_size)):
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nA: {} \nB: {} \npatch_size: {}."\
                              .format(sitk_utils.get_size_zxy(A),
-                                     sitk_utils.get_size_zxy(B), 
+                                     sitk_utils.get_size_zxy(B),
                                      self.patch_size))
 
         A = sitk_utils.get_tensor(A)
         B = sitk_utils.get_tensor(B)
 
         # Extract patches
-        A, B = self.patch_sampler.get_patch_pair(A, B) 
+        A, B = self.patch_sampler.get_patch_pair(A, B)
         # Z-score normalization per volume
-        A = z_score_normalize(A, scale_to_range=(-1,1))
-        B = z_score_normalize(B, scale_to_range=(-1,1))
-        
+        A = z_score_normalize(A, scale_to_range=(-1, 1))
+        B = z_score_normalize(B, scale_to_range=(-1, 1))
+
         # Add channel dimension (1 = grayscale)
         A = A.unsqueeze(0)
         B = B.unsqueeze(0)
