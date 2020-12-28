@@ -225,20 +225,3 @@ class PiCycleGAN(BaseGAN):
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
-
-    def infer(self, input, direction='AB'):
-        if direction == "AB":
-            return super().infer(input)
-
-        elif direction == "BA":
-            input = squeeze_z_axis_if_2D(input)
-
-            if self.is_train:
-                raise ValueError("Inference cannot be done in training mode.")
-
-            with torch.no_grad():
-                generator = list(self.networks.keys())[0]
-                return self.networks[generator].forward(input, inverse=True)
-
-        else:
-            raise NotImplementedError(f"Direction specified as {direction}, which is unsupported")
