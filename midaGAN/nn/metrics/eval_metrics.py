@@ -1,6 +1,4 @@
-import torch
 # import midaGAN.nn.losses.ssim as ssim
-from midaGAN.nn.utils import reshape_to_4D_if_5D
 import numpy as np
 from typing import Optional
 

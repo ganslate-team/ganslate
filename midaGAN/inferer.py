@@ -1,13 +1,9 @@
-import os
 import logging
 
-import torch
-import numpy as np
 from monai.inferers import SlidingWindowInferer
 
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
-from midaGAN.utils import io
 from midaGAN.utils.trackers.inference_tracker import InferenceTracker
 
 from midaGAN.data.utils import decollate

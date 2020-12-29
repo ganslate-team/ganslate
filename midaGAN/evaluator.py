@@ -1,9 +1,6 @@
 import logging
-import os
 from pathlib import Path
 
-import numpy as np
-import torch
 from monai.inferers import SlidingWindowInferer
 
 from midaGAN.configs.utils import builders

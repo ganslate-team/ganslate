@@ -1,7 +1,5 @@
-import sys
 import logging
 
-from pathlib import Path
 from omegaconf import OmegaConf, DictConfig
 
 import midaGAN

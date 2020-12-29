@@ -8,9 +8,8 @@ from midaGAN.nn.losses.patch_nce import PatchNCELoss
 from midaGAN.nn.utils import init_net, get_network_device
 
 # Config imports
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Tuple
-from omegaconf import MISSING
 from midaGAN import configs
 
 

@@ -8,9 +8,7 @@ from midaGAN.data.utils.transforms import get_transform
 from midaGAN.utils.io import make_dataset_of_files
 
 # Config imports
-from typing import Tuple
-from dataclasses import dataclass, field
-from omegaconf import MISSING
+from dataclasses import dataclass
 from midaGAN import configs
 
 

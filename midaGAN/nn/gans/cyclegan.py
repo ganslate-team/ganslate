@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 
 import itertools
 
@@ -7,11 +6,9 @@ from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 # Config imports
-from dataclasses import dataclass, field
-from omegaconf import MISSING
+from dataclasses import dataclass
 from midaGAN import configs
 
 

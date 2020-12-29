@@ -1,6 +1,5 @@
 import random
 import numpy as np
-import torch
 
 from midaGAN.data.utils import pad
 
