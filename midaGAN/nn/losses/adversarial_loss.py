@@ -1,14 +1,15 @@
 import torch
 import torch.nn as nn
 
-class GANLoss(nn.Module):
+
+class AdversarialLoss(nn.Module):
     """Define different GAN objectives.
-    The GANLoss class abstracts away the need to create the target label tensor
+    The AdversarialLoss class abstracts away the need to create the target label tensor
     that has the same size as the input.
     """
 
     def __init__(self, gan_mode, target_real_label=1.0, target_fake_label=0.0):
-        """ Initialize the GANLoss class.
+        """ Initialize the AdversarialLoss class.
         Parameters:
             gan_mode (str) - - the type of GAN objective. It currently supports vanilla, lsgan, and wgangp.
             target_real_label (bool) - - label for a real image

@@ -1,0 +1,27 @@
+name: Python Code Quality Check
+on:
+  pull_request:
+    branches:
+      - master
+      
+jobs:
+  formatting-check:
+    name: Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: ricardochaves/python-lint@v1.3.0
+        with:
+          python-root-list: "midaGAN"
+          use-pylint: true
+          use-pycodestyle: false
+          use-flake8: false
+          use-black: false
+          use-mypy: true
+          use-isort: false
+          extra-pylint-options: ""
+          extra-pycodestyle-options: ""
+          extra-flake8-options: ""
+          extra-black-options: ""
+          extra-mypy-options: ""
+          extra-isort-options: ""

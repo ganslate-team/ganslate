@@ -10,20 +10,21 @@ from pathlib import Path
 
 import numpy as np
 import random
+import cv2
 
 import torch
 from omegaconf import OmegaConf
-
+import SimpleITK as sitk
 from midaGAN.utils import io, communication
 
-
 logger = logging.getLogger(__name__)
+
 
 def setup_logging_with_config(conf, debug=False):
     use_stdout = communication.get_local_rank() == 0 or debug
     log_level = 'INFO' if not debug else 'DEBUG'
 
-    if conf.gan.is_train:
+    if conf.is_train:
         output_dir = Path(conf.logging.checkpoint_dir).resolve()
         saving_to_message = f'Saving checkpoints, logs and config to: {output_dir}'
         filename = Path(output_dir) / 'training_log.txt'
@@ -41,18 +42,18 @@ def setup_logging_with_config(conf, debug=False):
     logger.info(f'Python version: {sys.version.strip()}')
     logger.info(f'PyTorch version: {torch.__version__}')  # noqa
     logger.info(f'CUDA {torch.version.cuda} - cuDNN {torch.backends.cudnn.version()}')
-    
+
     # These two useful if we decide to keep logs of all processes
-    #logger.info(f'Machine rank: {communication.get_rank()}.')  
-    #logger.info(f'Local rank: {communication.get_local_rank()}.') 
+    #logger.info(f'Machine rank: {communication.get_rank()}.')
+    #logger.info(f'Local rank: {communication.get_local_rank()}.')
 
     # -------------------------------------
     # TODO: this might come in handy later
     # if communication.get_local_rank() == 0:
-        # Want to prevent multiple workers from trying to write a directory
-        # This is required in the logging below
-        # pass
-        # experiment_dir.mkdir(parents=True, exist_ok=True)
+    # Want to prevent multiple workers from trying to write a directory
+    # This is required in the logging below
+    # pass
+    # experiment_dir.mkdir(parents=True, exist_ok=True)
     # communication.synchronize()  # Ensure folders are in place.
     # log_file = experiment_dir / f'log_{machine_rank}_{communication.get_local_rank()}.txt'
 
@@ -85,9 +86,7 @@ def setup_logging(use_stdout: Optional[bool] = True,
     root = logging.getLogger('')
     root.setLevel(log_level)
 
-    formatter = logging.Formatter(
-        "[%(asctime)s][%(name)s][%(levelname)s] - %(message)s"
-    )
+    formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
 
     if use_stdout:
         handler = logging.StreamHandler(sys.stdout)
@@ -113,3 +112,23 @@ def set_seed(seed=0):
     # https://pytorch.org/docs/stable/notes/randomness.html#cudnn
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+
+def threading_setup():
+    """
+    Sets max threads for SimpleITK and Opencv.
+    For numpy etc. set OMP_NUM_THREADS=1 as an env var while 
+    running the training script 
+    E.g 
+    OMP_NUM_THREADS=1 python tools/train.py ...
+    """
+    logger.warning("""
+    Max threads for SimpleITK and Opencv set to 1
+    For numpy etc. set OMP_NUM_THREADS=1 as an env var while 
+    running the training script 
+    E.g 
+    OMP_NUM_THREADS=1 python tools/train.py ...
+    """)
+    MAX_THREADS = 1
+    sitk.ProcessObject_SetGlobalDefaultNumberOfThreads(MAX_THREADS)
+    cv2.setNumThreads(MAX_THREADS)

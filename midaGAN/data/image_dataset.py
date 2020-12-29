@@ -16,18 +16,21 @@ from midaGAN.conf import BaseDatasetConfig
 
 @dataclass
 class ImageDatasetConfig(BaseDatasetConfig):
-    name:           str = "ImageDataset"
+    name: str = "ImageDataset"
     image_channels: int = 3
-    preprocess:     str = "resize_and_crop" # scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]'
-    load_size:      int = 286
-    crop_size:      int = 256
-    flip:           bool = True
-    
+    preprocess: str = "resize_and_crop"  # scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]'
+    load_size: int = 286
+    crop_size: int = 256
+    flip: bool = True
+
+
 EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
+
 class ImageDataset(Dataset):
+
     def __init__(self, conf):
-        
+
         self.dir_A = Path(conf.dataset.root) / 'A'
         self.dir_B = Path(conf.dataset.root) / 'B'
 
@@ -48,7 +51,7 @@ class ImageDataset(Dataset):
 
         A_img = Image.open(A_path).convert(self.rgb_or_grayscale)
         B_img = Image.open(B_path).convert(self.rgb_or_grayscale)
-        
+
         A = self.transform(A_img)
         B = self.transform(B_img)
 

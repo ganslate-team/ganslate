@@ -1,3 +1,5 @@
+![YAPF Formatting Check](https://github.com/Maastro-CDS-Imaging-Group/midaGAN/workflows/YAPF%20Formatting%20Check/badge.svg)
+
 
 
 ## Installation

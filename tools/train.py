@@ -1,5 +1,6 @@
 import sys
 import logging
+
 logger = logging.getLogger(__name__)
 
 # --------- midaGAN imports ----------
@@ -16,11 +17,12 @@ from midaGAN.utils import communication, environment
 
 
 def main():
+    environment.threading_setup()
     communication.init_distributed()  # inits distributed mode if ran with torch.distributed.launch
 
     conf = build_training_conf()
     environment.setup_logging_with_config(conf)
-    
+
     trainer = Trainer(conf)
     trainer.run()
 

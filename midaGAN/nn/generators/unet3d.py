@@ -7,11 +7,12 @@ from dataclasses import dataclass, field
 from omegaconf import MISSING
 from midaGAN.conf import BaseGeneratorConfig
 
+
 @dataclass
 class Unet3DConfig(BaseGeneratorConfig):
-    name:     str = 'Unet3D'
+    name: str = 'Unet3D'
     num_downs: int = 7
-    ngf:       int = 64
+    ngf: int = 64
     use_dropout = False
 
 
@@ -19,7 +20,7 @@ class Unet3D(nn.Module):
     """Create a Unet-based generator"""
 
     def __init__(self, in_channels, num_downs, norm_type, ngf=64, use_dropout=False):
-        out_channels = in_channels 
+        out_channels = in_channels
         """Construct a Unet generator
         Parameters:
             in_channels (int)  -- the number of channels in input images
@@ -32,14 +33,41 @@ class Unet3D(nn.Module):
         """
         super().__init__()
         # construct unet structure
-        unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, in_channels=None, submodule=None, norm_type=norm_type, innermost=True)  # add the innermost layer
-        for i in range(num_downs - 5):          # add intermediate layers with ngf * 8 filters
-            unet_block = UnetSkipConnectionBlock(ngf * 8, ngf * 8, in_channels=None, submodule=unet_block, norm_type=norm_type, use_dropout=use_dropout)
+        unet_block = UnetSkipConnectionBlock(ngf * 8,
+                                             ngf * 8,
+                                             in_channels=None,
+                                             submodule=None,
+                                             norm_type=norm_type,
+                                             innermost=True)  # add the innermost layer
+        for i in range(num_downs - 5):  # add intermediate layers with ngf * 8 filters
+            unet_block = UnetSkipConnectionBlock(ngf * 8,
+                                                 ngf * 8,
+                                                 in_channels=None,
+                                                 submodule=unet_block,
+                                                 norm_type=norm_type,
+                                                 use_dropout=use_dropout)
         # gradually reduce the number of filters from ngf * 8 to ngf
-        unet_block = UnetSkipConnectionBlock(ngf * 4, ngf * 8, in_channels=None, submodule=unet_block, norm_type=norm_type)
-        unet_block = UnetSkipConnectionBlock(ngf * 2, ngf * 4, in_channels=None, submodule=unet_block, norm_type=norm_type)
-        unet_block = UnetSkipConnectionBlock(ngf, ngf * 2, in_channels=None, submodule=unet_block, norm_type=norm_type)
-        self.model = UnetSkipConnectionBlock(out_channels, ngf, in_channels=in_channels, submodule=unet_block, outermost=True, norm_type=norm_type)  # add the outermost layer
+        unet_block = UnetSkipConnectionBlock(ngf * 4,
+                                             ngf * 8,
+                                             in_channels=None,
+                                             submodule=unet_block,
+                                             norm_type=norm_type)
+        unet_block = UnetSkipConnectionBlock(ngf * 2,
+                                             ngf * 4,
+                                             in_channels=None,
+                                             submodule=unet_block,
+                                             norm_type=norm_type)
+        unet_block = UnetSkipConnectionBlock(ngf,
+                                             ngf * 2,
+                                             in_channels=None,
+                                             submodule=unet_block,
+                                             norm_type=norm_type)
+        self.model = UnetSkipConnectionBlock(out_channels,
+                                             ngf,
+                                             in_channels=in_channels,
+                                             submodule=unet_block,
+                                             outermost=True,
+                                             norm_type=norm_type)  # add the outermost layer
 
     def forward(self, input):
         """Standard forward"""
@@ -52,8 +80,15 @@ class UnetSkipConnectionBlock(nn.Module):
         |-- downsampling -- |submodule| -- upsampling --|
     """
 
-    def __init__(self, outer_nc, inner_nc, norm_type, in_channels=None,
-                 submodule=None, outermost=False, innermost=False, use_dropout=False):
+    def __init__(self,
+                 outer_nc,
+                 inner_nc,
+                 norm_type,
+                 in_channels=None,
+                 submodule=None,
+                 outermost=False,
+                 innermost=False,
+                 use_dropout=False):
         """Construct a Unet submodule with skip connections.
         Parameters:
             outer_nc (int) -- the number of filters in the outer conv layer
@@ -73,31 +108,39 @@ class UnetSkipConnectionBlock(nn.Module):
 
         if in_channels is None:
             in_channels = outer_nc
-        downconv = nn.Conv3d(in_channels, inner_nc, kernel_size=4,
-                             stride=2, padding=1, bias=use_bias)
+        downconv = nn.Conv3d(in_channels,
+                             inner_nc,
+                             kernel_size=4,
+                             stride=2,
+                             padding=1,
+                             bias=use_bias)
         downrelu = nn.LeakyReLU(0.2)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU()
         upnorm = norm_layer(outer_nc)
 
         if outermost:
-            upconv = nn.ConvTranspose3d(inner_nc * 2, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1)
+            upconv = nn.ConvTranspose3d(inner_nc * 2, outer_nc, kernel_size=4, stride=2, padding=1)
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
         elif innermost:
-            upconv = nn.ConvTranspose3d(inner_nc, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1, bias=use_bias)
+            upconv = nn.ConvTranspose3d(inner_nc,
+                                        outer_nc,
+                                        kernel_size=4,
+                                        stride=2,
+                                        padding=1,
+                                        bias=use_bias)
             down = [downrelu, downconv]
             up = [uprelu, upconv, upnorm]
             model = down + up
         else:
-            upconv = nn.ConvTranspose3d(inner_nc * 2, outer_nc,
-                                        kernel_size=4, stride=2,
-                                        padding=1, bias=use_bias)
+            upconv = nn.ConvTranspose3d(inner_nc * 2,
+                                        outer_nc,
+                                        kernel_size=4,
+                                        stride=2,
+                                        padding=1,
+                                        bias=use_bias)
             down = [downrelu, downconv, downnorm]
             up = [uprelu, upconv, upnorm]
 
@@ -111,6 +154,5 @@ class UnetSkipConnectionBlock(nn.Module):
     def forward(self, x):
         if self.outermost:
             return self.model(x)
-        else:   # add skip connections
+        else:  # add skip connections
             return torch.cat([x, self.model(x)], 1)
-

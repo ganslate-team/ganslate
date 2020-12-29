@@ -1,3 +1,4 @@
+from typing import Tuple
 import torch
 import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
@@ -10,20 +11,22 @@ from midaGAN.conf import BaseDiscriminatorConfig
 
 @dataclass
 class PatchGAN2DConfig(BaseDiscriminatorConfig):
-    name:        str = "PatchGAN2D"
+    name: str = "PatchGAN2D"
     in_channels: int = 1
-    ndf:         int = 64
-    n_layers:    int = 3
+    ndf: int = 64
+    n_layers: int = 3
+    kernel_size: Tuple[int] = (4, 4)
 
 
 class PatchGAN2D(nn.Module):
-    def __init__(self, in_channels, ndf, n_layers, norm_type):
+
+    def __init__(self, in_channels, ndf, n_layers, kernel_size, norm_type):
         super().__init__()
-        
+
         norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 
-        kw = 4
+        kw = kernel_size
         padw = 1
         sequence = [
             # TODO: instead of 1, give image_channel
@@ -37,8 +40,12 @@ class PatchGAN2D(nn.Module):
             nf_mult_prev = nf_mult
             nf_mult = min(2**n, 8)
             sequence += [
-                nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
-                          kernel_size=kw, stride=2, padding=padw, bias=use_bias),
+                nn.Conv2d(ndf * nf_mult_prev,
+                          ndf * nf_mult,
+                          kernel_size=kw,
+                          stride=2,
+                          padding=padw,
+                          bias=use_bias),
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
@@ -46,8 +53,12 @@ class PatchGAN2D(nn.Module):
         nf_mult_prev = nf_mult
         nf_mult = min(2**n_layers, 8)
         sequence += [
-            nn.Conv2d(ndf * nf_mult_prev, ndf * nf_mult,
-                      kernel_size=kw, stride=1, padding=padw, bias=use_bias),
+            nn.Conv2d(ndf * nf_mult_prev,
+                      ndf * nf_mult,
+                      kernel_size=kw,
+                      stride=1,
+                      padding=padw,
+                      bias=use_bias),
             norm_layer(ndf * nf_mult),
             nn.LeakyReLU(0.2, True)
         ]

@@ -1,6 +1,6 @@
-
 from PIL import Image
 import torchvision.transforms as transforms
+
 
 def get_transform(conf, method=Image.BICUBIC):
     preprocess = conf.dataset.preprocess
@@ -12,21 +12,24 @@ def get_transform(conf, method=Image.BICUBIC):
     transform_list = []
 
     if 'resize' in preprocess:
-        osize = [load_size, load_size] # TODO: make it a tuple from config
+        osize = [load_size, load_size]  # TODO: make it a tuple from config
         transform_list.append(transforms.Resize(osize, method))
 
     elif 'scale_width' in preprocess:
-        transform_list.append(transforms.Lambda(lambda img: __scale_width(img, load_size, crop_size, method)))
-        
+        transform_list.append(
+            transforms.Lambda(lambda img: __scale_width(img, load_size, crop_size, method)))
+
     elif 'scale_shortside' in preprocess:
-        transform_list.append(transforms.Lambda(lambda img: __scale_shortside(img, load_size, crop_size, method)))
+        transform_list.append(
+            transforms.Lambda(lambda img: __scale_shortside(img, load_size, crop_size, method)))
 
     if 'zoom' in preprocess:
-        transform_list.append(transforms.Lambda(lambda img: __random_zoom(img, load_size, crop_size, method)))
-        
+        transform_list.append(
+            transforms.Lambda(lambda img: __random_zoom(img, load_size, crop_size, method)))
+
     if 'crop' in preprocess:
         transform_list.append(transforms.RandomCrop(crop_size))
-        
+
     # if 'patch' in preprocess:
     #     transform_list.append(transforms.Lambda(lambda img: __patch(img, params['patch_index'], crop_size)))
 
@@ -41,13 +44,13 @@ def get_transform(conf, method=Image.BICUBIC):
 
     transform_list += [transforms.ToTensor()]
 
-    if image_channels == 1: # TODO: remove convert and use image_channels
+    if image_channels == 1:  # TODO: remove convert and use image_channels
         transform_list += [transforms.Normalize((0.5,), (0.5,))]
     elif image_channels == 3:
         transform_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     else:
         raise ValueError("Transforms support `image_channels` set to 1 or 3.")
-       
+
     return transforms.Compose(transform_list)
 
 

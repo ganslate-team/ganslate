@@ -9,7 +9,7 @@ import midaGAN
 from midaGAN.utils.io import make_dataset_of_directories, load_json
 from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.register_truncate import truncate_CT_to_scope_of_CBCT
+from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -25,13 +25,15 @@ EXTENSIONS = ['.nrrd']
 
 @dataclass
 class CBCTtoCTDatasetConfig(BaseDatasetConfig):
-    name:                    str = "CBCTtoCTDataset"
-    patch_size:              Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
-    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
-    focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
+    name: str = "CBCTtoCTDataset"
+    patch_size: Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
+    hounsfield_units_range: Tuple[int, int] = field(
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
+    focal_region_proportion: float = 0.2  # Proportion of focal region size compared to original volume size
 
 
 class CBCTtoCTDataset(Dataset):
+
     def __init__(self, conf):
         dir_CBCT = Path(conf.dataset.root) / 'CBCT'
         dir_CT = Path(conf.dataset.root) / 'CT'
@@ -53,24 +55,27 @@ class CBCTtoCTDataset(Dataset):
 
         path_CBCT = Path(self.paths_CBCT[index_CBCT]) / 'CT.nrrd'
         path_CT = Path(self.paths_CT[index_CT]) / 'CT.nrrd'
-        
+
         # load nrrd as SimpleITK objects
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
 
         # TODO: make a function
-        if (sitk_utils.is_volume_smaller_than(CBCT, self.patch_size) 
-                or sitk_utils.is_volume_smaller_than(CT, self.patch_size)):
+        if (sitk_utils.is_volume_smaller_than(CBCT, self.patch_size) or
+                sitk_utils.is_volume_smaller_than(CT, self.patch_size)):
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nCBCT: {} \nCT: {} \npatch_size: {}."\
                              .format(sitk_utils.get_size_zxy(CBCT),
-                                     sitk_utils.get_size_zxy(CT), 
+                                     sitk_utils.get_size_zxy(CT),
                                      self.patch_size))
 
-	    # limit CT so that it only contains part of the body shown in CBCT
+
+# limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size):
-            logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
+            logger.info(
+                "Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume."
+            )
             del CT_truncated
         else:
             CT = CT_truncated
@@ -79,7 +84,7 @@ class CBCTtoCTDataset(Dataset):
         CT = sitk_utils.get_tensor(CT)
 
         # Extract patches
-        CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT) 
+        CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
 
         # Limits the lowest and highest HU unit
         CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
@@ -101,11 +106,13 @@ class CBCTtoCTDataset(Dataset):
 
 @dataclass
 class CBCTtoCTInferenceDatasetConfig(BaseDatasetConfig):
-    name:                    str = "CBCTtoCTInferenceDataset"
-    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
-    
+    name: str = "CBCTtoCTInferenceDataset"
+    hounsfield_units_range: Tuple[int, int] = field(
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
+
 
 class CBCTtoCTInferenceDataset(Dataset):
+
     def __init__(self, conf):
         self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
         self.num_datapoints = len(self.paths)
@@ -116,10 +123,7 @@ class CBCTtoCTInferenceDataset(Dataset):
         path = str(Path(self.paths[index]) / 'CT.nrrd')
         # load nrrd as SimpleITK objects
         volume = sitk_utils.load(path)
-        metadata = (path, 
-                    volume.GetOrigin(), 
-                    volume.GetSpacing(), 
-                    volume.GetDirection(),
+        metadata = (path, volume.GetOrigin(), volume.GetSpacing(), volume.GetDirection(),
                     sitk_utils.get_npy_dtype(volume))
 
         volume = sitk_utils.get_tensor(volume)
@@ -138,7 +142,7 @@ class CBCTtoCTInferenceDataset(Dataset):
     def save(self, tensor, metadata, output_dir):
         tensor = tensor.squeeze()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
-        
+
         datapoint_path, origin, spacing, direction, dtype = metadata
         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)
 
@@ -147,7 +151,3 @@ class CBCTtoCTInferenceDataset(Dataset):
         save_path = Path(output_dir) / Path(datapoint_name).with_suffix('.nrrd')
 
         sitk_utils.write(sitk_image, save_path)
-        
-
-
-

@@ -24,14 +24,17 @@ EXTENSIONS = ['.nrrd']
 
 @dataclass
 class CBCTtoCT2DDatasetConfig(BaseDatasetConfig):
-    name:                    str = "CBCTtoCTDataset"
-    load_size:               int = 256
-    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
-    focal_region_proportion: float = 0.2    # Proportion of focal region size compared to original volume size
-    enable_cache:            bool = False
-    image_channels:          int = 1
+    name: str = "CBCTtoCTDataset"
+    load_size: int = 256
+    hounsfield_units_range: Tuple[int, int] = field(
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
+    focal_region_proportion: float = 0.2  # Proportion of focal region size compared to original volume size
+    enable_cache: bool = False
+    image_channels: int = 1
+
 
 class CBCTtoCT2DDataset(Dataset):
+
     def __init__(self, conf):
         dir_CBCT = Path(conf.dataset.root) / 'CBCT'
         dir_CT = Path(conf.dataset.root) / 'CT'
@@ -44,11 +47,10 @@ class CBCTtoCT2DDataset(Dataset):
         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
 
         focal_region_proportion = conf.dataset.focal_region_proportion
-        self.patch_size = np.array([conf.dataset.load_size]*2)
+        self.patch_size = np.array([conf.dataset.load_size] * 2)
         self.slice_sampler = SliceSampler(self.patch_size, focal_region_proportion)
         self.conf = conf
         self.data_cache = {}
-
 
     def add_to_cache(self, path, data):
         self.data_cache[path] = data
@@ -62,7 +64,7 @@ class CBCTtoCT2DDataset(Dataset):
 
         path_CBCT = Path(self.paths_CBCT[index_CBCT]) / 'CT.nrrd'
         path_CT = Path(self.paths_CT[index_CT]) / 'CT.nrrd'
-        
+
         # load nrrd as SimpleITK objects
 
         if self.conf.dataset.enable_cache:
@@ -85,7 +87,7 @@ class CBCTtoCT2DDataset(Dataset):
         CT = sitk_utils.get_npy(CT)
 
         # Extract patches
-        CBCT_slice, CT_slice = self.slice_sampler.get_slice_pair(CBCT, CT) 
+        CBCT_slice, CT_slice = self.slice_sampler.get_slice_pair(CBCT, CT)
 
         CBCT_slice = torch.Tensor(CBCT_slice)
         CT_slice = torch.Tensor(CT_slice)
@@ -112,7 +114,6 @@ class CBCTtoCT2DDataset(Dataset):
 # class CBCTtoCT2DInferenceDatasetConfig(BaseDatasetConfig):
 #     name:                    str = "CBCTtoCTInferenceDataset"
 #     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
-    
 
 # class CBCTtoCT2DInferenceDataset(Dataset):
 #     def __init__(self, conf):
@@ -125,9 +126,9 @@ class CBCTtoCT2DDataset(Dataset):
 #         path = str(Path(self.paths[index]) / 'CT.nrrd')
 #         # load nrrd as SimpleITK objects
 #         volume = sitk_utils.load(path)
-#         metadata = (path, 
-#                     volume.GetOrigin(), 
-#                     volume.GetSpacing(), 
+#         metadata = (path,
+#                     volume.GetOrigin(),
+#                     volume.GetSpacing(),
 #                     volume.GetDirection(),
 #                     sitk_utils.get_npy_dtype(volume))
 
@@ -147,7 +148,7 @@ class CBCTtoCT2DDataset(Dataset):
 #     def save(self, tensor, metadata, output_dir):
 #         tensor = tensor.squeeze()
 #         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
-        
+
 #         datapoint_path, origin, spacing, direction, dtype = metadata
 #         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)
 
@@ -156,7 +157,3 @@ class CBCTtoCT2DDataset(Dataset):
 #         save_path = Path(output_dir) / Path(datapoint_name).with_suffix('.nrrd')
 
 #         sitk_utils.write(sitk_image, save_path)
-        
-
-
-
