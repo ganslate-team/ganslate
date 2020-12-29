@@ -18,7 +18,7 @@ from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSam
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseDatasetConfig
+from midaGAN import configs
 
 DEBUG = False
 
@@ -33,7 +33,7 @@ EXTENSIONS = ['.nrrd']
 
 
 @dataclass
-class CBCTtoCTDatasetConfig(BaseDatasetConfig):
+class CBCTtoCTDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTDataset"
     patch_size: Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
     hounsfield_units_range: Tuple[int, int] = field(
@@ -162,7 +162,7 @@ class CBCTtoCTDataset(Dataset):
 
 
 @dataclass
-class CBCTtoCTInferenceDatasetConfig(BaseDatasetConfig):
+class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTInferenceDataset"
     hounsfield_units_range: Tuple[int, int] = field(
         default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
@@ -286,7 +286,7 @@ class CBCTtoCTInferenceDataset(Dataset):
 
 
 @dataclass
-class CBCTtoCTEvalDatasetConfig(BaseDatasetConfig):
+class CBCTtoCTEvalDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTEvalDataset"
     hounsfield_units_range: Tuple[int, int] = field(
         default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range

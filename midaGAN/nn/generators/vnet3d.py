@@ -11,13 +11,13 @@ from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, ge
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseGeneratorConfig
+from midaGAN import configs
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class Vnet3DConfig(BaseGeneratorConfig):
+class Vnet3DConfig(configs.base.BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
     name: str = "Vnet3D"
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]

@@ -7,11 +7,11 @@ from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseGeneratorConfig
+from midaGAN import configs
 
 
 @dataclass
-class Resnet3DConfig(BaseGeneratorConfig):
+class Resnet3DConfig(configs.base.BaseGeneratorConfig):
     name: str = 'Resnet3D'
     in_channels: int = 1
     n_residual_blocks: int = 9

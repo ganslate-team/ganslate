@@ -12,11 +12,11 @@ from midaGAN.nn.utils import squeeze_z_axis_if_2D
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseGANConfig, BaseOptimizerConfig
+from midaGAN import configs
 
 
 @dataclass
-class OptimizerConfig(BaseOptimizerConfig):
+class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_A: float = 10.0
     lambda_B: float = 10.0
     lambda_identity: float = 0
@@ -26,7 +26,7 @@ class OptimizerConfig(BaseOptimizerConfig):
 
 
 @dataclass
-class CycleGANConfig(BaseGANConfig):
+class CycleGANConfig(configs.base.BaseGANConfig):
     """CycleGAN"""
     name: str = "CycleGAN"
     pool_size: int = 50

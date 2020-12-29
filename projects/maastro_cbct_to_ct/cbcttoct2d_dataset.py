@@ -15,7 +15,7 @@ from midaGAN.data.utils.slice_sampler import SliceSampler
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseDatasetConfig
+from midaGAN import configs
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ EXTENSIONS = ['.nrrd']
 
 
 @dataclass
-class CBCTtoCT2DDatasetConfig(BaseDatasetConfig):
+class CBCTtoCT2DDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTDataset"
     load_size: int = 256
     hounsfield_units_range: Tuple[int, int] = field(
@@ -111,7 +111,7 @@ class CBCTtoCT2DDataset(Dataset):
 
 
 # @dataclass
-# class CBCTtoCT2DInferenceDatasetConfig(BaseDatasetConfig):
+# class CBCTtoCT2DInferenceDatasetConfig(configs.base.BaseDatasetConfig):
 #     name:                    str = "CBCTtoCTInferenceDataset"
 #     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
 

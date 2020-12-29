@@ -11,7 +11,7 @@ except ImportError:
     import midaGAN
 
 #from midaGAN import configs
-from midaGAN.configs.utils import builders
+from midaGAN import configs
 from midaGAN.trainer import Trainer
 from midaGAN.utils import communication, environment
 
@@ -20,7 +20,7 @@ def main():
     environment.threading_setup()
     communication.init_distributed()  # inits distributed mode if ran with torch.distributed.launch
 
-    conf = builders.build_training_conf()
+    conf = configs.utils.builders.build_training_conf()
     environment.setup_logging_with_config(conf)
 
     trainer = Trainer(conf)

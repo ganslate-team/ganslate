@@ -11,11 +11,11 @@ from midaGAN.utils.io import make_dataset_of_files
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseDatasetConfig
+from midaGAN import configs
 
 
 @dataclass
-class ImageDatasetConfig(BaseDatasetConfig):
+class ImageDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "ImageDataset"
     image_channels: int = 3
     preprocess: str = "resize_and_crop"  # scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]'

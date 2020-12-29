@@ -9,13 +9,13 @@ from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseGeneratorConfig
+from midaGAN import configs
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class Vnet2DConfig(BaseGeneratorConfig):
+class Vnet2DConfig(configs.base.BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
     name: str = "Vnet2D"
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]

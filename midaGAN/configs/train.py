@@ -1,7 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.configs import base_configs, common_configs, eval_config
+from midaGAN import configs
 
 
 @dataclass
@@ -23,7 +23,7 @@ class LoggingConfig:
     log_freq: int = 50
     checkpoint_freq: int = 2000
     tensorboard: bool = False
-    wandb: Optional[common_configs.WandbConfig] = None
+    wandb: Optional[configs.common.WandbConfig] = None
 
 
 @dataclass
@@ -40,7 +40,7 @@ class TrainMetricConfig:
 
 
 @dataclass
-class TrainConfig(base_configs.BaseConfig):
+class TrainConfig(configs.base.BaseConfig):
     # TODO: add git hash? will help when re-running or inferencing old runs
     
     is_train: bool = True
@@ -56,4 +56,4 @@ class TrainConfig(base_configs.BaseConfig):
 
     # Separate evaluation config that will be run with a full-volume dataloader.
     # Can be used for intermittent SSIM, dose calcs etc
-    evaluation: Optional[eval_config.EvalConfig] = None
+    evaluation: Optional[configs.evaluation.EvalConfig] = None

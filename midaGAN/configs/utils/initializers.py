@@ -18,7 +18,7 @@ IMPORT_LOCATIONS = {
 }
 
 
-def init_config(conf, config_class=config.train.TrainConfig):
+def init_config(conf, config_class=configs.train.TrainConfig):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 

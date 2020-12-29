@@ -12,11 +12,11 @@ from midaGAN.utils import sitk_utils, io
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseDatasetConfig
+from midaGAN import configs
 
 
 @dataclass
-class SliceBasedDatasetConfig(BaseDatasetConfig):
+class SliceBasedDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "SliceBasedDataset"
     image_channels: int = 1  # Number of image channels (1 for grayscale, 3 for RGB)
 

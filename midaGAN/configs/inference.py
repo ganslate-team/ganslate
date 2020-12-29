@@ -1,7 +1,7 @@
 from typing import Tuple, Optional
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.configs import base_configs
+from midaGAN import configs
 
 
 @dataclass
@@ -25,7 +25,7 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class InferenceConfig(base_configs.BaseConfig):
+class InferenceConfig(configs.base.BaseConfig):
     is_train: bool = False  # Training mode is False for framework
     batch_size: int = 1
     load_checkpoint: LoadCheckpointConfig = LoadCheckpointConfig()

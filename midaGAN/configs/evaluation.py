@@ -1,14 +1,14 @@
 from typing import Optional, Tuple
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.configs import base_configs, common_configs
+from midaGAN import configs
 
 
 @dataclass
 class LoggingConfig:
     inference_dir: str = MISSING  # Path where the inference will store the results
     tensorboard: bool = False
-    wandb: Optional[common_configs.WandbConfig] = None
+    wandb: Optional[configs.common.WandbConfig] = None
 
 
 @dataclass
@@ -41,4 +41,4 @@ class EvalConfig:
     samples: int = 4  # Number of samples from the data to run evaluation for
     sliding_window: Optional[SlidingWindowConfig] = None
     logging: LoggingConfig = LoggingConfig()
-    dataset: base_configs.BaseDatasetConfig = MISSING
+    dataset: configs.base.BaseDatasetConfig = MISSING

@@ -11,11 +11,11 @@ from midaGAN.nn.utils import init_net, get_network_device
 from dataclasses import dataclass, field
 from typing import Tuple
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseGANConfig, BaseOptimizerConfig
+from midaGAN import configs
 
 
 @dataclass
-class OptimizerConfig(BaseOptimizerConfig):
+class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_adv: float = 1  # weight for Adversarial loss： Adv(G(X))
     lambda_nce: float = 1  # weight for NCE loss: NCE(G(X), X)
     nce_idt: bool = True  # use NCE loss for identity mapping: NCE(G(Y), Y))
@@ -23,7 +23,7 @@ class OptimizerConfig(BaseOptimizerConfig):
 
 
 @dataclass
-class CUTConfig(BaseGANConfig):
+class CUTConfig(configs.base.BaseGANConfig):
     """Contrastive Unpaired Translation (CUT)"""
     name: str = "CUT"
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)  # compute NCE loss on which layers

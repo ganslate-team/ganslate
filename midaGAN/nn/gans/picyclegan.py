@@ -12,7 +12,7 @@ from midaGAN.nn.utils import squeeze_z_axis_if_2D
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.configs.base_configs import BaseGANConfig
+from midaGAN import configs
 
 from midaGAN.nn.gans import cyclegan
 
@@ -23,7 +23,7 @@ class OptimizerConfig(cyclegan.OptimizerConfig):
 
 
 @dataclass
-class PiCycleGANConfig(BaseGANConfig):
+class PiCycleGANConfig(configs.base.BaseGANConfig):
     """Partially-invertible CycleGAN"""
     name: str = "PiCycleGAN"
     pool_size: int = 50

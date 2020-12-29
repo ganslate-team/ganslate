@@ -12,7 +12,7 @@ def build_network_by_role(role, conf, device):
     assert role in ['discriminator', 'generator']
 
     name = conf.gan[role].name
-    import_locations = midaGAN.configs.IMPORT_LOCATIONS
+    import_locations = midaGAN.configs.utils.initializers.IMPORT_LOCATIONS
     network_class = import_class_from_dirs_and_modules(name, import_locations[role])
 
     network_args = dict(conf.gan[role])
