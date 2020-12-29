@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from abc import ABC, abstractmethod
-from collections import OrderedDict
 import logging
 
 import torch
@@ -85,17 +84,14 @@ class BaseGAN(ABC):
         Parameters:
             input (dict) -- a pair of data samples from domain A and domain B.
         """
-        pass
 
     @abstractmethod
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
-        pass
 
     @abstractmethod
     def optimize_parameters(self):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
-        pass
 
     def setup(self):
         """Set up a GAN model. Does the following:

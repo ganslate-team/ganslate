@@ -1,3 +1,4 @@
-__all__ = ["discriminators", "gans", "generators", "losses"]
-
-from . import *
+import midaGAN.nn.discriminators
+import midaGAN.nn.gans
+import midaGAN.nn.generators
+import midaGAN.nn.losses

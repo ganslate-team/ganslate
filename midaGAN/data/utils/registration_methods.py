@@ -1,5 +1,4 @@
 import SimpleITK as sitk
-from SimpleITK.SimpleITK import Not
 from numpy import mean
 from itertools import product
 import logging

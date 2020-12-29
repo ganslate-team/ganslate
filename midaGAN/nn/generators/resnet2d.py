@@ -1,17 +1,13 @@
-import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
 # Config imports
-from dataclasses import dataclass, field
-from omegaconf import MISSING
-from midaGAN.conf import BaseGeneratorConfig
+from dataclasses import dataclass
+from midaGAN import configs
 
 
 @dataclass
-class Resnet2DConfig(BaseGeneratorConfig):
+class Resnet2DConfig(configs.base.BaseGeneratorConfig):
     name: str = 'Resnet2D'
     in_channels: int = 1
     n_residual_blocks: int = 9

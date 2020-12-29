@@ -1,6 +1,5 @@
 from copy import deepcopy
 
-import torch
 from torch import nn
 
 import memcnn

@@ -13,7 +13,6 @@ LICENSE file in the root directory of this source tree.
 import torch
 import itertools
 
-from typing import Optional
 from torch.utils.data.sampler import Sampler
 from midaGAN.utils import communication
 

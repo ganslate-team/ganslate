@@ -3,14 +3,14 @@ import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 # Config imports
-from dataclasses import dataclass, field
-from typing import Tuple, Union
+from dataclasses import dataclass
+from typing import Tuple
 from omegaconf import MISSING
-from midaGAN.conf import BaseDiscriminatorConfig
+from midaGAN import configs
 
 
 @dataclass
-class Discrim3DConfig(BaseDiscriminatorConfig):
+class Discrim3DConfig(configs.base.BaseDiscriminatorConfig):
     name: str = "Discrim3D"
     in_channels: int = 1
     input_size: Tuple[int, int, int] = (MISSING, MISSING, MISSING)

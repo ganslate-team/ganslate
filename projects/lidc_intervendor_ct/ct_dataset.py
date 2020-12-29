@@ -11,11 +11,11 @@ from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSam
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf import BaseDatasetConfig
+from midaGAN import configs
 
 
 @dataclass
-class CTDatasetConfig(BaseDatasetConfig):
+class CTDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CTDataset"
     patch_size: Tuple[int] = field(default_factory=lambda: (32, 32, 32))
     focal_region_proportion: float = 0.2  # Proportion of focal region size compared to original volume size

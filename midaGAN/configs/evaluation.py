@@ -1,15 +1,14 @@
-from typing import Tuple, Optional, Dict, Any
-from dataclasses import dataclass, field
+from typing import Optional, Tuple
+from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.conf.base_configs import *
-from midaGAN.conf.common_configs import *
+from midaGAN import configs
 
 
 @dataclass
 class LoggingConfig:
     inference_dir: str = MISSING  # Path where the inference will store the results
     tensorboard: bool = False
-    wandb: Optional[WandbConfig] = None
+    wandb: Optional[configs.common.WandbConfig] = None
 
 
 @dataclass
@@ -25,10 +24,11 @@ class MetricConfig:
 
 @dataclass
 class SlidingWindowConfig:
+    # https://docs.monai.io/en/latest/inferers.html#monai.inferers.SlidingWindowInferer
     window_size: Tuple[int] = MISSING
     batch_size: int = 1
     overlap: float = 0.25
-    mode: str = 'gaussian'  # 'constant' or 'gaussian', https://docs.monai.io/en/latest/inferers.html#monai.inferers.SlidingWindowInferer
+    mode: str = 'gaussian'
 
 
 @dataclass
@@ -41,4 +41,4 @@ class EvalConfig:
     samples: int = 4  # Number of samples from the data to run evaluation for
     sliding_window: Optional[SlidingWindowConfig] = None
     logging: LoggingConfig = LoggingConfig()
-    dataset: BaseDatasetConfig = MISSING
+    dataset: configs.base.BaseDatasetConfig = MISSING

@@ -2,9 +2,7 @@ from pathlib import Path
 import logging
 
 import time
-import torch
 import torchvision
-from omegaconf import OmegaConf
 
 from midaGAN.utils import communication, io
 from midaGAN.utils.trackers.base_tracker import BaseTracker

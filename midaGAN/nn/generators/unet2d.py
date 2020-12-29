@@ -3,13 +3,12 @@ import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
 # Config imports
-from dataclasses import dataclass, field
-from omegaconf import MISSING
-from midaGAN.conf import BaseGeneratorConfig
+from dataclasses import dataclass
+from midaGAN import configs
 
 
 @dataclass
-class Unet2DConfig(BaseGeneratorConfig):
+class Unet2DConfig(configs.base.BaseGeneratorConfig):
     name: str = 'Unet2D'
     in_channels: int = 1
     num_downs: int = 7

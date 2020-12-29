@@ -1,18 +1,15 @@
 import torch
-import numpy as np
 from torch.utils.data import Dataset
-from midaGAN.utils.io import make_dataset_of_files
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass, field
-from omegaconf import MISSING
-from midaGAN.conf import BaseDatasetConfig
+from midaGAN import configs
 
 DUMMY_PATCH_SIZE = [32, 32, 32]
 
 
 @dataclass
-class DummyDatasetConfig(BaseDatasetConfig):
+class DummyDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "DummyDataset"
     patch_size: Tuple[int, int, int] = field(default_factory=lambda: DUMMY_PATCH_SIZE)
 

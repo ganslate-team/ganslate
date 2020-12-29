@@ -1,5 +1,3 @@
-from midaGAN.utils.summary import gan_summary
-import os
 import logging
 import torch
 

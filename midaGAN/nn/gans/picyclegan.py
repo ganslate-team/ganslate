@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 
 import itertools
 
@@ -7,12 +6,10 @@ from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 # Config imports
-from dataclasses import dataclass, field
-from omegaconf import MISSING
-from midaGAN.conf import BaseGANConfig
+from dataclasses import dataclass
+from midaGAN import configs
 
 from midaGAN.nn.gans import cyclegan
 
@@ -23,7 +20,7 @@ class OptimizerConfig(cyclegan.OptimizerConfig):
 
 
 @dataclass
-class PiCycleGANConfig(BaseGANConfig):
+class PiCycleGANConfig(configs.base.BaseGANConfig):
     """Partially-invertible CycleGAN"""
     name: str = "PiCycleGAN"
     pool_size: int = 50

@@ -1,10 +1,7 @@
-from typing import Tuple, Optional, Dict, Any
-from dataclasses import dataclass, field
+from typing import Optional
+from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.conf.base_configs import *
-from midaGAN.conf.common_configs import *
-
-from midaGAN.conf.eval_config import *
+from midaGAN import configs
 
 
 @dataclass
@@ -26,7 +23,7 @@ class LoggingConfig:
     log_freq: int = 50
     checkpoint_freq: int = 2000
     tensorboard: bool = False
-    wandb: Optional[WandbConfig] = None
+    wandb: Optional[configs.common.WandbConfig] = None
 
 
 @dataclass
@@ -43,12 +40,14 @@ class TrainMetricConfig:
 
 
 @dataclass
-class TrainConfig(BaseConfig):
-    is_train: bool = True
-
+class TrainConfig(configs.base.BaseConfig):
     # TODO: add git hash? will help when re-running or inferencing old runs
-    n_iters: int = MISSING  # Number of iters without linear decay of learning rates. [Default: 200]
-    n_iters_decay: int = MISSING  # Number of last iters in which the learning rates are linearly decayed. [Default: 50]
+    
+    is_train: bool = True
+    # Number of iters without linear decay of learning rates.
+    n_iters: int = MISSING
+    # Number of last iters in which the learning rates are linearly decayed.
+    n_iters_decay: int = MISSING  
 
     logging: LoggingConfig = LoggingConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None
@@ -57,4 +56,4 @@ class TrainConfig(BaseConfig):
 
     # Separate evaluation config that will be run with a full-volume dataloader.
     # Can be used for intermittent SSIM, dose calcs etc
-    evaluation: Optional[EvalConfig] = None
+    evaluation: Optional[configs.evaluation.EvalConfig] = None

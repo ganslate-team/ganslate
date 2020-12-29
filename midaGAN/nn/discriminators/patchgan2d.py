@@ -1,16 +1,14 @@
 from typing import Tuple
-import torch
 import torch.nn as nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
 # Config imports
-from dataclasses import dataclass, field
-from omegaconf import MISSING
-from midaGAN.conf import BaseDiscriminatorConfig
+from dataclasses import dataclass
+from midaGAN import configs
 
 
 @dataclass
-class PatchGAN2DConfig(BaseDiscriminatorConfig):
+class PatchGAN2DConfig(configs.base.BaseDiscriminatorConfig):
     name: str = "PatchGAN2D"
     in_channels: int = 1
     ndf: int = 64
