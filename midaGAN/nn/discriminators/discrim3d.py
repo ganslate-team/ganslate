@@ -6,7 +6,7 @@ from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 from dataclasses import dataclass, field
 from typing import Tuple, Union
 from omegaconf import MISSING
-from midaGAN.conf.base_configs import BaseDiscriminatorConfig
+from midaGAN.configs.base_configs import BaseDiscriminatorConfig
 
 
 @dataclass

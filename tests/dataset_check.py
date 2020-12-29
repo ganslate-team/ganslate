@@ -11,7 +11,7 @@ except ImportError:
     import midaGAN
 
 from midaGAN.trainer import Trainer
-from midaGAN.conf.builders import build_training_conf
+from midaGAN.configs.builders import build_training_conf
 from midaGAN.utils import communication, environment
 from midaGAN.data import build_loader
 from omegaconf import OmegaConf

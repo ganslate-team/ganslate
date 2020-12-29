@@ -12,7 +12,7 @@ from midaGAN.utils import sitk_utils, io
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.base_configs import BaseDatasetConfig
+from midaGAN.configs.base_configs import BaseDatasetConfig
 
 
 @dataclass

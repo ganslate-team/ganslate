@@ -11,7 +11,7 @@ from midaGAN.utils.io import make_dataset_of_files
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.base_configs import BaseDatasetConfig
+from midaGAN.configs.base_configs import BaseDatasetConfig
 
 
 @dataclass

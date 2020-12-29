@@ -6,7 +6,7 @@ from omegaconf import OmegaConf, DictConfig
 
 import midaGAN
 from midaGAN.utils import import_class_from_dirs_and_modules, iterate_nested_dict_keys
-from midaGAN.conf.train_config import TrainConfig
+from midaGAN import configs
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ IMPORT_LOCATIONS = {
 }
 
 
-def init_config(conf, config_class=TrainConfig):
+def init_config(conf, config_class=config.train.TrainConfig):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 

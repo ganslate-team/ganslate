@@ -37,7 +37,7 @@ def build_loader(conf):
 
 def build_dataset(conf):
     name = conf.dataset.name
-    import_locations = midaGAN.conf.IMPORT_LOCATIONS
+    import_locations = midaGAN.config.IMPORT_LOCATIONS
     dataset_class = import_class_from_dirs_and_modules(name, import_locations["dataset"])
     dataset = dataset_class(conf)
     return dataset

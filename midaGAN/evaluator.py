@@ -1,19 +1,16 @@
-import os
 import logging
+import os
 from pathlib import Path
 
-import torch
 import numpy as np
+import torch
 from monai.inferers import SlidingWindowInferer
 
+from midaGAN.configs.utils import builders
 from midaGAN.data import build_loader
-from midaGAN.nn.gans import build_gan
-from midaGAN.utils import io
-from midaGAN.utils.trackers.eval_tracker import EvalTracker
-from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
 from midaGAN.data.utils import decollate
-
-from midaGAN.conf.builders import build_eval_conf
+from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
+from midaGAN.utils.trackers.eval_tracker import EvalTracker
 
 
 class Evaluator():
@@ -23,7 +20,7 @@ class Evaluator():
         self.enabled = conf.evaluation is not None
         # Load evaluation configuration from training configuration!
         if self.enabled:
-            self.conf = build_eval_conf(conf)
+            self.conf = builders.build_eval_conf(conf)
             self.logger.info(f"Evaluation configuration \n {self.conf.pretty()}")
 
             self.data_loader = build_loader(self.conf)

@@ -1,5 +1,6 @@
 from omegaconf import OmegaConf
-from midaGAN.conf import init_config, init_dataclass, inference_config
+from midaGAN.configs.utils import initializers
+from midaGAN.configs import inference
 import logging
 
 logger = logging.getLogger(__name__)
@@ -7,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def build_training_conf():
     cli = OmegaConf.from_cli()
-    conf = init_config(cli.pop("config"))
+    conf = initializers.init_config(cli.pop("config"))
     return OmegaConf.merge(conf, cli)
 
 
@@ -25,7 +26,7 @@ def build_inference_conf():
     conf = OmegaConf.masked_copy(conf, train_to_inference_options)
     # Merge conf with inference_defaults and then with cli before init
     conf = OmegaConf.merge(conf, inference_defaults, cli)
-    return init_config(conf, inference_config.InferenceConfig)
+    return initializers.init_config(conf, inference.InferenceConfig)
 
 
 def build_eval_conf(conf):
@@ -37,7 +38,8 @@ def build_eval_conf(conf):
     dataset = OmegaConf.to_container(eval_conf.dataset)
 
     try:
-        eval_conf.dataset = init_dataclass("dataset", OmegaConf.select(eval_conf, "dataset"))
+        eval_conf.dataset = initializers.init_dataclass("dataset",
+                                                        OmegaConf.select(eval_conf, "dataset"))
     except ValueError as e:
         logger.warning(f"Evaluation mode turned OFF: {e}")
         return None

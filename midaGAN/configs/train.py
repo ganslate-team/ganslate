@@ -1,7 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.conf import base_configs, common_configs, eval_config
+from midaGAN.configs import base_configs, common_configs, eval_config
 
 
 @dataclass

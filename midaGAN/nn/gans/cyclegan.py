@@ -12,7 +12,7 @@ from midaGAN.nn.utils import squeeze_z_axis_if_2D
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf.base_configs import BaseGANConfig, BaseOptimizerConfig
+from midaGAN.configs.base_configs import BaseGANConfig, BaseOptimizerConfig
 
 
 @dataclass
