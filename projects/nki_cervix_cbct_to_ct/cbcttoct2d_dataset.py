@@ -19,7 +19,7 @@ from midaGAN.data.utils.slice_sampler import SliceSampler
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf import BaseDatasetConfig
+from midaGAN.conf.base_configs import BaseDatasetConfig
 
 logger = logging.getLogger(__name__)
 

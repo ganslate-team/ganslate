@@ -1,5 +1,5 @@
-from typing import Tuple, Optional, Dict, Any
-from dataclasses import dataclass, field
+from typing import Optional
+from dataclasses import dataclass
 from omegaconf import MISSING
 
 
@@ -21,7 +21,7 @@ class BaseOptimizerConfig:
 
 @dataclass
 class BaseDatasetConfig:
-    name: str = MISSING  # TODO: used for importing data/name_dataset.py, any better way?
+    name: str = MISSING
     root: str = MISSING
     shuffle: bool = True
     num_workers: int = 4
@@ -36,7 +36,7 @@ class BaseDiscriminatorConfig:
 @dataclass
 class BaseGeneratorConfig:
     name: str = MISSING
-    in_channels: int = MISSING  # TODO: put in GAN config since both G and D use `in_channels`?
+    in_channels: int = MISSING
 
 
 @dataclass

@@ -11,7 +11,7 @@ from midaGAN.nn.utils import init_net, get_network_device
 from dataclasses import dataclass, field
 from typing import Tuple
 from omegaconf import MISSING
-from midaGAN.conf import BaseGANConfig, BaseOptimizerConfig
+from midaGAN.conf.base_configs import BaseGANConfig, BaseOptimizerConfig
 
 
 @dataclass

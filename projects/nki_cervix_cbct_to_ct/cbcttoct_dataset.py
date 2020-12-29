@@ -18,7 +18,7 @@ from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSam
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf import BaseDatasetConfig
+from midaGAN.conf.base_configs import BaseDatasetConfig
 
 DEBUG = False
 

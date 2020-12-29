@@ -11,7 +11,7 @@ from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, ge
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf import BaseGeneratorConfig
+from midaGAN.conf.base_configs import BaseGeneratorConfig
 
 logger = logging.getLogger(__name__)
 

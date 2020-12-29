@@ -1,7 +1,7 @@
-from typing import Tuple, Optional, Dict, Any
-from dataclasses import dataclass, field
+from typing import Tuple, Optional
+from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.conf.base_configs import *
+from midaGAN.conf import base_configs
 
 
 @dataclass
@@ -17,14 +17,15 @@ class LoadCheckpointConfig:
 
 @dataclass
 class SlidingWindowConfig:
+    # https://docs.monai.io/en/latest/inferers.html#monai.inferers.SlidingWindowInferer
     window_size: Tuple[int] = MISSING
     batch_size: int = 1
     overlap: float = 0.25
-    mode: str = 'gaussian'  # 'constant' or 'gaussian', https://docs.monai.io/en/latest/inferers.html#monai.inferers.SlidingWindowInferer
+    mode: str = 'gaussian'
 
 
 @dataclass
-class InferenceConfig(BaseConfig):
+class InferenceConfig(base_configs.BaseConfig):
     is_train: bool = False  # Training mode is False for framework
     batch_size: int = 1
     load_checkpoint: LoadCheckpointConfig = LoadCheckpointConfig()

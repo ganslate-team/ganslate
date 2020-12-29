@@ -1,6 +1,5 @@
-from pathlib import Path
 from omegaconf import OmegaConf
-from midaGAN.conf import eval_config, init_config, InferenceConfig, EvalConfig, init_dataclass
+from midaGAN.conf import init_config, init_dataclass, inference_config
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,7 +25,7 @@ def build_inference_conf():
     conf = OmegaConf.masked_copy(conf, train_to_inference_options)
     # Merge conf with inference_defaults and then with cli before init
     conf = OmegaConf.merge(conf, inference_defaults, cli)
-    return init_config(conf, InferenceConfig)
+    return init_config(conf, inference_config.InferenceConfig)
 
 
 def build_eval_conf(conf):

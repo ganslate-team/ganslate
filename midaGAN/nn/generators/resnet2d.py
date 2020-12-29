@@ -7,7 +7,7 @@ from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 # Config imports
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN.conf import BaseGeneratorConfig
+from midaGAN.conf.base_configs import BaseGeneratorConfig
 
 
 @dataclass
