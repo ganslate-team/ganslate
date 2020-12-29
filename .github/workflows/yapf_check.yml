@@ -1,5 +1,8 @@
 name: YAPF Formatting Check
-on: [push]
+on:
+  pull_request:
+    branches:
+      - master
 jobs:
   formatting-check:
     name: Formatting Check
@@ -9,4 +12,4 @@ jobs:
     - name: run YAPF to test if python code is correctly formatted
       uses: AlexanderMelde/yapf-action@master
       with:
-        args: --verbose --style=/home/runner/work/midaGAN/setup.cfg
+        args: --verbose --style=/github/workspace/setup.cfg
