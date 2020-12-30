@@ -1,8 +1,10 @@
 import SimpleITK as sitk
 import numpy as np
 
+from midaGAN.utils import sitk_utils
 
-def truncate_CBCT_based_on_fov(image: sitk.Image, return_filter=False):
+
+def truncate_CBCT_based_on_fov(image: sitk.Image):
     """
     Truncates the CBCT to consider full FOV in the scans. First few and last few slices
     generally have small FOV that is around 25-50% of the axial slice. Ignore this 
@@ -41,14 +43,8 @@ def truncate_CBCT_based_on_fov(image: sitk.Image, return_filter=False):
             end_idx = idx - 1
             break
 
-    slice_filter = sitk.SliceImageFilter()
-    slice_filter.SetStart((0, 0, start_idx))
-    slice_filter.SetStop((*image.GetSize()[:-1], end_idx))
+    image = sitk_utils.slice_image(image,
+                                   start=(0, 0, start_idx),
+                                   end=(-1, -1, end_idx))
 
-    filtered_image = slice_filter.Execute(image)
-
-    if return_filter:
-        return slice_filter
-
-    else:
-        return filtered_image
+    return image

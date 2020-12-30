@@ -22,6 +22,8 @@ def tensor_to_sitk_image(tensor, origin, spacing, direction, dtype='int16'):
     sitk_image.SetDirection(direction)
     return sitk_image
 
+def get_size_xyz(sitk_image):
+    return sitk_image.GetSize()
 
 def get_size_zxy(sitk_image):
     """Get volume size in torch format (e.g. zxy instead of xyz)."""
@@ -61,3 +63,18 @@ def is_image_smaller_than(sitk_volume, target_shape):
 
 def get_npy_dtype(sitk_image):
     return str(sitk.GetArrayFromImage(sitk_image).dtype)
+
+
+def slice_image(sitk_image, start=(0,0,0), end=(-1,-1,-1)):
+    """"Returns the `sitk_image` sliced from the `start` index (x,y,z) to the `end` index.
+    """
+    size = tuple(sitk_image.GetSize())
+    assert len(start) == len(end) == len(size)
+
+    # replace -1 dim index placeholders with the last index of the dimension
+    end = [size[i] if end[i] == -1 else end[i] for i in range(len(end))]
+
+    slice_filter = sitk.SliceImageFilter()
+    slice_filter.SetStart(start)
+    slice_filter.SetStop(end)
+    return slice_filter.Execute(sitk_image)
