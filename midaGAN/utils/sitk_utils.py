@@ -68,10 +68,10 @@ def get_npy_dtype(sitk_image):
 def slice_image(sitk_image, start=(0,0,0), end=(-1,-1,-1)):
     """"Returns the `sitk_image` sliced from the `start` index (x,y,z) to the `end` index.
     """
-    size = tuple(sitk_image.GetSize())
+    size = sitk_image.GetSize()
     assert len(start) == len(end) == len(size)
 
-    # replace -1 dim index placeholders with the last index of the dimension
+    # replace -1 dim index placeholders with the size of that dimension
     end = [size[i] if end[i] == -1 else end[i] for i in range(len(end))]
 
     slice_filter = sitk.SliceImageFilter()
