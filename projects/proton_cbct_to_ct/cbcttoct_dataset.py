@@ -27,24 +27,25 @@ EXTENSIONS = ['.nrrd']
 
 @dataclass
 class CBCTtoCTDatasetConfig(configs.base.BaseDatasetConfig):
-    name:                    str = "CBCTtoCTDataset"
-    patch_size:              Tuple[int, int, int] = (32, 32, 32)
-    hounsfield_units_range:  Tuple[int, int] = (-1000, 2000)
-     # Proportion of focal region size compared to original volume size
+    name: str = "CBCTtoCTDataset"
+    patch_size: Tuple[int, int, int] = (32, 32, 32)
+    hounsfield_units_range: Tuple[int, int] = (-1000, 2000)
+    # Proportion of focal region size compared to original volume size
     focal_region_proportion: float = 0.2
 
 
 class CBCTtoCTDataset(Dataset):
+
     def __init__(self, conf):
         root_path = Path(conf.dataset.root).resolve()
-        
+
         self.paths_CBCT = []
         self.paths_CT = []
         for patient in root_path.iterdir():
             if (patient / "CBCT").is_dir():
-                self.paths_CBCT.extend(make_dataset_of_directories(patient / "CBCT", EXTENSIONS)) 
+                self.paths_CBCT.extend(make_dataset_of_directories(patient / "CBCT", EXTENSIONS))
             if (patient / "CT").is_dir():
-                self.paths_CT.extend(make_dataset_of_directories(patient / "CT", EXTENSIONS)) 
+                self.paths_CT.extend(make_dataset_of_directories(patient / "CT", EXTENSIONS))
 
         self.num_datapoints_CBCT = len(self.paths_CBCT)
         self.num_datapoints_CT = len(self.paths_CT)
@@ -57,7 +58,7 @@ class CBCTtoCTDataset(Dataset):
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
     def __getitem__(self, index):
-        
+
         index_CBCT = index % self.num_datapoints_CBCT
         index_CT = random.randint(0, self.num_datapoints_CT - 1)
 
@@ -75,16 +76,17 @@ class CBCTtoCTDataset(Dataset):
                 break
 
             # Remove from the paths since it's too small for the training.
-            # If-statement since the path might already be deleted by another worker. 
+            # If-statement since the path might already be deleted by another worker.
             if path_CT in self.paths_CT:
                 self.paths_CT.remove(path_CT)
 
             # Randomly select another one
             paths_CBCT = random.choice(self.paths_CBCT)
-            
+
             if i == 0:
-                raise ValueError(f"Could not replace the image for {num_replacements_threshold}"
-                                 " consecutive times. Please verify your images and the specified config.")
+                raise ValueError(
+                    f"Could not replace the image for {num_replacements_threshold}"
+                    " consecutive times. Please verify your images and the specified config.")
 
         for i in reversed(range(num_replacements_threshold)):
             # load nrrd as SimpleITK objects
@@ -94,16 +96,14 @@ class CBCTtoCTDataset(Dataset):
             num_slices = sitk_utils.get_size(CBCT)[-1]
             start_slice = int(num_slices * 0.13)
             end_slice = int(num_slices * 0.82)
-            CBCT = sitk_utils.slice_image(CBCT,
-                                          start=(0, 0, start_slice),
-                                          end=(-1, -1, end_slice))
+            CBCT = sitk_utils.slice_image(CBCT, start=(0, 0, start_slice), end=(-1, -1, end_slice))
 
             # Selected if it's big enough for the training
             if not sitk_utils.is_image_smaller_than(CBCT, self.patch_size):
                 break
-            
+
             # Remove from the paths since it's too small for the training.
-            # If-statement since the path might already be deleted by another worker. 
+            # If-statement since the path might already be deleted by another worker.
             if path_CBCT in self.paths_CBCT:
                 self.paths_CBCT.remove(path_CBCT)
 
@@ -111,13 +111,16 @@ class CBCTtoCTDataset(Dataset):
             paths_CBCT = random.choice(self.paths_CBCT)
 
             if i == 0:
-                raise ValueError(f"Could not replace the image for {num_replacements_threshold}"
-                                 " consecutive times. Please verify your images and the specified config.")
+                raise ValueError(
+                    f"Could not replace the image for {num_replacements_threshold}"
+                    " consecutive times. Please verify your images and the specified config.")
 
-	    # limit CT so that it only contains part of the body shown in CBCT
+# limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
-            logger.info("Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume.")
+            logger.info(
+                "Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume."
+            )
             del CT_truncated
         else:
             CT = CT_truncated
@@ -126,7 +129,7 @@ class CBCTtoCTDataset(Dataset):
         CT = sitk_utils.get_tensor(CT)
 
         # Extract patches
-        CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT) 
+        CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
 
         # Limits the lowest and highest HU unit
         CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
@@ -150,7 +153,6 @@ class CBCTtoCTDataset(Dataset):
 # class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
 #     name:                    str = "CBCTtoCTInferenceDataset"
 #     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
-    
 
 # class CBCTtoCTInferenceDataset(Dataset):
 #     def __init__(self, conf):
@@ -163,9 +165,9 @@ class CBCTtoCTDataset(Dataset):
 #         path = str(Path(self.paths[index]) / 'CT.nrrd')
 #         # load nrrd as SimpleITK objects
 #         volume = sitk_utils.load(path)
-#         metadata = (path, 
-#                     volume.GetOrigin(), 
-#                     volume.GetSpacing(), 
+#         metadata = (path,
+#                     volume.GetOrigin(),
+#                     volume.GetSpacing(),
 #                     volume.GetDirection(),
 #                     sitk_utils.get_npy_dtype(volume))
 
@@ -185,7 +187,7 @@ class CBCTtoCTDataset(Dataset):
 #     def save(self, tensor, metadata, output_dir):
 #         tensor = tensor.squeeze()
 #         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
-        
+
 #         datapoint_path, origin, spacing, direction, dtype = metadata
 #         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)
 
@@ -194,7 +196,3 @@ class CBCTtoCTDataset(Dataset):
 #         save_path = Path(output_dir) / Path(datapoint_name).with_suffix('.nrrd')
 
 #         sitk_utils.write(sitk_image, save_path)
-        
-
-
-

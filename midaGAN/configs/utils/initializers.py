@@ -6,7 +6,6 @@ from midaGAN import configs, data, nn, utils
 
 logger = logging.getLogger(__name__)
 
-
 IMPORT_LOCATIONS = {
     "dataset": [data],
     "gan": [nn.gans],

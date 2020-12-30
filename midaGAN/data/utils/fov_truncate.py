@@ -43,8 +43,6 @@ def truncate_CBCT_based_on_fov(image: sitk.Image):
             end_idx = idx - 1
             break
 
-    image = sitk_utils.slice_image(image,
-                                   start=(0, 0, start_idx),
-                                   end=(-1, -1, end_idx))
+    image = sitk_utils.slice_image(image, start=(0, 0, start_idx), end=(-1, -1, end_idx))
 
     return image

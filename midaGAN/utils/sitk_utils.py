@@ -64,7 +64,7 @@ def get_npy_dtype(sitk_image):
     return str(sitk.GetArrayFromImage(sitk_image).dtype)
 
 
-def slice_image(sitk_image, start=(0,0,0), end=(-1,-1,-1)):
+def slice_image(sitk_image, start=(0, 0, 0), end=(-1, -1, -1)):
     """"Returns the `sitk_image` sliced from the `start` index (x,y,z) to the `end` index.
     """
     size = sitk_image.GetSize()

@@ -42,12 +42,12 @@ class TrainMetricConfig:
 @dataclass
 class TrainConfig(configs.base.BaseConfig):
     # TODO: add git hash? will help when re-running or inferencing old runs
-    
+
     is_train: bool = True
     # Number of iters without linear decay of learning rates.
     n_iters: int = MISSING
     # Number of last iters in which the learning rates are linearly decayed.
-    n_iters_decay: int = MISSING  
+    n_iters_decay: int = MISSING
 
     logging: LoggingConfig = LoggingConfig()
     load_checkpoint: Optional[LoadCheckpointConfig] = None
