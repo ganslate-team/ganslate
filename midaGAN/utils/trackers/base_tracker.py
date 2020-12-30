@@ -1,5 +1,6 @@
 import time
 from pathlib import Path
+
 from omegaconf import OmegaConf
 from midaGAN.utils import communication
 

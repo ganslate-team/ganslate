@@ -1,22 +1,21 @@
 import logging
 
-from omegaconf import OmegaConf, DictConfig
+from omegaconf import DictConfig, OmegaConf
 
-import midaGAN
-from midaGAN.utils import import_class_from_dirs_and_modules, iterate_nested_dict_keys
-from midaGAN import configs
+from midaGAN import configs, data, nn, utils
 
 logger = logging.getLogger(__name__)
 
+
 IMPORT_LOCATIONS = {
-    "dataset": [midaGAN.data],
-    "gan": [midaGAN.nn.gans],
-    "generator": [midaGAN.nn.generators],
-    "discriminator": [midaGAN.nn.discriminators],
+    "dataset": [data],
+    "gan": [nn.gans],
+    "generator": [nn.generators],
+    "discriminator": [nn.discriminators],
 }
 
 
-def init_config(conf, config_class=configs.train.TrainConfig):
+def init_config(conf, config_class=configs.training.TrainConfig):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 
@@ -64,7 +63,7 @@ def init_dataclass(key, field):
     format "name" + "Config", e.g. "MRIDatasetConfig".
     """
     dataclass_name = f'{field["name"]}Config'
-    dataclass = import_class_from_dirs_and_modules(dataclass_name, IMPORT_LOCATIONS[key])
+    dataclass = utils.import_class_from_dirs_and_modules(dataclass_name, IMPORT_LOCATIONS[key])
     return OmegaConf.structured(dataclass)
 
 
@@ -79,5 +78,5 @@ def is_dataclass(key, field):
 def get_all_conf_keys(conf):
     """Get all keys from a conf and order from them the deepest to the shallowest."""
     conf = OmegaConf.to_container(conf)
-    keys = list(iterate_nested_dict_keys(conf))
+    keys = list(utils.iterate_nested_dict_keys(conf))
     return keys[::-1]  # order by depth

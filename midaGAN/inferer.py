@@ -3,10 +3,9 @@ import logging
 from monai.inferers import SlidingWindowInferer
 
 from midaGAN.data import build_loader
+from midaGAN.data.utils import decollate
 from midaGAN.nn.gans import build_gan
 from midaGAN.utils.trackers.inference_tracker import InferenceTracker
-
-from midaGAN.data.utils import decollate
 
 
 class Inferer():

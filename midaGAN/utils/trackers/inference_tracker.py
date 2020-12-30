@@ -1,8 +1,8 @@
 #from pathlib import Path
-import time
 import logging
+import time
 
-from midaGAN.utils import communication  #, io
+from midaGAN.utils import communication
 from midaGAN.utils.trackers.base_tracker import BaseTracker
 
 

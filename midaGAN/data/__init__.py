@@ -2,12 +2,12 @@ import importlib
 import logging
 
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.distributed import DistributedSampler
 
-import midaGAN
+from midaGAN import configs
+from midaGAN.utils import communication, import_class_from_dirs_and_modules
 from midaGAN.data.samplers import InfiniteSampler
-from midaGAN.utils import import_class_from_dirs_and_modules, communication
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def build_loader(conf):
 
 def build_dataset(conf):
     name = conf.dataset.name
-    import_locations = midaGAN.configs.utils.initializers.IMPORT_LOCATIONS
+    import_locations = configs.utils.initializers.IMPORT_LOCATIONS
     dataset_class = import_class_from_dirs_and_modules(name, import_locations["dataset"])
     dataset = dataset_class(conf)
     return dataset

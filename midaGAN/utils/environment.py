@@ -3,19 +3,18 @@
 
 import logging
 import os
+import random
 import sys
-from typing import Optional
 from os import PathLike
 from pathlib import Path
+from typing import Optional
 
-import numpy as np
-import random
 import cv2
-
+import numpy as np
+import SimpleITK as sitk
 import torch
 from omegaconf import OmegaConf
-import SimpleITK as sitk
-from midaGAN.utils import io, communication
+from midaGAN.utils import communication, io
 
 logger = logging.getLogger(__name__)
 

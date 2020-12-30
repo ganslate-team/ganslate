@@ -1,14 +1,13 @@
-from pathlib import Path
 import logging
-
 import time
-import torchvision
+from pathlib import Path
 
+import torchvision
 from midaGAN.utils import communication, io
+from midaGAN.utils.trackers import visuals_to_combined_2d_grid
 from midaGAN.utils.trackers.base_tracker import BaseTracker
 from midaGAN.utils.trackers.tensorboard_tracker import TensorboardTracker
 from midaGAN.utils.trackers.wandb_tracker import WandbTracker
-from midaGAN.utils.trackers import visuals_to_combined_2d_grid
 
 
 class EvalTracker(BaseTracker):
