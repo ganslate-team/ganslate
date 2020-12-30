@@ -72,12 +72,12 @@ class BratsDataset(Dataset):
         A = get_mri_sequence(A, self.source_sequence)
         B = get_mri_sequence(B, self.target_sequence)
 
-        if (sitk_utils.is_volume_smaller_than(A, self.patch_size) or
-                sitk_utils.is_volume_smaller_than(B, self.patch_size)):
+        if (sitk_utils.is_image_smaller_than(A, self.patch_size) or
+                sitk_utils.is_image_smaller_than(B, self.patch_size)):
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nA: {} \nB: {} \npatch_size: {}."\
-                             .format(sitk_utils.get_size_zxy(A),
-                                     sitk_utils.get_size_zxy(B),
+                             .format(sitk_utils.get_torch_like_size(A),
+                                     sitk_utils.get_torch_like_size(B),
                                      self.patch_size))
 
         A = sitk_utils.get_tensor(A)

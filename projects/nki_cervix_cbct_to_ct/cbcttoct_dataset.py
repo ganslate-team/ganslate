@@ -11,7 +11,7 @@ from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormal
 from midaGAN.data.utils.registration_methods import register_CT_to_CBCT, truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.body_mask import apply_body_mask_and_bound, get_body_mask_and_bound
-from midaGAN.data.utils import size_invalid_check_and_replace, pad
+from midaGAN.data.utils import pad
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports

@@ -61,18 +61,18 @@ class CBCTtoCTDataset(Dataset):
         CT = sitk_utils.load(path_CT)
 
         # TODO: make a function
-        if (sitk_utils.is_volume_smaller_than(CBCT, self.patch_size) or
-                sitk_utils.is_volume_smaller_than(CT, self.patch_size)):
+        if (sitk_utils.is_image_smaller_than(CBCT, self.patch_size) or
+                sitk_utils.is_image_smaller_than(CT, self.patch_size)):
             raise ValueError("Volume size not smaller than the defined patch size.\
                               \nCBCT: {} \nCT: {} \npatch_size: {}."\
-                             .format(sitk_utils.get_size_zxy(CBCT),
-                                     sitk_utils.get_size_zxy(CT),
+                             .format(sitk_utils.get_torch_like_size(CBCT),
+                                     sitk_utils.get_torch_like_size(CT),
                                      self.patch_size))
 
 
 # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
-        if sitk_utils.is_volume_smaller_than(CT_truncated, self.patch_size):
+        if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
             logger.info(
                 "Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume."
             )
