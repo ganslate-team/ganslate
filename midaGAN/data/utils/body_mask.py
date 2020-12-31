@@ -69,14 +69,14 @@ def smooth_contour_points(contour: np.ndarray, radius: int = 3, sigma: int = 10)
     return np.array(smooth_contours)
 
 
-def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
+def get_body_mask_and_bound(image: np.ndarray, hu_threshold: int) -> np.ndarray:
     """
     Function that gets a mask around the patient body and returns a 3D bound
 
     Parameters
     -------------
     image: Numpy array to get the mask and bound from
-    HU_threshold: Set threshold to binarize image
+    hu_threshold: Set threshold to binarize image
 
 
     Returns
@@ -86,7 +86,7 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
     the ((z_min, z_max), (y_min, y_max), (x_min, x_max)) format
     """
 
-    binarized_image = np.uint8(image >= HU_threshold)
+    binarized_image = np.uint8(image >= hu_threshold)
 
     body_mask = np.zeros(image.shape)
 
@@ -136,7 +136,7 @@ def get_body_mask_and_bound(image: np.ndarray, HU_threshold: int) -> np.ndarray:
 
 
 def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
-                                apply_mask: bool =False, apply_bound: bool=False, HU_threshold: int =-300) -> np.ndarray:
+                                apply_mask: bool =False, apply_bound: bool=False, hu_threshold: int =-300) -> np.ndarray:
     """
     Function to apply mask based filtering and bound the array
     
@@ -146,7 +146,7 @@ def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
     masking_value: Value to apply outside the mask
     apply_mask: Set to True to apply mask
     apply_bound: Set to True to apply bound
-    HU_threshold: Threshold to apply for binarization of the image. 
+    hu_threshold: Threshold to apply for binarization of the image. 
 
     Returns
     ------------------
@@ -158,7 +158,7 @@ def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
         return array
 
     body_mask, ((z_max, z_min), \
-        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(array, HU_threshold)
+        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(array, hu_threshold)
 
     # Apply mask to the image array
     if apply_mask:
