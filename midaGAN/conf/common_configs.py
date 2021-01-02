@@ -12,3 +12,4 @@ class WandbConfig:
     project: str = "my-project"
     entity: Optional[str] = None
     image_filter: Optional[ImageFilterConfig] = None
+    run: Optional[str] = None
