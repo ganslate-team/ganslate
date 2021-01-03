@@ -8,10 +8,11 @@ from torch.utils.data import Dataset
 import midaGAN
 from midaGAN.utils.io import make_dataset_of_directories
 from midaGAN.utils import sitk_utils
+from midaGAN.data.utils import pad
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-
+from midaGAN.data.utils.body_mask import apply_body_mask_and_bound
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -115,19 +116,36 @@ class CBCTtoCTDataset(Dataset):
                     f"Could not replace the image for {num_replacements_threshold}"
                     " consecutive times. Please verify your images and the specified config.")
 
-# limit CT so that it only contains part of the body shown in CBCT
+        # limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
-            logger.info(
-                "Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume."
-            )
+            logger.info("Post-registration truncated CT is smaller than the defined patch size."
+                        " Passing the whole CT volume.")
             del CT_truncated
         else:
             CT = CT_truncated
 
-        CBCT = sitk_utils.get_tensor(CBCT)
-        CT = sitk_utils.get_tensor(CT)
+        # Mask and bound is applied on numpy arrays!
+        CBCT = sitk_utils.get_npy(CBCT)
+        CT = sitk_utils.get_npy(CT)
 
+        CBCT = apply_body_mask_and_bound(CBCT,
+                                         apply_mask=True,
+                                         masking_value=self.hu_min,
+                                         apply_bound=True,
+                                         hu_threshold=-800)
+        CBCT = pad(CBCT, self.patch_size)
+
+        CT = apply_body_mask_and_bound(CT,
+                                       apply_mask=True,
+                                       masking_value=self.hu_min,
+                                       apply_bound=True,
+                                       hu_threshold=-600)
+        CT = pad(CT, self.patch_size)
+
+        CBCT = torch.tensor(CBCT)
+        CT = torch.tensor(CT)
+        
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
 

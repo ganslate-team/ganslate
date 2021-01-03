@@ -12,8 +12,8 @@ class InvertibleBlock(nn.Module):
         """
         super().__init__()
 
-        self.invertible_block = memcnn.InvertibleModuleWrapper(fn=memcnn.AdditiveCoupling(
-            deepcopy(block)),
+        block = memcnn.AdditiveCoupling(deepcopy(block))
+        self.invertible_block = memcnn.InvertibleModuleWrapper(fn=block,
                                                                keep_input=keep_input,
                                                                keep_input_inverse=keep_input,
                                                                disable=disable)
@@ -21,8 +21,7 @@ class InvertibleBlock(nn.Module):
     def forward(self, x, inverse=False):
         if inverse:
             return self.invertible_block.inverse(x)
-        else:
-            return self.invertible_block(x)
+        return self.invertible_block(x)
 
 
 class InvertibleSequence(nn.Module):

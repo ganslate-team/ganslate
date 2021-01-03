@@ -124,8 +124,8 @@ class CBCTtoCTDataset(Dataset):
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")
 
-        CBCT = pad(self.patch_size, CBCT)
-        CT = pad(self.patch_size, CT)
+        CBCT = pad(CBCT, self.patch_size)
+        CT = pad(CT, self.patch_size)
 
         if DEBUG:
             import wandb

@@ -44,7 +44,7 @@ class SliceSampler:
         x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)
                        ]  # start + patch size for each coord
 
-        volume = pad((0, x_end, y_end), volume)
+        volume = pad(volume, (0, x_end, y_end))
 
         slice = volume[z, x:x_end, y:y_end]
         relative_focal_point = self.calculate_relative_focal_point(z, x, y, volume)
@@ -56,7 +56,7 @@ class SliceSampler:
         x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)
                        ]  # start + patch size for each coord
 
-        volume = pad((0, x_end, y_end), volume)
+        volume = pad(volume, (0, x_end, y_end))
 
         slice = volume[z, x:x_end, y:y_end]
         return slice
