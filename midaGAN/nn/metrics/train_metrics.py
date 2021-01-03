@@ -1,6 +1,6 @@
 import midaGAN.nn.losses.utils.ssim as ssim
 from midaGAN.nn.losses import reshape_to_4D_if_5D
-
+import torch
 
 class TrainingMetrics:
 
@@ -21,10 +21,16 @@ class TrainingMetrics:
         https://medium.com/swlh/training-gans-with-limited-data-22a7c8ffce78
         """
         if self.output_distributions:
-            if len(out.size()) > 1:
-                return out.mean()
+            # Reduce the output to a tensor if it is dict
+            if isinstance(out, dict):
+                out = torch.tensor([elem.detach().mean() for k, elem in out.items()])
+
             else:
-                return out
+                out = out.detach()
+                if len(out.size()) > 1:
+                    return out.mean()
+                else:
+                    return out
         else:
             return None
 
@@ -49,22 +55,19 @@ class TrainingMetrics:
     def compute_metrics_D(self, discriminator, pred_real, pred_fake):
         # Update metrics with output distributions if enabled
         return {
-            f"{discriminator}_real": self.get_output_metric_D(pred_real.detach()),
-            f"{discriminator}_fake": self.get_output_metric_D(pred_fake.detach())
+            f"{discriminator}_real": self.get_output_metric_D(pred_real),
+            f"{discriminator}_fake": self.get_output_metric_D(pred_fake)
         }
 
     def compute_metrics_G(self, visuals):
         # Update metrics with SSIM if enabled in config
         metrics_G = {}
-
         if all([key in visuals for key in ["rec_A", "real_A"]]):
-
             # Update SSIM for forward A->B->A reconstruction
-            metrics_G.update({'ssim_A': self.get_SSIM_metric(visuals["real_A"], visuals["rec_A"])})
+            metrics_G['ssim_A'] =  self.get_SSIM_metric(visuals["real_A"], visuals["rec_A"])
 
         if all([key in visuals for key in ["rec_B", "real_B"]]):
-
             # Update SSIM for forward B->A->B reconstruction
-            metrics_G.update({'ssim_B': self.get_SSIM_metric(visuals["real_B"], visuals["rec_B"])})
+            metrics_G['ssim_B'] =  self.get_SSIM_metric(visuals["real_B"], visuals["rec_B"])
 
         return metrics_G

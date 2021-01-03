@@ -45,7 +45,8 @@ class AdversarialLoss(nn.Module):
             target_tensor = self.fake_label
         return target_tensor.expand_as(prediction)
 
-    def __call__(self, prediction, target_is_real):
+
+    def calculate_loss(self, prediction, target_is_real):
         """Calculate loss given Discriminator's output and grount truth labels.
         Parameters:
             prediction (tensor) - - tpyically the prediction output from a discriminator
@@ -67,4 +68,23 @@ class AdversarialLoss(nn.Module):
                 loss = F.softplus(-prediction).view(bs, -1).mean(dim=1)
             else:
                 loss = F.softplus(prediction).view(bs, -1).mean(dim=1)
+        return loss        
+
+
+    def __call__(self, prediction, target_is_real):
+        """
+        TODO: Replace torch mean with a user specifyable function 
+        """
+        # If prediction is a dict, compute loss and reduce over all keys of the dict
+        if isinstance(prediction, dict):
+            loss_list = [self.calculate_loss(pred, target_is_real) for k, pred in prediction.items()]
+            loss = torch.stack(loss_list).mean()
+
+        else:
+            loss = self.calculate_loss(prediction, target_is_real)
+
         return loss
+
+
+        
+        
