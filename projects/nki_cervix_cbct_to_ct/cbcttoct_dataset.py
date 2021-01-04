@@ -107,20 +107,25 @@ class CBCTtoCTDataset(Dataset):
         # Apply body masking to the CT and CBCT arrays
         # and bound the z, x, y grid to around the mask
         try:
-            CBCT = apply_body_mask_and_bound(CBCT, \
-                    apply_mask=self.apply_mask, HU_threshold=self.cbct_mask_threshold)
+            CBCT = apply_body_mask_and_bound(
+                CBCT,
+                apply_mask=self.apply_mask,
+                hu_threshold=self.cbct_mask_threshold
+            )
         except:
             logger.error(f"Error applying mask and bound in file : {path_CBCT}")
 
         try:
-            CT = apply_body_mask_and_bound(CT, \
-                    apply_mask=self.apply_mask, HU_threshold=self.ct_mask_threshold)
-
+            CT = apply_body_mask_and_bound(
+                CT,
+                apply_mask=self.apply_mask,
+                hu_threshold=self.ct_mask_threshold
+            )
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")
 
-        CBCT = pad(self.patch_size, CBCT)
-        CT = pad(self.patch_size, CT)
+        CBCT = pad(CBCT, self.patch_size)
+        CT = pad(CT, self.patch_size)
 
         if DEBUG:
             import wandb
@@ -363,7 +368,7 @@ class CBCTtoCTEvalDataset(Dataset):
 
         return {"A": CBCT, "B": CT, "metadata": metadata}
 
-    def scale_to_HU(self, tensor):
+    def scale_to_hu(self, tensor):
         return min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
 
     def save(self, tensor, metadata, output_dir):
