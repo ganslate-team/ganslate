@@ -1,4 +1,4 @@
-# Weigh discriminator loss higher by reducing both lambda_A and lambda_B
+#Train without SSIM
 project_dir: "./projects/nki_cervix_cbct_to_ct"
 use_cuda: True
 n_iters: 30000
@@ -6,7 +6,7 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: /midagan/checkpoints/cbct_ex9/
+    checkpoint_dir: /midagan/checkpoints/cbct_ex13/
     wandb:
         project: "Cervix_CBCT"
         image_filter: 
@@ -21,7 +21,7 @@ dataset:
     root: /data/train
     hounsfield_units_range: [-1024, 2048]
     num_workers: 4
-    patch_size: [32, 400, 400]
+    patch_size: [32, 384, 384]
     enable_masking: True
     enable_bounding: True
     
@@ -34,23 +34,23 @@ generator:
   use_memory_saving: False
   use_inverse: True
   is_separable: False
-  down_blocks: [2, 2, 3]
-  up_blocks: [3, 3, 3]
+  down_blocks: [2, 2, 2, 3]
+  up_blocks: [3, 3, 3, 3]
 
 discriminator:
     name: "PatchGAN3D"
-    n_layers: 2
+    n_layers: 5
     in_channels: 1
+    kernel_size: [3, 4, 4]
 
 optimizer:
-  lambda_A: 10.0
-  lambda_B: 10.0
+  lambda_A: 25.0
+  lambda_B: 25.0
   lambda_identity: 0.0
   lambda_inverse: 0.0
   proportion_ssim: 0.84
   lr_D: 0.0002
   lr_G: 0.0004
-
 
 metrics: 
     ssim: True
