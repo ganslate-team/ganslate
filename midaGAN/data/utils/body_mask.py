@@ -157,9 +157,9 @@ def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
     if not (apply_mask or apply_bound):
         return array
 
-    body_mask, ((z_max, z_min), \
-        (y_max, y_min), (x_max, x_min)) = get_body_mask_and_bound(array, hu_threshold)
-
+    body_mask, bound = get_body_mask_and_bound(array, hu_threshold)
+    (z_max, z_min), (y_max, y_min), (x_max, x_min) = bound
+    
     # Apply mask to the image array
     if apply_mask:
         array = np.where(body_mask, array, masking_value)
