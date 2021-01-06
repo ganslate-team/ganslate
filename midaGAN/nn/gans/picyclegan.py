@@ -6,6 +6,7 @@ from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
+from midaGAN.nn.losses.frequency_loss import FrequencyLoss
 
 # Config imports
 from dataclasses import dataclass
@@ -45,7 +46,7 @@ class PiCycleGAN(BaseGAN):
 
         # Losses used by the model
         loss_names = [
-            'D_A', 'G_A', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_B', 'cycle_B', 'idt_B', 'inv_B'
+            'D_A', 'G_A', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_B', 'cycle_B', 'idt_B', 'inv_B', 'freq_A', 'freq_B'
         ]
         self.losses = {name: None for name in loss_names}
 
@@ -71,6 +72,8 @@ class PiCycleGAN(BaseGAN):
             self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
         self.criterion_G = CycleGANLosses(self.conf)
+        # Frequency-related losses
+        self.criterion_freq = FrequencyLoss(self.conf)
 
     def init_optimizers(self):
         lr_G = self.conf.gan.optimizer.lr_G
@@ -219,6 +222,11 @@ class PiCycleGAN(BaseGAN):
         self.losses.update(losses_G)
         # ---------------------------------------------------------------
 
+        # ------------- Frequency Losses --------------------------------
+        losses_freq = self.criterion_freq(self.visuals)
+        self.losses.update(losses_freq)
+        # ---------------------------------------------------------------
+
         # combine losses and calculate gradients
-        combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
+        combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B'] + sum(losses_freq.values())
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)

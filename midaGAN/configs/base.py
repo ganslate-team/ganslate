@@ -17,6 +17,7 @@ class BaseOptimizerConfig:
     lr_D: float = 0.0001
     lr_G: float = 0.0002
     loss_mask: Optional[LossMaskingConfig] = None
+    # freq_loss: Optional[FreqLossConfig] = None
 
 
 @dataclass

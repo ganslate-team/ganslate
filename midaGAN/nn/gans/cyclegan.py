@@ -16,6 +16,7 @@ from midaGAN import configs
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_A: float = 10.0
     lambda_B: float = 10.0
+    lambda_F: float = 0
     lambda_identity: float = 0
     lambda_inverse: float = 0
     proportion_ssim: float = 0.84

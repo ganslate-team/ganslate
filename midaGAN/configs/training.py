@@ -9,6 +9,10 @@ class LossMaskingConfig:
     masking_value: float = -1
     operator: str = "eq"
 
+# @dataclass
+# class FreqConfig:
+#     masking_value: float = -1
+#     operator: str = "eq"
 
 @dataclass
 class ImageFilterConfig:  # Filtering for images uploaded to wandb to show windowing
