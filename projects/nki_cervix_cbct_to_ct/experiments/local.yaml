@@ -57,7 +57,7 @@ metrics:
   
 evaluation:
   freq: 2
-  samples: 5
+  samples: 10
   dataset: 
       name: CBCTtoCTEvalDataset
       root: /repos/Maastro/nki_cervix

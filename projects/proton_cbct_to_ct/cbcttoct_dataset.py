@@ -6,12 +6,12 @@ import torch
 from torch.utils.data import Dataset
 
 import midaGAN
-from midaGAN.utils.io import make_dataset_of_directories
-from midaGAN.utils import sitk_utils
+from midaGAN.utils import io, sitk_utils
+from midaGAN.data.utils import pad
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-
+from midaGAN.data.utils.body_mask import apply_body_mask_and_bound
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -41,11 +41,18 @@ class CBCTtoCTDataset(Dataset):
 
         self.paths_CBCT = []
         self.paths_CT = []
+
         for patient in root_path.iterdir():
-            if (patient / "CBCT").is_dir():
-                self.paths_CBCT.extend(make_dataset_of_directories(patient / "CBCT", EXTENSIONS))
-            if (patient / "CT").is_dir():
-                self.paths_CT.extend(make_dataset_of_directories(patient / "CT", EXTENSIONS))
+
+            cbct_dir = patient / "CBCT"
+            if cbct_dir.is_dir():
+                patient_cbcts = io.make_dataset_of_directories(cbct_dir, EXTENSIONS)
+                self.paths_CBCT.extend(patient_cbcts)
+
+            ct_dir = patient / "CT"
+            if ct_dir.is_dir():
+                patient_cts = io.make_dataset_of_directories(ct_dir, EXTENSIONS)
+                self.paths_CT.extend(patient_cts)
 
         self.num_datapoints_CBCT = len(self.paths_CBCT)
         self.num_datapoints_CT = len(self.paths_CT)
@@ -79,9 +86,11 @@ class CBCTtoCTDataset(Dataset):
             # If-statement since the path might already be deleted by another worker.
             if path_CT in self.paths_CT:
                 self.paths_CT.remove(path_CT)
+                logger.info(f"Removed the image with size {sitk_utils.get_torch_like_size(CT)}"
+                            f" as it's smaller than the defined patch_size. Path: {path_CT}")
 
             # Randomly select another one
-            paths_CBCT = random.choice(self.paths_CBCT)
+            path_CT = random.choice(self.paths_CT)
 
             if i == 0:
                 raise ValueError(
@@ -106,27 +115,71 @@ class CBCTtoCTDataset(Dataset):
             # If-statement since the path might already be deleted by another worker.
             if path_CBCT in self.paths_CBCT:
                 self.paths_CBCT.remove(path_CBCT)
+                logger.info(f"Removed the image with size {sitk_utils.get_torch_like_size(CBCT)}"
+                            f" as it's smaller than the defined patch_size. Path: {path_CBCT}")
 
             # Randomly select another one
-            paths_CBCT = random.choice(self.paths_CBCT)
+            path_CBCT = random.choice(self.paths_CBCT)
 
             if i == 0:
                 raise ValueError(
                     f"Could not replace the image for {num_replacements_threshold}"
                     " consecutive times. Please verify your images and the specified config.")
 
-# limit CT so that it only contains part of the body shown in CBCT
+        # Use, by priority, BODY, External or treatment table mask
+        # to mask out unuseful values in the CT
+        mask_exists = True
+        negated_mask = False
+
+        if (path_CT / 'BODY.nrrd').exists():
+            mask_path = path_CT / 'BODY.nrrd'
+        elif paths := io.find_paths_containing_pattern(path_CT, "External*"):
+            mask_path = paths[0]
+        elif paths := io.find_paths_containing_pattern(path_CT, "*_treatment_*"):
+            mask_path = paths[0]
+            # Use negated masking as we want to only mask out the table
+            negated_mask = True
+        else:
+            mask_exists = False
+            logger.info(f'No mask files found for {path_CT}')
+
+        if mask_exists:
+            CT_mask = sitk_utils.load(mask_path)
+            CT = sitk_utils.apply_mask(CT,
+                                       CT_mask,
+                                       masking_value=self.hu_min,
+                                       set_same_origin=True,
+                                       negated_mask=negated_mask)
+
+        # Limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
-            logger.info(
-                "Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume."
-            )
+            logger.info("Post-registration truncated CT is smaller than the defined patch size."
+                        " Passing the whole CT volume.")
             del CT_truncated
         else:
             CT = CT_truncated
 
-        CBCT = sitk_utils.get_tensor(CBCT)
-        CT = sitk_utils.get_tensor(CT)
+        # Mask and bound is applied on numpy arrays!
+        CBCT = sitk_utils.get_npy(CBCT)
+        CT = sitk_utils.get_npy(CT)
+
+        CBCT = apply_body_mask_and_bound(CBCT,
+                                         apply_mask=True,
+                                         masking_value=self.hu_min,
+                                         apply_bound=True,
+                                         hu_threshold=-800)
+        CBCT = pad(CBCT, self.patch_size)
+
+        CT = apply_body_mask_and_bound(CT,
+                                       apply_mask=True,
+                                       masking_value=self.hu_min,
+                                       apply_bound=True,
+                                       hu_threshold=-600)
+        CT = pad(CT, self.patch_size)
+
+        CBCT = torch.tensor(CBCT)
+        CT = torch.tensor(CT)
 
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
@@ -156,7 +209,7 @@ class CBCTtoCTDataset(Dataset):
 
 # class CBCTtoCTInferenceDataset(Dataset):
 #     def __init__(self, conf):
-#         self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
+#         self.paths = io.make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
 #         self.num_datapoints = len(self.paths)
 #         # Min and max HU values for clipping and normalization
 #         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range

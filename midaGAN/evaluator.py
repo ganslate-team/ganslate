@@ -37,8 +37,6 @@ class Evaluator():
         inference_dir = Path(self.conf.logging.inference_dir) / "eval_nrrds"
 
         if self.enabled:
-            self.eval_iter_idx = 1
-
             self.logger.info(f"Evaluation started, running with {self.conf.samples} samples")
             for i, data in zip(range(self.conf.samples + 1), self.data_loader):
 
@@ -51,13 +49,14 @@ class Evaluator():
                 visuals['fake_B'] = self.infer(visuals['A'])
                 metrics = self.calculate_metrics(visuals['fake_B'], visuals['B'])
 
-                self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, visuals, metrics)
+                self.tracker.add_sample(visuals, metrics)
                 metadata = decollate(data['metadata'])
                 self.data_loader.dataset.save(
                     visuals['fake_B'], metadata,
-                    inference_dir / f"{self.trainer_idx}_{self.eval_iter_idx}")
+                    inference_dir / f"{self.trainer_idx}")
 
-                self.eval_iter_idx += 1
+
+            self.tracker.push_samples(self.trainer_idx)
 
     def infer(self, data):
         data = data.to(self.model.device)
@@ -78,11 +77,11 @@ class Evaluator():
             return None
 
     def calculate_metrics(self, pred, target):
-        # Check if dataset has scale_to_HU method defined,
+        # Check if dataset has scale_to_hu method defined,
         # if not, compute the metrics in [0, 1] space
-        if hasattr(self.data_loader.dataset, "scale_to_HU"):
-            pred = self.data_loader.dataset.scale_to_HU(pred)
-            target = self.data_loader.dataset.scale_to_HU(target)
+        if hasattr(self.data_loader.dataset, "scale_to_hu"):
+            pred = self.data_loader.dataset.scale_to_hu(pred)
+            target = self.data_loader.dataset.scale_to_hu(target)
 
         metrics = self.metrics.get_metric_dict(pred, target)
         return metrics

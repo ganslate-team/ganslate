@@ -53,6 +53,12 @@ def has_files_with_extension(folder, extensions):
     return False
 
 
+def find_paths_containing_pattern(path, pattern, recursive=False):
+    path = Path(path)
+    paths = path.rglob(pattern) if recursive else path.glob(pattern)
+    return list(paths)
+
+
 def load_json(file):
     with open(file, 'r') as f:
         return json.load(f)
