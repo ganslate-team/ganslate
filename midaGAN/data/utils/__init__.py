@@ -10,15 +10,15 @@ from typing import Union
 logger = logging.getLogger(__name__)
 
 
-def pad(index, volume):
-    assert len(index) == len(volume.shape)
-    pad_width = [(0, 0) for _ in range(len(index))]  # by default no padding
+def pad(volume, target_shape):
+    assert len(target_shape) == len(volume.shape)
+    pad_width = [(0, 0) for _ in range(len(target_shape))]  # by default no padding
 
-    for dim in range(len(index)):
-        if index[dim] > volume.shape[dim]:
-            pad = index[dim] - volume.shape[dim]
-            pad_per_side = pad // 2
-            pad_width[dim] = (pad_per_side, pad % 2 + pad_per_side)
+    for dim in range(len(target_shape)):
+        if target_shape[dim] > volume.shape[dim]:
+            pad_total = target_shape[dim] - volume.shape[dim]
+            pad_per_side = pad_total // 2
+            pad_width[dim] = (pad_per_side, pad_total % 2 + pad_per_side)
 
     return np.pad(volume, pad_width, 'constant', constant_values=volume.min())
 

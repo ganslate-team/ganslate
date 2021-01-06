@@ -77,3 +77,41 @@ def slice_image(sitk_image, start=(0, 0, 0), end=(-1, -1, -1)):
     slice_filter.SetStart(start)
     slice_filter.SetStop(end)
     return slice_filter.Execute(sitk_image)
+
+
+def apply_mask(sitk_image,
+               sitk_mask,
+               masking_value,
+               outside_value=0,
+               set_same_origin=False,
+               negated_mask=False):
+    """
+    Apply SimpleITK mask on a SimpleITK image.
+    
+    Parameters
+    ------------------
+    sitk_image: Input SimpleITK image
+    sitk_mask: Input SimpleTIK mask image
+    masking_value: int or float - Value to apply outside the mask
+    outside_value: int or float - Value where mask is negative, like 0 
+        in [0,1] or [0,255] masks. (Default: 0).
+    set_same_origin: bool - Sets the mask origin to be equal to the image origin. 
+        To be used only when the origin is roughly the same except for some 
+        minor differences in the position of the origin. (Default: False)
+    negated_mask: bool - if True, only the values where mask is 0 are masked out. 
+
+    Returns
+    ------------------
+    SimpleITK image: image with the masked values replaced with `masking value`.
+
+    """
+    if set_same_origin:
+        sitk_mask.SetOrigin(sitk_image.GetOrigin())
+
+    mask_filter = sitk.MaskNegatedImageFilter() if negated_mask else sitk.MaskImageFilter()
+
+    mask_filter.SetMaskingValue(masking_value)
+    mask_filter.SetOutsideValue(outside_value)
+
+    masked_sitk_image = mask_filter.Execute(sitk_image, sitk_mask)
+    return masked_sitk_image

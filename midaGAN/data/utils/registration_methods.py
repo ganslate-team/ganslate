@@ -44,7 +44,8 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     # while the other four are the slice indices of the top of the volume.
     z_corners = sorted([xyz[2] for xyz in final_corners])
 
-    # The registered image can be sloped it in regards to z-axis, so its corners might not lay in the same slice.
+    # The registered image can be sloped it in regards to z-axis,
+    # so its corners might not lay in the same slice.
     # Averaging them is a way to decide at which bottom and top slice the CT should be truncated.
     start_slice = int(round(mean(z_corners[:4])))
     end_slice = int(round(mean(z_corners[4:])))
