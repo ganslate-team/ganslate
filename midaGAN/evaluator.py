@@ -37,8 +37,6 @@ class Evaluator():
         inference_dir = Path(self.conf.logging.inference_dir) / "eval_nrrds"
 
         if self.enabled:
-            self.eval_iter_idx = 1
-
             self.logger.info(f"Evaluation started, running with {self.conf.samples} samples")
             for i, data in zip(range(self.conf.samples + 1), self.data_loader):
 
@@ -51,13 +49,14 @@ class Evaluator():
                 visuals['fake_B'] = self.infer(visuals['A'])
                 metrics = self.calculate_metrics(visuals['fake_B'], visuals['B'])
 
-                self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, visuals, metrics)
+                self.tracker.add_sample(visuals, metrics)
                 metadata = decollate(data['metadata'])
                 self.data_loader.dataset.save(
                     visuals['fake_B'], metadata,
-                    inference_dir / f"{self.trainer_idx}_{self.eval_iter_idx}")
+                    inference_dir / f"{self.trainer_idx}")
 
-                self.eval_iter_idx += 1
+
+            self.tracker.push_samples(self.trainer_idx)
 
     def infer(self, data):
         data = data.to(self.model.device)

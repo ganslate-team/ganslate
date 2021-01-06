@@ -24,6 +24,9 @@ class EvalTracker(BaseTracker):
             if conf.logging.tensorboard:
                 self.tensorboard = TensorboardTracker(conf)
 
+        self.metrics = []
+        self.visuals = []
+
     def start_saving_timer(self):
         self.saving_start_time = time.time()
 
@@ -42,10 +45,11 @@ class EvalTracker(BaseTracker):
 
         self.logger.info(message)
 
-    def log_sample(self, train_index, index, visuals, metrics):
+    
+
+    def add_sample(self, visuals, metrics):
         """Parameters: # TODO: update this
         """
-        self.iter_idx = index
         visuals = {k: v for k, v in visuals.items() if v is not None}
         metrics = {k: v for k, v in metrics.items() if v is not None}
 
@@ -53,17 +57,36 @@ class EvalTracker(BaseTracker):
             metrics, average=True,
             all_reduce=False)  # reduce metrics (avg) and send to the process of rank 0
 
-        self._log_message(self.iter_idx, metrics)
 
         if communication.get_local_rank() == 0:
             visuals = visuals_to_combined_2d_grid(visuals)
-            self._save_image(visuals)
+            self.visuals.append(visuals)
+            self.metrics.append(metrics)
+
+
+    def push_samples(self, iter_idx):
+        if communication.get_local_rank() == 0:
+            print("Number of samples", len(self.visuals))
+            for visuals in self.visuals:
+                self._save_image(visuals)
+
+            # Averages list of dictionaries within self.metrics        
+            averaged_metrics = {
+                    key: sum(metric[key] for metric in self.metrics)/len(self.metrics)
+                    for key in self.metrics[0]
+                }
+
+            self._log_message(iter_idx, averaged_metrics)
 
             if self.wandb:
-                self.wandb.log_iter(train_index, {}, {}, visuals, metrics, batch=index)
+                self.wandb.log_iter(iter_idx, {}, {}, self.visuals, averaged_metrics, mode='validation')
 
             if self.tensorboard:
-                self.tensorboard.log_iter(train_index, {}, {}, visuals, metrics, batch=index)
+                self.tensorboard.log_iter(iter_idx, {}, {}, visuals, metrics, mode='validation')
+
+            # Clear stored buffer after pushing the results
+            self.metrics = []
+            self.visuals = []
 
     def _save_image(self, visuals):
         name, image = visuals['name'], visuals['image']
