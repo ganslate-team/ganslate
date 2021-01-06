@@ -125,7 +125,7 @@ class CBCTtoCTDataset(Dataset):
                 raise ValueError(
                     f"Could not replace the image for {num_replacements_threshold}"
                     " consecutive times. Please verify your images and the specified config.")
-        
+
         # Use, by priority, BODY, External or treatment table mask
         # to mask out unuseful values in the CT
         mask_exists = True
@@ -145,11 +145,11 @@ class CBCTtoCTDataset(Dataset):
 
         if mask_exists:
             CT_mask = sitk_utils.load(mask_path)
-            CT = sitk_utils.apply_mask(CT, CT_mask, 
-                                       masking_value=self.hu_min, 
+            CT = sitk_utils.apply_mask(CT,
+                                       CT_mask,
+                                       masking_value=self.hu_min,
                                        set_same_origin=True,
                                        negated_mask=negated_mask)
-
 
         # Limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
@@ -180,7 +180,7 @@ class CBCTtoCTDataset(Dataset):
 
         CBCT = torch.tensor(CBCT)
         CT = torch.tensor(CT)
-        
+
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
 
