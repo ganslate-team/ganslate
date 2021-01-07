@@ -48,8 +48,10 @@ class MultiScalePatchGAN3D(nn.Module):
     def __init__(self, in_channels, ndf, n_layers, kernel_size, scales, norm_type):
         super().__init__()
         # Multiscale PatchGAN consists of multiple PatchGANs.
-        self.model = nn.ModuleDict({str(scale): patchgan3d.PatchGAN3D(in_channels, ndf, n_layers, kernel_size, norm_type) \
-                                        for scale in range(1, scales + 1)})
+        self.model = nn.ModuleDict()
+        for scale in range(1, scales + 1):
+            self.model[str(scale)] = patchgan3d.PatchGAN3D(in_channels, ndf, n_layers, kernel_size,
+                                                           norm_type)
 
     def forward(self, input):
         model_outputs = {}

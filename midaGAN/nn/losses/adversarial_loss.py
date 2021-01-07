@@ -90,10 +90,8 @@ class AdversarialLoss(nn.Module):
         """
         # If prediction is a dict, compute loss and reduce over all keys of the dict
         if isinstance(prediction, dict):
-            loss_list = [self.calculate_loss(pred, target_is_real) \
-                            for k, pred in prediction.items()]
+            loss_list = [self.calculate_loss(pred, target_is_real) for pred in prediction.values()]
             loss = torch.stack(loss_list).mean()
-
         else:
             loss = self.calculate_loss(prediction, target_is_real)
 

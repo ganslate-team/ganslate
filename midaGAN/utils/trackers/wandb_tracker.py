@@ -10,8 +10,7 @@ class WandbTracker:
 
         config_dict = OmegaConf.to_container(conf, resolve=True)
 
-        wandb.init(project=project, entity=entity,
-                   config=config_dict)  # TODO: project and organization from conf
+        wandb.init(project=project, entity=entity, config=config_dict)
 
         if conf.logging.wandb.run:
             wandb.run.name = conf.logging.wandb.run
