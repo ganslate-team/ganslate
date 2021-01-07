@@ -1,5 +1,4 @@
 import logging
-import time
 from pathlib import Path
 
 import torchvision
@@ -24,13 +23,8 @@ class EvalTracker(BaseTracker):
             if conf.logging.tensorboard:
                 self.tensorboard = TensorboardTracker(conf)
 
-    def start_saving_timer(self):
-        self.saving_start_time = time.time()
-
-    def end_saving_timer(self):
-        self.t_save = (time.time() - self.saving_start_time) / self.batch_size
-        # reduce computational time data point (avg) and send to the process of rank 0
-        self.t_save = communication.reduce(self.t_save, average=True, all_reduce=False)
+        self.metrics = []
+        self.visuals = []
 
     def _log_message(self, index, metrics):
         message = '\n' + 20 * '-' + ' '
@@ -42,10 +36,9 @@ class EvalTracker(BaseTracker):
 
         self.logger.info(message)
 
-    def log_sample(self, train_index, index, visuals, metrics):
+    def add_sample(self, visuals, metrics):
         """Parameters: # TODO: update this
         """
-        self.iter_idx = index
         visuals = {k: v for k, v in visuals.items() if v is not None}
         metrics = {k: v for k, v in metrics.items() if v is not None}
 
@@ -53,17 +46,41 @@ class EvalTracker(BaseTracker):
             metrics, average=True,
             all_reduce=False)  # reduce metrics (avg) and send to the process of rank 0
 
-        self._log_message(self.iter_idx, metrics)
-
         if communication.get_local_rank() == 0:
             visuals = visuals_to_combined_2d_grid(visuals)
-            self._save_image(visuals)
+            self.visuals.append(visuals)
+            self.metrics.append(metrics)
+
+    def push_samples(self, iter_idx):
+        """
+        Push samples to start logging
+        """
+        if communication.get_local_rank() == 0:
+            print("Number of samples", len(self.visuals))
+            for visuals in self.visuals:
+                self._save_image(visuals)
+
+            # Averages list of dictionaries within self.metrics
+            averaged_metrics = {
+                key: sum(metric[key] for metric in self.metrics) / len(self.metrics)
+                for key in self.metrics[0]
+            }
+
+            self._log_message(iter_idx, averaged_metrics)
 
             if self.wandb:
-                self.wandb.log_iter(train_index, {}, {}, visuals, metrics, batch=index)
-
+                self.wandb.log_iter(iter_idx, {}, {},
+                                    self.visuals,
+                                    averaged_metrics,
+                                    mode='validation')
+            #TODO: Adapt eval tracker for tensorboard
             if self.tensorboard:
-                self.tensorboard.log_iter(train_index, {}, {}, visuals, metrics, batch=index)
+                raise NotImplementedError("Tensorboard evaluation tracking not implemented")
+                # self.tensorboard.log_iter(iter_idx, {}, {}, visuals, metrics)
+
+            # Clear stored buffer after pushing the results
+            self.metrics = []
+            self.visuals = []
 
     def _save_image(self, visuals):
         name, image = visuals['name'], visuals['image']

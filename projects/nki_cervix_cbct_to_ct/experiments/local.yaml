@@ -36,7 +36,7 @@ gan:
     up_blocks: [3, 3, 3]
 
   discriminator:
-      name: "PatchGAN3D"
+      name: "MultiScalePatchGAN3D"
       n_layers: 2
       in_channels: 1
       kernel_size: [2, 4, 4]
@@ -47,12 +47,8 @@ gan:
     lambda_identity: 0.0
     lambda_inverse: 0.0
     proportion_ssim: 0.84
-    lr_D: 0.0001
-    lr_G: 0.0002
-
-    loss_mask:
-      masking_value: -1
-      operator: "eq" 
+    lr_D: 0.0002
+    lr_G: 0.0004
 
 
 metrics: 
@@ -61,7 +57,7 @@ metrics:
   
 evaluation:
   freq: 2
-  samples: 5
+  samples: 10
   dataset: 
       name: CBCTtoCTEvalDataset
       root: /repos/Maastro/nki_cervix
