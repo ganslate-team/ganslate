@@ -1,3 +1,5 @@
+from typing import Union, Dict
+
 import torch
 import torch.nn as nn
 
@@ -11,7 +13,9 @@ class AdversarialLoss(nn.Module):
     def __init__(self, gan_mode, target_real_label=1.0, target_fake_label=0.0):
         """ Initialize the AdversarialLoss class.
         Parameters:
-            gan_mode (str) - - the type of GAN objective. It currently supports vanilla, lsgan, and wgangp.
+            gan_mode (str) - - the type of GAN objective. 
+            It currently supports vanilla, lsgan, and wgangp.
+
             target_real_label (bool) - - label for a real image
             target_fake_label (bool) - - label of a fake image
         Note: Do not use sigmoid as the last layer of Discriminator.
@@ -45,8 +49,7 @@ class AdversarialLoss(nn.Module):
             target_tensor = self.fake_label
         return target_tensor.expand_as(prediction)
 
-
-    def calculate_loss(self, prediction, target_is_real):
+    def calculate_loss(self, prediction: torch.Tensor, target_is_real: bool):
         """Calculate loss given Discriminator's output and grount truth labels.
         Parameters:
             prediction (tensor) - - tpyically the prediction output from a discriminator
@@ -68,23 +71,30 @@ class AdversarialLoss(nn.Module):
                 loss = F.softplus(-prediction).view(bs, -1).mean(dim=1)
             else:
                 loss = F.softplus(prediction).view(bs, -1).mean(dim=1)
-        return loss        
+        return loss
 
 
-    def __call__(self, prediction, target_is_real):
+    def forward(self, prediction: Union[Dict[str, torch.Tensor], torch.Tensor], \
+                    target_is_real: bool):
         """
-        TODO: Replace torch mean with a user specifyable function 
+        Calculate loss given Discriminator's output and ground truth labels.
+        Parameters:
+            prediction (tensor or dictionary of tensors) - the prediction output can be 
+            from a single discriminator where it is a tensor or from multiple 
+            discriminators or more complex discriminator structures where
+            it can be a Dict of tensors. When it is a dict of tensors the adversarial loss
+            is averaged (TODO: will be configurable) over all the elements of the dict. 
+            target_is_real (bool) - if the ground truth label is for real images or fake images
+        Returns:
+            the calculated loss.
         """
         # If prediction is a dict, compute loss and reduce over all keys of the dict
         if isinstance(prediction, dict):
-            loss_list = [self.calculate_loss(pred, target_is_real) for k, pred in prediction.items()]
+            loss_list = [self.calculate_loss(pred, target_is_real) \
+                            for k, pred in prediction.items()]
             loss = torch.stack(loss_list).mean()
 
         else:
             loss = self.calculate_loss(prediction, target_is_real)
 
         return loss
-
-
-        
-        

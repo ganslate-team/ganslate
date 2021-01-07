@@ -3,6 +3,7 @@ import wandb
 
 
 class WandbTracker:
+
     def __init__(self, conf):
         project = conf.logging.wandb.project
         entity = conf.logging.wandb.entity
