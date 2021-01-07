@@ -1,5 +1,4 @@
 import logging
-import time
 from pathlib import Path
 
 import torchvision
@@ -27,14 +26,6 @@ class EvalTracker(BaseTracker):
         self.metrics = []
         self.visuals = []
 
-    def start_saving_timer(self):
-        self.saving_start_time = time.time()
-
-    def end_saving_timer(self):
-        self.t_save = (time.time() - self.saving_start_time) / self.batch_size
-        # reduce computational time data point (avg) and send to the process of rank 0
-        self.t_save = communication.reduce(self.t_save, average=True, all_reduce=False)
-
     def _log_message(self, index, metrics):
         message = '\n' + 20 * '-' + ' '
         message += f'(sample: {index})'
@@ -44,8 +35,6 @@ class EvalTracker(BaseTracker):
             message += '%s: %.3f ' % (k, v)
 
         self.logger.info(message)
-
-    
 
     def add_sample(self, visuals, metrics):
         """Parameters: # TODO: update this
@@ -57,32 +46,37 @@ class EvalTracker(BaseTracker):
             metrics, average=True,
             all_reduce=False)  # reduce metrics (avg) and send to the process of rank 0
 
-
         if communication.get_local_rank() == 0:
             visuals = visuals_to_combined_2d_grid(visuals)
             self.visuals.append(visuals)
             self.metrics.append(metrics)
 
-
     def push_samples(self, iter_idx):
+        """
+        Push samples to start logging
+        """
         if communication.get_local_rank() == 0:
             print("Number of samples", len(self.visuals))
             for visuals in self.visuals:
                 self._save_image(visuals)
 
-            # Averages list of dictionaries within self.metrics        
+            # Averages list of dictionaries within self.metrics
             averaged_metrics = {
-                    key: sum(metric[key] for metric in self.metrics)/len(self.metrics)
-                    for key in self.metrics[0]
-                }
+                key: sum(metric[key] for metric in self.metrics) / len(self.metrics)
+                for key in self.metrics[0]
+            }
 
             self._log_message(iter_idx, averaged_metrics)
 
             if self.wandb:
-                self.wandb.log_iter(iter_idx, {}, {}, self.visuals, averaged_metrics, mode='validation')
-
+                self.wandb.log_iter(iter_idx, {}, {},
+                                    self.visuals,
+                                    averaged_metrics,
+                                    mode='validation')
+            #TODO: Adapt eval tracker for tensorboard
             if self.tensorboard:
-                self.tensorboard.log_iter(iter_idx, {}, {}, visuals, metrics, mode='validation')
+                raise NotImplementedError("Tensorboard evaluation tracking not implemented")
+                # self.tensorboard.log_iter(iter_idx, {}, {}, visuals, metrics)
 
             # Clear stored buffer after pushing the results
             self.metrics = []

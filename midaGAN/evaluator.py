@@ -38,7 +38,7 @@ class Evaluator():
 
         if self.enabled:
             self.logger.info(f"Evaluation started, running with {self.conf.samples} samples")
-            for i, data in zip(range(self.conf.samples + 1), self.data_loader):
+            for _, data in zip(range(self.conf.samples + 1), self.data_loader):
 
                 # Move elements from data that are visuals
                 visuals = {
@@ -51,10 +51,8 @@ class Evaluator():
 
                 self.tracker.add_sample(visuals, metrics)
                 metadata = decollate(data['metadata'])
-                self.data_loader.dataset.save(
-                    visuals['fake_B'], metadata,
-                    inference_dir / f"{self.trainer_idx}")
-
+                self.data_loader.dataset.save(visuals['fake_B'], metadata,
+                                              inference_dir / f"{self.trainer_idx}")
 
             self.tracker.push_samples(self.trainer_idx)
 
