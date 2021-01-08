@@ -24,8 +24,8 @@ def build_loader(conf):
                 dataset,
                 shuffle=False,
                 num_replicas=communication.get_world_size(),
-                rank=communication.get_local_rank(
-                ))  # TODO: verify that this indeed should be local rank and not rank
+                # TODO: should it be rank instead?
+                rank=communication.get_local_rank())
 
     loader = DataLoader(dataset,
                         batch_size=conf.batch_size,

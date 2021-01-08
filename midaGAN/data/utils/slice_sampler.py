@@ -4,16 +4,17 @@ import numpy as np
 from midaGAN.data.utils import pad
 
 
+# TODO: Differentiate from Stochasting Focal Patching
 class SliceSampler:
-    """ Stochasting Focal Patching technique achieves spatial correspondance of patches extracted from a pair 
+    """ Stochasting Focal Patching technique achieves spatial correspondance of patches extracted from a pair
     of volumes by:
         (1) Randomly selecting a slice from volume_A (slice_A)
-        (2) Calculating the relative start position of the slice_A 
+        (2) Calculating the relative start position of the slice_A
         (3) Translating the slice_A's relative position in volume_B
         (4) Placing a focal region (a proportion of volume shape) around the focal point
         (5) Randomly selecting a start point in the focal region and extracting the slice_B
 
-    The added stochasticity in steps (4) and (5) aims to account for possible differences in positioning 
+    The added stochasticity in steps (4) and (5) aims to account for possible differences in positioning
     of the object between volumes.
     """
 
@@ -24,7 +25,7 @@ class SliceSampler:
         self.patch_size = np.array(patch_size)
         try:
             assert len(self.patch_size) == 2
-        except AssertionError as error:
+        except AssertionError:
             print("Patch size needs to be 2D, use StochasticFocalPatchSampler for 3D!")
             exit()
 
@@ -40,9 +41,8 @@ class SliceSampler:
     def slice_and_focal_point_from_A(self, volume):
         """Return random patch from volume A and its relative start position."""
         z, x, y = self.pick_random_start(volume)
-
-        x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)
-                       ]  # start + patch size for each coord
+        # start + patch size for each coord
+        x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)]
 
         volume = pad(volume, (0, x_end, y_end))
 
@@ -53,8 +53,8 @@ class SliceSampler:
     def slice_from_B(self, volume, relative_focal_point):
         """Return random patch from volume B that is in relative neighborhood of patch_A."""
         z, x, y = self.pick_stochastic_focal_start(volume, relative_focal_point)
-        x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)
-                       ]  # start + patch size for each coord
+        # start + patch size for each coord
+        x_end, y_end = [sum(pair) for pair in zip((x, y), self.patch_size)]
 
         volume = pad(volume, (0, x_end, y_end))
 
@@ -76,7 +76,8 @@ class SliceSampler:
         focal_region = self.focal_region_proportion * volume_size
         focal_region = focal_region.astype(np.int64)
 
-        focal_point = relative_focal_point * volume_size  # map relative point to corresponding point in this volume
+        # Map relative point to corresponding point in this volume
+        focal_point = relative_focal_point * volume_size
         valid_start_region = self.calculate_valid_start_region(volume)
 
         start_coordinates = self.apply_stochastic_focal_method(focal_point, focal_region,
@@ -99,10 +100,11 @@ class SliceSampler:
             min_position = max(0, min_position)
             max_position = min(max_position, valid_start_region[axis])
 
-            if min_position > max_position:  # edge cases # TODO: is it because there's no min(min_position, valid_start_region[axis])
+            # Edge cases # TODO: is it because there's no min(min_position, valid_start_region[axis])
+            if min_position > max_position:
                 start_point.append(max_position)
             else:
-                start_point.append(random.randint(min_position, max_position))  # regular case
+                start_point.append(random.randint(min_position, max_position))
 
         return start_point
 
@@ -123,4 +125,5 @@ class SliceSampler:
         return valid_start_region
 
     def get_size(self, volume):
-        return np.array(volume.shape[-3:])  # last three dimension (Z,X,Y)
+        # last three dimension (Z,X,Y)
+        return np.array(volume.shape[-3:])

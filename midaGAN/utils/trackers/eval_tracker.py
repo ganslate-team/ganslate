@@ -41,10 +41,8 @@ class EvalTracker(BaseTracker):
         """
         visuals = {k: v for k, v in visuals.items() if v is not None}
         metrics = {k: v for k, v in metrics.items() if v is not None}
-
-        metrics = communication.reduce(
-            metrics, average=True,
-            all_reduce=False)  # reduce metrics (avg) and send to the process of rank 0
+        # reduce metrics (avg) and send to the process of rank 0
+        metrics = communication.reduce(metrics, average=True, all_reduce=False)
 
         if communication.get_local_rank() == 0:
             visuals = visuals_to_combined_2d_grid(visuals)
@@ -61,18 +59,23 @@ class EvalTracker(BaseTracker):
                 self._save_image(visuals)
 
             # Averages list of dictionaries within self.metrics
-            averaged_metrics = {
-                key: sum(metric[key] for metric in self.metrics) / len(self.metrics)
-                for key in self.metrics[0]
-            }
+            averaged_metrics = {}
+            # Each element of self.metrics has the same metric keys so
+            # so fetching the key names from self.metrics[0] is fine
+            for key in self.metrics[0]:
+                metric_average = sum(metric[key] for metric in self.metrics) / len(self.metrics)
+                averaged_metrics[key] = metric_average
 
             self._log_message(iter_idx, averaged_metrics)
 
             if self.wandb:
-                self.wandb.log_iter(iter_idx, {}, {},
-                                    self.visuals,
-                                    averaged_metrics,
+                self.wandb.log_iter(iter_idx=iter_idx,
+                                    learning_rates={},
+                                    losses={},
+                                    visuals=self.visuals,
+                                    metrics=averaged_metrics,
                                     mode='validation')
+
             #TODO: Adapt eval tracker for tensorboard
             if self.tensorboard:
                 raise NotImplementedError("Tensorboard evaluation tracking not implemented")

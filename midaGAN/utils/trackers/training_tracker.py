@@ -38,12 +38,10 @@ class TrainingTracker(BaseTracker):
             losses = {k: v for k, v in losses.items() if v is not None}
             metrics = {k: v for k, v in metrics.items() if v is not None}
 
-            metrics = communication.reduce(
-                metrics, average=True,
-                all_reduce=False)  # reduce metrics (avg) and send to the process of rank 0
-            losses = communication.reduce(
-                losses, average=True,
-                all_reduce=False)  # reduce losses (avg) and send to the process of rank 0
+            # reduce metrics (avg) and send to the process of rank 0
+            metrics = communication.reduce(metrics, average=True, all_reduce=False)
+            # reduce losses (avg) and send to the process of rank 0
+            losses = communication.reduce(losses, average=True, all_reduce=False)
 
             self._log_message(learning_rates, losses)
 

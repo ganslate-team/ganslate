@@ -16,7 +16,8 @@ class Trainer():
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
 
-        torch.backends.cudnn.benchmark = True  # https://stackoverflow.com/a/58965640
+        # https://stackoverflow.com/a/58965640
+        torch.backends.cudnn.benchmark = True
 
         # Set reproducibility parameters (random numbers and cudnn backend)
         if self.conf.seed:
@@ -67,8 +68,8 @@ class Trainer():
         self.model.optimize_parameters()
 
     def _perform_scheduler_step(self):
-        self.model.update_learning_rate(
-        )  # perform a scheduler step # TODO: better to make decaying rate in checkpoints rather than per iter
+        # perform a scheduler step
+        self.model.update_learning_rate()
 
     def _save_checkpoint(self):
         # TODO: save on cancel

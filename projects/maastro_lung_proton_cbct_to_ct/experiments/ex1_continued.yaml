@@ -1,0 +1,50 @@
+project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
+use_cuda: True
+n_iters: 45000  # starting from 40000
+n_iters_decay: 5000
+batch_size: 1
+mixed_precision: True
+
+load_checkpoint:
+    iter: 40000
+    count_start_iter: 40001
+    reset_optimizers: True
+
+logging:
+    checkpoint_dir: "./checkpoints/cbcttoct_ex16_lambda5"
+    wandb:
+        project: "proton-cbct-ct"
+    log_freq: 20
+    checkpoint_freq: 1000
+
+dataset: 
+    name: "CBCTtoCTDataset"
+    root: "/workspace/processed/"
+    num_workers: 16
+    patch_size: [40, 392, 392]
+    
+gan:  
+    name: "PiCycleGAN"
+
+    generator:
+        name: Vnet3D
+        in_channels: 1
+        use_memory_saving: False
+        use_inverse: True
+        is_separable: False
+        down_blocks: [2, 2, 3]
+        up_blocks: [3, 3, 3]
+
+    discriminator:
+        name: "PatchGAN3D"
+        n_layers: 2
+        in_channels: 1
+
+    optimizer:
+        lambda_A: 5.0
+        lambda_B: 5.0
+        lambda_identity: 0.0
+        lambda_inverse: 0.0
+        proportion_ssim: 0.84
+        lr_D: 0.0002
+        lr_G: 0.0004

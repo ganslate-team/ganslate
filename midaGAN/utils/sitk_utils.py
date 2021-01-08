@@ -87,7 +87,7 @@ def apply_mask(sitk_image,
                negated_mask=False):
     """
     Apply SimpleITK mask on a SimpleITK image.
-    
+
     Parameters
     ------------------
     sitk_image: Input SimpleITK image

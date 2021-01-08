@@ -1,3 +1,4 @@
+import numpy as np
 from PIL import Image
 import torchvision.transforms as transforms
 
@@ -12,7 +13,7 @@ def get_transform(conf, method=Image.BICUBIC):
     transform_list = []
 
     if 'resize' in preprocess:
-        osize = [load_size, load_size]  # TODO: make it a tuple from config
+        osize = [load_size, load_size]
         transform_list.append(transforms.Resize(osize, method))
 
     elif 'scale_width' in preprocess:
