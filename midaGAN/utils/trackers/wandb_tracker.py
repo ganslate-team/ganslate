@@ -23,7 +23,7 @@ class WandbTracker:
             ]
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics, mode='train'):
-        """TODO"""
+        """"""
         mode = mode.capitalize()
         log_dict = {}
 
@@ -52,8 +52,7 @@ class WandbTracker:
         """
         Create wandb images from visuals
         """
-        # Check if visuals is a list of images and create a list
-        # of wandb.Image
+        # Check if visuals is a list of images and create a list of wandb.Image's
         if isinstance(visuals, list):
             wandb_images = []
             for idx, visual in enumerate(visuals):
@@ -62,12 +61,10 @@ class WandbTracker:
                     visual['name'] = f"Sample: {idx} {visual['name']}"
 
                 wandb_images.append(self._wandb_image_from_visual(visual))
-
             return wandb_images
 
         # If visual is an image then a single wandb.Image is created
-        else:
-            return self._wandb_image_from_visual(visuals)
+        return self._wandb_image_from_visual(visuals)
 
     def _wandb_image_from_visual(self, visual, image_threshold=None):
         """
@@ -75,7 +72,8 @@ class WandbTracker:
         https://docs.wandb.ai/library/log#images-and-overlays
         """
         name, image = visual['name'], visual['image']
-        image = image.permute(1, 2, 0)  # CxHxW -> HxWxC
+        # CxHxW -> HxWxC
+        image = image.permute(1, 2, 0)
 
         # Check if a threshold is defined while creating the wandb image.
         if image_threshold:

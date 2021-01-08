@@ -51,9 +51,8 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
     end_slice = int(round(mean(z_corners[4:])))
     # When the registration fails, just return the original CT. Happens infrequently.
     if start_slice < 0:
-        logger.info(
-            "Registration failed as the at least one corner is below 0 in one of the axes. Passing the whole CT volume."
-        )
+        logger.info("Registration failed as the at least one corner is below 0 in one of the axes."
+                    " Passing the whole CT volume.")
         return CT
     return CT[:, :, start_slice:end_slice]
 
@@ -80,10 +79,11 @@ def register_CT_to_CBCT(CT, CBCT, registration_type="Rigid"):
 def get_registration_transform(fixed_image, moving_image, registration_type="Rigid"):
     """Performs the registration and returns a SimpleITK's `Transform` class which can be
     used to resample an image so that it is registered to another one. However, in our code
-    should be truncated so that it contains only the part of the body that is found in the `fixed_image`. 
-    Registration parameters are hardcoded and picked for the specific task of  CBCT to CT translation. 
+    should be truncated so that it contains only the part of the body that is 
+    found in the `fixed_image`.
+    Registration parameters are hardcoded and picked for the specific 
+    task of  CBCT to CT translation. 
     TODO: consider making the adjustable in config.
-    
     
     Parameters:
     ------------------------
@@ -95,8 +95,10 @@ def get_registration_transform(fixed_image, moving_image, registration_type="Rig
     """
 
     # Get seed from environment variable if set for registration randomness
-    seed = int(
-        os.environ.get('PYTHONHASHSEED')) if 'PYTHONHASHSEED' in os.environ else sitk.sitkWallClock
+    if 'PYTHONHASHSEED' in os.environ:
+        seed = int(os.environ.get('PYTHONHASHSEED'))
+    else:
+        seed = sitk.sitkWallClock
 
     # SimpleITK registration's supported pixel types are sitkFloat32 and sitkFloat64
     fixed_image = sitk.Cast(fixed_image, sitk.sitkFloat32)
@@ -130,7 +132,8 @@ def get_registration_transform(fixed_image, moving_image, registration_type="Rig
         logger.warning("Unsupported transform provided, falling back to Rigid transformation")
         registration_transform = REGISTRATION_MAP["Rigid"]
 
-    # Align the centers of the two volumes and set the center of rotation to the center of the fixed image
+    # Align the centers of the two volumes and set the
+    # center of rotation to the center of the fixed image
     initial_transform = sitk.CenteredTransformInitializer(
         fixed_image, moving_image, registration_transform,
         sitk.CenteredTransformInitializerFilter.GEOMETRY)
