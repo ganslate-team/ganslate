@@ -1,4 +1,4 @@
-project_dir: "./projects/proton_cbct_to_ct"
+project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
 use_cuda: True
 n_iters: 20000
 n_iters_decay: 20000
