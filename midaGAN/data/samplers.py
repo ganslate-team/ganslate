@@ -10,8 +10,8 @@ LICENSE file in the root directory of this source tree.
 # - Docstring to match the rest of the library
 # - Calls to other subroutines which do not exist in DIRECT.
 
-import torch
 import itertools
+import torch
 
 from torch.utils.data.sampler import Sampler
 from midaGAN.utils import communication

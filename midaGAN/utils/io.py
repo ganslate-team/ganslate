@@ -7,7 +7,7 @@ def mkdirs(*paths):
         Path(path).mkdir(parents=True, exist_ok=True)
 
 
-def make_dataset_of_files(root, extensions=['.npy']):
+def make_dataset_of_files(root, extensions):
     """The root of dataset contains files of the given extension."""
     root = Path(root).resolve()
     assert root.is_dir(), f"{root} is not a valid directory"
@@ -15,12 +15,12 @@ def make_dataset_of_files(root, extensions=['.npy']):
     return sorted(paths)
 
 
-def make_recursive_dataset_of_files(root, extensions=['.npy']):
+def make_recursive_dataset_of_files(root, extensions):
     root = Path(root).resolve()
     assert root.is_dir(), f"{root} is not a valid directory"
     paths = []
     for ext in extensions:
-        paths.extend([file for file in root.rglob(f"*{ext}")])
+        paths.extend(list(root.rglob(f"*{ext}")))
     return sorted(paths)
 
 
@@ -30,7 +30,7 @@ def has_extension(file, extensions):
     return any(ext in suffix for ext in extensions)
 
 
-def make_dataset_of_directories(root, extensions=['.npy']):
+def make_dataset_of_directories(root, extensions):
     """The root of dataset contains folders for each data point. Each data point folder has to have
     (at least) one file of the specified extension. The dataset has to define which file it takes from
     such folder. Useful when using a dataset that stores, for example, an image and a mask together

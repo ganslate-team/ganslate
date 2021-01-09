@@ -25,9 +25,8 @@ def init_config(conf, config_class=configs.training.TrainConfig):
     # Allows the framework to find user-defined, project-specific, dataset classes and their configs
     if conf.project_dir:
         IMPORT_LOCATIONS["dataset"].append(conf.project_dir)
-        logger.info(
-            f"Project directory {conf.project_dir} added to path to allow imports of modules from it."
-        )
+        logger.info(f"Project directory {conf.project_dir} added to the"
+                    " path to allow imports of modules from it.")
 
     # Make yaml mergeable by instantiating the dataclasses
     conf = instantiate_dataclasses_from_yaml(conf)
@@ -37,7 +36,7 @@ def init_config(conf, config_class=configs.training.TrainConfig):
 
 
 def instantiate_dataclasses_from_yaml(conf):
-    """Goes through a config and instantiates the fields that are dataclasses. 
+    """Goes through a config and instantiates the fields that are dataclasses.
     A field is a dataclass if its key can be found in the keys of the IMPORT_LOCATIONS.
     Each such dataclass should have an entry "name" which is used to import its dataclass
     class using that "name" + "Config" as class name.
@@ -78,4 +77,5 @@ def get_all_conf_keys(conf):
     """Get all keys from a conf and order from them the deepest to the shallowest."""
     conf = OmegaConf.to_container(conf)
     keys = list(utils.iterate_nested_dict_keys(conf))
-    return keys[::-1]  # order by depth
+    # Order deeper to shallower
+    return keys[::-1]

@@ -16,7 +16,8 @@ from midaGAN.utils import communication, environment
 
 
 def main():
-    communication.init_distributed()  # inits distributed mode if ran with torch.distributed.launch
+    # inits distributed mode if ran with torch.distributed.launch
+    communication.init_distributed()
 
     conf = builders.build_inference_conf()
     environment.setup_logging_with_config(conf)

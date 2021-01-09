@@ -41,12 +41,10 @@ class SliceBasedDataset(Dataset):
         elif conf.dataset.crop:
             self.crop_size = conf.dataset.crop_size
 
-        dataset_summary = pd.read_csv(Path(conf.dataset.root) / 'dataset_summary.csv')
+        data_summary = pd.read_csv(Path(conf.dataset.root) / 'dataset_summary.csv')
         # Filter out rows by their domain
-        self.domain_A_summary = dataset_summary[dataset_summary["volume_filename"].str.startswith(
-            'A')]
-        self.domain_B_summary = dataset_summary[dataset_summary["volume_filename"].str.startswith(
-            'B')]
+        self.domain_A_summary = data_summary[data_summary["volume_filename"].str.startswith('A')]
+        self.domain_B_summary = data_summary[data_summary["volume_filename"].str.startswith('B')]
 
         self.num_datapoints_A = len(self.domain_A_summary)
         self.num_datapoints_B = len(self.domain_B_summary)

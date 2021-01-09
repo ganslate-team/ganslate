@@ -20,7 +20,8 @@ from midaGAN import configs
 class BratsDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "BratsDataset"
     patch_size: Tuple[int, int, int] = (32, 32, 32)
-    focal_region_proportion: float = 0  # Proportion of focal region size compared to original volume size
+    # Proportion of focal region size compared to original volume size
+    focal_region_proportion: float = 0
     source_sequence: str = "flair"
     target_sequence: str = "t1w"
 
@@ -38,10 +39,10 @@ def get_mri_sequence(sitk_image, sequence_name):
     size[3] = 0
     index = [0, 0, 0, z_index]
 
-    Extractor = sitk.ExtractImageFilter()
-    Extractor.SetSize(size)
-    Extractor.SetIndex(index)
-    return Extractor.Execute(sitk_image)
+    extractor = sitk.ExtractImageFilter()
+    extractor.SetSize(size)
+    extractor.SetIndex(index)
+    return extractor.Execute(sitk_image)
 
 
 class BratsDataset(Dataset):

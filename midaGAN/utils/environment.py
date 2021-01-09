@@ -94,10 +94,10 @@ def setup_logging(use_stdout: Optional[bool] = True,
         root.addHandler(handler)
 
     if filename is not None:
-        fh = logging.FileHandler(filename)
-        fh.setLevel(log_level)
-        fh.setFormatter(formatter)
-        root.addHandler(fh)
+        handler = logging.FileHandler(filename)
+        handler.setLevel(log_level)
+        handler.setFormatter(formatter)
+        root.addHandler(handler)
 
 
 def set_seed(seed=0):
@@ -113,20 +113,16 @@ def set_seed(seed=0):
     torch.backends.cudnn.benchmark = False
 
 
-def threading_setup():
+def setup_threading():
     """
     Sets max threads for SimpleITK and Opencv.
-    For numpy etc. set OMP_NUM_THREADS=1 as an env var while 
-    running the training script 
-    E.g 
-    OMP_NUM_THREADS=1 python tools/train.py ...
+    For numpy etc. set OMP_NUM_THREADS=1 as an env var while running the training script,
+    e.g., OMP_NUM_THREADS=1 python tools/train.py ...
     """
     logger.warning("""
     Max threads for SimpleITK and Opencv set to 1
-    For numpy etc. set OMP_NUM_THREADS=1 as an env var while 
-    running the training script 
-    E.g 
-    OMP_NUM_THREADS=1 python tools/train.py ...
+    For numpy etc. set OMP_NUM_THREADS=1 as an env var while running the training script,
+    e.g., OMP_NUM_THREADS=1 python tools/train.py ...
     """)
     MAX_THREADS = 1
     sitk.ProcessObject_SetGlobalDefaultNumberOfThreads(MAX_THREADS)

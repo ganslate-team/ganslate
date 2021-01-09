@@ -24,7 +24,7 @@ def init_distributed():
             synchronize()
             logger.info(f'Number of GPUs available in world: {num_gpu}.')
         else:
-            raise ValueError("Distributed ON but but running single process")  # TODO make nicer
+            raise ValueError("Distributed ON but but running single process")
 
 
 def synchronize():
@@ -121,20 +121,25 @@ def shared_random_seed() -> int:
 
 def reduce(input_data, average=False, all_reduce=False):
     """
-    Interface function for performing reduce on any type of data [int, float, tensor, dict, list, tuple] 
-    by summing or averaging the value(s) using one of the methods:
-    (1) rank 0 reduce (torch.distributed.reduce)  - communicates the sum or average of 
-                                                    all processes to the process of rank 0 only
-    (2) all reduce (torch.distributed.all_reduce) - communicates the sum or average of 
-                                                    all processes to each process
-    
+    Interface function for performing reduce on any type of 
+    data [int, float, tensor, dict, list, tuple] by summing or 
+    averaging the value(s) using one of the methods:
+
+    (1) rank 0 reduce (torch.distributed.reduce):
+        communicates the sum or average of
+        all processes to the process of rank 0 only
+
+    (2) all reduce (torch.distributed.all_reduce)
+        communicates the sum or average of
+        all processes to each process
+
     Parameters:
         input_dict (int, float, tensor, dict, list, tuple) -- data for reduction
         average (bool) -- true if the results should be averaged
-        all_reduce (bool) -- true if communicating the reduced value to all processes, 
+        all_reduce (bool) -- true if communicating the reduced value to all processes,
                              otherwise process of rank 0 only
 
-    Returns the sum or average of the input data from across processes. 
+    Returns the sum or average of the input data from across processes.
     """
     if get_world_size() < 2:
         return input_data
@@ -147,20 +152,20 @@ def reduce(input_data, average=False, all_reduce=False):
         elif isinstance(input_data, dict):
             reduced_data = reduce_dict(input_data, average, all_reduce, device)
 
-        elif isinstance(input_data, list) or isinstance(input_data, tuple):
+        elif isinstance(input_data, (list, tuple)):
             reduced_data = reduce_list_tuple(input_data, average, all_reduce, device)
 
-        elif isinstance(input_data, int) or isinstance(input_data, float):
+        elif isinstance(input_data, (float, int)):
             reduced_data = reduce_int_float(input_data, average, all_reduce, device)
 
         else:
-            data_type = str(type(data))
+            data_type = str(type(input_data))
             raise NotImplementedError(f"Reduction on data type `{data_type}` is not implemented.")
     return reduced_data
 
 
 is_not_tensor = lambda x: not isinstance(x, torch.Tensor)
-is_float_or_int = lambda x: isinstance(x, float) or isinstance(x, int)
+is_float_or_int = lambda x: isinstance(x, (float, int))
 
 
 def reduce_tensor(tensor, average, all_reduce, device):
@@ -188,11 +193,9 @@ def reduce_int_float(input_value, average, all_reduce, device):
 
 
 def reduce_dict(input_dict, average, all_reduce, device):
-    """ Reduce a dict by extracting all of its values into a tensor and communicating it.    . 
+    """ Reduce a dict by extracting all of its values into a tensor and communicating it.
     Returns a dict with the same fields as input_dict, after reduction. If its values were 
     int or float, they are converted to tensors.
-
-    * if order of the keys matters, convert the dict to OrderedDict before passing it to the function.
     """
     names = []
     values = []
@@ -223,7 +226,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
 
 
 def reduce_list_tuple(input_data, average, all_reduce, device):
-    """ Reduce a list or tuple whose elements are either tensors, floats or integers. 
+    """ Reduce a list or tuple whose elements are either tensors, floats or integers.
     Returns reduced list/tuple with its elements as tensors.
     """
     data_type = type(input_data)  # save the original data type
@@ -234,10 +237,10 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
             if is_float_or_int(value):
                 input_data[i] = torch.Tensor([value])
             else:
-                raise NotImplementedError("List/tuple reduction supported only if \
-                                            its values are tensors, floats or integers.")
-    values = torch.stack(input_data,
-                         dim=0).to(device)  # convert list/tuple of tensors to a single tensor
+                raise NotImplementedError("List/tuple reduction supported only if"
+                                          " its values are tensors, floats or integers.")
+    # Convert list/tuple of tensors to a single tensor
+    values = torch.stack(input_data, dim=0).to(device)
 
     if all_reduce:
         torch.distributed.all_reduce(values)
@@ -247,5 +250,6 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
     if average and (get_rank() == 0 or all_reduce):
         values /= get_world_size()
 
-    reduced_sequence = data_type(values)  # cast it back to tuple or list
+    # Cast it back to tuple or list
+    reduced_sequence = data_type(values)
     return reduced_sequence

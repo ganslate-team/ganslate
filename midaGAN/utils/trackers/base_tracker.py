@@ -41,6 +41,6 @@ class BaseTracker:
         self.t_comp = communication.reduce(self.t_comp, average=True, all_reduce=False)
 
     def end_dataloading_timer(self):
-        self.t_data = self.iter_start_time - self.iter_end_time  # is it per sample or per batch?
+        self.t_data = self.iter_start_time - self.iter_end_time
         # reduce data loading per data point (avg) and send to the process of rank 0
         self.t_data = communication.reduce(self.t_data, average=True, all_reduce=False)

@@ -86,7 +86,7 @@ def get_norm_layer_3d(norm_type='instance'):
 
 
 def is_bias_before_norm(norm_type='instance'):
-    """When using BatchNorm, the preceding Conv layer does not use bias, 
+    """When using BatchNorm, the preceding Conv layer does not use bias,
     but it does if using InstanceNorm.
     """
     if norm_type == 'instance':
