@@ -126,30 +126,7 @@ class CBCTtoCTDataset(Dataset):
                     f"Could not replace the image for {num_replacements_threshold}"
                     " consecutive times. Please verify your images and the specified config.")
 
-        # Use, by priority, BODY, External or treatment table mask
-        # to mask out unuseful values in the CT
-        mask_exists = True
-        negated_mask = False
-
-        if (path_CT / 'BODY.nrrd').exists():
-            mask_path = path_CT / 'BODY.nrrd'
-        elif paths := io.find_paths_containing_pattern(path_CT, "External*"):
-            mask_path = paths[0]
-        elif paths := io.find_paths_containing_pattern(path_CT, "*_treatment_*"):
-            mask_path = paths[0]
-            # Use negated masking as we want to only mask out the table
-            negated_mask = True
-        else:
-            mask_exists = False
-            logger.info(f'No mask files found for {path_CT}')
-
-        if mask_exists:
-            CT_mask = sitk_utils.load(mask_path)
-            CT = sitk_utils.apply_mask(CT,
-                                       CT_mask,
-                                       masking_value=self.hu_min,
-                                       set_same_origin=True,
-                                       negated_mask=negated_mask)
+        CT = mask_out_ct(CT, path_CT, self.hu_min)
 
         # Limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
@@ -184,17 +161,7 @@ class CBCTtoCTDataset(Dataset):
         # Extract patches
         CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
 
-        # Limits the lowest and highest HU unit
-        CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
-        CT = torch.clamp(CT, self.hu_min, self.hu_max)
-
-        # Normalize Hounsfield units to range [-1,1]
-        CBCT = min_max_normalize(CBCT, self.hu_min, self.hu_max)
-        CT = min_max_normalize(CT, self.hu_min, self.hu_max)
-
-        # Add channel dimension (1 = grayscale)
-        CBCT = CBCT.unsqueeze(0)
-        CT = CT.unsqueeze(0)
+        CBCT, CT = clamp_normalize(CBCT, CT, self.hu_min, self.hu_max)
 
         return {'A': CBCT, 'B': CT}
 
@@ -202,50 +169,45 @@ class CBCTtoCTDataset(Dataset):
         return max(self.num_datapoints_CBCT, self.num_datapoints_CT)
 
 
-# @dataclass
-# class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
-#     name:                    str = "CBCTtoCTInferenceDataset"
-#     hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
+def mask_out_ct(ct_scan, ct_dir_path, masking_value):
+    # Use, by priority, BODY, External or treatment table mask
+    # to mask out unuseful values in the CT
+    mask_exists = True
+    negated_mask = False
 
-# class CBCTtoCTInferenceDataset(Dataset):
-#     def __init__(self, conf):
-#         self.paths = io.make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
-#         self.num_datapoints = len(self.paths)
-#         # Min and max HU values for clipping and normalization
-#         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+    if (ct_dir_path / 'BODY.nrrd').exists():
+        mask_path = ct_dir_path / 'BODY.nrrd'
+    elif paths := io.find_paths_containing_pattern(ct_dir_path, "External*"):
+        mask_path = paths[0]
+    elif paths := io.find_paths_containing_pattern(ct_dir_path, "*_treatment_*"):
+        mask_path = paths[0]
+        # Use negated masking as we want to only mask out the table
+        negated_mask = True
+    else:
+        mask_exists = False
+        logger.info(f'No mask files found for {ct_dir_path}')
 
-#     def __getitem__(self, index):
-#         path = str(Path(self.paths[index]) / 'CT.nrrd')
-#         # load nrrd as SimpleITK objects
-#         volume = sitk_utils.load(path)
-#         metadata = (path,
-#                     volume.GetOrigin(),
-#                     volume.GetSpacing(),
-#                     volume.GetDirection(),
-#                     sitk_utils.get_npy_dtype(volume))
+    if mask_exists:
+        ct_mask = sitk_utils.load(mask_path)
+        ct_scan = sitk_utils.apply_mask(ct_scan,
+                                        ct_mask,
+                                        masking_value=masking_value,
+                                        set_same_origin=True,
+                                        negated_mask=negated_mask)
+    return ct_scan
 
-#         volume = sitk_utils.get_tensor(volume)
-#         # Limits the lowest and highest HU unit
-#         volume = torch.clamp(volume, self.hu_min, self.hu_max)
-#         # Normalize Hounsfield units to range [-1,1]
-#         volume = min_max_normalize(volume, self.hu_min, self.hu_max)
-#         # Add channel dimension (1 = grayscale)
-#         volume = volume.unsqueeze(0)
 
-#         return volume, metadata
+def clamp_normalize(A, B, min_value, max_value):
+    # Limits the lowest and highest HU unit
+    A = torch.clamp(A, min_value, max_value)
+    B = torch.clamp(B, min_value, max_value)
 
-#     def __len__(self):
-#         return self.num_datapoints
+    # Normalize Hounsfield units to range [-1,1]
+    A = min_max_normalize(A, min_value, max_value)
+    B = min_max_normalize(B, min_value, max_value)
 
-#     def save(self, tensor, metadata, output_dir):
-#         tensor = tensor.squeeze()
-#         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
-
-#         datapoint_path, origin, spacing, direction, dtype = metadata
-#         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)
-
-#         # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
-#         datapoint_name = Path(str(datapoint_path)).parent.name
-#         save_path = Path(output_dir) / Path(datapoint_name).with_suffix('.nrrd')
-
-#         sitk_utils.write(sitk_image, save_path)
+    # Add channel dimension (1 = grayscale)
+    A = A.unsqueeze(0)
+    B = B.unsqueeze(0)
+    
+    return A, B

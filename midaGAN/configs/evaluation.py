@@ -38,7 +38,6 @@ class EvalConfig:
     batch_size: int = 1
     freq: int = 1  # Every n iterations to run eval
     metrics: MetricConfig = MetricConfig()
-    samples: int = 4  # Number of samples from the data to run evaluation for
     sliding_window: Optional[SlidingWindowConfig] = None
     logging: LoggingConfig = LoggingConfig()
     dataset: configs.base.BaseDatasetConfig = MISSING

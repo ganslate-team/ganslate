@@ -54,7 +54,6 @@ class EvalTracker(BaseTracker):
         Push samples to start logging
         """
         if communication.get_local_rank() == 0:
-            print("Number of samples", len(self.visuals))
             for visuals in self.visuals:
                 self._save_image(visuals)
 

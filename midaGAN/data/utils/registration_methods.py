@@ -58,6 +58,7 @@ def truncate_CT_to_scope_of_CBCT(CT, CBCT):
 
 
 def register_CT_to_CBCT(CT, CBCT, registration_type="Rigid"):
+    # TODO: make it more general sounding, except assumes CT is bigger
     try:
         registration_transform = get_registration_transform(fixed_image=CBCT,
                                                             moving_image=CT,

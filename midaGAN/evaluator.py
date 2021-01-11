@@ -37,9 +37,9 @@ class Evaluator():
         inference_dir = Path(self.conf.logging.inference_dir) / "eval_nrrds"
 
         if self.enabled:
-            self.logger.info(f"Evaluation started, running with {self.conf.samples} samples")
-            for _, data in zip(range(self.conf.samples + 1), self.data_loader):
+            self.logger.info(f"Running validation with {len(self.data_loader.dataset)} samples")
 
+            for data in self.data_loader:
                 # Move elements from data that are visuals
                 visuals = {
                     "A": data['A'].to(self.model.device),
