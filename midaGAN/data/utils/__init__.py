@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 def pad(volume, target_shape):
     assert len(target_shape) == len(volume.shape)
-    pad_width = [(0, 0) for _ in range(len(target_shape))]  # by default no padding
+    # By default no padding
+    pad_width = [(0, 0) for _ in range(len(target_shape))]
 
     for dim in range(len(target_shape)):
         if target_shape[dim] > volume.shape[dim]:

@@ -3,15 +3,15 @@ import numpy as np
 
 
 class StochasticFocalPatchSampler:
-    """ Stochasting Focal Patching technique achieves spatial correspondance of patches extracted from a pair 
+    """ Stochasting Focal Patching technique achieves spatial correspondance of patches extracted from a pair
     of volumes by:
         (1) Randomly selecting a patch from volume_A (patch_A)
-        (2) Calculating the relative start position of the patch_A 
+        (2) Calculating the relative start position of the patch_A
         (3) Translating the patch_A's relative position in volume_B
         (4) Placing a focal region (a proportion of volume shape) around the focal point
         (5) Randomly selecting a start point in the focal region and extracting the patch_B
 
-    The added stochasticity in steps (4) and (5) aims to account for possible differences in positioning 
+    The added stochasticity in steps (4) and (5) aims to account for possible differences in positioning
     of the object between volumes.
     """
 
@@ -28,8 +28,8 @@ class StochasticFocalPatchSampler:
     def patch_and_focal_point_from_A(self, volume):
         """Return random patch from volume A and its relative start position."""
         z, x, y = self.pick_random_start(volume)
-        z_end, x_end, y_end = [sum(pair) for pair in zip((z, x, y), self.patch_size)
-                              ]  # start + patch size for each coord
+        # start + patch size for each coord
+        z_end, x_end, y_end = [sum(pair) for pair in zip((z, x, y), self.patch_size)]
 
         patch = volume[z:z_end, x:x_end, y:y_end]
         relative_focal_point = self.calculate_relative_focal_point(z, x, y, volume)
@@ -38,8 +38,8 @@ class StochasticFocalPatchSampler:
     def patch_from_B(self, volume, relative_focal_point):
         """Return random patch from volume B that is in relative neighborhood of patch_A."""
         z, x, y = self.pick_stochastic_focal_start(volume, relative_focal_point)
-        z_end, x_end, y_end = [sum(pair) for pair in zip((z, x, y), self.patch_size)
-                              ]  # start + patch size for each coord
+        # start + patch size for each coord
+        z_end, x_end, y_end = [sum(pair) for pair in zip((z, x, y), self.patch_size)]
 
         patch = volume[z:z_end, x:x_end, y:y_end]
         return patch
@@ -56,7 +56,8 @@ class StochasticFocalPatchSampler:
         focal_region = self.focal_region_proportion * volume_size
         focal_region = focal_region.astype(np.int64)
 
-        focal_point = relative_focal_point * volume_size  # map relative point to corresponding point in this volume
+        # Map relative point to corresponding point in this volume
+        focal_point = relative_focal_point * volume_size
         valid_start_region = self.calculate_valid_start_region(volume)
 
         z, x, y = self.apply_stochastic_focal_method(focal_point, focal_region, valid_start_region)
@@ -71,14 +72,15 @@ class StochasticFocalPatchSampler:
             min_position = int(focal_point[axis] - focal_region[axis] / 2)
             max_position = int(focal_point[axis] + focal_region[axis] / 2)
 
-            # if one of the boundaries of the focus is outside of the possible area to sample from, cap it
+            # If one of the boundaries of the focus is outside of the possible area to sample from, cap it
             min_position = max(0, min_position)
             max_position = min(max_position, valid_start_region[axis])
 
-            if min_position > max_position:  # edge cases # TODO: is it because there's no min(min_position, valid_start_region[axis])
+            # Edge cases # TODO: is it because there's no min(min_position, valid_start_region[axis])
+            if min_position > max_position:
                 start_point.append(max_position)
             else:
-                start_point.append(random.randint(min_position, max_position))  # regular case
+                start_point.append(random.randint(min_position, max_position))
 
         return start_point
 
@@ -97,4 +99,5 @@ class StochasticFocalPatchSampler:
         return valid_start_region
 
     def get_size(self, volume):
-        return np.array(volume.shape[-3:])  # last three dimension (Z,X,Y)
+        # last three dimension (Z,X,Y)
+        return np.array(volume.shape[-3:])

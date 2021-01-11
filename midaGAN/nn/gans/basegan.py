@@ -5,7 +5,6 @@ import logging
 
 import torch
 from torch.nn.parallel import DistributedDataParallel
-from apex import amp
 from midaGAN.utils import communication
 
 # midaGAN.nn imports
@@ -119,6 +118,7 @@ class BaseGAN(ABC):
                     "When inferring there should be only one network initialized - generator.")
 
         if self.conf.mixed_precision:
+            from apex import amp
             self.convert_to_mixed_precision()
 
         if self.conf.load_checkpoint:

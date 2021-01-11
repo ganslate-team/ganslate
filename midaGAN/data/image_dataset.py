@@ -16,7 +16,9 @@ from midaGAN import configs
 class ImageDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "ImageDataset"
     image_channels: int = 3
-    preprocess: str = "resize_and_crop"  # scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none]'
+    # Scaling and cropping of images at load time:
+    # [resize_and_crop | crop | scale_width | scale_width_and_crop | none]'
+    preprocess: str = "resize_and_crop"
     load_size: int = 286
     crop_size: int = 256
     flip: bool = True

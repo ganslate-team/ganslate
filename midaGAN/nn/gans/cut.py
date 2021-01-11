@@ -15,20 +15,28 @@ from midaGAN import configs
 
 @dataclass
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
-    lambda_adv: float = 1  # weight for Adversarial loss： Adv(G(X))
-    lambda_nce: float = 1  # weight for NCE loss: NCE(G(X), X)
-    nce_idt: bool = True  # use NCE loss for identity mapping: NCE(G(Y), Y))
-    nce_T: float = 0.07  # temperature for NCE loss
+    # weight for Adversarial loss： Adv(G(X))
+    lambda_adv: float = 1
+    # weight for NCE loss: NCE(G(X), X)
+    lambda_nce: float = 1
+    # use NCE loss for identity mapping: NCE(G(Y), Y))
+    nce_idt: bool = True
+    # temperature for NCE loss
+    nce_T: float = 0.07
 
 
 @dataclass
 class CUTConfig(configs.base.BaseGANConfig):
     """Contrastive Unpaired Translation (CUT)"""
     name: str = "CUT"
-    nce_layers: Tuple[int] = (0, 4, 8, 12, 16)  # compute NCE loss on which layers
-    mlp_nc: int = 256  # num of features in MLP
-    num_patches: int = 256  # number of patches per layer
-    use_flip_equivariance: bool = False  # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
+    # compute NCE loss on which layers
+    nce_layers: Tuple[int] = (0, 4, 8, 12, 16)
+    # num of features in MLP
+    mlp_nc: int = 256
+    # number of patches per layer
+    num_patches: int = 256
+    # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
+    use_flip_equivariance: bool = False
     optimizer: OptimizerConfig = OptimizerConfig
 
 
@@ -65,7 +73,8 @@ class CUT(BaseGAN):
         network_names = ['G', 'D', 'mlp'] if self.is_train else ['G']  # during test time, only G
         self.networks = {name: None for name in network_names}
 
-        self.setup()  # schedulers, mixed precision, checkpoint loading and network parallelization
+        # schedulers, mixed precision, checkpoint loading and network parallelization
+        self.setup()
 
     def init_networks(self):
         """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
@@ -137,7 +146,8 @@ class CUT(BaseGAN):
         if self.is_train and self.use_flip_equivariance and np.random.random() < 0.5:
             self.is_equivariance_flipped = True
 
-            real_A = real_A.flip(-1)  # flip the last dimension
+            # flip the last dimension
+            real_A = real_A.flip(-1)
             if self.nce_idt:
                 real_B = real_B.flip(-1)
 
@@ -211,6 +221,7 @@ class CUT(BaseGAN):
         for target_feat, source_feat, criterion, nce_layer in per_level_iterator:
             loss = criterion(target_feat, source_feat) * self.lambda_nce
             nce_loss = nce_loss + loss.mean()
+
         return nce_loss / len(self.nce_layers)
 
 

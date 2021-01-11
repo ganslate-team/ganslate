@@ -134,9 +134,11 @@ def get_body_mask_and_bound(image: np.ndarray, hu_threshold: int) -> np.ndarray:
     return body_mask, bound
 
 
-
-def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
-                                apply_mask: bool =False, apply_bound: bool=False, hu_threshold: int =-300) -> np.ndarray:
+def apply_body_mask_and_bound(array: np.ndarray,
+                              masking_value: int = -1024,
+                              apply_mask: bool = False,
+                              apply_bound: bool = False,
+                              hu_threshold: int = -300) -> np.ndarray:
     """
     Function to apply mask based filtering and bound the array
     
@@ -159,7 +161,7 @@ def apply_body_mask_and_bound(array: np.ndarray, masking_value: int =-1024, \
 
     body_mask, bound = get_body_mask_and_bound(array, hu_threshold)
     (z_max, z_min), (y_max, y_min), (x_max, x_min) = bound
-    
+
     # Apply mask to the image array
     if apply_mask:
         array = np.where(body_mask, array, masking_value)

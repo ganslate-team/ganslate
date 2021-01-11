@@ -2,6 +2,7 @@ import midaGAN.nn.losses.utils.ssim as ssim
 from midaGAN.nn.losses import reshape_to_4D_if_5D
 import torch
 
+
 class TrainingMetrics:
 
     def __init__(self, conf):
@@ -23,7 +24,7 @@ class TrainingMetrics:
         if self.output_distributions:
             # Reduce the output to a tensor if it is dict
             if isinstance(out, dict):
-                out = torch.tensor([elem.detach().mean() for k, elem in out.items()])
+                out = torch.tensor([elem.detach().mean() for elem in out.values()])
 
             else:
                 out = out.detach()
@@ -64,10 +65,10 @@ class TrainingMetrics:
         metrics_G = {}
         if all([key in visuals for key in ["rec_A", "real_A"]]):
             # Update SSIM for forward A->B->A reconstruction
-            metrics_G['ssim_A'] =  self.get_SSIM_metric(visuals["real_A"], visuals["rec_A"])
+            metrics_G['ssim_A'] = self.get_SSIM_metric(visuals["real_A"], visuals["rec_A"])
 
         if all([key in visuals for key in ["rec_B", "real_B"]]):
             # Update SSIM for forward B->A->B reconstruction
-            metrics_G['ssim_B'] =  self.get_SSIM_metric(visuals["real_B"], visuals["rec_B"])
+            metrics_G['ssim_B'] = self.get_SSIM_metric(visuals["real_B"], visuals["rec_B"])
 
         return metrics_G
