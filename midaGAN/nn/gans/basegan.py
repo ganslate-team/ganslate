@@ -102,6 +102,11 @@ class BaseGAN(ABC):
         assert 'G' or 'G_A' in self.networks.keys(), \
             "The (main) generator has to be named `G` or `G_A`."
 
+        if self.conf.mixed_precision:
+            from apex import amp
+            # Allow the methods to access AMP that was imported here
+            globals()["amp"] = amp
+
         # Initialize Generators and Discriminators
         self.init_networks()
 
@@ -118,7 +123,6 @@ class BaseGAN(ABC):
                     "When inferring there should be only one network initialized - generator.")
 
         if self.conf.mixed_precision:
-            from apex import amp
             self.convert_to_mixed_precision()
 
         if self.conf.load_checkpoint:

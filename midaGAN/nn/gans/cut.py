@@ -19,8 +19,8 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_adv: float = 1
     # weight for NCE loss: NCE(G(X), X)
     lambda_nce: float = 1
-    # use NCE loss for identity mapping: NCE(G(Y), Y))
-    nce_idt: bool = True
+    # weight for NCE loss for identity mapping: NCE(G(Y), Y)), weighted sum with nce_loss
+    lambda_nce_idt: float = 0.5
     # temperature for NCE loss
     nce_T: float = 0.07
 
@@ -52,7 +52,7 @@ class CUT(BaseGAN):
 
         self.lambda_adv = conf.gan.optimizer.lambda_adv
         self.lambda_nce = conf.gan.optimizer.lambda_nce
-        self.nce_idt = conf.gan.optimizer.nce_idt
+        self.lambda_nce_idt = conf.gan.optimizer.lambda_nce_idt
         self.nce_layers = conf.gan.nce_layers
         self.num_patches = conf.gan.num_patches
         self.use_flip_equivariance = conf.gan.use_flip_equivariance
@@ -108,7 +108,7 @@ class CUT(BaseGAN):
         self.criterion_nce = [
             PatchNCELoss(self.conf).to(self.device) for _ in self.conf.gan.nce_layers
         ]
-        if self.nce_idt:
+        if self.lambda_nce_idt > 0:
             self.criterion_nce_idt = torch.nn.L1Loss().to(self.device)
 
     def optimize_parameters(self):
@@ -139,7 +139,7 @@ class CUT(BaseGAN):
 
     def forward(self):
         real_A = self.visuals['real_A']
-        if self.nce_idt:
+        if self.lambda_nce_idt > 0:
             real_B = self.visuals['real_B']
 
         self.is_equivariance_flipped = False
@@ -148,12 +148,12 @@ class CUT(BaseGAN):
 
             # flip the last dimension
             real_A = real_A.flip(-1)
-            if self.nce_idt:
+            if self.lambda_nce_idt > 0:
                 real_B = real_B.flip(-1)
 
         # concat for joint forward?
         self.visuals['fake_B'] = self.networks['G'](real_A)
-        if self.nce_idt:
+        if self.lambda_nce_idt > 0:
             self.visuals['idt_B'] = self.networks['G'](real_B)
 
     def backward_D(self):
@@ -189,10 +189,11 @@ class CUT(BaseGAN):
             nce_loss = self.calculate_nce_loss(real_A, fake_B)
             self.losses['NCE'] = nce_loss
 
-            if self.nce_idt:
-                nce_idt_loss = self.calculate_nce_loss(real_B, idt_B)
+            if self.lambda_nce_idt > 0:
+                nce_idt_loss = self.lambda_nce_idt * self.calculate_nce_loss(real_B, idt_B)
+                # Weighted sum of nce and nce_idt loss
+                nce_loss = (1 - self.lambda_nce_idt) * nce_loss + nce_idt_loss
                 self.losses['NCE_idt'] = nce_idt_loss
-                nce_loss = 0.5 * (nce_loss + nce_idt_loss)
         # ---------------------------------------------------------------
 
         combined_loss = nce_loss + adversarial_loss
