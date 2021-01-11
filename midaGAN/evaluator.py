@@ -42,13 +42,15 @@ class Evaluator():
             self.logger.info(f"Evaluation started, running with {self.conf.samples} samples")
             for i, data in zip(range(self.conf.samples + 1), self.data_loader):
 
+                fake_B = self.infer(data['A'])
+
                 # Move elements from data that are visuals
                 visuals = {
                     "A": data['A'].to(self.model.device),
+                    "fake_B": fake_B,
                     "B": data['B'].to(self.model.device)
                 }
-
-                visuals['fake_B'] = self.infer(visuals['A'])
+                
                 metrics = self.calculate_metrics(visuals['fake_B'], visuals['B'])
 
                 self.tracker.log_sample(self.trainer_idx, self.eval_iter_idx, visuals, metrics)
