@@ -6,7 +6,7 @@ batch_size: 1
 mixed_precision: True
 
 logging:
-    checkpoint_dir: "./checkpoints/cbcttoct_cut_ex2"
+    checkpoint_dir: "./checkpoints/cbcttoct_cut_ex3"
     wandb:
         project: "CUT-proton-cbct-ct"
     log_freq: 50
@@ -16,11 +16,11 @@ dataset:
     name: "CBCTtoCTDataset"
     root: "/workspace/processed/"
     num_workers: 32
-    patch_size: [32, 304, 304]
+    patch_size: [32, 224, 224]
     
 gan:  
     name: "CUT"
-    nce_layers: [0, 1, 4]
+    nce_layers: [0, 1, 2, 3, 4, 5, 6]
     mlp_nc: 256
     num_patches: 1024
 
@@ -30,8 +30,8 @@ gan:
         use_memory_saving: False
         use_inverse: False
         is_separable: False
-        down_blocks: [2, 2, 3]
-        up_blocks: [3, 3, 3]
+        down_blocks: [3, 3, 5, 5, 5]
+        up_blocks: [5, 5, 5, 5, 5]
 
     discriminator:
         name: "PatchGAN3D"
@@ -41,7 +41,7 @@ gan:
     optimizer:
         lr_D: 0.0002
         lr_G: 0.0004
-        lambda_adv: 5.0
+        lambda_adv: 1.0
         lambda_nce: 1.0
         lambda_nce_idt: 0.2
         nce_T: 0.07
