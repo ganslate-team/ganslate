@@ -8,7 +8,7 @@ import SimpleITK as sitk
 
 from midaGAN.utils.io import make_dataset_of_files
 from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.normalization import min_max_normalize, z_score_normalize
+from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize, z_score_normalize, unequal_normalize, unequal_denormalize
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -83,18 +83,28 @@ class RIREDataset(Dataset):
         MR, CT = self.patch_sampler.get_patch_pair(MR, CT)
 
         # Limits the lowest and highest HU unit for the CT
+        # Note: RIRE data was originally given with -1024 as minimal HU value
+        # However there should be practically no information loss between -1024 and -1000
         CT = torch.clamp(CT, self.hu_min, self.hu_max)
 
-        # # Normalize Hounsfield units to range [-1,1] for CT
-        # CT = min_max_normalize(CT, self.hu_min, self.hu_max)
+        # Normalize MR to range [-1,1]
+        # Only meaningful due to preprocessing of MR via histogram matching
+        MR = min_max_normalize(MR, 0, 1695)
 
-        # Z-score standardization per volume
-        MR = z_score_normalize(MR, scale_to_range=(-1,1))
-        CT = z_score_normalize(CT, scale_to_range=(-1,1))
+        # normalize CT to range [-1,1] but according to piecewise linear function
+        # This is an unequal normalization that accentuates the expressivity of the range [-50, 150] (important for brain anatomy)
+
+        # TODO: CONVERT TENSOR INTO NP ARRAY BEFORE PASSING TO UNEQUAL NORMALIZE AND DENORMALIZE
+
+        min_value = -1000
+        max_value = 2000
+        split_points = [-50, 150]
+        split_proportions = [0.25, 0.5, 0.25]
+        CT = unequal_normalize(CT.detach().numpy(), min_value, max_value, split_points, split_proportions)
         
         # Add channel dimension (1 = grayscale)
         MR = MR.unsqueeze(0)
-        CT = CT.unsqueeze(0)
+        CT = torch.from_numpy(CT).unsqueeze(0)
 
         return {'A': MR, 'B': CT}
 
@@ -127,8 +137,9 @@ class RIREInferenceDataset(Dataset):
                     sitk_utils.get_npy_dtype(volume))
 
         volume = sitk_utils.get_tensor(volume)
-        # Z-score standardization per volume
-        volume = z_score_normalize(volume, scale_to_range=(-1,1))
+        # Normalize MR to range [-1,1]
+        # Only meaningful due to preprocessing of MR via histogram matching
+        volume = min_max_normalize(volume, 0, 1695)
         # Add channel dimension (1 = grayscale)
         volume = volume.unsqueeze(0)
 
@@ -140,9 +151,14 @@ class RIREInferenceDataset(Dataset):
 
     def save(self, tensor, metadata, output_dir):
         tensor = tensor.squeeze()
-        # tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
-        # TODO: Fix fake denormalization
-        tensor = 341*tensor+330
+
+        # denormalize CT according to piecewise linear function
+        # Resulting from an unequal normalization that accentuates the expressivity of the range [-50, 150] (important for brain anatomy)
+        min_value = -1000
+        max_value = 2000
+        split_points = [-50, 150]
+        split_proportions = [0.25, 0.5, 0.25]
+        tensor = unequal_denormalize(tensor, min_value, max_value, split_points, split_proportions)
 
         datapoint_path, origin, spacing, direction, dtype = metadata
         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)
