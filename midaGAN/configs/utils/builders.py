@@ -52,12 +52,38 @@ def build_eval_conf(conf):
 
 def get_inference_defaults(conf):
     inference_defaults = f"""
-    dataset: 
-        shuffle: False
+    project_dir: {conf.project_dir}
+    use_cuda: {conf.use_cuda}
+    batch_size: {conf.batch_size}
 
     logging:
         checkpoint_dir: {conf.logging.checkpoint_dir}
+        inference_dir: {conf.logging.inference_dir}
 
+    dataset: 
+        name: {conf.dataset.name}
+        root: {conf.dataset.root}
+        num_workers: {conf.dataset.num_workers}
+
+    gan:  
+        name: {conf.gan.name}
+
+        generator:
+            name: {conf.gan.generator.name}
+            in_channels: {conf.gan.generator.in_channels}
+            use_memory_saving: {conf.gan.generator.use_memory_saving}
+            use_inverse: {conf.gan.generator.use_inverse}
+            is_separable: {conf.gan.generator.is_separable}
+            down_blocks: {conf.gan.generator.down_blocks}
+            up_blocks: {conf.gan.generator.up_blocks}
+
+    sliding_window:
+        window_size: {conf.sliding_window.window_size}
+        overlap: {conf.sliding_window.overlap}
+        mode: {conf.sliding_window.mode}
+
+    load_checkpoint:
+        iter: {conf.load_checkpoint.iter}
     """
     return OmegaConf.create(inference_defaults)
 
