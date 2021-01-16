@@ -26,6 +26,7 @@ class BaseDatasetConfig:
     root: str = MISSING
     shuffle: bool = True
     num_workers: int = 4
+    unequal_normalize: bool = False
 
 
 @dataclass

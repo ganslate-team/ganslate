@@ -21,6 +21,11 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_inverse: float = 0
     proportion_ssim: float = 0.84
     ssim_type: str = "SSIM"  # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
+    filt: str = "hamming" # Possible options are hamming, lowpass, highpass
+    spectrum: str = "magnitude" # Possible options are magnitude, phase
+    freq_distance_metric: str = "log" # Possible options are log, euclidean, euclidean_squared
+    # TODO: Test adversarial and non-adversarial loss
+    freq_adversarial: bool = False
 
 
 @dataclass

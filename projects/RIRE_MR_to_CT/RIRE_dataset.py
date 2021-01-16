@@ -21,10 +21,10 @@ EXTENSIONS = ['.nii']
 
 @dataclass
 class RIREDatasetConfig(configs.base.BaseDatasetConfig):
-    name:         str = "BratsDataset"
-    patch_size:   Tuple[int, int, int] = (32, 32, 32)
+    name:         str = "RIREDataset"
+    patch_size:   Tuple[int, int, int] = (16, 128, 128)
     focal_region_proportion: float = 0    # Proportion of focal region size compared to original volume size
-    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000)) #TODO: what should be the default range
+    hounsfield_units_range:  Tuple[int, int] = field(default_factory=lambda: (-1000, 2000))
 
 def get_sequence_or_ct(sitk_image):
     size = list(sitk_image.GetSize())
@@ -40,6 +40,7 @@ class RIREDataset(Dataset):
     def __init__(self, conf):
         dir_MR = Path(conf.dataset.root) / 'MR'
         dir_CT = Path(conf.dataset.root) / 'CT'
+        self.unequal_normalize = conf.dataset.unequal_normalize
         self.paths_MR = make_dataset_of_files(dir_MR, EXTENSIONS)
         self.paths_CT = make_dataset_of_files(dir_CT, EXTENSIONS)
         self.num_datapoints_MR = len(self.paths_MR)
@@ -89,22 +90,27 @@ class RIREDataset(Dataset):
 
         # Normalize MR to range [-1,1]
         # Only meaningful due to preprocessing of MR via histogram matching
-        MR = min_max_normalize(MR, 0, 1695)
-
-        # normalize CT to range [-1,1] but according to piecewise linear function
-        # This is an unequal normalization that accentuates the expressivity of the range [-50, 150] (important for brain anatomy)
-
-        # TODO: CONVERT TENSOR INTO NP ARRAY BEFORE PASSING TO UNEQUAL NORMALIZE AND DENORMALIZE
+        min_MR = 0
+        max_MR = 1695
+        MR = min_max_normalize(MR, min_MR, max_MR)
 
         min_value = -1000
         max_value = 2000
-        split_points = [-50, 150]
-        split_proportions = [0.25, 0.5, 0.25]
-        CT = unequal_normalize(CT.detach().numpy(), min_value, max_value, split_points, split_proportions)
+        if self.unequal_normalize:
+            # unequal_normalize normalizes CT to range [-1,1] but according to piecewise linear function
+            # This is an unequal normalization that accentuates the expressivity of the range [-50, 150] (important for brain anatomy)
+            split_points = [-50, 150]
+            split_proportions = [0.25, 0.5, 0.25]
+            CT = unequal_normalize(CT.detach().numpy(), min_value, max_value, split_points, split_proportions)
+        else:
+            CT = min_max_normalize(CT, min_value, max_value)
         
         # Add channel dimension (1 = grayscale)
         MR = MR.unsqueeze(0)
-        CT = torch.from_numpy(CT).unsqueeze(0)
+        if self.unequal_normalize:
+            CT = torch.from_numpy(CT).unsqueeze(0)
+        else:
+            CT = CT.unsqueeze(0)
 
         return {'A': MR, 'B': CT}
 
