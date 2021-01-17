@@ -130,6 +130,7 @@ class RIREInferenceDataset(Dataset):
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+        self.unequal_normalize = conf.dataset.unequal_normalize
 
     def __getitem__(self, index):
         path = str(Path(self.paths[index]))
@@ -157,14 +158,19 @@ class RIREInferenceDataset(Dataset):
 
     def save(self, tensor, metadata, output_dir):
         tensor = tensor.squeeze()
-
-        # denormalize CT according to piecewise linear function
-        # Resulting from an unequal normalization that accentuates the expressivity of the range [-50, 150] (important for brain anatomy)
         min_value = -1000
         max_value = 2000
-        split_points = [-50, 150]
-        split_proportions = [0.25, 0.5, 0.25]
-        tensor = unequal_denormalize(tensor, min_value, max_value, split_points, split_proportions)
+        
+        if self.unequal_normalize:
+            print("hey")
+            # denormalize CT according to piecewise linear function
+            # Resulting from an unequal normalization that accentuates the expressivity of the range [-50, 150] (important for brain anatomy)
+            split_points = [-50, 150]
+            split_proportions = [0.25, 0.5, 0.25]
+            tensor = unequal_denormalize(tensor.detach().numpy(), min_value, max_value, split_points, split_proportions)
+        else:
+            print("ho")
+            tensor = min_max_denormalize(tensor, min_value, max_value)
 
         datapoint_path, origin, spacing, direction, dtype = metadata
         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, origin, spacing, direction, dtype)

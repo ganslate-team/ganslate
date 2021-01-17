@@ -1,0 +1,32 @@
+project_dir: "/home/vo171314/midaGAN/projects/RIRE_MR_to_CT/"
+use_cuda: True
+batch_size: 1
+
+logging:
+    checkpoint_dir: "./checkpoints/RIRE_exp1_min_max_norm"
+    inference_dir: "./results/exp1_min_max_norm"
+
+dataset: 
+    name: "RIREInferenceDataset"
+    root: "/home/vo171314/midaGAN/projects/RIRE_MR_to_CT/data_val/"
+    num_workers: 4
+    
+gan:  
+    name: "PiCycleGAN"
+
+    generator:
+        name: Vnet3D
+        in_channels: 1
+        use_memory_saving: False
+        use_inverse: True
+        is_separable: False
+        down_blocks: [2, 2, 3]
+        up_blocks: [3, 3, 3]
+
+sliding_window:
+    window_size: [16, 128, 128]
+    overlap: 0.0
+    mode: "gaussian"
+
+load_checkpoint:
+    iter: 40000
