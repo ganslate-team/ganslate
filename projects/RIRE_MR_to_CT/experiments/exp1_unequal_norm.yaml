@@ -1,0 +1,52 @@
+use_cuda: True
+# 1.6M total iterations took 38h with old architecture
+# 42.000 it. = 1h with old architecture
+# old architecture is about 8.5 times faster
+# 5000 it. = 1h with new architecture
+n_iters: 20000
+n_iters_decay: 20000
+batch_size: 1
+mixed_precision: False
+
+project_dir: "/home/vo171314/midaGAN/projects/RIRE_MR_to_CT/"
+
+logging:
+    checkpoint_dir: "./checkpoints/RIRE_exp1_unequal_norm"
+    wandb:
+        project: "RIRE_exp1_unequal_norm"
+    log_freq: 2000
+    checkpoint_freq: 10000
+
+dataset: 
+    name: "RIREDataset"
+    root: "/home/vo171314/midaGAN/projects/RIRE_MR_to_CT/data_train_p000s/"
+    num_workers: 16
+    patch_size: [16, 128, 128]
+    unequal_normalize: True
+    
+gan:  
+    name: "PiCycleGAN"
+
+    generator:
+        name: Vnet3D
+        in_channels: 1
+        use_memory_saving: False
+        use_inverse: True
+        is_separable: False
+        down_blocks: [2, 2, 3]
+        up_blocks: [3, 3, 3]
+
+    discriminator:
+        name: "PatchGAN3D"
+        n_layers: 2
+        in_channels: 1
+
+    optimizer:
+        lambda_A: 25.0
+        lambda_B: 25.0
+        lambda_F: 0.0
+        lambda_identity: 0.0
+        lambda_inverse: 0.0
+        proportion_ssim: 0.84
+        lr_D: 0.0002
+        lr_G: 0.0004
