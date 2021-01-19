@@ -8,9 +8,7 @@ from midaGAN.utils.trackers.base_tracker import BaseTracker
 from midaGAN.utils.trackers.tensorboard_tracker import TensorboardTracker
 from midaGAN.utils.trackers.wandb_tracker import WandbTracker
 
-
 class ValidationTracker(BaseTracker):
-
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
@@ -45,7 +43,7 @@ class ValidationTracker(BaseTracker):
         metrics = communication.reduce(metrics, average=True, all_reduce=False)
 
         if communication.get_local_rank() == 0:
-            visuals = visuals_to_combined_2d_grid(visuals)
+            visuals = visuals_to_combined_2d_grid(visuals, grid_depth='mid')
             self.visuals.append(visuals)
             self.metrics.append(metrics)
 
@@ -55,8 +53,9 @@ class ValidationTracker(BaseTracker):
         """
         if communication.get_local_rank() == 0:
             print("Number of samples", len(self.visuals))
+
             for visuals in self.visuals:
-                self._save_image(visuals)
+                self._save_image(visuals, iter_idx)
 
             # Averages list of dictionaries within self.metrics
             averaged_metrics = {}
@@ -85,7 +84,7 @@ class ValidationTracker(BaseTracker):
             self.metrics = []
             self.visuals = []
 
-    def _save_image(self, visuals):
+    def _save_image(self, visuals, iter_idx):
         name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"val_images/{self.iter_idx}_{name}.png"
+        file_path = Path(self.output_dir) / f"val_images/{iter_idx}_{name}.png"
         torchvision.utils.save_image(image, file_path)

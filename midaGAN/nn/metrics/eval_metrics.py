@@ -11,7 +11,7 @@ class EvaluationMetrics:
     def __init__(self, conf):
         self.conf = conf
 
-    def get_metrics(self, input, target):
+    def get_metrics(self, input, target, suffix=None):
 
         input = tensor_to_3D_numpy(input)
         target = tensor_to_3D_numpy(target)
@@ -29,7 +29,12 @@ class EvaluationMetrics:
 
         if self.conf.metrics.psnr:
             metrics['PSNR'] = psnr(target, input)
-            
+
+
+        # Append suffixes to metrics, used when metrics need to 
+        # denote specifics such as mask-specific metrics            
+        if suffix:
+            metrics = {f"{k}_{suffix}": v for k,v in metrics.items()}
 
         return metrics
 
