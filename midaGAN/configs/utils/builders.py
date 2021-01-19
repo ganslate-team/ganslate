@@ -29,25 +29,25 @@ def build_inference_conf():
     return initializers.init_config(conf, inference.InferenceConfig)
 
 
-def build_eval_conf(conf):
+def build_val_conf(conf):
     """
     #TODO: Make this more elegant but OmegaConf is a pain while overriding.
     """
-    eval_conf = OmegaConf.masked_copy(conf, "evaluation")["evaluation"]
-    eval_conf = override_defaults(conf, eval_conf)
-    dataset = OmegaConf.to_container(eval_conf.dataset)
+    val_conf = OmegaConf.masked_copy(conf, "validation")["validation"]
+    val_conf = override_defaults(conf, val_conf)
+    dataset = OmegaConf.to_container(val_conf.dataset)
 
     try:
-        eval_conf.dataset = initializers.init_dataclass("dataset",
-                                                        OmegaConf.select(eval_conf, "dataset"))
+        val_conf.dataset = initializers.init_dataclass("dataset",
+                                                        OmegaConf.select(val_conf, "dataset"))
     except ValueError as e:
-        logger.warning(f"Evaluation mode turned OFF: {e}")
+        logger.warning(f"Validation mode turned OFF: {e}")
         return None
 
     for key in dataset:
-        eval_conf.dataset[key] = dataset[key]
+        val_conf.dataset[key] = dataset[key]
 
-    return eval_conf
+    return val_conf
 
 
 def get_inference_defaults(conf):
@@ -62,7 +62,7 @@ def get_inference_defaults(conf):
     return OmegaConf.create(inference_defaults)
 
 
-def override_defaults(conf, eval_conf):
+def override_defaults(conf, val_conf):
     tensorboard_config = conf.logging.tensorboard
 
     if OmegaConf.select(conf, "dataset.patch_size"):
@@ -71,7 +71,7 @@ def override_defaults(conf, eval_conf):
         # Type will be auto-inferred later
         window_size = str([1, int(conf.dataset.load_size), int(conf.dataset.load_size)])
 
-    eval_defaults = OmegaConf.create(f"""
+    val_defaults = OmegaConf.create(f"""
     logging:
         inference_dir: {conf.logging.checkpoint_dir}
         tensorboard: {tensorboard_config}
@@ -84,5 +84,5 @@ def override_defaults(conf, eval_conf):
         window_size: {window_size}
     """)
 
-    OmegaConf.update(eval_defaults, "logging.wandb", conf.logging.wandb, merge=True)
-    return OmegaConf.merge(eval_conf, eval_defaults)
+    OmegaConf.update(val_defaults, "logging.wandb", conf.logging.wandb, merge=True)
+    return OmegaConf.merge(val_conf, val_defaults)

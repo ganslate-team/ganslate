@@ -11,9 +11,10 @@ class EvaluationMetrics:
     def __init__(self, conf):
         self.conf = conf
 
-    def get_metric_dict(self, input, target):
+    def get_metrics(self, input, target):
 
-        input, target = tensor_to_3D_numpy(input, target)
+        input = tensor_to_3D_numpy(input)
+        target = tensor_to_3D_numpy(target)
 
         metrics = {}
 
@@ -28,18 +29,23 @@ class EvaluationMetrics:
 
         if self.conf.metrics.psnr:
             metrics['PSNR'] = psnr(target, input)
+            
 
         return metrics
 
 
-def tensor_to_3D_numpy(input, target):
+    def get_cycle_metrics(self, input, target):
+        input = tensor_to_3D_numpy(input)
+        target = tensor_to_3D_numpy(target)
+        metrics = {}
+        metrics["cycle_SSIM"] = ssim(input, target)
+
+        return metrics        
+
+def tensor_to_3D_numpy(input):
     input = input.squeeze()
     input = input.detach().cpu().numpy()
-
-    target = target.squeeze()
-    target = target.detach().cpu().numpy()
-
-    return input, target
+    return input
 
 
 # Metrics below are taken from

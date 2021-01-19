@@ -1,15 +1,13 @@
-import torch
-
 import itertools
+from dataclasses import dataclass
 
+import torch
+from midaGAN import configs
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
-from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-
-# Config imports
-from dataclasses import dataclass
-from midaGAN import configs
+from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
+from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 
 @dataclass
@@ -225,3 +223,12 @@ class CycleGAN(BaseGAN):
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=0)
+        
+    def infer(self, input, cycle='A'):
+        assert cycle == 'A' or cycle == 'B', \
+            "Infer needs an input of either cycle with A or B domain as input"
+        assert f'G_{cycle}' in self.networks.keys()     
+
+        input = squeeze_z_axis_if_2D(input)
+        with torch.no_grad():
+            return self.networks[f'G_{cycle}'].forward(input)

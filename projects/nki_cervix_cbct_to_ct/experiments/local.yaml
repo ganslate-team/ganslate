@@ -55,7 +55,7 @@ metrics:
   output_distributions_D: True
   ssim: True
   
-evaluation:
+validation:
   freq: 2
   samples: 10
   dataset: 

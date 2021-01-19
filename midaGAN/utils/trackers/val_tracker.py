@@ -9,7 +9,7 @@ from midaGAN.utils.trackers.tensorboard_tracker import TensorboardTracker
 from midaGAN.utils.trackers.wandb_tracker import WandbTracker
 
 
-class EvalTracker(BaseTracker):
+class ValidationTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)
@@ -17,7 +17,7 @@ class EvalTracker(BaseTracker):
         self.wandb = None
         self.tensorboard = None
         if communication.get_local_rank() == 0:
-            io.mkdirs(Path(self.output_dir) / 'eval_images')
+            io.mkdirs(Path(self.output_dir) / 'val_images')
             if conf.logging.wandb:
                 self.wandb = WandbTracker(conf)
             if conf.logging.tensorboard:
@@ -76,9 +76,9 @@ class EvalTracker(BaseTracker):
                                     metrics=averaged_metrics,
                                     mode='validation')
 
-            #TODO: Adapt eval tracker for tensorboard
+            #TODO: Adapt validation tracker for tensorboard
             if self.tensorboard:
-                raise NotImplementedError("Tensorboard evaluation tracking not implemented")
+                raise NotImplementedError("Tensorboard validation tracking not implemented")
                 # self.tensorboard.log_iter(iter_idx, {}, {}, visuals, metrics)
 
             # Clear stored buffer after pushing the results
@@ -87,5 +87,5 @@ class EvalTracker(BaseTracker):
 
     def _save_image(self, visuals):
         name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"eval_images/{self.iter_idx}_{name}.png"
+        file_path = Path(self.output_dir) / f"val_images/{self.iter_idx}_{name}.png"
         torchvision.utils.save_image(image, file_path)
