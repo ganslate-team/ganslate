@@ -4,7 +4,7 @@ from torch import nn
 
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-from midaGAN.nn.losses.patch_nce import PatchNCELoss
+from midaGAN.nn.losses.cut_losses import PatchNCELoss, PixelIdentityLoss
 from midaGAN.nn.utils import init_net, get_network_device
 
 # Config imports
@@ -21,6 +21,10 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_nce: float = 1
     # weight for NCE loss for identity mapping: NCE(G(Y), Y)), weighted sum with nce_loss
     lambda_nce_idt: float = 0.5
+    # weight for the pixel loss for identity mapping LOSS(G(Y), Y)
+    lambda_pixel_idt: float = 1
+    # which loss to calculate over pixels in pixel identity loss ["ssim", "l1"] 
+    pixel_idt_mode: str = 'ssim'
     # temperature for NCE loss
     nce_T: float = 0.07
 
@@ -53,6 +57,8 @@ class CUT(BaseGAN):
         self.lambda_adv = conf.gan.optimizer.lambda_adv
         self.lambda_nce = conf.gan.optimizer.lambda_nce
         self.lambda_nce_idt = conf.gan.optimizer.lambda_nce_idt
+        self.lambda_pixel_idt = conf.gan.optimizer.lambda_pixel_idt
+
         self.nce_layers = conf.gan.nce_layers
         self.num_patches = conf.gan.num_patches
         self.use_flip_equivariance = conf.gan.use_flip_equivariance
@@ -66,7 +72,7 @@ class CUT(BaseGAN):
         self.visuals = {name: None for name in all_visual_names}
 
         # Losses used by the model
-        loss_names = ['D', 'G', 'NCE', 'NCE_idt']
+        loss_names = ['D', 'G', 'NCE', 'NCE_idt', 'pixel_idt']
         self.losses = {name: None for name in loss_names}
 
         # Generators and Discriminators
@@ -110,6 +116,8 @@ class CUT(BaseGAN):
         ]
         if self.lambda_nce_idt > 0:
             self.criterion_nce_idt = torch.nn.L1Loss().to(self.device)
+        if self.lambda_pixel_idt > 0:
+            self.criterion_pixel_idt = PixelIdentityLoss(self.conf).to(self.device)
 
     def optimize_parameters(self):
         self.forward()
@@ -153,7 +161,7 @@ class CUT(BaseGAN):
 
         # concat for joint forward?
         self.visuals['fake_B'] = self.networks['G'](real_A)
-        if self.lambda_nce_idt > 0:
+        if self.lambda_nce_idt > 0 or self.lambda_pixel_idt > 0:
             self.visuals['idt_B'] = self.networks['G'](real_B)
 
     def backward_D(self):
@@ -196,7 +204,14 @@ class CUT(BaseGAN):
                 self.losses['NCE_idt'] = nce_idt_loss
         # ---------------------------------------------------------------
 
-        combined_loss = nce_loss + adversarial_loss
+        # ------------------- Pixel Identity Loss -----------------------
+        pixel_idt_loss = 0
+        if self.lambda_pixel_idt:
+            pixel_idt_loss = self.criterion_pixel_idt(real_B, idt_B) * self.lambda_pixel_idt
+            self.losses['pixel_idt'] = pixel_idt_loss
+        # ---------------------------------------------------------------
+
+        combined_loss = adversarial_loss + nce_loss + pixel_idt_loss
 
         optimizers = (self.optimizers['G'], self.optimizers['mlp'])
         self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
@@ -261,7 +276,7 @@ class FeaturePatchMLP(nn.Module):
                     patch_id = patch_ids[i]
                 else:
                     # Randomized indices of the F dimension for selecting patches. If F is 512, it
-                    # will be a list with length 512 and will look like, e.g., [511, 3, 275, 303, ...]
+                    # will be a list with length 512 and will look like, e.g. [511, 3, 27, 303, ..]
                     patch_id = torch.randperm(feat.shape[1], device=device)
                     # Limit the number of patches to `num_patches` if necessary
                     patch_id = patch_id[:int(min(self.num_patches, len(patch_id)))]

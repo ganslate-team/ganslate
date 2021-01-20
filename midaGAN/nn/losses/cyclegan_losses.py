@@ -1,6 +1,6 @@
 import torch
 import midaGAN.nn.losses.utils.ssim as ssim
-from midaGAN.nn.losses import reshape_to_4D_if_5D
+from midaGAN.nn.utils import reshape_to_4D_if_5D
 
 import logging
 logger = logging.getLogger(__name__)
@@ -26,8 +26,9 @@ class CycleGANLosses:
         # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
         # so the number of channels equals to the number of slices in sampled patches.
         # In 2D training, the number of image channels is defined in the config. TODO: nicer
-        channels_ssim = conf.dataset.patch_size[0] if 'patch_size' in conf.dataset.keys() \
-                        else conf.dataset.image_channels
+        channels_ssim = conf.gan.generator.in_channels
+        if 'patch_size' in conf.dataset.keys():
+            channels_ssim = conf.dataset.patch_size[0]
         # Cycle-consistency - L1, with optional weighted combination with SSIM
         self.criterion_cycle = CycleLoss(lambda_A,
                                          lambda_B,
