@@ -22,7 +22,7 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     # weight for NCE loss for identity mapping: NCE(G(Y), Y)), weighted sum with nce_loss
     lambda_nce_idt: float = 0.5
     # weight for the pixel loss for identity mapping LOSS(G(Y), Y)
-    lambda_pixel_idt: float = 1
+    lambda_pixel_idt: float = 0
     # which loss to calculate over pixels in pixel identity loss ["ssim", "l1"] 
     pixel_idt_mode: str = 'ssim'
     # temperature for NCE loss
@@ -40,7 +40,7 @@ class CUTConfig(configs.base.BaseGANConfig):
     # number of patches per layer
     num_patches: int = 256
     # Enforce flip-equivariance as additional regularization. It's used by FastCUT, but not CUT
-    use_flip_equivariance: bool = False
+    use_equivariance_flip: bool = False
     optimizer: OptimizerConfig = OptimizerConfig
 
 
@@ -61,8 +61,8 @@ class CUT(BaseGAN):
 
         self.nce_layers = conf.gan.nce_layers
         self.num_patches = conf.gan.num_patches
-        self.use_flip_equivariance = conf.gan.use_flip_equivariance
-        self.is_equivariance_flipped = False
+        self.use_equivariance_flip = conf.gan.use_equivariance_flip
+        self.is_flipped = False
 
         # Inputs and Outputs of the model
         self.visual_names = {'A': ['real_A', 'fake_B'], 'B': ['real_B', 'idt_B']}
@@ -146,22 +146,23 @@ class CUT(BaseGAN):
         self.visuals['real_B'] = input['B'].to(self.device)
 
     def forward(self):
+        using_idt = self.lambda_nce_idt > 0 or self.lambda_pixel_idt > 0
+
         real_A = self.visuals['real_A']
-        if self.lambda_nce_idt > 0:
+        if using_idt:
             real_B = self.visuals['real_B']
 
-        self.is_equivariance_flipped = False
-        if self.is_train and self.use_flip_equivariance and np.random.random() < 0.5:
-            self.is_equivariance_flipped = True
-
-            # flip the last dimension
-            real_A = real_A.flip(-1)
-            if self.lambda_nce_idt > 0:
-                real_B = real_B.flip(-1)
-
+        if self.use_equivariance_flip and self.is_train:
+            self.is_flipped = np.random.random() > 0.5
+            if self.is_flipped:
+                # flip the last dimension
+                real_A = real_A.flip(-1)
+                if using_idt:
+                    real_B = real_B.flip(-1)
+                
         # concat for joint forward?
         self.visuals['fake_B'] = self.networks['G'](real_A)
-        if self.lambda_nce_idt > 0 or self.lambda_pixel_idt > 0:
+        if using_idt:
             self.visuals['idt_B'] = self.networks['G'](real_B)
 
     def backward_D(self):
@@ -194,11 +195,11 @@ class CUT(BaseGAN):
         # ------------------------- NCE Loss ----------------------------
         nce_loss = 0
         if self.lambda_nce > 0:
-            nce_loss = self.calculate_nce_loss(real_A, fake_B)
+            nce_loss = self._calculate_nce_loss(real_A, fake_B)
             self.losses['NCE'] = nce_loss
 
             if self.lambda_nce_idt > 0:
-                nce_idt_loss = self.lambda_nce_idt * self.calculate_nce_loss(real_B, idt_B)
+                nce_idt_loss = self.lambda_nce_idt * self._calculate_nce_loss(real_B, idt_B)
                 # Weighted sum of nce and nce_idt loss
                 nce_loss = (1 - self.lambda_nce_idt) * nce_loss + nce_idt_loss
                 self.losses['NCE_idt'] = nce_idt_loss
@@ -216,7 +217,7 @@ class CUT(BaseGAN):
         optimizers = (self.optimizers['G'], self.optimizers['mlp'])
         self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)
 
-    def calculate_nce_loss(self, source, target):
+    def _calculate_nce_loss(self, source, target):
         source_feats = extract_features(input=source,
                                         network=self.networks['G'],
                                         layers_to_extract_from=self.nce_layers)
@@ -225,7 +226,7 @@ class CUT(BaseGAN):
                                         network=self.networks['G'],
                                         layers_to_extract_from=self.nce_layers)
 
-        if self.is_equivariance_flipped:
+        if self.is_flipped:
             target_feats = [feat.flip(-1) for feat in target_feats]
 
         source_feats_pool, patch_ids = self.networks['mlp'](source_feats)
