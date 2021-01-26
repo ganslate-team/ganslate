@@ -13,13 +13,24 @@ class LoggingConfig:
 
 @dataclass
 class MetricConfig:
+    # SSIM metric between the images
     ssim: bool = True
+
+    # PSNR metric between the images
     psnr: bool = True
+
+    # Normalized MSE
     nmse: bool = True
+
+    # MSE 
     mse: bool = True
 
-    hu_accuracy: bool = False
-    dosimetric_calculations: bool = False
+    # Abs diff between the two images
+    abs_diff: bool = True
+
+    # Set to true if cycle metrics need to be logged 
+    # i.e A->B->A followed by comparison between the A
+    cycle_metrics: bool = False
 
 
 @dataclass
@@ -32,7 +43,10 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class EvalConfig:
+class ValidationConfig:
+    # For validation ensure that pairing is maintained between the A and B 
+    # provided by the attached dataloader
+
     project_dir: Optional[str] = None  # Needed if project-specific classes are to be imported
     is_train: bool = False  # Training mode is False for framework
     batch_size: int = 1

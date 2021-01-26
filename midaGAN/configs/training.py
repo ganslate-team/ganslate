@@ -54,6 +54,6 @@ class TrainConfig(configs.base.BaseConfig):
     seed: Optional[int] = None  # Seed for reproducibility
     metrics: TrainMetricConfig = TrainMetricConfig()  # Metrics to log while training!
 
-    # Separate evaluation config that will be run with a full-volume dataloader.
-    # Can be used for intermittent SSIM, dose calcs etc
-    evaluation: Optional[configs.evaluation.EvalConfig] = None
+    # Separate validation config that will be run with a full-volume dataloader.
+    # Can be used for intermittent SSIM
+    validation: Optional[configs.validation.ValidationConfig] = None

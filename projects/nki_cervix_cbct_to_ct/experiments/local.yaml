@@ -5,7 +5,7 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: ./checkpoints/cbct_ex3/
+    checkpoint_dir: ./checkpoints/test_expt/
     wandb:
         project: "NKI_CBCT_CT"
         image_filter: 
@@ -55,10 +55,11 @@ metrics:
   output_distributions_D: True
   ssim: True
   
-evaluation:
+validation:
   freq: 2
   samples: 10
   dataset: 
       name: CBCTtoCTEvalDataset
       root: /repos/Maastro/nki_cervix
+      mask_labels: ["Cervix"]
 

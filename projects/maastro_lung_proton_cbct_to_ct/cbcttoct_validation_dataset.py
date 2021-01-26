@@ -148,5 +148,5 @@ def clamp_normalize(A, B, min_value, max_value):
 
     # Add channel dimension (1 = grayscale)
     A = A.unsqueeze(0)
-    B = B.unsqueeze(0) 
+    B = B.unsqueeze(0)
     return A, B

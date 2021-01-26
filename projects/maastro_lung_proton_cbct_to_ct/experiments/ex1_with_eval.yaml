@@ -44,7 +44,7 @@ gan:
         lr_D: 0.0002
         lr_G: 0.0004
 
-evaluation:
+validation:
     freq: 2000
     dataset: 
         name: "CBCTtoCTValidationDataset"

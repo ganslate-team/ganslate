@@ -29,7 +29,7 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 class CUTConfig(configs.base.BaseGANConfig):
     """Contrastive Unpaired Translation (CUT)"""
     name: str = "CUT"
-    # compute NCE loss on which layers
+    # On which layers to compute the NCE loss. 0 (zero) denotes the input itself.
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)
     # num of features in MLP
     mlp_nc: int = 256
