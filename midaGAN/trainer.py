@@ -3,11 +3,10 @@ import logging
 import torch
 
 from midaGAN.data import build_loader
-# Imports for evaluation.
-from midaGAN.evaluator import Evaluator
 from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication, environment
 from midaGAN.utils.trackers.training_tracker import TrainingTracker
+from midaGAN.validator import Validator
 
 
 class Trainer():
@@ -29,8 +28,8 @@ class Trainer():
 
         self.model = build_gan(self.conf)
 
-        # Evaluation configuration and evaluation dataloader specified.
-        self._init_evaluation()
+        # Validation configuration and validtion dataloader specified.
+        self._init_validation()
 
         start_iter = 1 if not self.conf.load_checkpoint else self.conf.load_checkpoint.count_start_iter
         end_iter = 1 + self.conf.n_iters + self.conf.n_iters_decay
@@ -58,7 +57,7 @@ class Trainer():
             self._save_checkpoint()
             self._perform_scheduler_step()
 
-            self.evaluate()
+            self.run_validation()
 
             self.tracker.start_dataloading_timer()
         self.tracker.close()
@@ -79,19 +78,19 @@ class Trainer():
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx)
 
-    def _init_evaluation(self):
+    def _init_validation(self):
         """
         Intitialize evaluation parameters from training conf.
         """
-        # Eval conf is built from training conf
-        self.evaluator = Evaluator(self.conf)
-        self.evaluator.set_model(self.model)
+        # Validation conf is built from training conf
+        self.validator = Validator(self.conf)
+        self.validator.set_model(self.model)
 
-    def evaluate(self):
-        if self.evaluator.is_enabled() and (self.iter_idx % self.conf.evaluation.freq == 0):
-            self.evaluator.run()
+    def run_validation(self):
+        if self.validator.is_enabled() and (self.iter_idx % self.conf.validation.freq == 0):
+            self.validator.run()
 
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
-        self.evaluator.set_trainer_idx(iter_idx)
+        self.validator.set_trainer_idx(iter_idx)
