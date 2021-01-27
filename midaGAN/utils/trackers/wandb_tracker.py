@@ -60,12 +60,13 @@ class WandbTracker:
                 if image_threshold is not None:
                     visual['name'] = f"Sample: {idx} {visual['name']}"
 
+
                 wandb_images.append(self._wandb_image_from_visual(visual, \
                     image_threshold=image_threshold))
             return wandb_images
 
         # If visual is an image then a single wandb.Image is created
-        return self._wandb_image_from_visual(visuals)
+        return self._wandb_image_from_visual(visuals, image_threshold=image_threshold)
 
     def _wandb_image_from_visual(self, visual, image_threshold=None):
         """
