@@ -8,12 +8,12 @@ from midaGAN.nn.gans import cyclegan
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
-from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 
 @dataclass
 class OptimizerConfig(cyclegan.OptimizerConfig):
-    pass  # the same as CycleGAN, kept here for consistency and for possible future changes
+    # the same as CycleGAN, kept here for consistency and for possible future changes
+    pass
 
 
 @dataclass
@@ -222,13 +222,12 @@ class PiCycleGAN(BaseGAN):
 
 
     def infer(self, input, cycle='A'):
-        assert cycle == 'A' or cycle == 'B', \
+        assert cycle in ['A', 'B'], \
             "Infer needs an input of either cycle with A or B domain as input"
-        assert 'G' in self.networks.keys()     
+        assert 'G' in self.networks.keys()
 
-        input = squeeze_z_axis_if_2D(input)
         with torch.no_grad():
             if cycle == 'A':
                 return self.networks['G'].forward(input)            
             elif cycle == 'B':
-                return self.networks['G'].forward(input, inverse=True)            
+                return self.networks['G'].forward(input, inverse=True)

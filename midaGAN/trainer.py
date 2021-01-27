@@ -6,7 +6,7 @@ from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication, environment
 from midaGAN.utils.trackers.training_tracker import TrainingTracker
-from midaGAN.validator import Validator
+from midaGAN.evaluator import Evaluator
 
 
 class Trainer():
@@ -28,8 +28,8 @@ class Trainer():
 
         self.model = build_gan(self.conf)
 
-        # Validation configuration and validtion dataloader specified.
-        self._init_validation()
+        # Validation configuration and validation dataloader specified.
+        self.validator = self._init_validator()
 
         start_iter = 1 if not self.conf.load_checkpoint else self.conf.load_checkpoint.count_start_iter
         end_iter = 1 + self.conf.n_iters + self.conf.n_iters_decay
@@ -78,19 +78,21 @@ class Trainer():
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx)
 
-    def _init_validation(self):
+    def _init_validator(self):
         """
         Intitialize evaluation parameters from training conf.
         """
         # Validation conf is built from training conf
-        self.validator = Validator(self.conf)
-        self.validator.set_model(self.model)
+        if not self.conf.validation:
+            return
+        return Evaluator(self.conf, self.model)
 
     def run_validation(self):
-        if self.validator.is_enabled() and (self.iter_idx % self.conf.validation.freq == 0):
+        if self.validator and (self.iter_idx % self.conf.validation.freq == 0):
             self.validator.run()
 
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
-        self.validator.set_trainer_idx(iter_idx)
+        if self.validator:
+            self.validator.set_trainer_idx(iter_idx)

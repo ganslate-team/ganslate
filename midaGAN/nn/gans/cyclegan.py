@@ -7,7 +7,6 @@ from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
-from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 
 @dataclass
@@ -225,10 +224,9 @@ class CycleGAN(BaseGAN):
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=0)
         
     def infer(self, input, cycle='A'):
-        assert cycle == 'A' or cycle == 'B', \
+        assert cycle in ['A', 'B'], \
             "Infer needs an input of either cycle with A or B domain as input"
         assert f'G_{cycle}' in self.networks.keys()     
 
-        input = squeeze_z_axis_if_2D(input)
         with torch.no_grad():
             return self.networks[f'G_{cycle}'].forward(input)

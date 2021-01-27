@@ -56,4 +56,4 @@ class TrainConfig(configs.base.BaseConfig):
 
     # Separate validation config that will be run with a full-volume dataloader.
     # Can be used for intermittent SSIM
-    validation: Optional[configs.validation.ValidationConfig] = None
+    validation: Optional[configs.evaluation.EvaluationConfig] = None

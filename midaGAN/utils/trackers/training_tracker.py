@@ -1,30 +1,16 @@
 import logging
 from pathlib import Path
 
-import torchvision
-from midaGAN.utils import communication, io
+from midaGAN.utils import communication
 from midaGAN.utils.trackers import visuals_to_combined_2d_grid
 from midaGAN.utils.trackers.base_tracker import BaseTracker
-from midaGAN.utils.trackers.tensorboard_tracker import TensorboardTracker
-from midaGAN.utils.trackers.wandb_tracker import WandbTracker
 
 
 class TrainingTracker(BaseTracker):
-
     def __init__(self, conf):
-        super().__init__(conf)
+        super().__init__(conf, mode='training')
         self.logger = logging.getLogger(type(self).__name__)
         self.log_freq = conf.logging.log_freq
-
-        self.wandb = None
-        self.tensorboard = None
-        if communication.get_local_rank() == 0:
-            io.mkdirs(Path(self.output_dir) / 'images')
-
-            if conf.logging.wandb:
-                self.wandb = WandbTracker(conf)
-            if conf.logging.tensorboard:
-                self.tensorboard = TensorboardTracker(conf)
 
     def log_iter(self, learning_rates, losses, visuals, metrics):
         """Parameters: # TODO: update this
@@ -47,7 +33,7 @@ class TrainingTracker(BaseTracker):
 
             if communication.get_local_rank() == 0:
                 visuals = visuals_to_combined_2d_grid(visuals)
-                self._save_image(visuals)
+                self._save_image(visuals, self.iter_idx)
 
                 if self.wandb:
                     self.wandb.log_iter(self.iter_idx, learning_rates, losses, visuals, metrics)
@@ -68,12 +54,3 @@ class TrainingTracker(BaseTracker):
         for k, v in losses.items():
             message += '%s: %.3f ' % (k, v)
         self.logger.info(message)
-
-    def _save_image(self, visuals):
-        name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"images/{self.iter_idx}_{name}.png"
-        torchvision.utils.save_image(image, file_path)
-
-    def close(self):
-        if communication.get_local_rank() == 0 and self.tensorboard:
-            self.tensorboard.close()

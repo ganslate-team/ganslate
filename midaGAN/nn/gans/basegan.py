@@ -8,7 +8,7 @@ from torch.nn.parallel import DistributedDataParallel
 from midaGAN.utils import communication
 
 # midaGAN.nn imports
-from midaGAN.nn.utils import get_scheduler, squeeze_z_axis_if_2D
+from midaGAN.nn.utils import get_scheduler
 
 from midaGAN.nn.generators import build_G
 from midaGAN.nn.discriminators import build_D
@@ -291,7 +291,6 @@ class BaseGAN(ABC):
         generator = 'G' if 'G' in self.networks.keys() else 'G_A'
 
         with torch.no_grad():
-            input = squeeze_z_axis_if_2D(input)
             return self.networks[generator].forward(input)
 
     def get_loggable_data(self):

@@ -22,7 +22,7 @@ def main():
     communication.init_distributed()
 
     conf = configs.utils.builders.build_training_conf()
-    environment.setup_logging_with_config(conf)
+    environment.setup_logging_with_config(conf, mode='training')
 
     trainer = Trainer(conf)
     trainer.run()

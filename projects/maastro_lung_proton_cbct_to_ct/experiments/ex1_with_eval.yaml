@@ -49,3 +49,5 @@ validation:
     dataset: 
         name: "CBCTtoCTValidationDataset"
         root: "/mnt/14F117A002BC354B/maastro_proton_cbct_ct_processed_eval"
+    sliding_window:
+        window_size: [32, 224, 224]

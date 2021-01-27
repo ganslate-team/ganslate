@@ -20,7 +20,7 @@ def main():
     communication.init_distributed()
 
     conf = builders.build_inference_conf()
-    environment.setup_logging_with_config(conf)
+    environment.setup_logging_with_config(conf, mode='inference')
 
     inferer = Inferer(conf)
     inferer.run()
