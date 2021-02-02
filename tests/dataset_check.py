@@ -11,7 +11,7 @@ except ImportError:
     import midaGAN
 
 from midaGAN.engines.trainer import Trainer
-from midaGAN.configs.builders import build_training_conf
+from midaGAN.configs.builders import build_conf
 from midaGAN.utils import communication, environment
 from midaGAN.data import build_loader
 from omegaconf import OmegaConf
@@ -21,12 +21,12 @@ import wandb
 def main():
     communication.init_distributed()  # inits distributed mode if ran with torch.distributed.launch
 
-    conf = build_training_conf()
+    conf = build_conf()
 
     environment.setup_logging_with_config(conf)
 
     # Load limited entries in the dataloader
-    conf.train.is_train = False
+    conf.is_train = 'test'
     data_loader = build_loader(conf)
 
     project = conf.train.logging.wandb.project

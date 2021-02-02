@@ -40,6 +40,7 @@ class BaseEvaluationConfig:
     sliding_window: Optional[SlidingWindowConfig] = None
     dataset: configs.base.BaseDatasetConfig = MISSING
 
+
 @dataclass
 class ValidationConfig(BaseEvaluationConfig):
     # How frequently to validate (each `freq` iters)

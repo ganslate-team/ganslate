@@ -4,11 +4,11 @@ import torchvision.transforms as transforms
 
 
 def get_transform(conf, method=Image.BICUBIC):
-    preprocess = conf.train.dataset.preprocess
-    load_size = conf.train.dataset.load_size
-    crop_size = conf.train.dataset.crop_size
-    flip = conf.train.dataset.flip
-    image_channels = conf.train.dataset.image_channels
+    preprocess = conf[conf.mode].dataset.preprocess
+    load_size = conf[conf.mode].dataset.load_size
+    crop_size = conf[conf.mode].dataset.crop_size
+    flip = conf[conf.mode].dataset.flip
+    image_channels = conf[conf.mode].dataset.image_channels
 
     transform_list = []
 

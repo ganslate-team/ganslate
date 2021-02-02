@@ -86,7 +86,7 @@ class Trainer(BaseEngine):
 
     def _init_validator(self):
         """
-        Intitialize evaluation parameters from training conf.train.
+        Intitialize evaluation parameters from training conf
         """
         # Validation conf is built from training conf
         if not self.conf.val:

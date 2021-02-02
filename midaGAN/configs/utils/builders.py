@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def build_training_conf():
+def build_conf():
     cli = OmegaConf.from_cli()
     conf = initializers.init_config(cli.pop("config"), config_class=Config)
     return OmegaConf.merge(conf, cli)

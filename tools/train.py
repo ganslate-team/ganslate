@@ -21,7 +21,7 @@ def main():
     # inits distributed mode if ran with torch.distributed.launch
     communication.init_distributed()
 
-    conf = configs.utils.builders.build_training_conf()
+    conf = configs.utils.builders.build_conf()
     environment.setup_logging_with_config(conf)
 
     trainer = Trainer(conf)

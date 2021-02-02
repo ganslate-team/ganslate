@@ -48,6 +48,7 @@ class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
 class CBCTtoCTInferenceDataset(Dataset):
     exit("FIX ALL THESE conf.train. things")
     def __init__(self, conf):
+        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! SHOULDN'T BE conf.train
         # self.paths = make_dataset_of_directories(conf.train.dataset.root, EXTENSIONS)
         self.root_path = Path(conf.train.dataset.root).resolve()
 
