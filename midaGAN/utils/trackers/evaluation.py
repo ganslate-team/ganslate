@@ -3,11 +3,11 @@ from pathlib import Path
 
 from midaGAN.utils import communication
 from midaGAN.utils.trackers import visuals_to_combined_2d_grid
-from midaGAN.utils.trackers.base_tracker import BaseTracker
+from midaGAN.utils.trackers.base import BaseTracker
 
 class EvaluationTracker(BaseTracker):
-    def __init__(self, conf, mode):
-        super().__init__(conf, mode)
+    def __init__(self, conf):
+        super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
 
         self.metrics = []
@@ -51,7 +51,7 @@ class EvaluationTracker(BaseTracker):
                                     losses={},
                                     visuals=self.visuals,
                                     metrics=averaged_metrics,
-                                    mode=self.mode)
+                                    mode=self.conf.mode)
 
             # TODO: Adapt eval tracker for tensorboard
             if self.tensorboard:

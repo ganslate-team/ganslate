@@ -2,25 +2,26 @@ import logging
 
 import torch
 
+from midaGAN.engines.base import BaseEngine
 from midaGAN.data import build_loader
 from midaGAN.nn.gans import build_gan
 from midaGAN.utils import communication, environment
-from midaGAN.utils.trackers.training_tracker import TrainingTracker
-from midaGAN.evaluator import Evaluator
+from midaGAN.utils.trackers.training import TrainingTracker
+from midaGAN.engines.evaluators import Validator
 
 
-class Trainer():
+class Trainer(BaseEngine):
 
     def __init__(self, conf):
+        super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
-        self.conf = conf
 
         # https://stackoverflow.com/a/58965640
         torch.backends.cudnn.benchmark = True
 
         # Set reproducibility parameters (random numbers and cudnn backend)
-        if self.conf.seed:
-            environment.set_seed(self.conf.seed)
+        if self.conf.train.seed:
+            environment.set_seed(self.conf.train.seed)
 
         self.tracker = TrainingTracker(self.conf)
 
@@ -31,13 +32,18 @@ class Trainer():
         # Validation configuration and validation dataloader specified.
         self.validator = self._init_validator()
 
-        start_iter = 1 if not self.conf.load_checkpoint else self.conf.load_checkpoint.count_start_iter
-        end_iter = 1 + self.conf.n_iters + self.conf.n_iters_decay
+        start_iter = 1 if not self.conf.train.load_checkpoint else self.conf.train.load_checkpoint + 1
+        end_iter = 1 + self.conf.train.n_iters + self.conf.train.n_iters_decay
+        assert start_iter < end_iter, \
+            "If continuing, define the `n_iters` relative to the loaded iteration."
         self.iters = range(start_iter, end_iter)
         self.iter_idx = 0
 
+    def _set_mode(self):
+        self.conf.mode = "train"
+
     def run(self):
-        #TODO: breaks 3D training with num_workers>0
+        #TODO: breaks 3D training with num_workers>0. Create a temp dataloader from the dataset in gan_summary?
         # self.logger.info(gan_summary(self.model, self.data_loader))
 
         self.logger.info('Training started.')
@@ -72,7 +78,7 @@ class Trainer():
 
     def _save_checkpoint(self):
         # TODO: save on cancel
-        checkpoint_freq = self.conf.logging.checkpoint_freq
+        checkpoint_freq = self.conf.train.logging.checkpoint_freq
         if communication.get_local_rank() == 0:
             if self.iter_idx % checkpoint_freq == 0:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
@@ -80,15 +86,15 @@ class Trainer():
 
     def _init_validator(self):
         """
-        Intitialize evaluation parameters from training conf.
+        Intitialize evaluation parameters from training conf.train.
         """
         # Validation conf is built from training conf
-        if not self.conf.validation:
+        if not self.conf.val:
             return
-        return Evaluator(self.conf, self.model)
+        return Validator(self.conf, self.model)
 
     def run_validation(self):
-        if self.validator and (self.iter_idx % self.conf.validation.freq == 0):
+        if self.validator and (self.iter_idx % self.conf.val.freq == 0):
             self.validator.run()
 
     def _set_iter_idx(self, iter_idx):

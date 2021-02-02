@@ -5,10 +5,10 @@
 
 # class CBCTtoCTInferenceDataset(Dataset):
 #     def __init__(self, conf):
-#         self.paths = io.make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
+#         self.paths = io.make_dataset_of_directories(conf.train.dataset.root, EXTENSIONS)
 #         self.num_datapoints = len(self.paths)
 #         # Min and max HU values for clipping and normalization
-#         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+#         self.hu_min, self.hu_max = conf.train.dataset.hounsfield_units_range
 
 #     def __getitem__(self, index):
 #         path = str(Path(self.paths[index]) / 'CT.nrrd')

@@ -1,14 +1,7 @@
 from typing import Optional, Tuple
 from dataclasses import dataclass
-from omegaconf import MISSING
+from omegaconf import MISSING, II
 from midaGAN import configs
-
-
-@dataclass
-class LoggingConfig:
-    #inference_dir: str = MISSING  # Path where the inference will store the results
-    tensorboard: bool = False
-    wandb: Optional[configs.common.WandbConfig] = None
 
 
 @dataclass
@@ -38,15 +31,24 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class EvaluationConfig:
+class BaseEvaluationConfig:
     # For evaluation ensure that pairing is maintained between the A and B 
     # provided by the attached dataloader
-
-    #project_dir: Optional[str] = None  # Needed if project-specific classes are to be imported
-    #is_train: bool = False  # Training mode is False for framework
-    #batch_size: int = 1
-    freq: int = 1  # Every n iterations to run eval
+    
+    # To define by the user
     metrics: MetricConfig = MetricConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
-    #logging: LoggingConfig = LoggingConfig()
     dataset: configs.base.BaseDatasetConfig = MISSING
+
+@dataclass
+class ValidationConfig(BaseEvaluationConfig):
+    # How frequently to validate (each `freq` iters)
+    freq: int = 1
+    # Validation uses the same batch size as training by default
+    batch_size: int = II("train.batch_size")
+
+
+@dataclass
+class TestConfig(BaseEvaluationConfig):
+    checkpoint_dir: str = MISSING
+    checkpoint_iter: int = MISSING

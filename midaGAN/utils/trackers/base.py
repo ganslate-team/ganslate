@@ -5,17 +5,17 @@ import torchvision
 from omegaconf import OmegaConf
 from midaGAN.utils import communication, io
 
-from midaGAN.utils.trackers.tensorboard_tracker import TensorboardTracker
-from midaGAN.utils.trackers.wandb_tracker import WandbTracker
+from midaGAN.utils.trackers.tensorboard import TensorboardTracker
+from midaGAN.utils.trackers.wandb import WandbTracker
 
 class BaseTracker:
     """"Base for training and inference trackers."""
 
-    def __init__(self, conf, mode='training'):
-        assert mode in ['training', 'validation', 'testing', 'inference']
-        self.mode = mode
-        self.batch_size = conf.batch_size
-        self.output_dir = conf.logging.checkpoint_dir
+    def __init__(self, conf):
+        assert conf.mode in ['train', 'val', 'test']
+        self.conf = conf
+        self.batch_size = self.conf.train.batch_size
+        self.output_dir = self.conf.train.logging.checkpoint_dir
         self.iter_idx = None
         self.iter_end_time = None
         self.iter_start_time = None
@@ -24,24 +24,25 @@ class BaseTracker:
 
         self.wandb, self.tensorboard = self._setup_wandb_tensorboard(conf)
         self._setup_images_dir()
+        # TODO: right now it saves it for val too which is unnecessary. Let's see how testing and inferencing will function before changing this
         self._save_config(conf)
 
     def _save_config(self, conf):
         if communication.get_local_rank() == 0:
-            config_path = Path(self.output_dir) / f"{self.mode}_config.yaml"
+            config_path = Path(self.output_dir) / f"{self.conf.mode}_config.yaml"
             with open(config_path, "w") as file:
                 file.write(OmegaConf.to_yaml(conf))
 
     def _setup_images_dir(self):
         if communication.get_local_rank() == 0:
-            io.mkdirs(Path(self.output_dir) / f"{self.mode}/images")
+            io.mkdirs(Path(self.output_dir) / f"{self.conf.mode}/images")
 
     def _setup_wandb_tensorboard(self, conf):
         wandb, tensorboard = None, None
         if communication.get_local_rank() == 0:
-            if conf.logging.wandb:
+            if conf.train.logging.wandb:
                 wandb = WandbTracker(conf)
-            if conf.logging.tensorboard:
+            if conf.train.logging.tensorboard:
                 tensorboard = TensorboardTracker(conf)
         return wandb, tensorboard
 
@@ -70,5 +71,5 @@ class BaseTracker:
 
     def _save_image(self, visuals, iter_idx):
         name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"{self.mode}/images/{iter_idx}_{name}.png"
+        file_path = Path(self.output_dir) / f"{self.conf.mode}/images/{iter_idx}_{name}.png"
         torchvision.utils.save_image(image, file_path)

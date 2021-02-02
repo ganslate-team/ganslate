@@ -4,11 +4,11 @@ import torchvision.transforms as transforms
 
 
 def get_transform(conf, method=Image.BICUBIC):
-    preprocess = conf.dataset.preprocess
-    load_size = conf.dataset.load_size
-    crop_size = conf.dataset.crop_size
-    flip = conf.dataset.flip
-    image_channels = conf.dataset.image_channels
+    preprocess = conf.train.dataset.preprocess
+    load_size = conf.train.dataset.load_size
+    crop_size = conf.train.dataset.crop_size
+    flip = conf.train.dataset.flip
+    image_channels = conf.train.dataset.image_channels
 
     transform_list = []
 
@@ -37,15 +37,12 @@ def get_transform(conf, method=Image.BICUBIC):
     if 'trim' in preprocess:
         transform_list.append(transforms.Lambda(lambda img: __trim(img, crop_size)))
 
-    # TODO: This shouldn't be made like this so that it's happening without knowing it
-    # transform_list.append(transforms.Lambda(lambda img: __make_power_2(img, base=4, method=method)))
-
     if flip:
         transform_list.append(transforms.RandomHorizontalFlip())
 
     transform_list += [transforms.ToTensor()]
 
-    if image_channels == 1:  # TODO: remove convert and use image_channels
+    if image_channels == 1:
         transform_list += [transforms.Normalize((0.5,), (0.5,))]
     elif image_channels == 3:
         transform_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]

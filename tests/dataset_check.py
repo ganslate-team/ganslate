@@ -10,7 +10,7 @@ except ImportError:
     sys.path.append('./')
     import midaGAN
 
-from midaGAN.trainer import Trainer
+from midaGAN.engines.trainer import Trainer
 from midaGAN.configs.builders import build_training_conf
 from midaGAN.utils import communication, environment
 from midaGAN.data import build_loader
@@ -26,11 +26,11 @@ def main():
     environment.setup_logging_with_config(conf)
 
     # Load limited entries in the dataloader
-    conf.is_train = False
+    conf.train.is_train = False
     data_loader = build_loader(conf)
 
-    project = conf.logging.wandb.project
-    entity = conf.logging.wandb.entity
+    project = conf.train.logging.wandb.project
+    entity = conf.train.logging.wandb.entity
     config_dict = OmegaConf.to_container(conf, resolve=True)
 
     wandb.init(name='dataset_check', project=project, entity=entity, config=config_dict)  #
@@ -41,8 +41,8 @@ def main():
 
             # Check for n NCDHW
             if data['A'].ndim == 5:
-                image_A = data['A'][0, 0, conf.dataset.patch_size[0] // 2]
-                image_B = data['B'][0, 0, conf.dataset.patch_size[0] // 2]
+                image_A = data['A'][0, 0, conf.train.dataset.patch_size[0] // 2]
+                image_B = data['B'][0, 0, conf.train.dataset.patch_size[0] // 2]
             elif data['A'].ndim == 4:
                 image_A = data['A'][0, 0]
                 image_B = data['B'][0, 0]

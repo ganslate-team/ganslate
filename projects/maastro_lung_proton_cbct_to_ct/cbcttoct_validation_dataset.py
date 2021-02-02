@@ -31,7 +31,7 @@ class CBCTtoCTValidationDatasetConfig(configs.base.BaseDatasetConfig):
 
 class CBCTtoCTValidationDataset(Dataset):
     def __init__(self, conf):
-        self.root_path = Path(conf.dataset.root).resolve()
+        self.root_path = Path(conf.val.dataset.root).resolve()
 
         self.pairs = []
         for CT_CBCT_pair_dir in self.root_path.iterdir():
@@ -42,7 +42,7 @@ class CBCTtoCTValidationDataset(Dataset):
             self.pairs.append((CBCT, CT))
 
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf.val.dataset.hounsfield_units_range
 
     def __getitem__(self, index):
         path_CBCT, path_CT = self.pairs[index]

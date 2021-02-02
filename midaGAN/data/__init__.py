@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 def build_loader(conf):
     dataset = build_dataset(conf)
 
-    if conf.is_train:
-        sampler = InfiniteSampler(size=len(dataset), shuffle=conf.dataset.shuffle)
+    if conf.mode == "train":
+        sampler = InfiniteSampler(size=len(dataset), shuffle=conf.train.dataset.shuffle)
     else:
         sampler = None
         if torch.distributed.is_initialized():
@@ -28,15 +28,15 @@ def build_loader(conf):
                 rank=communication.get_local_rank())
 
     loader = DataLoader(dataset,
-                        batch_size=conf.batch_size,
                         sampler=sampler,
-                        num_workers=conf.dataset.num_workers,
-                        pin_memory=True)
+                        batch_size= conf[conf.mode].batch_size,
+                        num_workers=conf[conf.mode].dataset.num_workers,
+                        pin_memory=conf[conf.mode].dataset.pin_memory)
     return loader
 
 
 def build_dataset(conf):
-    name = conf.dataset.name
+    name = conf[conf.mode].dataset.name
     import_locations = configs.utils.initializers.IMPORT_LOCATIONS
     dataset_class = import_class_from_dirs_and_modules(name, import_locations["dataset"])
     dataset = dataset_class(conf)

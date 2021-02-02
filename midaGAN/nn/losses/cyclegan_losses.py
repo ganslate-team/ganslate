@@ -16,18 +16,18 @@ class CycleGANLosses:
     """
 
     def __init__(self, conf):
-        lambda_A = conf.gan.optimizer.lambda_A
-        lambda_B = conf.gan.optimizer.lambda_B
-        lambda_identity = conf.gan.optimizer.lambda_identity
-        lambda_inverse = conf.gan.optimizer.lambda_inverse
-        proportion_ssim = conf.gan.optimizer.proportion_ssim
-        ssim_type = conf.gan.optimizer.ssim_type
+        lambda_A = conf.train.gan.optimizer.lambda_A
+        lambda_B = conf.train.gan.optimizer.lambda_B
+        lambda_identity = conf.train.gan.optimizer.lambda_identity
+        lambda_inverse = conf.train.gan.optimizer.lambda_inverse
+        proportion_ssim = conf.train.gan.optimizer.proportion_ssim
+        ssim_type = conf.train.gan.optimizer.ssim_type
 
         # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
         # so the number of channels equals to the number of slices in sampled patches.
         # In 2D training, the number of image channels is defined in the config. TODO: nicer
-        channels_ssim = conf.dataset.patch_size[0] if 'patch_size' in conf.dataset.keys() \
-                        else conf.dataset.image_channels
+        channels_ssim = conf.train.dataset.patch_size[0] if 'patch_size' in conf.train.dataset.keys() \
+                        else conf.train.dataset.image_channels
         # Cycle-consistency - L1, with optional weighted combination with SSIM
         self.criterion_cycle = CycleLoss(lambda_A,
                                          lambda_B,

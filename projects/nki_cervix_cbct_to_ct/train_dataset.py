@@ -54,7 +54,7 @@ class CBCTtoCTDataset(Dataset):
 
     def __init__(self, conf):
 
-        root_path = Path(conf.dataset.root).resolve()
+        root_path = Path(conf.train.dataset.root).resolve()
 
         self.paths_CBCT = {}
         self.paths_CT = {}
@@ -71,15 +71,15 @@ class CBCTtoCTDataset(Dataset):
         self.num_datapoints = len(self.paths_CT)
 
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf.train.dataset.hounsfield_units_range
 
-        focal_region_proportion = conf.dataset.focal_region_proportion
-        self.patch_size = np.array(conf.dataset.patch_size)
+        focal_region_proportion = conf.train.dataset.focal_region_proportion
+        self.patch_size = np.array(conf.train.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
-        self.apply_mask = conf.dataset.enable_masking
-        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
-        self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+        self.apply_mask = conf.train.dataset.enable_masking
+        self.cbct_mask_threshold = conf.train.dataset.cbct_mask_threshold
+        self.ct_mask_threshold = conf.train.dataset.ct_mask_threshold
 
     def __getitem__(self, index):
         patient_index = list(self.paths_CT)[index]

@@ -50,12 +50,12 @@ class CUT(BaseGAN):
     def __init__(self, conf):
         super().__init__(conf)
 
-        self.lambda_adv = conf.gan.optimizer.lambda_adv
-        self.lambda_nce = conf.gan.optimizer.lambda_nce
-        self.lambda_nce_idt = conf.gan.optimizer.lambda_nce_idt
-        self.nce_layers = conf.gan.nce_layers
-        self.num_patches = conf.gan.num_patches
-        self.use_flip_equivariance = conf.gan.use_flip_equivariance
+        self.lambda_adv = conf.train.gan.optimizer.lambda_adv
+        self.lambda_nce = conf.train.gan.optimizer.lambda_nce
+        self.lambda_nce_idt = conf.train.gan.optimizer.lambda_nce_idt
+        self.nce_layers = conf.train.gan.nce_layers
+        self.num_patches = conf.train.gan.num_patches
+        self.use_flip_equivariance = conf.train.gan.use_flip_equivariance
         self.is_equivariance_flipped = False
 
         # Inputs and Outputs of the model
@@ -70,7 +70,7 @@ class CUT(BaseGAN):
         self.losses = {name: None for name in loss_names}
 
         # Generators and Discriminators
-        network_names = ['G', 'D', 'mlp'] if self.is_train else ['G']  # during test time, only G
+        network_names = ['G', 'D', 'mlp'] if self.is_train else ['G']
         self.networks = {name: None for name in network_names}
 
         # schedulers, mixed precision, checkpoint loading and network parallelization
@@ -81,16 +81,16 @@ class CUT(BaseGAN):
         super().init_networks()
         if self.is_train:
             channels_per_feature_level = probe_network_channels(self.networks['G'], self.nce_layers,
-                                                                self.conf.gan.generator.in_channels)
-            mlp = FeaturePatchMLP(channels_per_feature_level, self.conf.gan.num_patches,
-                                  self.conf.gan.mlp_nc)
+                                                                self.conf.train.gan.generator.in_channels)
+            mlp = FeaturePatchMLP(channels_per_feature_level, self.conf.train.gan.num_patches,
+                                  self.conf.train.gan.mlp_nc)
             self.networks['mlp'] = init_net(mlp, self.conf, self.device)
 
     def init_optimizers(self):
-        lr_G = self.conf.gan.optimizer.lr_G
-        lr_D = self.conf.gan.optimizer.lr_D
-        beta1 = self.conf.gan.optimizer.beta1
-        beta2 = self.conf.gan.optimizer.beta2
+        lr_G = self.conf.train.gan.optimizer.lr_G
+        lr_D = self.conf.train.gan.optimizer.lr_D
+        beta1 = self.conf.train.gan.optimizer.beta1
+        beta2 = self.conf.train.gan.optimizer.beta2
 
         self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(),
                                                 lr=lr_G,
@@ -103,10 +103,10 @@ class CUT(BaseGAN):
                                                   betas=(beta1, beta2))
 
     def init_criterions(self):
-        self.criterion_adv = AdversarialLoss(self.conf.gan.optimizer.adversarial_loss_type).to(
+        self.criterion_adv = AdversarialLoss(self.conf.train.gan.optimizer.adversarial_loss_type).to(
             self.device)
         self.criterion_nce = [
-            PatchNCELoss(self.conf).to(self.device) for _ in self.conf.gan.nce_layers
+            PatchNCELoss(self.conf).to(self.device) for _ in self.conf.train.gan.nce_layers
         ]
         if self.lambda_nce_idt > 0:
             self.criterion_nce_idt = torch.nn.L1Loss().to(self.device)

@@ -18,7 +18,7 @@ class DummyDataset(Dataset):
     """Dummy dataset for quick testing purposes"""
 
     def __init__(self, conf):
-        self.root = conf.dataset.root
+        self.root = conf.train.dataset.root
         self.A_size = 4
         self.B_size = self.A_size
 

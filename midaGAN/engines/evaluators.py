@@ -1,44 +1,39 @@
 import logging
 from pathlib import Path
+from abc import abstractmethod
 
 from omegaconf import open_dict
 from monai.inferers import SlidingWindowInferer
 
-from midaGAN.inferer import Inferer
+from midaGAN.engines.inferer import Inferer
 from midaGAN.configs.utils import builders
 from midaGAN.data import build_loader
 from midaGAN.data.utils import decollate
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
-from midaGAN.utils.trackers.eval_tracker import EvaluationTracker
+from midaGAN.utils.trackers.evaluation import EvaluationTracker
 
-class Evaluator(Inferer):
-    def __init__(self, conf, model, mode="validation"):
-        assert mode in ["validation", "testing"]
-        conf = self._setup_conf(conf, mode)
+
+class BaseEvaluator(Inferer):
+    def __init__(self, conf, model):
         super().__init__(conf, model)
 
         self.logger = logging.getLogger(type(self).__name__)
-        self.mode = mode
-        self.output_dir = Path(conf.logging.checkpoint_dir) / self.mode
+        self.output_dir = Path(conf.train.logging.checkpoint_dir) / self.conf.mode
 
         self.data_loader = build_loader(self.conf)
-        self.tracker = EvaluationTracker(self.conf, self.mode)
+        self.tracker = EvaluationTracker(self.conf)
         self.metrics = EvaluationMetrics(self.conf)
         self.trainer_idx = 0
 
-    def _setup_conf(self, conf, mode):
-        mode_conf = conf[mode]
-        with open_dict(mode_conf):
-            for key in set(conf) - set(mode_conf):
-                mode_conf[key] = conf[key]
-        mode_conf.is_train = False
-        return mode_conf
+    @abstractmethod
+    def _set_mode(self):
+        self.conf.mode = ...
 
     def set_trainer_idx(self, idx):
         self.trainer_idx = idx
 
     def run(self):
-        self.logger.info(f"{self.mode.capitalize()} with {len(self.data_loader.dataset)} samples")
+        self.logger.info(f"{self.conf.mode} with {len(self.data_loader.dataset)} samples")
 
         for data in self.data_loader:
             # Move elements from data that are visuals
@@ -87,12 +82,23 @@ class Evaluator(Inferer):
 
         # Check if cycle metrics are enabled and if the model is cyclic
         # Cyclic check for model will be done through definition of 
-        # cycle key in infer method.TODO: Improve placement
-        if self.conf.metrics.cycle_metrics:
+        # cycle key in infer method. 
+        # TODO: Improve placement
+        if self.conf[self.conf.mode].metrics.cycle_metrics:
             assert 'cycle' in self.model.infer.__code__.co_varnames, \
             "If cycle metrics are enabled, please define behavior of inference"\
             "with a cycle flag"
             rec_A = self.infer(visuals["fake_B"], cycle='B')
-            metrics.update(self.metrics.get_cycle_metrics(rec_A, visuals["A"])) 
+            metrics.update(self.metrics.get_cycle_metrics(rec_A, visuals["A"]))
 
         return metrics
+
+
+class Validator(BaseEvaluator):
+    def _set_mode(self):
+        self.conf.mode = 'val'
+
+
+class Tester(BaseEvaluator):
+    def _set_mode(self):
+        self.conf.mode = 'test'

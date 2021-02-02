@@ -6,8 +6,8 @@ class PatchNCELoss(nn.Module):
 
     def __init__(self, conf):
         super().__init__()
-        self.batch_size = conf.batch_size
-        self.nce_T = conf.gan.optimizer.nce_T
+        self.batch_size = conf.train.batch_size
+        self.nce_T = conf.train.gan.optimizer.nce_T
 
         self.cross_entropy_loss = torch.nn.CrossEntropyLoss(reduction='none')
 

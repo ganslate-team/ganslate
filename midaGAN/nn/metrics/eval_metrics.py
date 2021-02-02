@@ -18,16 +18,16 @@ class EvaluationMetrics:
 
         metrics = {}
 
-        if self.conf.metrics.ssim:
+        if self.conf[self.conf.mode].metrics.ssim:
             metrics['SSIM'] = ssim(target, input)
 
-        if self.conf.metrics.mse:
+        if self.conf[self.conf.mode].metrics.mse:
             metrics['MSE'] = mse(target, input)
 
-        if self.conf.metrics.nmse:
+        if self.conf[self.conf.mode].metrics.nmse:
             metrics['NMSE'] = nmse(target, input)
 
-        if self.conf.metrics.psnr:
+        if self.conf[self.conf.mode].metrics.psnr:
             metrics['PSNR'] = psnr(target, input)
 
 

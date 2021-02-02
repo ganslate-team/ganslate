@@ -5,21 +5,18 @@ import wandb
 class WandbTracker:
 
     def __init__(self, conf):
-        project = conf.logging.wandb.project
-        entity = conf.logging.wandb.entity
-
+        mode = conf.mode
+        project = conf.train.logging.wandb.project
+        entity = conf.train.logging.wandb.entity
         conf_dict = OmegaConf.to_container(conf, resolve=True)
         wandb.init(project=project, entity=entity, config=conf_dict)
 
-        if conf.logging.wandb.run:
-            wandb.run.name = conf.logging.wandb.run
+        if conf.train.logging.wandb.run:
+            wandb.run.name = conf.train.logging.wandb.run
 
         self.image_filter = None
-
-        if conf.logging.wandb.image_filter:
-            self.image_filter = [
-                conf.logging.wandb.image_filter.min, conf.logging.wandb.image_filter.max
-            ]
+        if conf.train.logging.wandb.image_filter:
+            self.image_filter = conf.train.logging.wandb.image_filter
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics, mode='train'):
         """"""
@@ -64,7 +61,7 @@ class WandbTracker:
             return wandb_images
 
         # If visual is an image then a single wandb.Image is created
-        return self._wandb_image_from_visual(visuals)
+        return self._wandb_image_from_visual(visuals, image_threshold=image_threshold)
 
     def _wandb_image_from_visual(self, visual, image_threshold=None):
         """

@@ -46,7 +46,7 @@ class CBCTtoCT2DDataset(Dataset):
 
     def __init__(self, conf):
 
-        root_path = Path(conf.dataset.root).resolve()
+        root_path = Path(conf.train.dataset.root).resolve()
 
         self.paths_CBCT = {}
         self.paths_CT = {}
@@ -63,16 +63,16 @@ class CBCTtoCT2DDataset(Dataset):
         self.num_datapoints = len(self.paths_CT)
 
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf.train.dataset.hounsfield_units_range
 
-        focal_region_proportion = conf.dataset.focal_region_proportion
-        self.patch_size = np.array([conf.dataset.load_size] * 2)
+        focal_region_proportion = conf.train.dataset.focal_region_proportion
+        self.patch_size = np.array([conf.train.dataset.load_size] * 2)
         self.slice_sampler = SliceSampler(self.patch_size, focal_region_proportion)
 
-        self.apply_mask = conf.dataset.enable_masking
-        self.apply_bound = conf.dataset.enable_bounding
-        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
-        self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+        self.apply_mask = conf.train.dataset.enable_masking
+        self.apply_bound = conf.train.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.train.dataset.cbct_mask_threshold
+        self.ct_mask_threshold = conf.train.dataset.ct_mask_threshold
 
     def __getitem__(self, index):
         patient_index = list(self.paths_CT)[index]
@@ -174,10 +174,10 @@ class CBCTtoCT2DDataset(Dataset):
 
 # class CBCTtoCT2DInferenceDataset(Dataset):
 #     def __init__(self, conf):
-#         self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
+#         self.paths = make_dataset_of_directories(conf.train.dataset.root, EXTENSIONS)
 #         self.num_datapoints = len(self.paths)
 #         # Min and max HU values for clipping and normalization
-#         self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+#         self.hu_min, self.hu_max = conf.train.dataset.hounsfield_units_range
 
 #     def __getitem__(self, index):
 #         path = str(Path(self.paths[index]) / 'CT.nrrd')
@@ -233,8 +233,8 @@ class CBCTtoCT2DEvalDatasetConfig(configs.base.BaseDatasetConfig):
 class CBCTtoCT2DEvalDataset(Dataset):
 
     def __init__(self, conf):
-        # self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
-        self.root_path = Path(conf.dataset.root).resolve()
+        # self.paths = make_dataset_of_directories(conf.train.dataset.root, EXTENSIONS)
+        self.root_path = Path(conf.train.dataset.root).resolve()
 
         self.paths = {}
 
@@ -249,12 +249,12 @@ class CBCTtoCT2DEvalDataset(Dataset):
 
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf.train.dataset.hounsfield_units_range
 
-        self.apply_mask = conf.dataset.enable_masking
-        self.apply_bound = conf.dataset.enable_bounding
-        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
-        self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+        self.apply_mask = conf.train.dataset.enable_masking
+        self.apply_bound = conf.train.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.train.dataset.cbct_mask_threshold
+        self.ct_mask_threshold = conf.train.dataset.ct_mask_threshold
 
     def __getitem__(self, index):
         patient_index = list(self.paths)[index]

@@ -6,11 +6,11 @@ import torch
 class TrainingMetrics:
 
     def __init__(self, conf):
-        self.output_distributions = True if conf.metrics.output_distributions_D else False
+        self.output_distributions = True if conf.train.metrics.output_distributions_D else False
 
-        if conf.metrics.ssim:
-            channels_ssim = conf.dataset.patch_size[0] if 'patch_size' in conf.dataset.keys() \
-                        else conf.dataset.image_channels
+        if conf.train.metrics.ssim:
+            channels_ssim = conf.train.dataset.patch_size[0] if 'patch_size' in conf.train.dataset.keys() \
+                        else conf.train.dataset.image_channels
             self.ssim = ssim.SSIM(data_range=1, channel=channels_ssim, nonnegative_ssim=True)
         else:
             self.ssim = None

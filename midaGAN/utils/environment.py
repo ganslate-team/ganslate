@@ -19,14 +19,14 @@ from midaGAN.utils import communication, io
 logger = logging.getLogger(__name__)
 
 
-def setup_logging_with_config(conf, mode='training', debug=False):
-    assert mode in ['training', 'testing', 'inference']
+def setup_logging_with_config(conf, debug=False):
+    assert conf.mode in ['train', 'test', 'infer']
     use_stdout = communication.get_local_rank() == 0 or debug
     log_level = 'INFO' if not debug else 'DEBUG'
 
-    output_dir = Path(conf.logging.checkpoint_dir).resolve()
+    output_dir = Path(conf.train.logging.checkpoint_dir).resolve()
     saving_to_message = f'Saving checkpoints, logs and config to: {output_dir}'
-    filename = Path(output_dir) / f'{mode}_log.txt'
+    filename = Path(output_dir) / f'{conf.mode}_log.txt'
 
     io.mkdirs(output_dir)
 
