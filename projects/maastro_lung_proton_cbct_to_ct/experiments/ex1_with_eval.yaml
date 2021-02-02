@@ -52,3 +52,8 @@ val:
         root: "/mnt/14F117A002BC354B/maastro_proton_cbct_ct_processed_eval"
     sliding_window:
         window_size: [32, 224, 224]
+
+test:
+    checkpoint_iter: 1
+    dataset: "${val.dataset}"
+    sliding_window: "${val.sliding_window}"

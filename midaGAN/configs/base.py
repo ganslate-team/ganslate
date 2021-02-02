@@ -84,7 +84,6 @@ class BaseEngineConfig:
      # Enables importing project-specific classes located in the project's dir
     project_dir: Optional[str] = None
 
-    is_train: bool = MISSING
     batch_size: int = MISSING
     use_cuda: bool = True
     mixed_precision: bool = False

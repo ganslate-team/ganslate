@@ -34,11 +34,12 @@ class SlidingWindowConfig:
 class BaseEvaluationConfig:
     # For evaluation ensure that pairing is maintained between the A and B 
     # provided by the attached dataloader
-    
+
     # To define by the user
     metrics: MetricConfig = MetricConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
     dataset: configs.base.BaseDatasetConfig = MISSING
+    batch_size: int = MISSING
 
 
 @dataclass
@@ -51,5 +52,4 @@ class ValidationConfig(BaseEvaluationConfig):
 
 @dataclass
 class TestConfig(BaseEvaluationConfig):
-    checkpoint_dir: str = MISSING
-    checkpoint_iter: int = MISSING
+    checkpoint_iter: int = 1

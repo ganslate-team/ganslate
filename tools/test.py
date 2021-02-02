@@ -12,9 +12,9 @@ except ImportError:
 
 #from midaGAN import configs
 from midaGAN import configs
-from midaGAN.engines.trainer import Trainer
+from midaGAN.engines.evaluators import Tester
 from midaGAN.utils import communication, environment
-
+from midaGAN.nn.gans import build_gan
 
 def main():
     environment.setup_threading()
@@ -23,8 +23,8 @@ def main():
 
     conf = configs.utils.builders.build_conf()
 
-    trainer = Trainer(conf)
-    trainer.run()
+    tester = Tester(conf)
+    tester.run()
 
 
 if __name__ == '__main__':

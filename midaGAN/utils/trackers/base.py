@@ -12,7 +12,6 @@ class BaseTracker:
     """"Base for training and inference trackers."""
 
     def __init__(self, conf):
-        assert conf.mode in ['train', 'val', 'test']
         self.conf = conf
         self.batch_size = self.conf.train.batch_size
         self.output_dir = self.conf.train.logging.checkpoint_dir
@@ -29,7 +28,7 @@ class BaseTracker:
 
     def _save_config(self, conf):
         if communication.get_local_rank() == 0:
-            config_path = Path(self.output_dir) / f"{self.conf.mode}_config.yaml"
+            config_path = Path(self.output_dir) / f"{self.conf.mode}/{self.conf.mode}_config.yaml"
             with open(config_path, "w") as file:
                 file.write(OmegaConf.to_yaml(conf))
 

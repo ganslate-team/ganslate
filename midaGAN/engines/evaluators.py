@@ -11,13 +11,12 @@ from midaGAN.data import build_loader
 from midaGAN.data.utils import decollate
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
 from midaGAN.utils.trackers.evaluation import EvaluationTracker
-
+from midaGAN.nn.gans import build_gan
+from midaGAN.utils import environment
 
 class BaseEvaluator(Inferer):
     def __init__(self, conf, model):
         super().__init__(conf, model)
-
-        self.logger = logging.getLogger(type(self).__name__)
         self.output_dir = Path(conf.train.logging.checkpoint_dir) / self.conf.mode
 
         self.data_loader = build_loader(self.conf)
@@ -100,5 +99,17 @@ class Validator(BaseEvaluator):
 
 
 class Tester(BaseEvaluator):
+    def __init__(self, conf):
+        # Model doesn't exist yet so pass None
+        super().__init__(conf, model=None)
+        self._override_conf()
+        environment.setup_logging_with_config(conf)
+
+        # Build the model after setting the appropriate mode
+        self.model = build_gan(self.conf)
+
     def _set_mode(self):
         self.conf.mode = 'test'
+
+    def _override_conf(self):
+        self.conf.train.load_checkpoint = self.conf.test.checkpoint_iter

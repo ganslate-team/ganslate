@@ -14,6 +14,8 @@ class Trainer(BaseEngine):
 
     def __init__(self, conf):
         super().__init__(conf)
+        environment.setup_logging_with_config(conf)
+
         self.logger = logging.getLogger(type(self).__name__)
 
         # https://stackoverflow.com/a/58965640
