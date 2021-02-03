@@ -312,7 +312,6 @@ class CBCTtoCT2DEvalDataset(Dataset):
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
 
-        print("Returning volume")
         return {"A": CBCT, "B": CT}
 
     def __len__(self):

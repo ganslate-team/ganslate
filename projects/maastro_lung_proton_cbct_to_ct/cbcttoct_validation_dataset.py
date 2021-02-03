@@ -64,7 +64,6 @@ class CBCTtoCTValidationDataset(Dataset):
         ################ TO RECONSIDER LATER ################
         # Limit CT so that it only contains part of the body shown in CBCT
         CT = register_CT_to_CBCT(CT, CBCT)
-        print(CT.GetSize(), CBCT.GetSize())
         CBCT = apply_body_mask_and_bound(sitk_utils.get_npy(CBCT),
                                          apply_mask=True,
                                          masking_value=self.hu_min,
@@ -83,7 +82,6 @@ class CBCTtoCTValidationDataset(Dataset):
 
         CBCT, CT = clamp_normalize(CBCT, CT, self.hu_min, self.hu_max)
 
-        print(CBCT.shape, CT.shape)
         return {'A': CBCT, 'B': CT, "metadata": metadata}
 
     def __len__(self):

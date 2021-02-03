@@ -9,8 +9,7 @@ except ImportError:
     logger.warning("midaGAN not installed as a package, importing it from the local directory.")
     sys.path.append('./')
     import midaGAN
-
-#from midaGAN import configs
+    
 from midaGAN import configs
 from midaGAN.engines.trainer import Trainer
 from midaGAN.utils import communication, environment

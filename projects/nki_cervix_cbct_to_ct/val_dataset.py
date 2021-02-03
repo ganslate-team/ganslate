@@ -131,7 +131,10 @@ class CBCTtoCTEvalDataset(Dataset):
 
         return data_dict
 
-    def scale_to_hu(self, tensor):
+    def denormalize(self, tensor):
+        """Allows the Tester and Validator to calculate the metrics in
+        the original range of values.
+        """
         return min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
 
     def save(self, tensor, metadata, output_dir):

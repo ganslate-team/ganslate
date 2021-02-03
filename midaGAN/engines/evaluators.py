@@ -1,32 +1,24 @@
-import logging
-from pathlib import Path
 from abc import abstractmethod
+from pathlib import Path
 
-from omegaconf import open_dict
-from monai.inferers import SlidingWindowInferer
-
-from midaGAN.engines.inferer import Inferer
-from midaGAN.configs.utils import builders
 from midaGAN.data import build_loader
 from midaGAN.data.utils import decollate
-from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
-from midaGAN.utils.trackers.evaluation import EvaluationTracker
+from midaGAN.engines.base import BaseEngineWithInference
 from midaGAN.nn.gans import build_gan
+from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
 from midaGAN.utils import environment
+from midaGAN.utils.trackers.evaluation import EvaluationTracker
 
-class BaseEvaluator(Inferer):
-    def __init__(self, conf, model):
-        super().__init__(conf, model)
+
+class BaseEvaluator(BaseEngineWithInference):
+    def __init__(self, conf):
+        super().__init__(conf)
         self.output_dir = Path(conf.train.logging.checkpoint_dir) / self.conf.mode
 
         self.data_loader = build_loader(self.conf)
         self.tracker = EvaluationTracker(self.conf)
         self.metrics = EvaluationMetrics(self.conf)
         self.trainer_idx = 0
-
-    @abstractmethod
-    def _set_mode(self):
-        self.conf.mode = ...
 
     def set_trainer_idx(self, idx):
         self.trainer_idx = idx
@@ -56,16 +48,15 @@ class BaseEvaluator(Inferer):
         self.tracker.push_samples(self.trainer_idx)
 
     def calculate_metrics(self, visuals):
-        # Input to Translated comparison metrics
         pred = visuals["fake_B"]
-        target = visuals["A"]
+        target = visuals["B"]
 
-        # TODO: this thing below is very bad, remove asap and do it somehow differently
-        # Check if dataset has scale_to_hu method defined,
+        # Check if dataset has `denormalize` method defined,
         # if not, compute the metrics in [0, 1] space
-        if hasattr(self.data_loader.dataset, "scale_to_hu"):
-            pred = self.data_loader.dataset.scale_to_hu(pred)
-            target = self.data_loader.dataset.scale_to_hu(target)
+        if denormalize := getattr(self.data_loader.dataset, "denormalize", False):
+            pred = denormalize(pred)
+            target = denormalize(target)
+
         metrics = self.metrics.get_metrics(pred, target)
 
         # Check if any masks are defined and calculate mask specific metrics
@@ -80,13 +71,12 @@ class BaseEvaluator(Inferer):
             visuals.pop("masks")
 
         # Check if cycle metrics are enabled and if the model is cyclic
-        # Cyclic check for model will be done through definition of 
-        # cycle key in infer method. 
+        # by inspecting if the model's `infer()` method contains `cycle` argument.
         # TODO: Improve placement
         if self.conf[self.conf.mode].metrics.cycle_metrics:
             assert 'cycle' in self.model.infer.__code__.co_varnames, \
             "If cycle metrics are enabled, please define behavior of inference"\
-            "with a cycle flag"
+            "with a `cycle` flag in the model's `infer()` method"
             rec_A = self.infer(visuals["fake_B"], cycle='B')
             metrics.update(self.metrics.get_cycle_metrics(rec_A, visuals["A"]))
 
@@ -94,18 +84,18 @@ class BaseEvaluator(Inferer):
 
 
 class Validator(BaseEvaluator):
+    def __init__(self, conf, model):
+        super().__init__(conf)
+        self.model = model
+
     def _set_mode(self):
         self.conf.mode = 'val'
 
 
 class Tester(BaseEvaluator):
     def __init__(self, conf):
-        # Model doesn't exist yet so pass None
-        super().__init__(conf, model=None)
-        self._override_conf()
-        environment.setup_logging_with_config(conf)
-
-        # Build the model after setting the appropriate mode
+        super().__init__(conf)
+        environment.setup_logging_with_config(self.conf)
         self.model = build_gan(self.conf)
 
     def _set_mode(self):

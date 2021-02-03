@@ -1,7 +1,10 @@
-import numpy as np
-from PIL import Image
-import torchvision.transforms as transforms
+import logging
 
+import numpy as np
+import torchvision.transforms as transforms
+from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 def get_transform(conf, method=Image.BICUBIC):
     preprocess = conf[conf.mode].dataset.preprocess
@@ -129,7 +132,7 @@ def __patch(img, index, size):
 def __print_size_warning(ow, oh, w, h):
     """Print warning information about image size(only print once)"""
     if not hasattr(__print_size_warning, 'has_printed'):
-        print("The image size needs to be a multiple of 4. "
+        logger.info("The image size needs to be a multiple of 4. "
               "The loaded image size was (%d, %d), so it was adjusted to "
               "(%d, %d). This adjustment will be done to all images "
               "whose sizes are not multiples of 4" % (ow, oh, w, h))

@@ -23,11 +23,8 @@ class SliceSampler:
                  focal_region_proportion,
                  select_origin_for_axes=(False, True, True)):
         self.patch_size = np.array(patch_size)
-        try:
-            assert len(self.patch_size) == 2
-        except AssertionError:
-            print("Patch size needs to be 2D, use StochasticFocalPatchSampler for 3D!")
-            exit()
+        if len(self.patch_size) != 2:
+            raise RuntimeError("Patch size needs to be 2D, use StochasticFocalPatchSampler for 3D")
 
         self.focal_region_proportion = focal_region_proportion
         self.select_origin_for_axes = select_origin_for_axes

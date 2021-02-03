@@ -68,7 +68,6 @@ class CBCTtoCTInferenceDataset(Dataset):
     def __getitem__(self, index):
         path = str(self.paths[index])
 
-        print(path)
         # load nrrd as SimpleITK objects
         volume = sitk_utils.load(path)
 
