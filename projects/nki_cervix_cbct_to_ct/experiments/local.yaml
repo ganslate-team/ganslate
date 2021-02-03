@@ -5,7 +5,7 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: ./checkpoints/test_expt/
+    output_dir: ./checkpoints/test_expt/
     wandb:
         project: "NKI_CBCT_CT"
         image_filter: 

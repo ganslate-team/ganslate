@@ -5,7 +5,7 @@ batch_size: 1
 mixed_precision: False
 
 logging:
-    checkpoint_dir: "./checkpoints/horse2zebra_cut"
+    output_dir: "./checkpoints/horse2zebra_cut"
     log_freq: 1
     checkpoint_freq: 20000
 

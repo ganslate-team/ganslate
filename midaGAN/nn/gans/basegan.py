@@ -45,7 +45,7 @@ class BaseGAN(ABC):
         self.conf = conf
         self.is_train = self.conf.mode == "train"
         self.device = self._specify_device()
-        self.checkpoint_dir = conf.train.logging.checkpoint_dir
+        self.output_dir = conf.train.logging.output_dir
 
         self.visual_names = {}
         self.visuals = {}
@@ -220,7 +220,7 @@ class BaseGAN(ABC):
             iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
         checkpoint = {}
-        checkpoint_path = Path(self.checkpoint_dir) / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.output_dir) / f"{iter_idx}_checkpoint.pth"
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
@@ -244,7 +244,7 @@ class BaseGAN(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = Path(self.checkpoint_dir).resolve() / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.output_dir).resolve() / f"{iter_idx}_checkpoint.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.logger.info(f"Loaded the checkpoint from `{checkpoint_path}`")
 

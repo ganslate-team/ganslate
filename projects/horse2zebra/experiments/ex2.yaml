@@ -5,7 +5,7 @@ batch_size: 1
 mixed_precision: False
 
 logging:
-    checkpoint_dir: "./checkpoints/horse2zebra_ex2"
+    output_dir: "./checkpoints/horse2zebra_ex2"
     wandb:
         project: "my-project"
     log_freq: 50

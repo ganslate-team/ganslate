@@ -6,7 +6,7 @@ batch_size: 1
 mixed_precision: False
 
 logging:
-    checkpoint_dir: "./checkpoints/cbcttoct_2d_ex1"
+    output_dir: "./checkpoints/cbcttoct_2d_ex1"
     wandb:
         project: "NKI_CBCT_CT"
     log_freq: 1

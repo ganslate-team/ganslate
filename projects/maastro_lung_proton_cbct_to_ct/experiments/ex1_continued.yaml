@@ -11,7 +11,7 @@ load_checkpoint:
     reset_optimizers: True
 
 logging:
-    checkpoint_dir: "./checkpoints/cbcttoct_ex16_lambda5"
+    output_dir: "./checkpoints/cbcttoct_ex16_lambda5"
     wandb:
         project: "proton-cbct-ct"
     log_freq: 20

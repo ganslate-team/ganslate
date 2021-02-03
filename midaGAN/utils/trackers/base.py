@@ -14,7 +14,7 @@ class BaseTracker:
     def __init__(self, conf):
         self.conf = conf
         self.batch_size = self.conf[conf.mode].batch_size
-        self.output_dir = self.conf.train.logging.checkpoint_dir
+        self.output_dir = self.conf.train.logging.output_dir
         self.iter_idx = None
         self.iter_end_time = None
         self.iter_start_time = None

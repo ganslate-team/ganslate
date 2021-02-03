@@ -69,7 +69,7 @@ class WandbConfig:
 @dataclass
 class LoggingConfig:
     # TODO: make it datetime or smth. make sure it works in distributed mode
-    checkpoint_dir: str = MISSING
+    output_dir: str = MISSING
     # How often to log training progress
     log_freq: int = 50
     # How often to save checkpoints

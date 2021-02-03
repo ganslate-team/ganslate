@@ -13,7 +13,7 @@ from midaGAN.utils.trackers.evaluation import EvaluationTracker
 class BaseEvaluator(BaseEngineWithInference):
     def __init__(self, conf):
         super().__init__(conf)
-        self.output_dir = Path(conf.train.logging.checkpoint_dir) / self.conf.mode
+        self.output_dir = Path(conf.train.logging.output_dir) / self.conf.mode
 
         self.data_loader = build_loader(self.conf)
         self.tracker = EvaluationTracker(self.conf)
@@ -41,6 +41,7 @@ class BaseEvaluator(BaseEngineWithInference):
             metrics = self.calculate_metrics(visuals)
             self.tracker.add_sample(visuals, metrics)
             metadata = decollate(data['metadata'])
+            # TODO: This nrrd stuff not general at all
             self.data_loader.dataset.save(visuals['fake_B'],
                                           metadata,
                                           self.output_dir / "nrrds" / str(self.trainer_idx))

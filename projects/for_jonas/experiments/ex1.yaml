@@ -5,7 +5,7 @@ n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: "./checkpoints/ex1/"
+    output_dir: "./checkpoints/ex1/"
     wandb: null
     tensorboard: False
     log_freq: 10

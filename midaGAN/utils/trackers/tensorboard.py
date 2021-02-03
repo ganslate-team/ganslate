@@ -4,7 +4,7 @@ from torch.utils.tensorboard import SummaryWriter
 class TensorboardTracker:
 
     def __init__(self, conf):
-        self.writer = SummaryWriter(conf.train.logging.checkpoint_dir)
+        self.writer = SummaryWriter(conf.train.logging.output_dir)
 
     def close(self):
         self.writer.close()
