@@ -80,9 +80,9 @@ class Validator():
 
 
     def calculate_metrics(self, visuals):
-        # Input to Translated comparison metrics
+        # Target to Translated comparison metrics
         pred = visuals["fake_B"]
-        target = visuals["A"]
+        target = visuals["B"]
         # Check if dataset has scale_to_hu method defined,
         # if not, compute the metrics in [0, 1] space
         if hasattr(self.data_loader.dataset, "scale_to_hu"):
