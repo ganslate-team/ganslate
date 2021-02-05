@@ -7,12 +7,13 @@ from monai.inferers import SlidingWindowInferer
 
 
 class BaseEngine(ABC):
+
     def __init__(self, conf):
         # deep copy to isolate the conf.mode of an engine from other engines (e.g train from val)
         self.conf = copy.deepcopy(conf)
         self._set_mode()
         self._override_conf()
-        
+
         self.model = None
         self.logger = logging.getLogger(type(self).__name__)
 
@@ -28,6 +29,7 @@ class BaseEngine(ABC):
 
 
 class BaseEngineWithInference(BaseEngine):
+
     def __init__(self, conf):
         super().__init__(conf)
         self.sliding_window_inferer = self._init_sliding_window_inferer()

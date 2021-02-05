@@ -8,6 +8,7 @@ from midaGAN.utils import communication, io
 from midaGAN.utils.trackers.tensorboard import TensorboardTracker
 from midaGAN.utils.trackers.wandb import WandbTracker
 
+
 class BaseTracker:
     """"Base for training and inference trackers."""
 

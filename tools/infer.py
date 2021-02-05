@@ -10,7 +10,7 @@ except ImportError:
     sys.path.append('./')
     import midaGAN
 
-from midaGAN.configs.utils import builders
+from midaGAN.configs._builder import build_conf
 from midaGAN.inferer import Inferer
 from midaGAN.utils import communication, environment
 
@@ -25,11 +25,12 @@ def parse_input(input_path):
     """
     raise NotImplementedError()
 
+
 def main():
     # inits distributed mode if ran with torch.distributed.launch
     communication.init_distributed()
 
-    conf = builders.build_conf()
+    conf = build_conf()
     environment.setup_logging_with_config(conf)
 
     inferer = Inferer(conf)

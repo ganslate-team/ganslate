@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from midaGAN.data.utils import pad
+from midaGAN.data.utils.ops import pad
 
 
 # TODO: Differentiate from Stochasting Focal Patching

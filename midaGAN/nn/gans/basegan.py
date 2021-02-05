@@ -10,8 +10,8 @@ from midaGAN.utils import communication
 # midaGAN.nn imports
 from midaGAN.nn.utils import get_scheduler
 
-from midaGAN.nn.generators import build_G
-from midaGAN.nn.discriminators import build_D
+from midaGAN.nn.generators._builder import build_G
+from midaGAN.nn.discriminators._builder import build_D
 
 from midaGAN.nn.metrics.train_metrics import TrainingMetrics
 

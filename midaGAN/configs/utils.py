@@ -2,15 +2,17 @@ import logging
 
 from omegaconf import DictConfig, OmegaConf
 
-from midaGAN import configs, data, nn, utils
+from midaGAN import data
+from midaGAN.nn import gans, generators, discriminators
+from midaGAN.utils.io import import_class_from_dirs_and_modules
 
 logger = logging.getLogger(__name__)
 
 IMPORT_LOCATIONS = {
     "dataset": [data],
-    "gan": [nn.gans],
-    "generator": [nn.generators],
-    "discriminator": [nn.discriminators],
+    "gan": [gans],
+    "generator": [generators],
+    "discriminator": [discriminators],
 }
 
 
@@ -23,7 +25,6 @@ def init_config(conf, config_class):
         conf = OmegaConf.load(str(conf))
 
     # Allows the framework to find user-defined, project-specific, dataset classes and their configs
-    # TODO check if if else is needed
     if conf.project_dir:
         IMPORT_LOCATIONS["dataset"].append(conf.project_dir)
         logger.info(f"Project directory {conf.project_dir} added to the"
@@ -62,7 +63,7 @@ def init_dataclass(key, field):
     format "name" + "Config", e.g. "MRIDatasetConfig".
     """
     dataclass_name = f'{field["name"]}Config'
-    dataclass = utils.import_class_from_dirs_and_modules(dataclass_name, IMPORT_LOCATIONS[key])
+    dataclass = import_class_from_dirs_and_modules(dataclass_name, IMPORT_LOCATIONS[key])
     return OmegaConf.structured(dataclass)
 
 
@@ -77,6 +78,22 @@ def is_dataclass(key, field):
 def get_all_conf_keys(conf):
     """Get all keys from a conf and order from them the deepest to the shallowest."""
     conf = OmegaConf.to_container(conf)
-    keys = list(utils.iterate_nested_dict_keys(conf))
+    keys = list(iterate_nested_dict_keys(conf))
     # Order deeper to shallower
     return keys[::-1]
+
+
+def iterate_nested_dict_keys(dictionary):
+    """Returns an iterator that returns all keys of a nested dictionary ordered
+    from the shallowest to the deepest key. The nested keys are in the dot-list format,
+    e.g. "gan.discriminator.name".
+    """
+    if isinstance(dictionary, dict):
+        current_level_keys = []
+        for key in dictionary.keys():
+            current_level_keys.append(key)
+            yield key
+        for key in current_level_keys:
+            value = dictionary[key]
+            for ret in iterate_nested_dict_keys(value):
+                yield f"{key}.{ret}"

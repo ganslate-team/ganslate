@@ -8,14 +8,12 @@ import midaGAN
 import numpy as np
 import torch
 from midaGAN import configs
-from midaGAN.data.utils import pad
-from midaGAN.data.utils.body_mask import (apply_body_mask_and_bound,
-                                          get_body_mask_and_bound)
+from midaGAN.data.utils.ops import pad
+from midaGAN.data.utils.body_mask import (apply_body_mask_and_bound, get_body_mask_and_bound)
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.normalization import (min_max_denormalize,
-                                              min_max_normalize)
-from midaGAN.data.utils.registration_methods import (
-    register_CT_to_CBCT, truncate_CT_to_scope_of_CBCT)
+from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
+from midaGAN.data.utils.registration_methods import (register_CT_to_CBCT,
+                                                     truncate_CT_to_scope_of_CBCT)
 from midaGAN.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
 from midaGAN.utils import sitk_utils
@@ -34,6 +32,7 @@ EXTENSIONS = ['.nrrd']
 # --------------------------- VALIDATION DATASET ---------------------------------------------
 # --------------------------------------------------------------------------------------------
 
+
 @dataclass
 class CBCTtoCTEvalDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTEvalDataset"
@@ -43,8 +42,7 @@ class CBCTtoCTEvalDatasetConfig(configs.base.BaseDatasetConfig):
     enable_bounding: bool = False
     cbct_mask_threshold: int = -700
     ct_mask_threshold: int = -300
-    mask_labels: List[str] = field(
-        default_factory=lambda: [])
+    mask_labels: List[str] = field(default_factory=lambda: [])
 
 
 class CBCTtoCTEvalDataset(Dataset):
@@ -108,11 +106,11 @@ class CBCTtoCTEvalDataset(Dataset):
 
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
-        masks = {k: sitk_utils.get_npy(v) for k,v in masks.items()}
+        masks = {k: sitk_utils.get_npy(v) for k, v in masks.items()}
 
         CT = torch.tensor(CT)
         CBCT = torch.tensor(CBCT)
-        masks = {k: torch.tensor(v) for k,v in masks.items()}
+        masks = {k: torch.tensor(v) for k, v in masks.items()}
 
         # Limits the lowest and highest HU unit
         CT = torch.clamp(CT, self.hu_min, self.hu_max)
@@ -123,7 +121,6 @@ class CBCTtoCTEvalDataset(Dataset):
         # Add channel dimension (1 = grayscale)
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
-
 
         data_dict = {"A": CBCT, "B": CT, "metadata": metadata}
         if masks:

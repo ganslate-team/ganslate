@@ -8,14 +8,12 @@ import midaGAN
 import numpy as np
 import torch
 from midaGAN import configs
-from midaGAN.data.utils import pad
-from midaGAN.data.utils.body_mask import (apply_body_mask_and_bound,
-                                          get_body_mask_and_bound)
+from midaGAN.data.utils.ops import pad
+from midaGAN.data.utils.body_mask import (apply_body_mask_and_bound, get_body_mask_and_bound)
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.normalization import (min_max_denormalize,
-                                              min_max_normalize)
-from midaGAN.data.utils.registration_methods import (
-    register_CT_to_CBCT, truncate_CT_to_scope_of_CBCT)
+from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
+from midaGAN.data.utils.registration_methods import (register_CT_to_CBCT,
+                                                     truncate_CT_to_scope_of_CBCT)
 from midaGAN.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
 from midaGAN.utils import sitk_utils
@@ -47,6 +45,7 @@ class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
 
 class CBCTtoCTInferenceDataset(Dataset):
     exit("FIX ALL THESE conf.train. things")
+
     def __init__(self, conf):
         # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! SHOULDN'T BE conf.train
         # self.paths = make_dataset_of_directories(conf.train.dataset.root, EXTENSIONS)

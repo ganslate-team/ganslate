@@ -80,8 +80,8 @@ class CUT(BaseGAN):
         """Extend the `init_networks` of the BaseGAN by adding the initialization of MLP."""
         super().init_networks()
         if self.is_train:
-            channels_per_feature_level = probe_network_channels(self.networks['G'], self.nce_layers,
-                                                                self.conf.train.gan.generator.in_channels)
+            channels_per_feature_level = probe_network_channels(
+                self.networks['G'], self.nce_layers, self.conf.train.gan.generator.in_channels)
             mlp = FeaturePatchMLP(channels_per_feature_level, self.conf.train.gan.num_patches,
                                   self.conf.train.gan.mlp_nc)
             self.networks['mlp'] = init_net(mlp, self.conf, self.device)
@@ -103,8 +103,8 @@ class CUT(BaseGAN):
                                                   betas=(beta1, beta2))
 
     def init_criterions(self):
-        self.criterion_adv = AdversarialLoss(self.conf.train.gan.optimizer.adversarial_loss_type).to(
-            self.device)
+        self.criterion_adv = AdversarialLoss(
+            self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
         self.criterion_nce = [
             PatchNCELoss(self.conf).to(self.device) for _ in self.conf.train.gan.nce_layers
         ]

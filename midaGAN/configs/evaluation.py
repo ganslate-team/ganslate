@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 from dataclasses import dataclass
 from omegaconf import MISSING, II
-from midaGAN import configs
+from midaGAN.configs import base
 
 
 @dataclass
@@ -12,7 +12,7 @@ class EvalMetricsConfig:
     psnr: bool = True
     # Normalized MSE
     nmse: bool = True
-    # MSE 
+    # MSE
     mse: bool = True
     # Abs diff between the two images
     abs_diff: bool = True
@@ -31,11 +31,7 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class BaseEvaluationConfig(configs.base.BaseEngineConfig):
-    # For evaluation ensure that pairing is maintained between the A and B
-    # provided by the attached dataloader
-
-    # To define by the user
+class BaseEvaluationConfig(base.BaseEngineConfig):
     metrics: EvalMetricsConfig = EvalMetricsConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
 
@@ -48,4 +44,4 @@ class ValidationConfig(BaseEvaluationConfig):
 
 @dataclass
 class TestConfig(BaseEvaluationConfig):
-    checkpointing: configs.base.CheckpointingConfig = configs.base.CheckpointingConfig()
+    checkpointing: base.CheckpointingConfig = base.CheckpointingConfig()

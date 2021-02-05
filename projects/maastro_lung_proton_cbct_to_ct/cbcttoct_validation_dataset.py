@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 import midaGAN
 from midaGAN.utils import io, sitk_utils
-from midaGAN.data.utils import pad
+from midaGAN.data.utils.ops import pad
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
@@ -24,12 +24,15 @@ from midaGAN import configs
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class CBCTtoCTValidationDatasetConfig(configs.base.BaseDatasetConfig):
-    name:                    str = "CBCTtoCTValidationDataset"
-    hounsfield_units_range:  Tuple[int, int] = (-1000, 2000)
+    name: str = "CBCTtoCTValidationDataset"
+    hounsfield_units_range: Tuple[int, int] = (-1000, 2000)
+
 
 class CBCTtoCTValidationDataset(Dataset):
+
     def __init__(self, conf):
         self.root_path = Path(conf.val.dataset.root).resolve()
 
@@ -95,7 +98,7 @@ class CBCTtoCTValidationDataset(Dataset):
                                                      metadata['spacing'], metadata['direction'],
                                                      metadata['dtype'])
 
-        # Dataset used has a directory per each datapoint, the name of each 
+        # Dataset used has a directory per each datapoint, the name of each
         # datapoint's dir is used to save the output
         datapoint_path = Path(str(metadata['path']))
 
@@ -106,6 +109,7 @@ class CBCTtoCTValidationDataset(Dataset):
         save_path.parent.mkdir(exist_ok=True, parents=True)
 
         sitk_utils.write(sitk_image, save_path)
+
 
 def mask_out_ct(ct_scan, ct_dir_path, masking_value):
     # Use, by priority, BODY, External or treatment table mask

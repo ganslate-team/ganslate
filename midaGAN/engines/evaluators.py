@@ -1,16 +1,16 @@
-from abc import abstractmethod
 from pathlib import Path
 
-from midaGAN.data import build_loader
-from midaGAN.data.utils import decollate
+from midaGAN.data._builder import build_loader
 from midaGAN.engines.base import BaseEngineWithInference
-from midaGAN.nn.gans import build_gan
+from midaGAN.nn.gans._builder import build_gan
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
 from midaGAN.utils import environment
+from midaGAN.utils.io import decollate
 from midaGAN.utils.trackers.evaluation import EvaluationTracker
 
 
 class BaseEvaluator(BaseEngineWithInference):
+
     def __init__(self, conf):
         super().__init__(conf)
         self.output_dir = Path(conf[conf.mode].output_dir) / self.conf.mode
@@ -42,8 +42,7 @@ class BaseEvaluator(BaseEngineWithInference):
             self.tracker.add_sample(visuals, metrics)
             metadata = decollate(data['metadata'])
             # TODO: This nrrd stuff not general at all
-            self.data_loader.dataset.save(visuals['fake_B'],
-                                          metadata,
+            self.data_loader.dataset.save(visuals['fake_B'], metadata,
                                           self.output_dir / "nrrds" / str(self.trainer_idx))
 
         self.tracker.push_samples(self.trainer_idx)
@@ -85,6 +84,7 @@ class BaseEvaluator(BaseEngineWithInference):
 
 
 class Validator(BaseEvaluator):
+
     def __init__(self, conf, model):
         super().__init__(conf)
         self.model = model
@@ -94,6 +94,7 @@ class Validator(BaseEvaluator):
 
 
 class Tester(BaseEvaluator):
+
     def __init__(self, conf):
         super().__init__(conf)
         environment.setup_logging_with_config(self.conf)
