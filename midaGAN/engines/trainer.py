@@ -82,7 +82,7 @@ class Trainer(BaseEngine):
 
     def _save_checkpoint(self):
         # TODO: save on cancel
-        checkpoint_freq = self.conf[self.conf.mode].checkpointing.freq
+        checkpoint_freq = self.conf.train.checkpointing.freq
         if communication.get_local_rank() == 0:
             if self.iter_idx % checkpoint_freq == 0:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')

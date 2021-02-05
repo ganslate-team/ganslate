@@ -101,6 +101,3 @@ class Tester(BaseEvaluator):
 
     def _set_mode(self):
         self.conf.mode = 'test'
-
-    # def _override_conf(self):
-    #     self.conf.test.checkpointing.load_iter = self.conf.test.load_iter

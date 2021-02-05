@@ -16,6 +16,7 @@ class TrainCheckpointingConfig(configs.base.CheckpointingConfig):
     freq: int = 2000
     # If False, the saved optimizers won't be loaded when continuing training
     load_optimizers: bool = True
+    # Iteration number of the checkpoint to load for continuing training
     load_iter: Optional[int] = None
 
 
