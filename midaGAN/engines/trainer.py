@@ -32,10 +32,14 @@ class Trainer(BaseEngine):
         # Validation configuration and validation dataloader specified.
         self.validator = self._init_validator()
 
-        start_iter = 1 if not self.conf.train.load_checkpoint else self.conf.train.load_checkpoint + 1
+        start_iter = 1
+        if self.conf.train.checkpointing.load_iter:
+            start_iter += self.conf.train.checkpointing.load_iter
+
         end_iter = 1 + self.conf.train.n_iters + self.conf.train.n_iters_decay
         assert start_iter < end_iter, \
             "If continuing, define the `n_iters` relative to the loaded iteration."
+
         self.iters = range(start_iter, end_iter)
         self.iter_idx = 0
 
@@ -78,7 +82,7 @@ class Trainer(BaseEngine):
 
     def _save_checkpoint(self):
         # TODO: save on cancel
-        checkpoint_freq = self.conf.train.logging.checkpoint_freq
+        checkpoint_freq = self.conf[self.conf.mode].checkpointing.freq
         if communication.get_local_rank() == 0:
             if self.iter_idx % checkpoint_freq == 0:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')

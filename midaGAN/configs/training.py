@@ -5,14 +5,33 @@ from midaGAN import configs
 
 
 @dataclass
-class TrainMetricConfig:
+class TrainMetricsConfig:
     output_distributions_D: bool = False
     ssim: bool = False
 
 
 @dataclass
+class TrainCheckpointingConfig(configs.base.CheckpointingConfig):
+    # How often (in iters) to save checkpoints during training
+    freq: int = 2000
+    # If False, the saved optimizers won't be loaded when continuing training
+    load_optimizers: bool = True
+    load_iter: Optional[int] = None
+
+
+@dataclass
 class TrainConfig(configs.base.BaseEngineConfig):
     # TODO: add git hash? will help when re-running or inferencing old runs
+
+    ################## Overriding defaults of BaseEngineConfig ######################
+    output_dir:  str = MISSING
+    batch_size: int = MISSING
+    cuda: bool = True
+    mixed_precision: bool = False
+    opt_level: str = "O1"
+    checkpointing: TrainCheckpointingConfig = TrainCheckpointingConfig()
+    logging: configs.base.LoggingConfig = configs.base.LoggingConfig()
+    ###########################################################################
 
     # Number of iters without linear decay of learning rates.
     n_iters: int = MISSING
@@ -20,14 +39,6 @@ class TrainConfig(configs.base.BaseEngineConfig):
     n_iters_decay: int = MISSING
 
     gan: configs.base.BaseGANConfig = MISSING
-    # Iteration number of the checkpoint to load
-    load_checkpoint: Optional[int] = None
-    # If false, the saved optimizers won't be loaded and the optimizers will start from scratch
-    load_optimizers: Optional[bool] = None
 
-    seed: Optional[int] = None  # Seed for reproducibility
-    metrics: TrainMetricConfig = TrainMetricConfig()  # Metrics to log while training!
-
-    # Separate validation config that will be run with a full-volume dataloader.
-    # Can be used for intermittent SSIM
-    validation: Optional[configs.evaluation.ValidationConfig] = None
+    seed: Optional[int] = None
+    metrics: TrainMetricsConfig = TrainMetricsConfig()

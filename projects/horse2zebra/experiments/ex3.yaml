@@ -1,4 +1,4 @@
-use_cuda: True
+cuda: True
 n_iters: 117700 # (1177 [dataset_size] * 100)
 n_iters_decay: 117700
 batch_size: 1

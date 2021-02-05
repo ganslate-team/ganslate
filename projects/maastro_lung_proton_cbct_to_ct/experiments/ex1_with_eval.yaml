@@ -1,17 +1,20 @@
+project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
+
 train:
-    project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
-    use_cuda: True
+    cuda: True
     n_iters: 20000
     n_iters_decay: 20000
     batch_size: 1
     mixed_precision: True
+    output_dir: "./checkpoints/cbcttoct_ex16"
 
     logging:
-        output_dir: "./checkpoints/cbcttoct_ex16"
+        freq: 50
         wandb:
             project: "proton-cbct-ct"
-        log_freq: 50
-        checkpoint_freq: 2000
+        
+    checkpointing:
+        freq: 2000
 
     dataset: 
         name: "CBCTtoCTDataset"
@@ -54,6 +57,6 @@ val:
         window_size: [32, 224, 224]
 
 test:
-    checkpoint_iter: 1
+    #load_iter: 1
     dataset: "${val.dataset}"
     sliding_window: "${val.sliding_window}"

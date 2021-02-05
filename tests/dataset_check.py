@@ -26,7 +26,7 @@ def main():
     environment.setup_logging_with_config(conf)
 
     # Load limited entries in the dataloader
-    conf.is_train = 'test'
+    conf.mode = 'test'
     data_loader = build_loader(conf)
 
     project = conf.train.logging.wandb.project

@@ -45,7 +45,7 @@ class BaseGAN(ABC):
         self.conf = conf
         self.is_train = self.conf.mode == "train"
         self.device = self._specify_device()
-        self.output_dir = conf.train.logging.output_dir
+        self.output_dir = conf[conf.mode].output_dir
 
         self.visual_names = {}
         self.visuals = {}
@@ -80,7 +80,7 @@ class BaseGAN(ABC):
         if torch.distributed.is_initialized():
             rank = communication.get_local_rank()
             return torch.device(f"cuda:{rank}")  # distributed GPU training
-        elif self.conf.train.use_cuda:
+        elif self.conf[self.conf.mode].cuda:
             return torch.device('cuda:0')  # non-distributed GPU training
         else:
             return torch.device('cpu')
@@ -110,7 +110,7 @@ class BaseGAN(ABC):
         assert 'G' or 'G_A' in self.networks.keys(), \
             "The (main) generator has to be named `G` or `G_A`."
 
-        if self.conf.train.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             from apex import amp
             # Allow the methods to access AMP that was imported here
             globals()["amp"] = amp
@@ -130,11 +130,11 @@ class BaseGAN(ABC):
                 raise ValueError(
                     "When inferring there should be only one network initialized - generator.")
 
-        if self.conf.train.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             self.convert_to_mixed_precision()
 
-        if self.conf.train.load_checkpoint:
-            self.load_networks(self.conf.train.load_checkpoint)
+        if self.conf[self.conf.mode].checkpointing.load_iter:
+            self.load_networks(self.conf[self.conf.mode].checkpointing.load_iter)
 
         num_devices = int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
         if num_devices > 1:
@@ -153,7 +153,7 @@ class BaseGAN(ABC):
                              By initializing Amp with `num_losses=1` and setting `loss_id=0` for each loss, 
                              it will use a global scaler for all losses.
         """
-        if self.conf.train.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             with amp.scale_loss(loss, optimizer, loss_id) as scaled_loss:
                 scaled_loss.backward(retain_graph=retain_graph)
         else:
@@ -171,7 +171,7 @@ class BaseGAN(ABC):
                                                               device_ids=[self.device],
                                                               output_device=self.device,
                                                               broadcast_buffers=False)
-            elif self.conf.train.use_cuda and torch.cuda.device_count() > 0:
+            elif self.conf[self.conf.mode].cuda and torch.cuda.device_count() > 0:
                 message = (
                     "Multi-GPU runs must be launched in distributed mode using `torch.distributed.launch`."
                     " Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID> to use a single GPU if multiple are present."
@@ -189,7 +189,7 @@ class BaseGAN(ABC):
                           If `num_losses=1`, Amp will still support multiple losses/backward passes, 
                           but use a single global loss scale for all of them.
         """
-        opt_level = self.conf.train.opt_level
+        opt_level = self.conf[self.conf.mode].opt_level
         networks = list(self.networks.values())  # fetch the networks
 
         # initialize mixed precision on networks and, if training, on optimizers
@@ -234,7 +234,7 @@ class BaseGAN(ABC):
         checkpoint['optimizer_D'] = self.optimizers['D'].state_dict()
 
         # save apex mixed precision
-        if self.conf.train.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             checkpoint['amp'] = amp.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
@@ -255,7 +255,7 @@ class BaseGAN(ABC):
         # load amp state
         # TODO: what about opt_level, does it matter if it's different from before?
         # TODO: what if trained per-loss loss-scale and now using global or vice versa? Just reset it, i.e. ignore the amp state_dict?
-        if self.conf.train.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             if "amp" not in checkpoint:
                 self.logger.warning("This checkpoint was not trained using mixed precision.")
             else:
@@ -267,7 +267,7 @@ class BaseGAN(ABC):
 
         # load optimizers
         if self.is_train:
-            if self.conf.train.load_optimizers:
+            if self.conf[self.conf.mode].load_optimizers:
                 self.logger.info("Optimizers' state_dicts are loaded from the checkpoint.")
                 self.optimizers['G'].load_state_dict(checkpoint['optimizer_G'])
                 self.optimizers['D'].load_state_dict(checkpoint['optimizer_D'])

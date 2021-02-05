@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 from dataclasses import dataclass
-from omegaconf import MISSING
-from midaGAN import configs
+from omegaconf import MISSING, II
 
 
 ############################### Dataset ########################################
@@ -56,40 +55,52 @@ class BaseGANConfig:
     # Discriminator optional as it is not used in inference
     discriminator: Optional[BaseDiscriminatorConfig] = None
 
+
 ############################### Logging ########################################
 @dataclass
 class WandbConfig:
-    project: str = "my-project"
+    project: str = "midaGAN-project"
     entity: Optional[str] = None
+    # Name of the wandb run
+    run: Optional[str] = None
     # Min and max value for the image filter # TODO: explain!
     image_filter: Optional[Tuple[float, float]] = None
-    run: Optional[str] = None
+
+
+@dataclass
+class CheckpointingConfig:
+    # Iteration number of the checkpoint to load [for continuing training or test/val/infer]
+    load_iter: int = MISSING
 
 
 @dataclass
 class LoggingConfig:
-    # TODO: make it datetime or smth. make sure it works in distributed mode
-    output_dir: str = MISSING
-    # How often to log training progress
-    log_freq: int = 50
-    # How often to save checkpoints
-    checkpoint_freq: int = 2000
+    # How often (in iters) to log during *training* [Not used in other modes]
+    freq: int = 50
+    # Use Tensorboard?
     tensorboard: bool = False
+    # Use Weights & Biases?
     wandb: Optional[WandbConfig] = None
 
 
 ############# Config for engines (trainer, tester, inferencer...) ##############
 @dataclass
 class BaseEngineConfig:
-     # Enables importing project-specific classes located in the project's dir
-    project_dir: Optional[str] = None
+    """Contains params that all modes need to have, by default they interpolate the value
+    of the training config because test/val/infer rely on training's params' values.
+    TrainingConfig overrides these defaults for training."""
 
-    batch_size: int = MISSING
-    use_cuda: bool = True
-    mixed_precision: bool = False
-    opt_level: str = "O1"
+    # Where the logs and outputs are stored. Modes other than training use it to
+    # know where the checkpoints where stored to be able to load them.
+    output_dir:  str = II("train.output_dir")
 
-    logging: LoggingConfig = LoggingConfig()
+    batch_size: int = II("train.batch_size")
+    # Uses GPUs if True, otherwise CPU
+    cuda: bool = II("train.cuda")
+    mixed_precision: bool = II("train.mixed_precision")
+    opt_level: str = II("train.opt_level")
+
+    logging: LoggingConfig = II("train.logging")
 
     dataset: BaseDatasetConfig = MISSING
 

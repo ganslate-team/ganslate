@@ -6,17 +6,17 @@ class WandbTracker:
 
     def __init__(self, conf):
         mode = conf.mode
-        project = conf.train.logging.wandb.project
-        entity = conf.train.logging.wandb.entity
+        project = conf[conf.mode].logging.wandb.project
+        entity = conf[conf.mode].logging.wandb.entity
         conf_dict = OmegaConf.to_container(conf, resolve=True)
         wandb.init(project=project, entity=entity, config=conf_dict)
 
-        if conf.train.logging.wandb.run:
-            wandb.run.name = conf.train.logging.wandb.run
+        if conf[conf.mode].logging.wandb.run:
+            wandb.run.name = conf[conf.mode].logging.wandb.run
 
         self.image_filter = None
-        if conf.train.logging.wandb.image_filter:
-            self.image_filter = conf.train.logging.wandb.image_filter
+        if conf[conf.mode].logging.wandb.image_filter:
+            self.image_filter = conf[conf.mode].logging.wandb.image_filter
 
     def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics, mode='train'):
         """"""

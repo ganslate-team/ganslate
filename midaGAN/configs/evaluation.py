@@ -5,7 +5,7 @@ from midaGAN import configs
 
 
 @dataclass
-class MetricConfig:
+class EvalMetricsConfig:
     # SSIM metric between the images
     ssim: bool = True
     # PSNR metric between the images
@@ -31,25 +31,21 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class BaseEvaluationConfig:
-    # For evaluation ensure that pairing is maintained between the A and B 
+class BaseEvaluationConfig(configs.base.BaseEngineConfig):
+    # For evaluation ensure that pairing is maintained between the A and B
     # provided by the attached dataloader
 
     # To define by the user
-    metrics: MetricConfig = MetricConfig()
+    metrics: EvalMetricsConfig = EvalMetricsConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
-    dataset: configs.base.BaseDatasetConfig = MISSING
-    batch_size: int = MISSING
 
 
 @dataclass
 class ValidationConfig(BaseEvaluationConfig):
     # How frequently to validate (each `freq` iters)
-    freq: int = 1
-    # Validation uses the same batch size as training by default
-    batch_size: int = II("train.batch_size")
+    freq: int = MISSING
 
 
 @dataclass
 class TestConfig(BaseEvaluationConfig):
-    checkpoint_iter: int = 1
+    checkpointing: configs.base.CheckpointingConfig = configs.base.CheckpointingConfig()

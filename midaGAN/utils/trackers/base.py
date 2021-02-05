@@ -14,7 +14,7 @@ class BaseTracker:
     def __init__(self, conf):
         self.conf = conf
         self.batch_size = self.conf[conf.mode].batch_size
-        self.output_dir = self.conf.train.logging.output_dir
+        self.output_dir = self.conf[self.conf.mode].output_dir
         self.iter_idx = None
         self.iter_end_time = None
         self.iter_start_time = None
@@ -39,9 +39,9 @@ class BaseTracker:
     def _setup_wandb_tensorboard(self, conf):
         wandb, tensorboard = None, None
         if communication.get_local_rank() == 0:
-            if conf.train.logging.wandb:
+            if conf[conf.mode].logging.wandb:
                 wandb = WandbTracker(conf)
-            if conf.train.logging.tensorboard:
+            if conf[conf.mode].logging.tensorboard:
                 tensorboard = TensorboardTracker(conf)
         return wandb, tensorboard
 

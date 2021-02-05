@@ -226,7 +226,7 @@ class CycleGAN(BaseGAN):
     def infer(self, input, cycle='A'):
         assert cycle in ['A', 'B'], \
             "Infer needs an input of either cycle with A or B domain as input"
-        assert f'G_{cycle}' in self.networks.keys()     
+        assert f'G_{cycle}' in self.networks.keys()
 
         with torch.no_grad():
             return self.networks[f'G_{cycle}'].forward(input)

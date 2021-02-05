@@ -10,7 +10,7 @@ class TrainingTracker(BaseTracker):
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
-        self.log_freq = conf.train.logging.log_freq
+        self.log_freq = conf[conf.mode].logging.freq
 
     def log_iter(self, learning_rates, losses, visuals, metrics):
         """Parameters: # TODO: update this

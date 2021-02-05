@@ -1,5 +1,5 @@
 project_dir: "./projects/nki_cervix_cbct_to_ct"
-use_cuda: True
+cuda: True
 batch_size: 1
 
 logging:

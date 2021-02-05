@@ -13,7 +13,7 @@ from midaGAN.utils.trackers.evaluation import EvaluationTracker
 class BaseEvaluator(BaseEngineWithInference):
     def __init__(self, conf):
         super().__init__(conf)
-        self.output_dir = Path(conf.train.logging.output_dir) / self.conf.mode
+        self.output_dir = Path(conf[conf.mode].output_dir) / self.conf.mode
 
         self.data_loader = build_loader(self.conf)
         self.tracker = EvaluationTracker(self.conf)
@@ -102,5 +102,5 @@ class Tester(BaseEvaluator):
     def _set_mode(self):
         self.conf.mode = 'test'
 
-    def _override_conf(self):
-        self.conf.train.load_checkpoint = self.conf.test.checkpoint_iter
+    # def _override_conf(self):
+    #     self.conf.test.checkpointing.load_iter = self.conf.test.load_iter

@@ -1,4 +1,4 @@
-use_cuda: True
+cuda: True
 n_iters: 20000
 n_iters_decay: 0
 batch_size: 1

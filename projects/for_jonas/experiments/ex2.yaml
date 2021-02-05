@@ -1,5 +1,5 @@
 project_dir: "/work/ft002207/midaGAN/projects/for_jonas/"
-use_cuda: True
+cuda: True
 n_iters: 50000
 n_iters_decay: 0
 batch_size: 1

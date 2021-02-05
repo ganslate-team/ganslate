@@ -106,7 +106,9 @@ def get_scheduler(optimizer, conf):
     """
 
     def lambda_rule(iter_idx):
-        start_iter = 1 if not conf.train.load_checkpoint else conf.train.load_checkpoint + 1
+        start_iter = 1
+        if conf.train.checkpointing.load_iter:
+            start_iter += conf.train.checkpointing.load_iter
         lr_l = 1.0 - max(0, iter_idx + start_iter - conf.train.n_iters) / float(conf.train.n_iters_decay + 1)
         return lr_l
 

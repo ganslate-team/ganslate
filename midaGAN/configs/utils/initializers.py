@@ -24,10 +24,9 @@ def init_config(conf, config_class):
 
     # Allows the framework to find user-defined, project-specific, dataset classes and their configs
     # TODO check if if else is needed
-    project_dir = conf.train.project_dir if conf.train.project_dir else None 
-    if project_dir:
-        IMPORT_LOCATIONS["dataset"].append(project_dir)
-        logger.info(f"Project directory {project_dir} added to the"
+    if conf.project_dir:
+        IMPORT_LOCATIONS["dataset"].append(conf.project_dir)
+        logger.info(f"Project directory {conf.project_dir} added to the"
                     " path to allow imports of modules from it.")
 
     # Make yaml mergeable by instantiating the dataclasses
