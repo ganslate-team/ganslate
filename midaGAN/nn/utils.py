@@ -2,24 +2,8 @@ from torch import nn
 from torch.nn import init
 from torch.optim import lr_scheduler
 
-from midaGAN.configs.utils import IMPORT_LOCATIONS
 from midaGAN.nn import separable
-from midaGAN.utils.io import import_class_from_dirs_and_modules
 
-
-def build_network_by_role(role, conf, device):
-    """Builds a discriminator or generator. TODO: document """
-    assert role in ['discriminator', 'generator']
-
-    name = conf.train.gan[role].name
-    network_class = import_class_from_dirs_and_modules(name, IMPORT_LOCATIONS[role])
-
-    network_args = dict(conf.train.gan[role])
-    network_args.pop("name")
-    network_args["norm_type"] = conf.train.gan.norm_type
-
-    network = network_class(**network_args)
-    return init_net(network, conf, device)
 
 
 def init_net(network, conf, device):

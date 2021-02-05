@@ -11,9 +11,8 @@ except ImportError:
     import midaGAN
 
 #from midaGAN import configs
-from midaGAN.configs._builder import build_conf
+from midaGAN.utils.builders import build_conf, build_gan
 from midaGAN.engines.evaluators import Tester
-from midaGAN.nn.gans._builder import build_gan
 from midaGAN.utils import communication, environment
 
 

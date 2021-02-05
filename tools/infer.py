@@ -10,9 +10,9 @@ except ImportError:
     sys.path.append('./')
     import midaGAN
 
-from midaGAN.configs._builder import build_conf
 from midaGAN.inferer import Inferer
 from midaGAN.utils import communication, environment
+from midaGAN.utils.builders import build_conf
 
 
 def parse_input(input_path):

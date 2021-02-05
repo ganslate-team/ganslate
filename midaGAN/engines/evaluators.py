@@ -1,10 +1,9 @@
 from pathlib import Path
 
-from midaGAN.data._builder import build_loader
 from midaGAN.engines.base import BaseEngineWithInference
-from midaGAN.nn.gans._builder import build_gan
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
 from midaGAN.utils import environment
+from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.io import decollate
 from midaGAN.utils.trackers.evaluation import EvaluationTracker
 

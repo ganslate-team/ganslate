@@ -1,6 +1,6 @@
 from midaGAN.engines.base import BaseEngineWithInference
-from midaGAN.nn.gans._builder import build_gan
 from midaGAN.utils import environment
+from midaGAN.utils.builders import build_gan
 
 
 class Inferer(BaseEngineWithInference):
