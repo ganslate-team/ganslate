@@ -48,16 +48,16 @@ def get_mri_sequence(sitk_image, sequence_name):
 class BratsDataset(Dataset):
 
     def __init__(self, conf):
-        dir_brats = conf.dataset.root
+        dir_brats = conf.train.dataset.root
         self.paths_brats = make_dataset_of_files(dir_brats, EXTENSIONS)
         self.num_datapoints = len(self.paths_brats)
 
-        focal_region_proportion = conf.dataset.focal_region_proportion
-        self.patch_size = np.array(conf.dataset.patch_size)
+        focal_region_proportion = conf.train.dataset.focal_region_proportion
+        self.patch_size = np.array(conf.train.dataset.patch_size)
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
-        self.source_sequence = conf.dataset.source_sequence
-        self.target_sequence = conf.dataset.target_sequence
+        self.source_sequence = conf.train.dataset.source_sequence
+        self.target_sequence = conf.train.dataset.target_sequence
 
     def __getitem__(self, index):
         index_A = index % self.num_datapoints

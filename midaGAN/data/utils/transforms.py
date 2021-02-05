@@ -1,14 +1,17 @@
-import numpy as np
-from PIL import Image
-import torchvision.transforms as transforms
+import logging
 
+import numpy as np
+import torchvision.transforms as transforms
+from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 def get_transform(conf, method=Image.BICUBIC):
-    preprocess = conf.dataset.preprocess
-    load_size = conf.dataset.load_size
-    crop_size = conf.dataset.crop_size
-    flip = conf.dataset.flip
-    image_channels = conf.dataset.image_channels
+    preprocess = conf[conf.mode].dataset.preprocess
+    load_size = conf[conf.mode].dataset.load_size
+    crop_size = conf[conf.mode].dataset.crop_size
+    flip = conf[conf.mode].dataset.flip
+    image_channels = conf[conf.mode].dataset.image_channels
 
     transform_list = []
 
@@ -37,15 +40,12 @@ def get_transform(conf, method=Image.BICUBIC):
     if 'trim' in preprocess:
         transform_list.append(transforms.Lambda(lambda img: __trim(img, crop_size)))
 
-    # TODO: This shouldn't be made like this so that it's happening without knowing it
-    # transform_list.append(transforms.Lambda(lambda img: __make_power_2(img, base=4, method=method)))
-
     if flip:
         transform_list.append(transforms.RandomHorizontalFlip())
 
     transform_list += [transforms.ToTensor()]
 
-    if image_channels == 1:  # TODO: remove convert and use image_channels
+    if image_channels == 1:
         transform_list += [transforms.Normalize((0.5,), (0.5,))]
     elif image_channels == 3:
         transform_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
@@ -132,7 +132,7 @@ def __patch(img, index, size):
 def __print_size_warning(ow, oh, w, h):
     """Print warning information about image size(only print once)"""
     if not hasattr(__print_size_warning, 'has_printed'):
-        print("The image size needs to be a multiple of 4. "
+        logger.info("The image size needs to be a multiple of 4. "
               "The loaded image size was (%d, %d), so it was adjusted to "
               "(%d, %d). This adjustment will be done to all images "
               "whose sizes are not multiples of 4" % (ow, oh, w, h))

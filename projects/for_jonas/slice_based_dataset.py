@@ -30,18 +30,18 @@ class SliceBasedDatasetConfig(configs.base.BaseDatasetConfig):
 class SliceBasedDataset(Dataset):
 
     def __init__(self, conf):
-        self.dir_root = Path(conf.dataset.root)
+        self.dir_root = Path(conf.train.dataset.root)
 
         self.pad_size = None
         self.crop_size = None
-        if conf.dataset.pad and conf.dataset.crop:
+        if conf.train.dataset.pad and conf.train.dataset.crop:
             raise ValueError("Please specify either pad only, crop only or none.")
-        elif conf.dataset.pad:
-            self.pad_size = conf.dataset.pad_size
-        elif conf.dataset.crop:
-            self.crop_size = conf.dataset.crop_size
+        elif conf.train.dataset.pad:
+            self.pad_size = conf.train.dataset.pad_size
+        elif conf.train.dataset.crop:
+            self.crop_size = conf.train.dataset.crop_size
 
-        data_summary = pd.read_csv(Path(conf.dataset.root) / 'dataset_summary.csv')
+        data_summary = pd.read_csv(Path(conf.train.dataset.root) / 'dataset_summary.csv')
         # Filter out rows by their domain
         self.domain_A_summary = data_summary[data_summary["volume_filename"].str.startswith('A')]
         self.domain_B_summary = data_summary[data_summary["volume_filename"].str.startswith('B')]

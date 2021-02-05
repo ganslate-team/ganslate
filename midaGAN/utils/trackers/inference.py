@@ -3,7 +3,7 @@ import logging
 import time
 
 from midaGAN.utils import communication
-from midaGAN.utils.trackers.base_tracker import BaseTracker
+from midaGAN.utils.trackers.base import BaseTracker
 
 
 class InferenceTracker(BaseTracker):

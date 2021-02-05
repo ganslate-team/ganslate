@@ -1,9 +1,9 @@
 project_dir: "./projects/nki_cervix_cbct_to_ct"
-use_cuda: True
+cuda: True
 batch_size: 1
 
 logging:
-    checkpoint_dir: ./checkpoints/cbct_ex3/
+    output_dir: ./checkpoints/cbct_ex3/
     inference_dir: ./results
    
 dataset: 

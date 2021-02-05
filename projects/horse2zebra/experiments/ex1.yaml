@@ -1,11 +1,11 @@
-use_cuda: True
+cuda: True
 n_iters: 117700 # (1177 [dataset_size] * 100)
 n_iters_decay: 117700
 batch_size: 1
 mixed_precision: False
 
 logging:
-    checkpoint_dir: "./checkpoints/horse2zebra_ex1"
+    output_dir: "./checkpoints/horse2zebra_ex1"
     wandb:
         project: "my-project"
     log_freq: 50

@@ -1,4 +1,4 @@
-use_cuda: True
+cuda: True
 n_iters: 200000
 n_iters_decay: 0
 batch_size: 1
@@ -6,7 +6,7 @@ mixed_precision: True
 project_dir: "./projects/brats_flair_to_t1w/"
 
 logging:
-    checkpoint_dir: "./checkpoints/brats_ex5"
+    output_dir: "./checkpoints/brats_ex5"
     wandb:
         project: "my-project"
     log_freq: 1

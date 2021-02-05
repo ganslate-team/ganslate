@@ -1,11 +1,11 @@
 project_dir: "./projects/nki_cervix_cbct_to_ct"
-use_cuda: True
+cuda: True
 n_iters: 40000
 n_iters_decay: 0
 batch_size: 1
 
 logging:
-    checkpoint_dir: /midagan/checkpoints/cbct_ex4/
+    output_dir: /midagan/checkpoints/cbct_ex4/
     wandb:
         project: "Cervix_CBCT"
         image_filter: 

@@ -14,7 +14,7 @@ IMPORT_LOCATIONS = {
 }
 
 
-def init_config(conf, config_class=configs.training.TrainConfig):
+def init_config(conf, config_class):
     # Init default config
     base_conf = OmegaConf.structured(config_class)
 
@@ -23,6 +23,7 @@ def init_config(conf, config_class=configs.training.TrainConfig):
         conf = OmegaConf.load(str(conf))
 
     # Allows the framework to find user-defined, project-specific, dataset classes and their configs
+    # TODO check if if else is needed
     if conf.project_dir:
         IMPORT_LOCATIONS["dataset"].append(conf.project_dir)
         logger.info(f"Project directory {conf.project_dir} added to the"

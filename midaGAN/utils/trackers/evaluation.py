@@ -1,38 +1,17 @@
 import logging
 from pathlib import Path
 
-import torchvision
-from midaGAN.utils import communication, io
+from midaGAN.utils import communication
 from midaGAN.utils.trackers import visuals_to_combined_2d_grid
-from midaGAN.utils.trackers.base_tracker import BaseTracker
-from midaGAN.utils.trackers.tensorboard_tracker import TensorboardTracker
-from midaGAN.utils.trackers.wandb_tracker import WandbTracker
+from midaGAN.utils.trackers.base import BaseTracker
 
-class ValidationTracker(BaseTracker):
+class EvaluationTracker(BaseTracker):
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
-        self.wandb = None
-        self.tensorboard = None
-        if communication.get_local_rank() == 0:
-            io.mkdirs(Path(self.output_dir) / 'val_images')
-            if conf.logging.wandb:
-                self.wandb = WandbTracker(conf)
-            if conf.logging.tensorboard:
-                self.tensorboard = TensorboardTracker(conf)
 
         self.metrics = []
         self.visuals = []
-
-    def _log_message(self, index, metrics):
-        message = '\n' + 20 * '-' + ' '
-        message += f'(sample: {index})'
-        message += ' ' + 20 * '-' + '\n'
-
-        for k, v in metrics.items():
-            message += '%s: %.3f ' % (k, v)
-
-        self.logger.info(message)
 
     def add_sample(self, visuals, metrics):
         """Parameters: # TODO: update this
@@ -52,7 +31,6 @@ class ValidationTracker(BaseTracker):
         Push samples to start logging
         """
         if communication.get_local_rank() == 0:
-            print("Number of samples", len(self.visuals))
 
             for visuals in self.visuals:
                 self._save_image(visuals, iter_idx)
@@ -73,18 +51,23 @@ class ValidationTracker(BaseTracker):
                                     losses={},
                                     visuals=self.visuals,
                                     metrics=averaged_metrics,
-                                    mode='validation')
+                                    mode=self.conf.mode)
 
-            #TODO: Adapt validation tracker for tensorboard
+            # TODO: Adapt eval tracker for tensorboard
             if self.tensorboard:
-                raise NotImplementedError("Tensorboard validation tracking not implemented")
+                raise NotImplementedError("Tensorboard eval tracking not implemented")
                 # self.tensorboard.log_iter(iter_idx, {}, {}, visuals, metrics)
 
             # Clear stored buffer after pushing the results
             self.metrics = []
             self.visuals = []
 
-    def _save_image(self, visuals, iter_idx):
-        name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"val_images/{iter_idx}_{name}.png"
-        torchvision.utils.save_image(image, file_path)
+    def _log_message(self, index, metrics):
+        message = '\n' + 20 * '-' + ' '
+        message += f'(sample: {index})'
+        message += ' ' + 20 * '-' + '\n'
+
+        for k, v in metrics.items():
+            message += '%s: %.3f ' % (k, v)
+
+        self.logger.info(message)

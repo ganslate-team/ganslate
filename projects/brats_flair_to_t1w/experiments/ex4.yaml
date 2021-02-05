@@ -1,11 +1,11 @@
-use_cuda: True
+cuda: True
 n_iters: 200000
 n_iters_decay: 0
 batch_size: 1
 mixed_precision: True
 
 logging:
-    checkpoint_dir: "./checkpoints/brats_ex4"
+    output_dir: "./checkpoints/brats_ex4"
     wandb:
         project: "my-project"
     log_freq: 50

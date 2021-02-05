@@ -50,9 +50,9 @@ class CBCTtoCTEvalDatasetConfig(configs.base.BaseDatasetConfig):
 class CBCTtoCTEvalDataset(Dataset):
 
     def __init__(self, conf):
-        # self.paths = make_dataset_of_directories(conf.dataset.root, EXTENSIONS)
-        self.root_path = Path(conf.dataset.root).resolve()
-        self.mask_labels = conf.dataset.mask_labels
+        # self.paths = make_dataset_of_directories(conf.val.dataset.root, EXTENSIONS)
+        self.root_path = Path(conf.val.dataset.root).resolve()
+        self.mask_labels = conf.val.dataset.mask_labels
 
         self.paths = {}
 
@@ -71,12 +71,12 @@ class CBCTtoCTEvalDataset(Dataset):
 
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf.val.dataset.hounsfield_units_range
 
-        self.apply_mask = conf.dataset.enable_masking
-        self.apply_bound = conf.dataset.enable_bounding
-        self.cbct_mask_threshold = conf.dataset.cbct_mask_threshold
-        self.ct_mask_threshold = conf.dataset.ct_mask_threshold
+        self.apply_mask = conf.val.dataset.enable_masking
+        self.apply_bound = conf.val.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.val.dataset.cbct_mask_threshold
+        self.ct_mask_threshold = conf.val.dataset.ct_mask_threshold
 
     def __getitem__(self, index):
         patient_index = list(self.paths)[index]
@@ -131,7 +131,10 @@ class CBCTtoCTEvalDataset(Dataset):
 
         return data_dict
 
-    def scale_to_hu(self, tensor):
+    def denormalize(self, tensor):
+        """Allows the Tester and Validator to calculate the metrics in
+        the original range of values.
+        """
         return min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
 
     def save(self, tensor, metadata, output_dir):

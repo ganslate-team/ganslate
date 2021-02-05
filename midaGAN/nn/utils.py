@@ -10,20 +10,20 @@ def build_network_by_role(role, conf, device):
     """Builds a discriminator or generator. TODO: document """
     assert role in ['discriminator', 'generator']
 
-    name = conf.gan[role].name
+    name = conf.train.gan[role].name
     import_locations = midaGAN.configs.utils.initializers.IMPORT_LOCATIONS
     network_class = import_class_from_dirs_and_modules(name, import_locations[role])
 
-    network_args = dict(conf.gan[role])
+    network_args = dict(conf.train.gan[role])
     network_args.pop("name")
-    network_args["norm_type"] = conf.gan.norm_type
+    network_args["norm_type"] = conf.train.gan.norm_type
 
     network = network_class(**network_args)
     return init_net(network, conf, device)
 
 
 def init_net(network, conf, device):
-    init_weights(network, conf.gan.weight_init_type, conf.gan.weight_init_gain)
+    init_weights(network, conf.train.gan.weight_init_type, conf.train.gan.weight_init_gain)
     return network.to(device)
 
 
@@ -98,16 +98,18 @@ def is_bias_before_norm(norm_type='instance'):
 
 
 def get_scheduler(optimizer, conf):
-    """Return a scheduler that keeps the same learning rate for the first <conf.n_iters> epochs
-    and linearly decays the rate to zero over the next <conf.n_iters_decay> epochs.
+    """Return a scheduler that keeps the same learning rate for the first <conf.train.n_iters> epochs
+    and linearly decays the rate to zero over the next <conf.train.n_iters_decay> epochs.
     Parameters:
-        optimizer          -- the optimizer of the network
+        optimizer -- the optimizer of the network
         TODO
     """
 
     def lambda_rule(iter_idx):
-        start_iter = 1 if not conf.load_checkpoint else conf.load_checkpoint.count_start_iter
-        lr_l = 1.0 - max(0, iter_idx + start_iter - conf.n_iters) / float(conf.n_iters_decay + 1)
+        start_iter = 1
+        if conf.train.checkpointing.load_iter:
+            start_iter += conf.train.checkpointing.load_iter
+        lr_l = 1.0 - max(0, iter_idx + start_iter - conf.train.n_iters) / float(conf.train.n_iters_decay + 1)
         return lr_l
 
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
@@ -121,13 +123,4 @@ def get_network_device(network):
 def reshape_to_4D_if_5D(tensor):
     if len(tensor.shape) == 5:
         return tensor.view(-1, *tensor.shape[2:])
-    return tensor
-
-
-def squeeze_z_axis_if_2D(tensor):
-    # NCDHW, check if D is 1
-    if tensor.shape[2] == 1:
-        # Reshape to ensure that D is squeezed
-        return tensor.squeeze(axis=2)
-
     return tensor

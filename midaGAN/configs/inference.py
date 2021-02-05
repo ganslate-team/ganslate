@@ -1,33 +1,10 @@
 from typing import Tuple, Optional
 from dataclasses import dataclass
-from omegaconf import MISSING
-from midaGAN import configs
 
-
-@dataclass
-class LoggingConfig:
-    inference_dir: str = MISSING  # Path where the inference will store the results
-    checkpoint_dir: str = MISSING  # Where the checkpoints and training config yaml were saved
-
+from midaGAN.configs.evaluation import SlidingWindowConfig
 
 @dataclass
-class LoadCheckpointConfig:
-    iter: str = MISSING
-
-
-@dataclass
-class SlidingWindowConfig:
-    # https://docs.monai.io/en/latest/inferers.html#monai.inferers.SlidingWindowInferer
-    window_size: Tuple[int] = MISSING
-    batch_size: int = 1
-    overlap: float = 0.25
-    mode: str = 'gaussian'
-
-
-@dataclass
-class InferenceConfig(configs.base.BaseConfig):
-    is_train: bool = False  # Training mode is False for framework
-    batch_size: int = 1
-    load_checkpoint: LoadCheckpointConfig = LoadCheckpointConfig()
-    logging: LoggingConfig = LoggingConfig()
+class InferenceConfig:
+    batch_size: int 
     sliding_window: Optional[SlidingWindowConfig] = None
+
