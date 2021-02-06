@@ -14,6 +14,7 @@ class BaseEngine(ABC):
         self._set_mode()
         self._override_conf()
 
+        self.output_dir = Path(conf[conf.mode].output_dir) / self.conf.mode
         self.model = None
         self.logger = logging.getLogger(type(self).__name__)
 

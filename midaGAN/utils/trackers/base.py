@@ -15,7 +15,7 @@ class BaseTracker:
     def __init__(self, conf):
         self.conf = conf
         self.batch_size = self.conf[conf.mode].batch_size
-        self.output_dir = self.conf[self.conf.mode].output_dir
+        self.output_dir = Path(self.conf[self.conf.mode].output_dir) / self.conf.mode
         self.iter_idx = None
         self.iter_end_time = None
         self.iter_start_time = None
@@ -24,18 +24,17 @@ class BaseTracker:
 
         self.wandb, self.tensorboard = self._setup_wandb_tensorboard(conf)
         self._setup_images_dir()
-        # TODO: right now it saves it for val too which is unnecessary. Let's see how testing and inferencing will function before changing this
         self._save_config(conf)
 
     def _save_config(self, conf):
         if communication.get_local_rank() == 0:
-            config_path = Path(self.output_dir) / f"{self.conf.mode}/{self.conf.mode}_config.yaml"
+            config_path = self.output_dir / f"{self.conf.mode}_config.yaml"
             with open(config_path, "w") as file:
                 file.write(OmegaConf.to_yaml(conf))
 
     def _setup_images_dir(self):
         if communication.get_local_rank() == 0:
-            io.mkdirs(Path(self.output_dir) / f"{self.conf.mode}/images")
+            io.mkdirs(Path(self.output_dir) / "images")
 
     def _setup_wandb_tensorboard(self, conf):
         wandb, tensorboard = None, None
@@ -71,5 +70,5 @@ class BaseTracker:
 
     def _save_image(self, visuals, iter_idx):
         name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"{self.conf.mode}/images/{iter_idx}_{name}.png"
+        file_path = Path(self.output_dir) / f"images/{iter_idx}_{name}.png"
         torchvision.utils.save_image(image, file_path)

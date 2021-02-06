@@ -12,7 +12,6 @@ class BaseEvaluator(BaseEngineWithInference):
 
     def __init__(self, conf):
         super().__init__(conf)
-        self.output_dir = Path(conf[conf.mode].output_dir) / self.conf.mode
 
         self.data_loader = build_loader(self.conf)
         self.tracker = EvaluationTracker(self.conf)

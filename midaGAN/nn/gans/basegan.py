@@ -8,7 +8,7 @@ from torch.nn.parallel import DistributedDataParallel
 
 from midaGAN.nn.metrics.train_metrics import TrainingMetrics
 from midaGAN.nn.utils import get_scheduler
-from midaGAN.utils import communication
+from midaGAN.utils import communication, io
 from midaGAN.utils.builders import build_D, build_G
 
 logger = logging.getLogger(__name__)
@@ -216,7 +216,8 @@ class BaseGAN(ABC):
             iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
         checkpoint = {}
-        checkpoint_path = Path(self.output_dir) / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.output_dir) / f"checkpoints/{iter_idx}.pth"
+        io.mkdirs(checkpoint_path.parent)
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
@@ -240,7 +241,7 @@ class BaseGAN(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = Path(self.output_dir).resolve() / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.output_dir).resolve() / f"checkpoints/{iter_idx}.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.logger.info(f"Loaded the checkpoint from `{checkpoint_path}`")
 
