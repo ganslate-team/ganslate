@@ -64,8 +64,8 @@ class PiCycleGAN(BaseGAN):
 
     def init_criterions(self):
         # Standard GAN loss
-        self.criterion_adv = AdversarialLoss(self.conf.train.gan.optimizer.adversarial_loss_type).to(
-            self.device)
+        self.criterion_adv = AdversarialLoss(
+            self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
         self.criterion_G = CycleGANLosses(self.conf)
 
@@ -220,7 +220,6 @@ class PiCycleGAN(BaseGAN):
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
 
-
     def infer(self, input, cycle='A'):
         assert cycle in ['A', 'B'], \
             "Infer needs an input of either cycle with A or B domain as input"
@@ -228,6 +227,6 @@ class PiCycleGAN(BaseGAN):
 
         with torch.no_grad():
             if cycle == 'A':
-                return self.networks['G'].forward(input)            
+                return self.networks['G'].forward(input)
             elif cycle == 'B':
                 return self.networks['G'].forward(input, inverse=True)

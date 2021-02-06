@@ -1,10 +1,10 @@
-from typing import Tuple, Optional
+from typing import Optional
 from dataclasses import dataclass
 
-from midaGAN.configs.evaluation import SlidingWindowConfig
+from midaGAN.configs import base, evaluation
 
 
 @dataclass
-class InferenceConfig:
-    batch_size: int
-    sliding_window: Optional[SlidingWindowConfig] = None
+class InferenceConfig(base.BaseEngineConfig):
+    sliding_window: Optional[evaluation.SlidingWindowConfig] = None
+    checkpointing: base.CheckpointingConfig = base.CheckpointingConfig()

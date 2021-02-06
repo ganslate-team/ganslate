@@ -8,13 +8,12 @@ import midaGAN
 import numpy as np
 import torch
 from midaGAN import configs
-from midaGAN.data.utils import pad
 from midaGAN.data.utils.body_mask import apply_body_mask
+from midaGAN.data.utils.ops import pad
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.normalization import (min_max_denormalize,
-                                              min_max_normalize)
-from midaGAN.data.utils.registration_methods import (
-    register_CT_to_CBCT, truncate_CT_to_scope_of_CBCT)
+from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
+from midaGAN.data.utils.registration_methods import (register_CT_to_CBCT,
+                                                     truncate_CT_to_scope_of_CBCT)
 from midaGAN.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
 from midaGAN.utils import sitk_utils

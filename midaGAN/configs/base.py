@@ -91,8 +91,8 @@ class BaseEngineConfig:
     TrainingConfig overrides these defaults for training."""
 
     # Where the logs and outputs are stored. Modes other than training use it to
-    # know where the checkpoints where stored to be able to load them.
-    output_dir:  str = II("train.output_dir")
+    # know where the checkpoints were stored to be able to load them.
+    output_dir: str = II("train.output_dir")
 
     batch_size: int = II("train.batch_size")
     # Uses GPUs if True, otherwise CPU
@@ -103,5 +103,6 @@ class BaseEngineConfig:
     logging: LoggingConfig = II("train.logging")
 
     dataset: BaseDatasetConfig = MISSING
+
 
 ################################################################################

@@ -1,21 +1,16 @@
-import os
-from pathlib import Path
-from abc import ABC, abstractmethod
 import logging
+import os
+from abc import ABC, abstractmethod
+from pathlib import Path
 
 import torch
 from torch.nn.parallel import DistributedDataParallel
-from midaGAN.utils import communication
-
-# midaGAN.nn imports
-from midaGAN.nn.utils import get_scheduler
-
-from midaGAN.nn.generators import build_G
-from midaGAN.nn.discriminators import build_D
 
 from midaGAN.nn.metrics.train_metrics import TrainingMetrics
+from midaGAN.nn.utils import get_scheduler
+from midaGAN.utils import communication
+from midaGAN.utils.builders import build_D, build_G
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -112,6 +107,7 @@ class BaseGAN(ABC):
 
         if self.conf[self.conf.mode].mixed_precision:
             from apex import amp
+
             # Allow the methods to access AMP that was imported here
             globals()["amp"] = amp
 

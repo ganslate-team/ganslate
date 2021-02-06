@@ -6,6 +6,7 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+
 def get_transform(conf, method=Image.BICUBIC):
     preprocess = conf[conf.mode].dataset.preprocess
     load_size = conf[conf.mode].dataset.load_size
@@ -133,7 +134,7 @@ def __print_size_warning(ow, oh, w, h):
     """Print warning information about image size(only print once)"""
     if not hasattr(__print_size_warning, 'has_printed'):
         logger.info("The image size needs to be a multiple of 4. "
-              "The loaded image size was (%d, %d), so it was adjusted to "
-              "(%d, %d). This adjustment will be done to all images "
-              "whose sizes are not multiples of 4" % (ow, oh, w, h))
+                    "The loaded image size was (%d, %d), so it was adjusted to "
+                    "(%d, %d). This adjustment will be done to all images "
+                    "whose sizes are not multiples of 4" % (ow, oh, w, h))
         __print_size_warning.has_printed = True

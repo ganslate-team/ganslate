@@ -9,10 +9,10 @@ except ImportError:
     logger.warning("midaGAN not installed as a package, importing it from the local directory.")
     sys.path.append('./')
     import midaGAN
-    
-from midaGAN import configs
+
 from midaGAN.engines.trainer import Trainer
 from midaGAN.utils import communication, environment
+from midaGAN.utils.builders import build_conf
 
 
 def main():
@@ -20,7 +20,7 @@ def main():
     # inits distributed mode if ran with torch.distributed.launch
     communication.init_distributed()
 
-    conf = configs.utils.builders.build_conf()
+    conf = build_conf()
 
     trainer = Trainer(conf)
     trainer.run()

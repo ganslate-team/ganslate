@@ -32,14 +32,14 @@ class EvaluationMetrics:
 
         return metrics
 
-
     def get_cycle_metrics(self, input, target):
         input = tensor_to_3D_numpy(input)
         target = tensor_to_3D_numpy(target)
         metrics = {}
         metrics["cycle_SSIM"] = ssim(input, target)
 
-        return metrics        
+        return metrics
+
 
 def tensor_to_3D_numpy(input):
     input = input.squeeze()

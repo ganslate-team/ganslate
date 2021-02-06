@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 import midaGAN
 from midaGAN.utils import io, sitk_utils
-from midaGAN.data.utils import pad
+from midaGAN.data.utils.ops import pad
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
@@ -209,5 +209,5 @@ def clamp_normalize(A, B, min_value, max_value):
     # Add channel dimension (1 = grayscale)
     A = A.unsqueeze(0)
     B = B.unsqueeze(0)
-    
+
     return A, B

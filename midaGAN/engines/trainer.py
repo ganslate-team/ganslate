@@ -1,13 +1,11 @@
 import logging
 
 import torch
-
 from midaGAN.engines.base import BaseEngine
-from midaGAN.data import build_loader
-from midaGAN.nn.gans import build_gan
-from midaGAN.utils import communication, environment
-from midaGAN.utils.trackers.training import TrainingTracker
 from midaGAN.engines.evaluators import Validator
+from midaGAN.utils import communication, environment
+from midaGAN.utils.builders import build_gan, build_loader
+from midaGAN.utils.trackers.training import TrainingTracker
 
 
 class Trainer(BaseEngine):

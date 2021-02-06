@@ -1,7 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN import configs
+from midaGAN.configs import base
 
 
 @dataclass
@@ -11,7 +11,7 @@ class TrainMetricsConfig:
 
 
 @dataclass
-class TrainCheckpointingConfig(configs.base.CheckpointingConfig):
+class TrainCheckpointingConfig(base.CheckpointingConfig):
     # How often (in iters) to save checkpoints during training
     freq: int = 2000
     # If False, the saved optimizers won't be loaded when continuing training
@@ -21,17 +21,17 @@ class TrainCheckpointingConfig(configs.base.CheckpointingConfig):
 
 
 @dataclass
-class TrainConfig(configs.base.BaseEngineConfig):
+class TrainConfig(base.BaseEngineConfig):
     # TODO: add git hash? will help when re-running or inferencing old runs
 
     ################## Overriding defaults of BaseEngineConfig ######################
-    output_dir:  str = MISSING
+    output_dir: str = MISSING
     batch_size: int = MISSING
     cuda: bool = True
     mixed_precision: bool = False
     opt_level: str = "O1"
     checkpointing: TrainCheckpointingConfig = TrainCheckpointingConfig()
-    logging: configs.base.LoggingConfig = configs.base.LoggingConfig()
+    logging: base.LoggingConfig = base.LoggingConfig()
     ###########################################################################
 
     # Number of iters without linear decay of learning rates.
@@ -39,7 +39,7 @@ class TrainConfig(configs.base.BaseEngineConfig):
     # Number of last iters in which the learning rates are linearly decayed.
     n_iters_decay: int = MISSING
 
-    gan: configs.base.BaseGANConfig = MISSING
+    gan: base.BaseGANConfig = MISSING
 
     seed: Optional[int] = None
     metrics: TrainMetricsConfig = TrainMetricsConfig()

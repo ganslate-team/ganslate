@@ -1,25 +1,9 @@
-import torch.nn as nn
+from torch import nn
 from torch.nn import init
 from torch.optim import lr_scheduler
-import midaGAN
+
 from midaGAN.nn import separable
-from midaGAN.utils import import_class_from_dirs_and_modules
 
-
-def build_network_by_role(role, conf, device):
-    """Builds a discriminator or generator. TODO: document """
-    assert role in ['discriminator', 'generator']
-
-    name = conf.train.gan[role].name
-    import_locations = midaGAN.configs.utils.initializers.IMPORT_LOCATIONS
-    network_class = import_class_from_dirs_and_modules(name, import_locations[role])
-
-    network_args = dict(conf.train.gan[role])
-    network_args.pop("name")
-    network_args["norm_type"] = conf.train.gan.norm_type
-
-    network = network_class(**network_args)
-    return init_net(network, conf, device)
 
 
 def init_net(network, conf, device):
@@ -109,7 +93,8 @@ def get_scheduler(optimizer, conf):
         start_iter = 1
         if conf.train.checkpointing.load_iter:
             start_iter += conf.train.checkpointing.load_iter
-        lr_l = 1.0 - max(0, iter_idx + start_iter - conf.train.n_iters) / float(conf.train.n_iters_decay + 1)
+        lr_l = 1.0 - max(
+            0, iter_idx + start_iter - conf.train.n_iters) / float(conf.train.n_iters_decay + 1)
         return lr_l
 
     return lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
