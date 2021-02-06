@@ -17,31 +17,25 @@ train:
         freq: 10000
 
     dataset: 
-        name: "CBCTtoCTDataset"
+        name: "CBCTtoCT2DDataset"
         root: /repos/Maastro/nki_cervix
         hounsfield_units_range: [-1024, 2048]
         num_workers: 0
-        patch_size: [32, 32, 32]
+        image_size: [128, 128]
         enable_masking: True
         enable_bounding: True
       
     gan:  
-        name: "PiCycleGAN"
+        name: "CycleGAN"
 
         generator:
-            name: SAVnet3D
+            name: Unet2D
             in_channels: 1
-            use_memory_saving: False
-            use_inverse: True
-            is_separable: False
-            down_blocks: [2, 2, 3]
-            up_blocks: [3, 3, 3]
 
         discriminator:
-            name: "SAPatchGAN3D"
+            name: "PatchGAN2D"
             n_layers: 2
             in_channels: 1
-            kernel_size: [2, 4, 4]
 
         optimizer:
             lambda_A: 25.0
@@ -62,9 +56,8 @@ val:
     dataset: 
         name: CBCTtoCTValDataset
         root: /repos/Maastro/nki_cervix
-        mask_labels: ["Cervix"]
     sliding_window:
-        window_size: "${train.dataset.patch_size}"
+        window_size: "${train.dataset.image_size}"
 
 # test:
 #     #load_iter: 1

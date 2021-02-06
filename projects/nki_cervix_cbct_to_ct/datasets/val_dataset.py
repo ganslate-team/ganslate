@@ -35,8 +35,8 @@ EXTENSIONS = ['.nrrd']
 # --------------------------------------------------------------------------------------------
 
 @dataclass
-class CBCTtoCTEvalDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "CBCTtoCTEvalDataset"
+class CBCTtoCTValDatasetConfig(configs.base.BaseDatasetConfig):
+    name: str = "CBCTtoCTValDataset"
     hounsfield_units_range: Tuple[int, int] = field(
         default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
     enable_masking: bool = True
@@ -47,7 +47,7 @@ class CBCTtoCTEvalDatasetConfig(configs.base.BaseDatasetConfig):
         default_factory=lambda: [])
 
 
-class CBCTtoCTEvalDataset(Dataset):
+class CBCTtoCTValDataset(Dataset):
 
     def __init__(self, conf):
         # self.paths = make_dataset_of_directories(conf.val.dataset.root, EXTENSIONS)

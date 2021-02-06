@@ -46,11 +46,11 @@ class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
 
 
 class CBCTtoCTInferenceDataset(Dataset):
-    exit("FIX ALL THESE conf.train. things")
+    # exit("FIX ALL THESE conf.test. things")
     def __init__(self, conf):
-        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! SHOULDN'T BE conf.train
-        # self.paths = make_dataset_of_directories(conf.train.dataset.root, EXTENSIONS)
-        self.root_path = Path(conf.train.dataset.root).resolve()
+        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! SHOULDN'T BE conf.test
+        # self.paths = make_dataset_of_directories(conf.test.dataset.root, EXTENSIONS)
+        self.root_path = Path(conf.test.dataset.root).resolve()
 
         self.paths = []
 
@@ -59,11 +59,11 @@ class CBCTtoCTInferenceDataset(Dataset):
 
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.train.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf.test.dataset.hounsfield_units_range
 
-        self.apply_mask = conf.train.dataset.enable_masking
-        self.apply_bound = conf.train.dataset.enable_bounding
-        self.cbct_mask_threshold = conf.train.dataset.cbct_mask_threshold
+        self.apply_mask = conf.test.dataset.enable_masking
+        self.apply_bound = conf.test.dataset.enable_bounding
+        self.cbct_mask_threshold = conf.test.dataset.cbct_mask_threshold
 
     def __getitem__(self, index):
         path = str(self.paths[index])

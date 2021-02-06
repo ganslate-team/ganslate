@@ -12,13 +12,13 @@ class EvalMetricsConfig:
     psnr: bool = True
     # Normalized MSE
     nmse: bool = True
-    # MSE 
+    # MSE
     mse: bool = True
     # Abs diff between the two images
     abs_diff: bool = True
     # Set to true if cycle metrics need to be logged
     # i.e A->B->A followed by comparison between the A
-    cycle_metrics: bool = False
+    cycle_metrics: bool = True
 
 
 @dataclass
