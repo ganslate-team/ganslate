@@ -26,28 +26,21 @@ class Inferer(BaseEngineWithInference):
             "`Inferer.run()` cannot be used in deployment, please use `Inferer.infer()`."
 
         self.logger.info("Inference started.")
-        
+
         self.tracker.start_dataloading_timer()
         for i, data in enumerate(self.data_loader, start=1):
-            # Sometimes, metadata is necessary to be able to store the generated outputs.
-            # E.g. origin, spacing and direction is required in order to properly save medical images.
-
-            input = data["input"]
-            metadata = None
-            if "metadata" in data:
-                metadata = decollate(data["metadata"])
-
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
-            out = self.infer(input)
+            out = self.infer(data["input"])
             self.tracker.end_computation_timer()
 
             self.tracker.start_saving_timer()
             # Inference-time dataset class has to have a `save()` method
-            if metadata:
-                self.data_loader.dataset.save(out, metadata, self.output_dir / "output")
+            save_dir = self.output_dir / "saved"
+            if "metadata" in data:
+                self.data_loader.dataset.save(out, save_dir, metadata=decollate(data["metadata"]))
             else:
-                self.data_loader.dataset.save(out, self.output_dir / "output")
+                self.data_loader.dataset.save(out, save_dir)
             self.tracker.end_saving_timer()
 
             self.tracker.log_message(i, len_dataset=len(self.data_loader.dataset))

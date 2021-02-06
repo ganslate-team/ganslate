@@ -11,7 +11,7 @@ from midaGAN.data.utils.ops import pad
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.body_mask import apply_body_mask_and_bound
+from midaGAN.data.utils.body_mask import apply_body_mask
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 #from cbcttoct_train_dataset import mask_out_ct, clamp_normalize
@@ -67,17 +67,15 @@ class CBCTtoCTValidationDataset(Dataset):
         ################ TO RECONSIDER LATER ################
         # Limit CT so that it only contains part of the body shown in CBCT
         CT = register_CT_to_CBCT(CT, CBCT)
-        CBCT = apply_body_mask_and_bound(sitk_utils.get_npy(CBCT),
-                                         apply_mask=True,
-                                         masking_value=self.hu_min,
-                                         apply_bound=False,
-                                         hu_threshold=-800)
+        CBCT = apply_body_mask(sitk_utils.get_npy(CBCT),
+                               apply_mask=True,
+                               masking_value=self.hu_min,
+                               hu_threshold=-800)
 
-        CT = apply_body_mask_and_bound(sitk_utils.get_npy(CT),
-                                       apply_mask=True,
-                                       masking_value=self.hu_min,
-                                       apply_bound=False,
-                                       hu_threshold=-600)
+        CT = apply_body_mask(sitk_utils.get_npy(CT),
+                             apply_mask=True,
+                             masking_value=self.hu_min,
+                             hu_threshold=-600)
         #####################################################
 
         CBCT = torch.tensor(CBCT)
@@ -90,7 +88,7 @@ class CBCTtoCTValidationDataset(Dataset):
     def __len__(self):
         return len(self.pairs)
 
-    def save(self, tensor, metadata, output_dir):
+    def save(self, tensor, save_dir, metadata):
         tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
 
@@ -104,7 +102,7 @@ class CBCTtoCTValidationDataset(Dataset):
 
         save_path = datapoint_path.relative_to(self.root_path)
 
-        save_path = Path(output_dir) / save_path
+        save_path = Path(save_dir) / save_path
 
         save_path.parent.mkdir(exist_ok=True, parents=True)
 

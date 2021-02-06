@@ -127,7 +127,7 @@ class CBCTtoCTValDataset(Dataset):
         """
         return min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
 
-    def save(self, tensor, output_dir, metadata=None):
+    def save(self, tensor, save_dir, metadata=None):
         tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
 
@@ -140,9 +140,10 @@ class CBCTtoCTValDataset(Dataset):
 
         else:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor)
-            save_path = f'image_{date.today().strftime("%b-%d-%Y")}.nrrd' 
-        # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
-        save_path = Path(output_dir) / save_path
+            save_path = f'image_{date.today().strftime("%b-%d-%Y")}.nrrd'
+        # Dataset used has a directory per each datapoint,
+        # the name of each datapoint's dir is used to save the output
+        save_path = Path(save_dir) / save_path
         save_path.parent.mkdir(exist_ok=True, parents=True)
         sitk_utils.write(sitk_image, save_path)
 

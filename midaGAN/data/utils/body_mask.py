@@ -65,7 +65,8 @@ def get_body_mask(image: np.ndarray, hu_threshold: int) -> np.ndarray:
 
     body_mask = np.zeros(image.shape)
 
-    #  Returns a label map with a unique integer label for each connected geometrical object in the given binary array.
+    # Returns a label map with a unique integer label for each
+    # connected geometrical object in the given binary array.
     # Integer labels of components start from 1. Background is 0.
     connected_components, _ = ndimage.label(binarized_image)
 

@@ -97,10 +97,8 @@ class Trainer(BaseEngine):
 
     def run_validation(self):
         if self.validator and (self.iter_idx % self.conf.val.freq == 0):
-            self.validator.run()
+            self.validator.run(current_idx=self.iter_idx)
 
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx
         self.tracker.set_iter_idx(iter_idx)
-        if self.validator:
-            self.validator.set_trainer_idx(iter_idx)

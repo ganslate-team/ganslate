@@ -15,18 +15,18 @@ def write(sitk_image, file_path):
 
 
 def tensor_to_sitk_image(tensor, origin=None, spacing=None, direction=None, dtype='int16'):
-    array = tensor.cpu().numpy().astype(str(dtype))
+    array = tensor.cpu().numpy().astype(dtype)
     sitk_image = sitk.GetImageFromArray(array)
 
-    if origin:
+    if origin is not None:
         sitk_image.SetOrigin(origin)
-    
-    if spacing:
+
+    if spacing is not None:
         sitk_image.SetSpacing(spacing)
-    
-    if direction:
+
+    if direction is not None:
         sitk_image.SetDirection(direction)
-        
+
     return sitk_image
 
 

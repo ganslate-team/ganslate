@@ -16,12 +16,8 @@ class BaseEvaluator(BaseEngineWithInference):
         self.data_loader = build_loader(self.conf)
         self.tracker = EvaluationTracker(self.conf)
         self.metricizer = EvaluationMetrics(self.conf)
-        self.trainer_idx = 0
 
-    def set_trainer_idx(self, idx):
-        self.trainer_idx = idx
-
-    def run(self):
+    def run(self, current_idx=None):
         self.logger.info(f"{self.conf.mode} with {len(self.data_loader.dataset)} samples")
 
         for data in self.data_loader:
@@ -33,23 +29,27 @@ class BaseEvaluator(BaseEngineWithInference):
             }
 
             # Add masks to visuals if they are provided
-            if "masks" in data: visuals.update({"masks": data["masks"]})
+            if "masks" in data:
+                visuals.update({"masks": data["masks"]})
 
-            metrics = self.calculate_metrics(visuals)
+            metrics = self._calculate_metrics(visuals)
             self.tracker.add_sample(visuals, metrics)
 
+            # A dataset object has to have a `save()` method if it
+            # wishes to save the outputs in a particular way or format
             if saver := getattr(self.data_loader.dataset, "save", False):
-                if metadata := getattr(data, "metadata", False):
-                    saver(visuals['fake_B'],
-                          self.output_dir / "saved" / str(self.trainer_idx),
-                          metadata=metadata)
+                save_dir = self.output_dir / "saved"
+                if current_idx is not None:
+                    save_dir = save_dir / str(current_idx)
+
+                if "metadata" in data:
+                    saver(visuals['fake_B'], save_dir, metadata=decollate(data["metadata"]))
                 else:
-                    saver(visuals['fake_B'], self.output_dir / "saved" / str(self.trainer_idx))
+                    saver(visuals['fake_B'], save_dir)
 
+        self.tracker.push_samples(current_idx)
 
-        self.tracker.push_samples(self.trainer_idx)
-
-    def calculate_metrics(self, visuals):
+    def _calculate_metrics(self, visuals):
         # TODO: Decide if cycle metrics also need to be scaled
         pred, target = visuals["fake_B"], visuals["B"]
 
@@ -59,12 +59,12 @@ class BaseEvaluator(BaseEngineWithInference):
 
         metrics = self.metricizer.get_metrics(pred, target)
         # Update metrics with masked metrics if enabled
-        metrics.update(self.get_masked_metrics(pred, target, visuals))
+        metrics.update(self._get_masked_metrics(pred, target, visuals))
         # Update metrics with cycle metrics if enabled.
-        metrics.update(self.get_cycle_metrics(visuals))
+        metrics.update(self._get_cycle_metrics(visuals))
         return metrics
 
-    def get_cycle_metrics(self, visuals):
+    def _get_cycle_metrics(self, visuals):
         """
         Compute cycle metrics from visuals
         """
@@ -79,23 +79,26 @@ class BaseEvaluator(BaseEngineWithInference):
         return cycle_metrics
 
 
-    def get_masked_metrics(self, pred, target, visuals):
+    def _get_masked_metrics(self, pred, target, visuals):
         """
         Compute metrics over masks if they are provided from the dataloader
         """
         mask_metrics = {}
-        for label, mask in visuals["masks"].items():
-            mask = mask.to(pred.device)
-            # Mask the predicted and target
-            masked_pred = pred * mask
-            masked_target = target * mask
-            # Get metrics on masked images
-            metrics = {f"{k}_{label}": v \
-                for k,v in self.metricizer.get_metrics(masked_pred, masked_target).items()}
-            mask_metrics.update(metrics)
-            visuals[label] = 2. * mask - 1
 
-        visuals.pop("masks")
+        if "masks" in visuals:
+            for label, mask in visuals["masks"].items():
+                mask = mask.to(pred.device)
+                # Mask the predicted and target
+                masked_pred = pred * mask
+                masked_target = target * mask
+                # Get metrics on masked images
+                metrics = {f"{k}_{label}": v \
+                    for k,v in self.metricizer.get_metrics(masked_pred, masked_target).items()}
+                mask_metrics.update(metrics)
+                visuals[label] = 2. * mask - 1
+            
+            visuals.pop("masks")
+
         return mask_metrics
 
 

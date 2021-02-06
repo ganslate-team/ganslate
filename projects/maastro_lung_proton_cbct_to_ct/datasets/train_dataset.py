@@ -11,7 +11,7 @@ from midaGAN.data.utils.ops import pad
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.body_mask import apply_body_mask_and_bound
+from midaGAN.data.utils.body_mask import apply_body_mask
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -141,18 +141,16 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
 
-        CBCT = apply_body_mask_and_bound(CBCT,
-                                         apply_mask=True,
-                                         masking_value=self.hu_min,
-                                         apply_bound=True,
-                                         hu_threshold=-800)
+        CBCT = apply_body_mask(CBCT,
+                               apply_mask=True,
+                               masking_value=self.hu_min,
+                               hu_threshold=-800)
         CBCT = pad(CBCT, self.patch_size)
 
-        CT = apply_body_mask_and_bound(CT,
-                                       apply_mask=True,
-                                       masking_value=self.hu_min,
-                                       apply_bound=True,
-                                       hu_threshold=-600)
+        CT = apply_body_mask(CT,
+                             apply_mask=True,
+                             masking_value=self.hu_min,
+                             hu_threshold=-600)
         CT = pad(CT, self.patch_size)
 
         CBCT = torch.tensor(CBCT)

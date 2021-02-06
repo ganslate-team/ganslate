@@ -33,7 +33,7 @@
 #     def __len__(self):
 #         return self.num_datapoints
 
-#     def save(self, tensor, metadata, output_dir):
+#     def save(self, tensor, save_dir, metadata):
 #         tensor = tensor.squeeze()
 #         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
 
@@ -42,6 +42,6 @@
 
 #         # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
 #         datapoint_name = Path(str(datapoint_path)).parent.name
-#         save_path = Path(output_dir) / Path(datapoint_name).with_suffix('.nrrd')
+#         save_path = Path(save_dir) / Path(datapoint_name).with_suffix('.nrrd')
 
 #         sitk_utils.write(sitk_image, save_path)
