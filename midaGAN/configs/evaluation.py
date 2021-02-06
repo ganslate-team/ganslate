@@ -18,7 +18,7 @@ class EvalMetricsConfig:
     abs_diff: bool = True
     # Set to true if cycle metrics need to be logged
     # i.e A->B->A followed by comparison between the A
-    cycle_metrics: bool = False
+    cycle_metrics: bool = True
 
 
 @dataclass
