@@ -11,7 +11,7 @@ from midaGAN.utils import sitk_utils
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.body_mask import apply_body_mask_and_bound, get_body_mask_and_bound
+from midaGAN.data.utils.body_mask import apply_body_mask
 from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
@@ -36,7 +36,6 @@ class CBCTtoCT2DDatasetConfig(configs.base.BaseDatasetConfig):
     enable_cache: bool = False
     image_channels: int = 1
     enable_masking: bool = False
-    enable_bounding: bool = False
     ct_mask_threshold: int = -300
     cbct_mask_threshold: int = -700
 
@@ -108,14 +107,14 @@ class CBCTtoCT2DDataset(Dataset):
         # Apply body masking to the CT and CBCT arrays
         # and bound the z, x, y grid to around the mask
         try:
-            CBCT = apply_body_mask_and_bound(CBCT, \
-                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, hu_threshold=self.cbct_mask_threshold)
+            CBCT = apply_body_mask(CBCT, \
+                    apply_mask=self.apply_mask,  hu_threshold=self.cbct_mask_threshold)
         except:
             logger.error(f"Error applying mask and bound in file : {path_CBCT}")
 
         try:
-            CT = apply_body_mask_and_bound(CT, \
-                    apply_mask=self.apply_mask, apply_bound=self.apply_bound, hu_threshold=self.ct_mask_threshold)
+            CT = apply_body_mask(CT, \
+                    apply_mask=self.apply_mask, hu_threshold=self.ct_mask_threshold)
 
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")
@@ -159,9 +158,8 @@ class CBCTtoCT2DDataset(Dataset):
         # Add channel dimension
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
-        
+
         return {'A': CBCT, 'B': CT}
 
     def __len__(self):
         return self.num_datapoints
-

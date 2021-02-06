@@ -23,7 +23,6 @@ train:
         num_workers: 0
         image_size: [128, 128]
         enable_masking: True
-        enable_bounding: True
       
     gan:  
         name: "CycleGAN"

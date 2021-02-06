@@ -20,16 +20,15 @@ train:
         name: "CBCTtoCTDataset"
         root: /repos/Maastro/nki_cervix
         hounsfield_units_range: [-1024, 2048]
-        num_workers: 0
-        patch_size: [32, 32, 32]
+        num_workers: 4
+        patch_size: [8, 128, 128]
         enable_masking: True
-        enable_bounding: True
       
     gan:  
         name: "PiCycleGAN"
 
         generator:
-            name: SAVnet3D
+            name: Vnet3D
             in_channels: 1
             use_memory_saving: False
             use_inverse: True
@@ -38,7 +37,7 @@ train:
             up_blocks: [3, 3, 3]
 
         discriminator:
-            name: "SAPatchGAN3D"
+            name: "PatchGAN3D"
             n_layers: 2
             in_channels: 1
             kernel_size: [2, 4, 4]

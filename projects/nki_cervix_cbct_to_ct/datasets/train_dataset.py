@@ -9,8 +9,7 @@ import numpy as np
 import torch
 from midaGAN import configs
 from midaGAN.data.utils import pad
-from midaGAN.data.utils.body_mask import (apply_body_mask_and_bound,
-                                          get_body_mask_and_bound)
+from midaGAN.data.utils.body_mask import apply_body_mask
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.normalization import (min_max_denormalize,
                                               min_max_normalize)
@@ -43,9 +42,6 @@ class CBCTtoCTDatasetConfig(configs.base.BaseDatasetConfig):
         default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
     focal_region_proportion: float = 0.2  # Proportion of focal region size compared to original volume size
     enable_masking: bool = True
-
-    enable_bounding: bool = False  # Retained for legacy support. has no effect
-
     ct_mask_threshold: int = -300
     cbct_mask_threshold: int = -700
 
@@ -110,18 +106,16 @@ class CBCTtoCTDataset(Dataset):
         # Apply body masking to the CT and CBCT arrays
         # and bound the z, x, y grid to around the mask
         try:
-            CBCT = apply_body_mask_and_bound(CBCT,
-                                             apply_mask=self.apply_mask,
-                                             hu_threshold=self.cbct_mask_threshold)
+            CBCT = apply_body_mask(CBCT,
+                              apply_mask=self.apply_mask,
+                              hu_threshold=self.cbct_mask_threshold)
         except:
-            logger.error(f"Error applying mask and bound in file : {path_CBCT}")
+            logger.error(f"Error applying mask in file : {path_CBCT}, ")
 
         try:
-            CT = apply_body_mask_and_bound(CT,
-                                           apply_mask=self.apply_mask,
-                                           hu_threshold=self.ct_mask_threshold)
+            CT = apply_body_mask(CT, apply_mask=self.apply_mask, hu_threshold=self.ct_mask_threshold)
         except:
-            logger.error(f"Error applying mask and bound in file : {path_CT}")
+            logger.error(f"Error applying mask in file : {path_CT}")
 
         CBCT = pad(CBCT, self.patch_size)
         CT = pad(CT, self.patch_size)

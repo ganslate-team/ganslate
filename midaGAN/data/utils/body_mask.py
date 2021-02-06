@@ -6,31 +6,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_connected_components(binary_array: np.ndarray,
-                             structuring_element: np.ndarray = None) -> np.ndarray:
-    """
-    Returns a label map with a unique integer label for each connected geometrical object in the given binary array.
-    Integer labels of components start from 1. Background is 0.
-    """
-
-    if not structuring_element:  # If not given, set 26-connected structure as default
-        if binary_array.ndim == 3:
-            cc_structure = np.array([[[1, 1, 1], [1, 1, 1], [1, 1, 1]],
-                                     [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
-                                     [[1, 1, 1], [1, 1, 1], [1, 1, 1]]])
-        elif binary_array.ndim == 2:
-            cc_structure = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
-        else:
-            raise NotImplementedError()
-        # or alternatively, use the following function -
-        # cc_structure = ndimage.generate_binary_structure(rank=3, connectivity=3)
-
-    connected_component_array, num_connected_components = ndimage.label(binary_array, \
-                                                                        structure=structuring_element)
-
-    return connected_component_array
-
-
 def smooth_contour_points(contour: np.ndarray, radius: int = 3, sigma: int = 10) -> np.ndarray:
     """
     Function that smooths contour points using the approach from 
@@ -69,7 +44,7 @@ def smooth_contour_points(contour: np.ndarray, radius: int = 3, sigma: int = 10)
     return np.array(smooth_contours)
 
 
-def get_body_mask_and_bound(image: np.ndarray, hu_threshold: int) -> np.ndarray:
+def get_body_mask(image: np.ndarray, hu_threshold: int) -> np.ndarray:
     """
     Function that gets a mask around the patient body and returns a 3D bound
 
@@ -90,7 +65,9 @@ def get_body_mask_and_bound(image: np.ndarray, hu_threshold: int) -> np.ndarray:
 
     body_mask = np.zeros(image.shape)
 
-    connected_components = get_connected_components(binarized_image)
+    #  Returns a label map with a unique integer label for each connected geometrical object in the given binary array.
+    # Integer labels of components start from 1. Background is 0.
+    connected_components, _ = ndimage.label(binarized_image)
 
     # Get counts for each component in the connected component analysis
     label_counts = [
@@ -102,20 +79,13 @@ def get_body_mask_and_bound(image: np.ndarray, hu_threshold: int) -> np.ndarray:
     # Image with largest component binary mask
     binarized_image = connected_components == max_label
 
-    # Get coordinates where a label (1) is present
-    label_coordinates = np.nonzero(binarized_image)
-
-    # Get bound of the largest possible voxel range in the binary mask
-    bound = [(np.min(coord), np.max(coord)) for coord in label_coordinates]
-
     for z in range(binarized_image.shape[0]):
 
         binary_slice = np.uint8(binarized_image[z])
 
         # Find contours for each binary slice
         try:
-            contours, hierarchy = cv2.findContours(binary_slice, cv2.RETR_TREE,
-                                                   cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(binary_slice, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             # Get the largest contour based on its area
             largest_contour = max(contours, key=cv2.contourArea)
 
@@ -131,14 +101,13 @@ def get_body_mask_and_bound(image: np.ndarray, hu_threshold: int) -> np.ndarray:
         # inside the points is set to 1.
         cv2.drawContours(body_mask[z], [smoothed_contour], -1, 1, -1)
 
-    return body_mask, bound
+    return body_mask
 
 
-def apply_body_mask_and_bound(array: np.ndarray,
-                              masking_value: int = -1024,
-                              apply_mask: bool = False,
-                              apply_bound: bool = False,
-                              hu_threshold: int = -300) -> np.ndarray:
+def apply_body_mask(array: np.ndarray,
+                    apply_mask=True,
+                    masking_value: int = -1024,
+                    hu_threshold: int = -300) -> np.ndarray:
     """
     Function to apply mask based filtering and bound the array
     
@@ -147,7 +116,6 @@ def apply_body_mask_and_bound(array: np.ndarray,
     array: Input array to bound and mask
     masking_value: Value to apply outside the mask
     apply_mask: Set to True to apply mask
-    apply_bound: Set to True to apply bound
     hu_threshold: Threshold to apply for binarization of the image. 
 
     Returns
@@ -156,18 +124,9 @@ def apply_body_mask_and_bound(array: np.ndarray,
     the patient body and will be cropped to fit the bounds.
 
     """
-    if not (apply_mask or apply_bound):
-        return array
-
-    body_mask, bound = get_body_mask_and_bound(array, hu_threshold)
-    (z_max, z_min), (y_max, y_min), (x_max, x_min) = bound
-
-    # Apply mask to the image array
     if apply_mask:
+        body_mask = get_body_mask(array, hu_threshold)
+        # Apply mask to the image array
         array = np.where(body_mask, array, masking_value)
-
-    # Index the array within the bounds and return cropped array
-    if apply_bound:
-        array = array[z_max:z_min, y_max:y_min, x_max:x_min]
 
     return array
