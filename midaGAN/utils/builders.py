@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from omegaconf import OmegaConf
+from omegaconf import ListConfig, OmegaConf
 
 from midaGAN.configs.config import Config
 from midaGAN.configs.utils import IMPORT_LOCATIONS, init_config
@@ -15,6 +15,22 @@ def build_conf():
     cli = OmegaConf.from_cli()
     conf = init_config(cli.pop("config"), config_class=Config)
     return OmegaConf.merge(conf, cli)
+
+
+def build_loaders(conf):
+    """
+    Build a list of loaders, needed for validation when
+    multiple datasets are provided.
+    """
+    if conf[conf.mode].datasets:
+        loaders = []
+        for dataset_conf in conf[conf.mode].datasets:
+            conf[conf.mode].dataset = dataset_conf
+            loaders.append(build_loader(conf))
+        return loaders
+
+    elif conf[conf.mode].dataset:
+        return [build_loader(conf)]
 
 
 def build_loader(conf):

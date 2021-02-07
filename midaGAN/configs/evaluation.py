@@ -35,6 +35,8 @@ class BaseEvaluationConfig(base.BaseEngineConfig):
     metrics: EvalMetricsConfig = EvalMetricsConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
 
+    # Evaluation can have multiple datasets provided to it
+    datasets: Optional[Tuple[base.BaseDatasetConfig]] = None
 
 @dataclass
 class ValidationConfig(BaseEvaluationConfig):

@@ -5,7 +5,7 @@ train:
     n_iters: 20
     n_iters_decay: 0
     batch_size: 1
-    output_dir: "./checkpoints/test_expt/"
+    output_dir: "./checkpoints/test/"
 
     logging:
         freq: 1
@@ -57,10 +57,13 @@ train:
     
 val:
     freq: 2
-    dataset: 
-        name: CBCTtoCTValDataset
+    datasets: 
+    -   name: CBCTtoCTValDataset
         root: /repos/Maastro/nki_cervix
         mask_labels: ["Cervix"]
+    -   name: PhantomDataset
+        root: /repos/Maastro/nki_cervix
+
     sliding_window:
         window_size: "${train.dataset.patch_size}"
 
