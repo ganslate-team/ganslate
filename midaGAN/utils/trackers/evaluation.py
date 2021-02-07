@@ -34,10 +34,9 @@ class EvaluationTracker(BaseTracker):
         Push samples to start logging
         """
         if communication.get_local_rank() == 0:
-                
-            for idx, visual in enumerate(self.visuals):
-                visual['name'] = f"{visual['name']}_{idx}"
-                self._save_image(visual, iter_idx)
+
+            for visuals in self.visuals:
+                self._save_image(visuals, f"{prefix}_{iter_idx}")
 
             for visuals in self.visuals:
                 self._save_image(visuals, f"{prefix}_{iter_idx}")
