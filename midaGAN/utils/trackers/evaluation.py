@@ -20,6 +20,7 @@ class EvaluationTracker(BaseTracker):
         """
         visuals = {k: v for k, v in visuals.items() if v is not None}
         metrics = {k: v for k, v in metrics.items() if v is not None}
+
         # reduce metrics (avg) and send to the process of rank 0
         metrics = communication.reduce(metrics, average=True, all_reduce=False)
 
@@ -28,15 +29,14 @@ class EvaluationTracker(BaseTracker):
             self.visuals.append(visuals)
             self.metrics.append(metrics)
 
-    def push_samples(self, iter_idx):
+    def push_samples(self, iter_idx, prefix=''):
         """
         Push samples to start logging
         """
         if communication.get_local_rank() == 0:
-                
-            for idx, visual in enumerate(self.visuals):
-                visual['name'] = f"{visual['name']}_{idx}"
-                self._save_image(visual, iter_idx)
+
+            for visuals in self.visuals:
+                self._save_image(visuals, f"{prefix}_{iter_idx}")
 
             # Averages list of dictionaries within self.metrics
             averaged_metrics = {}
@@ -46,7 +46,7 @@ class EvaluationTracker(BaseTracker):
                 metric_average = sum(metric[key] for metric in self.metrics) / len(self.metrics)
                 averaged_metrics[key] = metric_average
 
-            self._log_message(iter_idx, averaged_metrics)
+            self._log_message(iter_idx, averaged_metrics, prefix=prefix)
 
             if self.wandb:
                 self.wandb.log_iter(iter_idx=iter_idx,
@@ -54,7 +54,7 @@ class EvaluationTracker(BaseTracker):
                                     losses={},
                                     visuals=self.visuals,
                                     metrics=averaged_metrics,
-                                    mode=self.conf.mode)
+                                    mode=prefix)
 
             # TODO: Adapt eval tracker for tensorboard
             if self.tensorboard:
@@ -65,12 +65,12 @@ class EvaluationTracker(BaseTracker):
             self.metrics = []
             self.visuals = []
 
-    def _log_message(self, index, metrics):
+    def _log_message(self, index, metrics, prefix=''):
         message = '\n' + 20 * '-' + ' '
         message += f'({self.conf.mode} at iter {index})'
         message += ' ' + 20 * '-' + '\n'
 
         for k, v in metrics.items():
-            message += '%s: %.3f ' % (k, v)
+            message += '%s: %.3f ' % (f'{prefix}_{k}', v)
 
         self.logger.info(message)
