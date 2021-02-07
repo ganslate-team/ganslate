@@ -1,6 +1,6 @@
 import logging
 
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from midaGAN import data
 from midaGAN.nn import gans, generators, discriminators
@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 IMPORT_LOCATIONS = {
     "dataset": [data],
+    "datasets": [data], 
     "gan": [gans],
     "generator": [generators],
     "discriminator": [discriminators],
@@ -26,7 +27,10 @@ def init_config(conf, config_class):
 
     # Allows the framework to find user-defined, project-specific, dataset classes and their configs
     if conf.project_dir:
-        IMPORT_LOCATIONS["dataset"].append(conf.project_dir)
+
+        for key in ["dataset", "datasets"]:
+            IMPORT_LOCATIONS[key].append(conf.project_dir)
+
         logger.info(f"Project directory {conf.project_dir} added to the"
                     " path to allow imports of modules from it.")
 
@@ -51,9 +55,18 @@ def instantiate_dataclasses_from_yaml(conf):
         field = OmegaConf.select(conf, key)
         # See if that field is a dataclass itself by checking its name
         if is_dataclass(key_name, field):
-            dataclass = init_dataclass(key_name, field)
-            # Update the field for that key with the newly instantiated dataclass
-            OmegaConf.update(conf, key, OmegaConf.merge(dataclass, field), merge=False)
+            if isinstance(field, ListConfig):
+                dataclasses = []
+                for f in field:
+                    dataclass = init_dataclass(key_name, f)
+                    dataclasses.append(OmegaConf.merge(dataclass, f))
+                OmegaConf.update(conf, key,dataclasses, merge=False)
+
+            else:
+                dataclass = init_dataclass(key_name, field)
+                # Update the field for that key with the newly instantiated dataclass
+                OmegaConf.update(conf, key, OmegaConf.merge(dataclass, field), merge=False)
+
     return conf
 
 
@@ -72,6 +85,11 @@ def is_dataclass(key, field):
     if isinstance(field, DictConfig):
         if key in IMPORT_LOCATIONS.keys():
             return True
+
+    if isinstance(field, ListConfig):
+        if key in IMPORT_LOCATIONS.keys():
+            return True
+
     return False
 
 
