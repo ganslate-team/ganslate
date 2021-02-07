@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from midaGAN.engines.base import BaseEngineWithInference
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
 from midaGAN.utils import environment

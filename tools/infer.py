@@ -10,20 +10,9 @@ except ImportError:
     sys.path.append('./')
     import midaGAN
 
-from midaGAN.inferer import Inferer
-from midaGAN.utils import communication, environment
+from midaGAN.engines.inferer import Inferer
+from midaGAN.utils import communication
 from midaGAN.utils.builders import build_conf
-
-
-def parse_input(input_path):
-    """This function should:
-        (1) Read the input
-        (2) Preprocess it as done in the training phase
-    Since the step 2 can vary greatly, it needs to be specific to each project,
-    so the user has to implement it on their own if they wish to deploy the model
-    for inference.
-    """
-    raise NotImplementedError()
 
 
 def main():
@@ -31,8 +20,6 @@ def main():
     communication.init_distributed()
 
     conf = build_conf()
-    environment.setup_logging_with_config(conf)
-
     inferer = Inferer(conf)
     inferer.run()
 

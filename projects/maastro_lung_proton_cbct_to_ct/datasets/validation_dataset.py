@@ -1,5 +1,4 @@
 from pathlib import Path
-import random
 import logging
 import numpy as np
 import torch
@@ -7,14 +6,9 @@ from torch.utils.data import Dataset
 
 import midaGAN
 from midaGAN.utils import io, sitk_utils
-from midaGAN.data.utils.ops import pad
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
 from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
-from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.body_mask import apply_body_mask
-from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
-
-#from cbcttoct_train_dataset import mask_out_ct, clamp_normalize
 
 # Config imports
 from typing import Tuple

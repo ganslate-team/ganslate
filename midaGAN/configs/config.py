@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from midaGAN.configs.training import TrainConfig
 from midaGAN.configs.evaluation import ValidationConfig, TestConfig
+from midaGAN.configs.inference import InferenceConfig
 
 
 @dataclass
@@ -15,3 +16,4 @@ class Config:
     train: TrainConfig = TrainConfig()
     val: Optional[ValidationConfig] = None
     test: Optional[TestConfig] = None
+    infer: Optional[InferenceConfig] = None

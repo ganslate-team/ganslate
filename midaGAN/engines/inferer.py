@@ -12,6 +12,7 @@ class Inferer(BaseEngineWithInference):
 
         # Logging, dataloader and tracker only when not in deployment mode
         if not self.conf.infer.is_deployment:
+            assert self.conf.infer.dataset, "Please specify the dataset for inference."
             environment.setup_logging_with_config(self.conf)
             self.tracker = InferenceTracker(self.conf)
             self.data_loader = build_loader(self.conf)

@@ -60,3 +60,9 @@ test:
     #load_iter: 1
     dataset: "${val.dataset}"
     sliding_window: "${val.sliding_window}"
+
+infer:
+    dataset:
+        name: "CBCTtoCTInferenceDataset"
+        root: "/mnt/14F117A002BC354B/maastro_proton_cbct_ct_processed_eval"
+    sliding_window: "${val.sliding_window}"
