@@ -37,7 +37,7 @@ EXTENSIONS = ['.nrrd']
 class ElektaPhantomDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "ElektaPhantomDataset"
     hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
     insert_values: Dict[str, int] = field(
         default_factory=lambda: {
             "Air": -1000,
