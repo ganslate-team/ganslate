@@ -33,9 +33,10 @@ class EvaluationTracker(BaseTracker):
         Push samples to start logging
         """
         if communication.get_local_rank() == 0:
-
-            for visuals in self.visuals:
-                self._save_image(visuals, iter_idx)
+                
+            for idx, visual in enumerate(self.visuals):
+                visual['name'] = f"{visual['name']}_{idx}"
+                self._save_image(visual, iter_idx)
 
             # Averages list of dictionaries within self.metrics
             averaged_metrics = {}
