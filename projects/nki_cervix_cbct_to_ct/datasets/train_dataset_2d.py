@@ -86,7 +86,7 @@ class CBCTtoCT2DDataset(Dataset):
         CT = sitk_utils.load(path_CT)
 
         # Subtract 1024 from CBCT to map values from grayscale to HU approx
-        CBCT = CBCT - 1024
+        CBCT = CBCT - 1000
 
         # Truncate CBCT based on size of FOV in the image
         CBCT = truncate_CBCT_based_on_fov(CBCT)
