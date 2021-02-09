@@ -59,10 +59,10 @@ val:
     freq: 2
     datasets: 
     -   name: CBCTtoCTValDataset
-        root: /repos/Maastro/nki_cervix
-        mask_labels: ["Cervix"]
-    -   name: PhantomDataset
-        root: /repos/Maastro/nki_cervix
+        root: /repos/Maastro/nki_cervix/valid
+        
+    -   name: ElektaPhantomDataset
+        root: /repos/Maastro/nki_cervix/phantom
 
     sliding_window:
         window_size: "${train.dataset.patch_size}"
