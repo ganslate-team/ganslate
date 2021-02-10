@@ -18,7 +18,7 @@ train:
 
     dataset: 
         name: "CBCTtoCT2DDataset"
-        root: /repos/Maastro/nki_cervix
+        root: /repos/Maastro/nki_cervix/train
         hounsfield_units_range: [-1024, 2048]
         num_workers: 0
         image_size: [128, 128]
@@ -54,7 +54,7 @@ val:
     freq: 2
     dataset: 
         name: CBCTtoCTValDataset
-        root: /repos/Maastro/nki_cervix
+        root: /repos/Maastro/nki_cervix/valid
     sliding_window:
         window_size: "${train.dataset.image_size}"
 

@@ -82,8 +82,6 @@ class PiCycleGAN(BaseGAN):
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))
 
-        self.setup_loss_masking(self.conf.train.gan.optimizer.loss_mask)
-
     def set_input(self, input):
         """Unpack input data from the dataloader.
         Parameters:
@@ -99,9 +97,6 @@ class PiCycleGAN(BaseGAN):
         discriminators = [self.networks['D_A'], self.networks['D_B']]
 
         self.forward()  # compute fake images and reconstruction images.
-
-        # Mask visuals if masking for certain value enabled
-        self.mask_current_visuals()
 
         # Compute generator based metrics dependent on visuals
         self.metrics.update(self.training_metrics.compute_metrics_G(self.visuals))
