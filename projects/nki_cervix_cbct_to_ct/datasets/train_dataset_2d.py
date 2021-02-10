@@ -31,7 +31,7 @@ class CBCTtoCT2DDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCT2DDataset"
     image_size: Tuple[int, int] = (256, 256)
     hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
     focal_region_proportion: float = 0.2  # Proportion of focal region size compared to original volume size
     enable_cache: bool = False
     image_channels: int = 1

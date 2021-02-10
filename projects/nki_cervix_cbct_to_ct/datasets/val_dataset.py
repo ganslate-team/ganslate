@@ -37,7 +37,7 @@ EXTENSIONS = ['.nrrd']
 class CBCTtoCTValDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTValDataset"
     hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
     mask_labels: List[str] = field(
         default_factory=lambda: [])
 
@@ -52,15 +52,12 @@ class CBCTtoCTValDataset(Dataset):
         self.paths = {}
 
         for patient in self.root_path.iterdir():
-
-            # Sorted list of files is returned, pick the first CBCT volume.
-
-            if (patient / "registered").is_dir():
-                first_CBCT = (patient / "registered" / "target").with_suffix(".nrrd")
-                dpCT = (patient / "registered" / "deformed").with_suffix(".nrrd")
+            if patient.is_dir():
+                first_CBCT = (patient / "target").with_suffix(".nrrd")
+                dpCT = (patient / "deformed").with_suffix(".nrrd")
                 masks = {}
                 for mask in self.mask_labels:
-                    masks.update({mask: (patient / "registered" / mask).with_suffix(".nrrd")})
+                    masks.update({mask: (patient / mask).with_suffix(".nrrd")})
 
                 self.paths[patient] = {"CT": dpCT, "CBCT": first_CBCT, "masks": masks}
 
@@ -125,11 +122,15 @@ class CBCTtoCTValDataset(Dataset):
         """Allows the Tester and Validator to calculate the metrics in
         the original range of values.
         """
-        return min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
+        tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
+
+        # Offset tensor with hu_min to get CT number from HU
+        # Useful for things like PSNR calculations
+        return tensor - self.hu_min
 
     def save(self, tensor, save_dir, metadata=None):
         tensor = tensor.squeeze().cpu()
-        tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
+        tensor = self.denormalize(tensor)
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],

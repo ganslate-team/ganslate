@@ -18,8 +18,7 @@ train:
 
     dataset: 
         name: "CBCTtoCTDataset"
-        root: /repos/Maastro/nki_cervix
-        hounsfield_units_range: [-1024, 2048]
+        root: /repos/Maastro/nki_cervix/train
         num_workers: 4
         patch_size: [8, 128, 128]
         enable_masking: True

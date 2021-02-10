@@ -38,7 +38,7 @@ EXTENSIONS = ['.nrrd']
 class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTInferenceDataset"
     hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
     enable_masking: bool = False
     enable_bounding: bool = True
     cbct_mask_threshold: int = -700
