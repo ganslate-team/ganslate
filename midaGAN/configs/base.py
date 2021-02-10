@@ -14,11 +14,6 @@ class BaseDatasetConfig:
 
 
 ############ GAN Optimizer, Discriminator, Generator, and Framework #############
-@dataclass
-class LossMaskingConfig:
-    masking_value: float = -1
-    operator: str = "eq"
-
 
 @dataclass
 class BaseOptimizerConfig:
@@ -27,7 +22,6 @@ class BaseOptimizerConfig:
     beta2: float = 0.999
     lr_D: float = 0.0001
     lr_G: float = 0.0002
-    loss_mask: Optional[LossMaskingConfig] = None
 
 
 @dataclass

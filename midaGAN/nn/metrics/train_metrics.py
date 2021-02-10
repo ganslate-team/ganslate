@@ -9,9 +9,7 @@ class TrainingMetrics:
         self.output_distributions = True if conf.train.metrics.output_distributions_D else False
 
         if conf.train.metrics.ssim:
-            channels_ssim = conf.train.dataset.patch_size[0] if 'patch_size' in conf.train.dataset.keys() \
-                        else conf.train.dataset.image_channels
-            self.ssim = ssim.SSIM(data_range=1, channel=channels_ssim, nonnegative_ssim=True)
+            self.ssim = ssim.SSIMLoss()
         else:
             self.ssim = None
 
@@ -39,17 +37,13 @@ class TrainingMetrics:
         # Gradient computation not needed for metric computation
         input = input.detach()
         target = target.detach()
-
-        input = reshape_to_4D_if_5D(input)
-        target = reshape_to_4D_if_5D(target)
-
         # Data range needs to be positive and normalized
         # https://github.com/VainF/pytorch-msssim#2-normalized-input
         input = (input + 1) / 2
         target = (target + 1) / 2
 
         if self.ssim:
-            return 1 - self.ssim(input, target)
+            return 1 - self.ssim(input, target, data_range=1)
         else:
             return None
 

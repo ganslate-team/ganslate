@@ -16,7 +16,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_identity: float = 0
     lambda_inverse: float = 0
     proportion_ssim: float = 0.84
-    ssim_type: str = "SSIM"  # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
 
 
 @dataclass
@@ -86,7 +85,6 @@ class CycleGAN(BaseGAN):
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))
 
-        self.setup_loss_masking(self.conf.train.gan.optimizer.loss_mask)
 
     def set_input(self, input):
         """Unpack input data from the dataloader.
@@ -106,9 +104,6 @@ class CycleGAN(BaseGAN):
 
         # Compute generator based metrics dependent on visuals
         self.metrics.update(self.training_metrics.compute_metrics_G(self.visuals))
-
-        # Mask visuals if masking for certain value enabled
-        self.mask_current_visuals()
 
         # ------------------------ G (A and B) ----------------------------------------------------
         self.set_requires_grad(discriminators, False)  # Ds require no gradients when optimizing Gs
