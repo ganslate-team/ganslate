@@ -38,7 +38,7 @@ class CBCTtoCTDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTDataset"
     patch_size: Tuple[int, int, int] = field(default_factory=lambda: (32, 32, 32))
     hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
+        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
     focal_region_proportion: float = 0.2  # Proportion of focal region size compared to original volume size
     enable_masking: bool = True
     ct_mask_threshold: int = -300
