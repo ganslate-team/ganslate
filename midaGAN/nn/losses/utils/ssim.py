@@ -31,12 +31,12 @@ class SSIMLoss(nn.Module):
 
     def forward(self, X: torch.Tensor, Y: torch.Tensor, data_range: torch.Tensor):
         assert X.shape == Y.shape, "X and Y need to be the same shape"
-        assert X.ndim in [4, 5], "Dimensions of input must be NxCxDxHxW"
+        assert X.ndim in [4, 5], "Dimensions of input must be NxCxHxW or NxCxDxHxW"
 
-        # Replace C with D if NxCxDxHxW 
+        # if NxCxDxHxW, convert NxC to N only giving NxDxHxW
         if X.ndim == 5:
-            X, Y = X.squeeze(dim=1), Y.squeeze(dim=1)
-        
+            X = X.view(-1, *X.shape[2:])
+            Y = Y.view(-1, *Y.shape[2:])
         channels = X.shape[1]
         self.w = torch.ones(1, channels, self.win_size, self.win_size, device=X.device) / self.win_size ** 2
 
