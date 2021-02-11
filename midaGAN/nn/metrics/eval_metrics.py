@@ -5,62 +5,28 @@ from typing import Optional
 import numpy as np
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
-class EvaluationMetrics:
-    def __init__(self, conf):
-        self.conf = conf
 
-    def get_metrics(self, input, target, mask=None):
-
-        input = get_npy(input, mask=mask)
-        target = get_npy(target, mask=mask)
-
-        metrics = {}
-
-        if self.conf[self.conf.mode].metrics.ssim:
-            metrics['SSIM'] = ssim(target, input)
-
-        if self.conf[self.conf.mode].metrics.mae:
-            metrics['MAE'] = mae(target, input)            
-
-        if self.conf[self.conf.mode].metrics.mse:
-            metrics['MSE'] = mse(target, input)
-
-        if self.conf[self.conf.mode].metrics.nmse:
-            metrics['NMSE'] = nmse(target, input)
-
-        if self.conf[self.conf.mode].metrics.psnr:
-            metrics['PSNR'] = psnr(target, input)
-
-        return metrics
-
-    def get_cycle_metrics(self, input, target):
-        input = get_npy(input)
-        target = get_npy(target)
-        metrics = {}
-        metrics["cycle_SSIM"] = ssim(input, target)
-
-        return metrics
-
-
-def get_npy(input, mask=None):
+def get_npy(input):
     """
     Gets numpy array from torch tensor after squeeze op.
     If a mask is provided, a masked array is created.
     """
     input = input.squeeze()
     input = input.detach().cpu().numpy()
-    
-    if mask is not None:
-        mask = mask.squeeze()
-        mask = mask.detach().cpu().numpy()
-        mask = mask.astype(np.bool)
-        # Masked array needs negated masks as it decides 
-        # what element to ignore based on True values
-        negated_mask = ~mask
-        input = np.ma.masked_array(input*mask, mask=negated_mask)
-
     return input
 
+def create_masked_array(input, mask):
+    """
+    Create a masked array after applying the respective mask. 
+    This mask array will filter values across different operations such as mean
+    """
+    mask = mask.squeeze()
+    mask = mask.detach().cpu().numpy()
+    mask = mask.astype(np.bool)
+    # Masked array needs negated masks as it decides 
+    # what element to ignore based on True values
+    negated_mask = ~mask
+    return np.ma.masked_array(input*mask, mask=negated_mask)
 
 # Metrics below are taken from
 # https://github.com/facebookresearch/fastMRI/blob/master/fastmri/evaluate.py
@@ -95,3 +61,37 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np
 
     return ssim / gt.shape[0]
 
+METRIC_DICT = {
+    "ssim": ssim,
+    "mse":  mse,
+    "nmse": nmse,
+    "psnr": psnr,
+    "mae":  mae
+}
+
+class EvaluationMetrics:
+    def __init__(self, conf):
+        self.conf = conf
+
+    def get_metrics(self, input, target, mask=None):
+        input, target = get_npy(input), get_npy(target)
+
+        # Apply masks if provided
+        if mask is not None:
+            input = create_masked_array(input, mask)
+            target = create_masked_array(target, mask)
+
+        metrics = {}
+        for metric_name, metric_fn in METRIC_DICT.items():
+            if getattr(self.conf[self.conf.mode].metrics, metric_name):
+                metrics[metric_name] = metric_fn(target, input)
+
+        return metrics
+
+    def get_cycle_metrics(self, input, target):
+        input = get_npy(input)
+        target = get_npy(target)
+        metrics = {}
+        metrics["cycle_SSIM"] = ssim(input, target)
+
+        return metrics
