@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from midaGAN import configs
 from midaGAN.data.utils.ops import pad
+from midaGAN.data.utils.body_mask import get_body_mask
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
 from midaGAN.data.utils.registration_methods import (register_CT_to_CBCT,
@@ -95,7 +96,12 @@ class CBCTtoCTValDataset(Dataset):
 
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
+        body_mask = get_body_mask(CT, hu_threshold=-300)
+
         masks = {k: sitk_utils.get_npy(v) for k, v in masks.items()}
+        
+        if "BODY" not in masks:
+            masks["BODY"] = body_mask
 
         CT = torch.tensor(CT)
         CBCT = torch.tensor(CBCT)
