@@ -6,62 +6,40 @@ import numpy as np
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
 
-class EvaluationMetrics:
-
-    def __init__(self, conf):
-        self.conf = conf
-
-    def get_metrics(self, input, target, suffix=None):
-
-        input = tensor_to_3D_numpy(input)
-        target = tensor_to_3D_numpy(target)
-
-        metrics = {}
-
-        if self.conf.metrics.ssim:
-            metrics['SSIM'] = ssim(target, input)
-
-        if self.conf.metrics.mse:
-            metrics['MSE'] = mse(target, input)
-
-        if self.conf.metrics.nmse:
-            metrics['NMSE'] = nmse(target, input)
-
-        if self.conf.metrics.psnr:
-            metrics['PSNR'] = psnr(target, input)
-
-
-        # Append suffixes to metrics, used when metrics need to 
-        # denote specifics such as mask-specific metrics            
-        if suffix:
-            metrics = {f"{k}_{suffix}": v for k,v in metrics.items()}
-
-        return metrics
-
-
-    def get_cycle_metrics(self, input, target):
-        input = tensor_to_3D_numpy(input)
-        target = tensor_to_3D_numpy(target)
-        metrics = {}
-        metrics["cycle_SSIM"] = ssim(input, target)
-
-        return metrics        
-
-def tensor_to_3D_numpy(input):
+def get_npy(input):
+    """
+    Gets numpy array from torch tensor after squeeze op.
+    If a mask is provided, a masked array is created.
+    """
     input = input.squeeze()
     input = input.detach().cpu().numpy()
     return input
 
+def create_masked_array(input, mask):
+    """
+    Create a masked array after applying the respective mask. 
+    This mask array will filter values across different operations such as mean
+    """
+    mask = mask.squeeze()
+    mask = mask.detach().cpu().numpy()
+    mask = mask.astype(np.bool)
+    # Masked array needs negated masks as it decides 
+    # what element to ignore based on True values
+    negated_mask = ~mask
+    return np.ma.masked_array(input*mask, mask=negated_mask)
 
 # Metrics below are taken from
 # https://github.com/facebookresearch/fastMRI/blob/master/fastmri/evaluate.py
 # Copyright (c) Facebook, Inc. and its affiliates.
+# Added MAE to the list of metrics
 
+def mae(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+    """Compute Mean Absolute Error (MAE)"""
+    return np.mean(np.abs(gt - pred))
 
 def mse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Mean Squared Error (MSE)"""
     return np.mean((gt - pred)**2)
-
 
 def nmse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Normalized Mean Squared Error (NMSE)"""
@@ -82,3 +60,38 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np
         ssim = ssim + structural_similarity(gt[slice_num], pred[slice_num], data_range=maxval)
 
     return ssim / gt.shape[0]
+
+METRIC_DICT = {
+    "ssim": ssim,
+    "mse":  mse,
+    "nmse": nmse,
+    "psnr": psnr,
+    "mae":  mae
+}
+
+class EvaluationMetrics:
+    def __init__(self, conf):
+        self.conf = conf
+
+    def get_metrics(self, input, target, mask=None):
+        input, target = get_npy(input), get_npy(target)
+
+        # Apply masks if provided
+        if mask is not None:
+            input = create_masked_array(input, mask)
+            target = create_masked_array(target, mask)
+
+        metrics = {}
+        for metric_name, metric_fn in METRIC_DICT.items():
+            if getattr(self.conf[self.conf.mode].metrics, metric_name):
+                metrics[metric_name] = metric_fn(target, input)
+
+        return metrics
+
+    def get_cycle_metrics(self, input, target):
+        input = get_npy(input)
+        target = get_npy(target)
+        metrics = {}
+        metrics["cycle_SSIM"] = ssim(input, target)
+
+        return metrics

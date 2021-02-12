@@ -1,0 +1,65 @@
+project_dir: "./projects/nki_cervix_cbct_to_ct/datasets"
+
+train:
+    cuda: True
+    n_iters: 20
+    n_iters_decay: 0
+    batch_size: 1
+    output_dir: "./checkpoints/test_expt/"
+
+    logging:
+        freq: 1
+        wandb:
+            project: "NKI_CBCT_CT"
+            image_filter: [0.289 ,0.40]
+
+    checkpointing:
+        freq: 10000
+
+    dataset: 
+        name: "CBCTtoCT2DDataset"
+        root: /repos/Maastro/nki_cervix/train
+        hounsfield_units_range: [-1024, 2048]
+        num_workers: 0
+        image_size: [128, 128]
+        enable_masking: True
+      
+    gan:  
+        name: "CycleGAN"
+
+        generator:
+            name: Unet2D
+            in_channels: 1
+
+        discriminator:
+            name: "PatchGAN2D"
+            n_layers: 2
+            in_channels: 1
+
+        optimizer:
+            lambda_A: 25.0
+            lambda_B: 25.0
+            lambda_identity: 0.0
+            lambda_inverse: 0.0
+            proportion_ssim: 0.84
+            lr_D: 0.0002
+            lr_G: 0.0004
+
+
+    metrics: 
+        output_distributions_D: True
+        ssim: True
+    
+val:
+    freq: 2
+    dataset: 
+        name: CBCTtoCTValDataset
+        root: /repos/Maastro/nki_cervix/valid
+    sliding_window:
+        window_size: "${train.dataset.image_size}"
+
+# test:
+#     #load_iter: 1
+#     dataset: "${val.dataset}"
+#     sliding_window: "${val.sliding_window}"
+

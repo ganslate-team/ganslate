@@ -1,6 +1,6 @@
 import torch
 import midaGAN.nn.losses.utils.ssim as ssim
-from midaGAN.nn.losses import reshape_to_4D_if_5D
+from midaGAN.nn.utils import reshape_to_4D_if_5D
 
 import logging
 logger = logging.getLogger(__name__)
@@ -16,25 +16,21 @@ class CycleGANLosses:
     """
 
     def __init__(self, conf):
-        lambda_A = conf.gan.optimizer.lambda_A
-        lambda_B = conf.gan.optimizer.lambda_B
-        lambda_identity = conf.gan.optimizer.lambda_identity
-        lambda_inverse = conf.gan.optimizer.lambda_inverse
-        proportion_ssim = conf.gan.optimizer.proportion_ssim
-        ssim_type = conf.gan.optimizer.ssim_type
+        lambda_A = conf.train.gan.optimizer.lambda_A
+        lambda_B = conf.train.gan.optimizer.lambda_B
+        lambda_identity = conf.train.gan.optimizer.lambda_identity
+        lambda_inverse = conf.train.gan.optimizer.lambda_inverse
+        proportion_ssim = conf.train.gan.optimizer.proportion_ssim
 
         # In 3D training, the channel and slice dimensions are merged in SSIM calculationn
         # so the number of channels equals to the number of slices in sampled patches.
         # In 2D training, the number of image channels is defined in the config. TODO: nicer
-        channels_ssim = conf.dataset.patch_size[0] if 'patch_size' in conf.dataset.keys() \
-                        else conf.dataset.image_channels
+        # channels_ssim = conf.train.dataset.patch_size[0] if 'patch_size' in conf.train.dataset.keys() \
+        #                 else conf.train.dataset.image_channels
         # Cycle-consistency - L1, with optional weighted combination with SSIM
         self.criterion_cycle = CycleLoss(lambda_A,
                                          lambda_B,
-                                         proportion_ssim,
-                                         channels_ssim=channels_ssim,
-                                         ssim_type=ssim_type)
-
+                                         proportion_ssim)
         if lambda_identity > 0:
             self.criterion_idt = IdentityLoss(lambda_identity, lambda_A, lambda_B)
         else:
@@ -75,25 +71,13 @@ class CycleGANLosses:
 
 
 class CycleLoss:
-
-    def __init__(self, lambda_A, lambda_B, proportion_ssim, channels_ssim, ssim_type):
+    def __init__(self, lambda_A, lambda_B, proportion_ssim):
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B
 
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
-
-            if hasattr(ssim, ssim_type):
-                logger.info(f"{ssim_type} set as SSIM loss function")
-
-                ssim_module = getattr(ssim, ssim_type)
-            else:
-                logger.warning("Specified SSIM type not found, reverting to using default SSIM")
-                ssim_module = ssim.SSIM
-
-            self.ssim_criterion = ssim_module(data_range=1,
-                                              channel=channels_ssim,
-                                              nonnegative_ssim=True)
+            self.ssim_criterion = ssim.SSIMLoss()
 
             # weights for addition of SSIM and L1 losses
             self.alpha = proportion_ssim
@@ -108,12 +92,6 @@ class CycleLoss:
 
         # cycle-consistency using a weighted combination of SSIM and L1
         if self.ssim_criterion:
-            # Merge channel and slice dimensions of volume inputs to allow calculation of SSIM
-            real_A = reshape_to_4D_if_5D(real_A)
-            real_B = reshape_to_4D_if_5D(real_B)
-            rec_A = reshape_to_4D_if_5D(rec_A)
-            rec_B = reshape_to_4D_if_5D(rec_B)
-
             # Data range needs to be positive and normalized
             # https://github.com/VainF/pytorch-msssim#2-normalized-input
             ssim_real_A = (real_A + 1) / 2
@@ -123,8 +101,8 @@ class CycleLoss:
             ssim_rec_B = (rec_B + 1) / 2
 
             # SSIM criterion returns distance metric
-            loss_ssim_A = self.ssim_criterion(ssim_real_A, ssim_rec_A)
-            loss_ssim_B = self.ssim_criterion(ssim_real_B, ssim_rec_B)
+            loss_ssim_A = self.ssim_criterion(ssim_rec_A, ssim_real_A, data_range=1)
+            loss_ssim_B = self.ssim_criterion(ssim_rec_B, ssim_real_B, data_range=1)
 
             # weighted sum of SSIM and L1 losses for both forward and backward cycle losses
             loss_cycle_A = self.alpha * loss_ssim_A + self.beta * loss_cycle_A

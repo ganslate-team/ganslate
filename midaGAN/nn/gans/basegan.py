@@ -1,21 +1,16 @@
-import os
-from pathlib import Path
-from abc import ABC, abstractmethod
 import logging
+import os
+from abc import ABC, abstractmethod
+from pathlib import Path
 
 import torch
 from torch.nn.parallel import DistributedDataParallel
-from midaGAN.utils import communication
-
-# midaGAN.nn imports
-from midaGAN.nn.utils import get_scheduler, squeeze_z_axis_if_2D
-
-from midaGAN.nn.generators import build_G
-from midaGAN.nn.discriminators import build_D
 
 from midaGAN.nn.metrics.train_metrics import TrainingMetrics
+from midaGAN.nn.utils import get_scheduler
+from midaGAN.utils import communication, io
+from midaGAN.utils.builders import build_D, build_G
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -43,9 +38,9 @@ class BaseGAN(ABC):
 
         self.logger = logging.getLogger(type(self).__name__)
         self.conf = conf
-        self.is_train = conf.is_train
+        self.is_train = self.conf.mode == "train"
         self.device = self._specify_device()
-        self.checkpoint_dir = conf.logging.checkpoint_dir
+        self.output_dir = conf[conf.mode].output_dir
 
         self.visual_names = {}
         self.visuals = {}
@@ -61,6 +56,14 @@ class BaseGAN(ABC):
             elif name.startswith('D'):
                 self.networks[name] = build_D(self.conf, self.device)
 
+    @abstractmethod
+    def init_criterions(self):
+        """Initialize criterions (losses)"""
+
+    @abstractmethod
+    def init_optimizers(self):
+        """Initialize optimizers"""
+
     def init_metrics(self):
         # Intialize training metrics
         self.training_metrics = TrainingMetrics(self.conf)
@@ -72,7 +75,7 @@ class BaseGAN(ABC):
         if torch.distributed.is_initialized():
             rank = communication.get_local_rank()
             return torch.device(f"cuda:{rank}")  # distributed GPU training
-        elif self.conf.use_cuda:
+        elif self.conf[self.conf.mode].cuda:
             return torch.device('cuda:0')  # non-distributed GPU training
         else:
             return torch.device('cpu')
@@ -96,14 +99,15 @@ class BaseGAN(ABC):
         """Set up a GAN model. Does the following:
             (1) Initialize its networks, criterions, optimizers, metrics and schedulers
             (2) Converts the networks to mixed precision, if specified
-            (3) Loads a checkpoint if continuing training or inferencing            
+            (3) Loads a checkpoint if continuing training or inferencing
             (4) Applies parallelization to the model if possible
         """
         assert 'G' or 'G_A' in self.networks.keys(), \
             "The (main) generator has to be named `G` or `G_A`."
 
-        if self.conf.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             from apex import amp
+
             # Allow the methods to access AMP that was imported here
             globals()["amp"] = amp
 
@@ -122,11 +126,11 @@ class BaseGAN(ABC):
                 raise ValueError(
                     "When inferring there should be only one network initialized - generator.")
 
-        if self.conf.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             self.convert_to_mixed_precision()
 
-        if self.conf.load_checkpoint:
-            self.load_networks(self.conf.load_checkpoint.iter)
+        if self.conf[self.conf.mode].checkpointing.load_iter:
+            self.load_networks(self.conf[self.conf.mode].checkpointing.load_iter)
 
         num_devices = int(os.environ.get('WORLD_SIZE', torch.cuda.device_count()))
         if num_devices > 1:
@@ -145,7 +149,7 @@ class BaseGAN(ABC):
                              By initializing Amp with `num_losses=1` and setting `loss_id=0` for each loss, 
                              it will use a global scaler for all losses.
         """
-        if self.conf.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             with amp.scale_loss(loss, optimizer, loss_id) as scaled_loss:
                 scaled_loss.backward(retain_graph=retain_graph)
         else:
@@ -163,7 +167,7 @@ class BaseGAN(ABC):
                                                               device_ids=[self.device],
                                                               output_device=self.device,
                                                               broadcast_buffers=False)
-            elif self.conf.use_cuda and torch.cuda.device_count() > 0:
+            elif self.conf[self.conf.mode].cuda and torch.cuda.device_count() > 0:
                 message = (
                     "Multi-GPU runs must be launched in distributed mode using `torch.distributed.launch`."
                     " Alternatively, set CUDA_VISIBE_DEVICES=<GPU_ID> to use a single GPU if multiple are present."
@@ -181,7 +185,7 @@ class BaseGAN(ABC):
                           If `num_losses=1`, Amp will still support multiple losses/backward passes, 
                           but use a single global loss scale for all of them.
         """
-        opt_level = self.conf.opt_level
+        opt_level = self.conf[self.conf.mode].opt_level
         networks = list(self.networks.values())  # fetch the networks
 
         # initialize mixed precision on networks and, if training, on optimizers
@@ -212,7 +216,8 @@ class BaseGAN(ABC):
             iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
         checkpoint = {}
-        checkpoint_path = Path(self.checkpoint_dir) / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.output_dir) / f"checkpoints/{iter_idx}.pth"
+        io.mkdirs(checkpoint_path.parent)
 
         # add all networks to checkpoint
         for name, net in self.networks.items():
@@ -226,7 +231,7 @@ class BaseGAN(ABC):
         checkpoint['optimizer_D'] = self.optimizers['D'].state_dict()
 
         # save apex mixed precision
-        if self.conf.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             checkpoint['amp'] = amp.state_dict()
 
         torch.save(checkpoint, checkpoint_path)
@@ -236,7 +241,7 @@ class BaseGAN(ABC):
         Parameters:
             iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
         """
-        checkpoint_path = Path(self.checkpoint_dir).resolve() / f"{iter_idx}_checkpoint.pth"
+        checkpoint_path = Path(self.output_dir).resolve() / f"checkpoints/{iter_idx}.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         self.logger.info(f"Loaded the checkpoint from `{checkpoint_path}`")
 
@@ -247,7 +252,7 @@ class BaseGAN(ABC):
         # load amp state
         # TODO: what about opt_level, does it matter if it's different from before?
         # TODO: what if trained per-loss loss-scale and now using global or vice versa? Just reset it, i.e. ignore the amp state_dict?
-        if self.conf.mixed_precision:
+        if self.conf[self.conf.mode].mixed_precision:
             if "amp" not in checkpoint:
                 self.logger.warning("This checkpoint was not trained using mixed precision.")
             else:
@@ -259,13 +264,13 @@ class BaseGAN(ABC):
 
         # load optimizers
         if self.is_train:
-            if self.conf.load_checkpoint.reset_optimizers:
-                self.logger.info(
-                    "Optimizers' state_dicts were not loaded. Optimizers starting from scratch.")
-            else:
+            if self.conf[self.conf.mode].load_optimizers:
                 self.logger.info("Optimizers' state_dicts are loaded from the checkpoint.")
                 self.optimizers['G'].load_state_dict(checkpoint['optimizer_G'])
                 self.optimizers['D'].load_state_dict(checkpoint['optimizer_D'])
+            else:
+                self.logger.info(
+                    "Optimizers' state_dicts were not loaded. Optimizers starting from scratch.")
 
     def set_requires_grad(self, networks, requires_grad=False):
         """Set requies_grad=False for all the networks to avoid unnecessary computations
@@ -291,7 +296,6 @@ class BaseGAN(ABC):
         generator = 'G' if 'G' in self.networks.keys() else 'G_A'
 
         with torch.no_grad():
-            input = squeeze_z_axis_if_2D(input)
             return self.networks[generator].forward(input)
 
     def get_loggable_data(self):
@@ -301,55 +305,3 @@ class BaseGAN(ABC):
             learning_rates[f"lr_{name}"] = optim.param_groups[0]['lr']
 
         return learning_rates, self.losses, self.visuals, self.metrics
-
-    def setup_loss_masking(self, mask_config):
-        """
-        Setup masking
-        """
-        self.enable_mask = False
-
-        if mask_config:
-            if hasattr(torch, mask_config.operator):
-                self.enable_mask = True
-                self.masking_operator = getattr(torch, mask_config.operator)
-                self.masking_value = torch.tensor(mask_config.masking_value).to(self.device)
-
-            else:
-                logger.warning("No valid operator match found, masking will be disabled!")
-
-        logger.info(f"Masking values enabled: {self.enable_mask}")
-
-    def mask_current_visuals(self):
-        """
-        Mask all items in visuals if they are tensors. This is done to 
-        ignore value updates outside a mask. 
-
-        Reference: https://forums.fast.ai/t/image-segmentation-leaving-some-pixels-unlabeled/40967/2
-
-        A better way to do it would be to operate directly on loss tensors but this will be quite ugly
-        given the structure of the current codebase. The issue is scaling of the loss, the mean will consider
-        the masked tensors here as well. 
-
-        But since the sizes are more or less similar across different data instances, this should be okay for now!
-        """
-
-        # Type needs to be casted for mixed_precision
-
-        if self.enable_mask:
-
-            mask_A = ~self.masking_operator(self.visuals['real_A'], self.masking_value)
-            mask_B = ~self.masking_operator(self.visuals['real_B'], self.masking_value)
-
-            # Values dependent on real_A use mask_A
-            for name in self.visual_names['A']:
-                if self.visuals[name] is not None:  # Check if the visual is enabled for this run
-                    cast_type = self.visuals[name].type()
-                    self.masking_value = self.masking_value.type(cast_type)
-                    self.visuals[name] = torch.where(mask_A, self.visuals[name], self.masking_value)
-
-            # Values dependent on real_B use mask_B
-            for name in self.visual_names['B']:
-                if self.visuals[name] is not None:  # Check if the visual is enabled for this run
-                    cast_type = self.visuals[name].type()
-                    self.masking_value = self.masking_value.type(cast_type)
-                    self.visuals[name] = torch.where(mask_B, self.visuals[name], self.masking_value)

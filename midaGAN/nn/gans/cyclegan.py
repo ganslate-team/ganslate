@@ -7,7 +7,6 @@ from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
-from midaGAN.nn.utils import squeeze_z_axis_if_2D
 
 
 @dataclass
@@ -17,7 +16,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_identity: float = 0
     lambda_inverse: float = 0
     proportion_ssim: float = 0.84
-    ssim_type: str = "SSIM"  # Possible options are ThreeComponentSSIM, SSIM, MS-SSIM
 
 
 @dataclass
@@ -60,24 +58,24 @@ class CycleGAN(BaseGAN):
 
         if self.is_train:
             # Create image buffer to store previously generated images
-            self.fake_A_pool = ImagePool(conf.gan.pool_size)
-            self.fake_B_pool = ImagePool(conf.gan.pool_size)
+            self.fake_A_pool = ImagePool(conf.train.gan.pool_size)
+            self.fake_B_pool = ImagePool(conf.train.gan.pool_size)
 
         # Set up networks, optimizers, schedulers, mixed precision, checkpoint loading, network parallelization...
         self.setup()
 
     def init_criterions(self):
         # Standard GAN loss
-        self.criterion_adv = AdversarialLoss(self.conf.gan.optimizer.adversarial_loss_type).to(
-            self.device)
+        self.criterion_adv = AdversarialLoss(
+            self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
         # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
         self.criterion_G = CycleGANLosses(self.conf)
 
     def init_optimizers(self):
-        lr_G = self.conf.gan.optimizer.lr_G
-        lr_D = self.conf.gan.optimizer.lr_D
-        beta1 = self.conf.gan.optimizer.beta1
-        beta2 = self.conf.gan.optimizer.beta2
+        lr_G = self.conf.train.gan.optimizer.lr_G
+        lr_D = self.conf.train.gan.optimizer.lr_D
+        beta1 = self.conf.train.gan.optimizer.beta1
+        beta2 = self.conf.train.gan.optimizer.beta2
 
         params_G = itertools.chain(self.networks['G_A'].parameters(),
                                    self.networks['G_B'].parameters())
@@ -87,7 +85,6 @@ class CycleGAN(BaseGAN):
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))
 
-        self.setup_loss_masking(self.conf.gan.optimizer.loss_mask)
 
     def set_input(self, input):
         """Unpack input data from the dataloader.
@@ -107,9 +104,6 @@ class CycleGAN(BaseGAN):
 
         # Compute generator based metrics dependent on visuals
         self.metrics.update(self.training_metrics.compute_metrics_G(self.visuals))
-
-        # Mask visuals if masking for certain value enabled
-        self.mask_current_visuals()
 
         # ------------------------ G (A and B) ----------------------------------------------------
         self.set_requires_grad(discriminators, False)  # Ds require no gradients when optimizing Gs
@@ -223,12 +217,11 @@ class CycleGAN(BaseGAN):
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=0)
-        
-    def infer(self, input, cycle='A'):
-        assert cycle == 'A' or cycle == 'B', \
-            "Infer needs an input of either cycle with A or B domain as input"
-        assert f'G_{cycle}' in self.networks.keys()     
 
-        input = squeeze_z_axis_if_2D(input)
+    def infer(self, input, cycle='A'):
+        assert cycle in ['A', 'B'], \
+            "Infer needs an input of either cycle with A or B domain as input"
+        assert f'G_{cycle}' in self.networks.keys()
+
         with torch.no_grad():
             return self.networks[f'G_{cycle}'].forward(input)

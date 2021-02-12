@@ -1,12 +1,12 @@
-project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
-use_cuda: True
+project_dir: "./projects/maastro_lung_proton_cbct_to_ct/datasets"
+cuda: True
 n_iters: 20000
 n_iters_decay: 20000
 batch_size: 1
 mixed_precision: True
 
 logging:
-    checkpoint_dir: "./checkpoints/cbcttoct_ex2"
+    output_dir: "./checkpoints/cbcttoct_ex2"
     wandb:
         project: "proton-cbct-ct"
     log_freq: 50

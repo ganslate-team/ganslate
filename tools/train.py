@@ -10,10 +10,9 @@ except ImportError:
     sys.path.append('./')
     import midaGAN
 
-#from midaGAN import configs
-from midaGAN import configs
-from midaGAN.trainer import Trainer
+from midaGAN.engines.trainer import Trainer
 from midaGAN.utils import communication, environment
+from midaGAN.utils.builders import build_conf
 
 
 def main():
@@ -21,8 +20,7 @@ def main():
     # inits distributed mode if ran with torch.distributed.launch
     communication.init_distributed()
 
-    conf = configs.utils.builders.build_training_conf()
-    environment.setup_logging_with_config(conf)
+    conf = build_conf()
 
     trainer = Trainer(conf)
     trainer.run()

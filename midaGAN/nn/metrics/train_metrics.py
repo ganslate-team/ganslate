@@ -1,17 +1,15 @@
 import midaGAN.nn.losses.utils.ssim as ssim
-from midaGAN.nn.losses import reshape_to_4D_if_5D
+from midaGAN.nn.utils import reshape_to_4D_if_5D
 import torch
 
 
 class TrainingMetrics:
 
     def __init__(self, conf):
-        self.output_distributions = True if conf.metrics.output_distributions_D else False
+        self.output_distributions = True if conf.train.metrics.output_distributions_D else False
 
-        if conf.metrics.ssim:
-            channels_ssim = conf.dataset.patch_size[0] if 'patch_size' in conf.dataset.keys() \
-                        else conf.dataset.image_channels
-            self.ssim = ssim.SSIM(data_range=1, channel=channels_ssim, nonnegative_ssim=True)
+        if conf.train.metrics.ssim:
+            self.ssim = ssim.SSIMLoss()
         else:
             self.ssim = None
 
@@ -39,17 +37,13 @@ class TrainingMetrics:
         # Gradient computation not needed for metric computation
         input = input.detach()
         target = target.detach()
-
-        input = reshape_to_4D_if_5D(input)
-        target = reshape_to_4D_if_5D(target)
-
         # Data range needs to be positive and normalized
         # https://github.com/VainF/pytorch-msssim#2-normalized-input
         input = (input + 1) / 2
         target = (target + 1) / 2
 
         if self.ssim:
-            return 1 - self.ssim(input, target)
+            return 1 - self.ssim(input, target, data_range=1)
         else:
             return None
 

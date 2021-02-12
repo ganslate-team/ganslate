@@ -14,12 +14,19 @@ def write(sitk_image, file_path):
     sitk.WriteImage(sitk_image, str(file_path), True)  # True is for useCompression flag
 
 
-def tensor_to_sitk_image(tensor, origin, spacing, direction, dtype='int16'):
-    array = tensor.cpu().numpy().astype(str(dtype))
+def tensor_to_sitk_image(tensor, origin=None, spacing=None, direction=None, dtype='int16'):
+    array = tensor.cpu().numpy().astype(dtype)
     sitk_image = sitk.GetImageFromArray(array)
-    sitk_image.SetOrigin(origin)
-    sitk_image.SetSpacing(spacing)
-    sitk_image.SetDirection(direction)
+
+    if origin is not None:
+        sitk_image.SetOrigin(origin)
+
+    if spacing is not None:
+        sitk_image.SetSpacing(spacing)
+
+    if direction is not None:
+        sitk_image.SetDirection(direction)
+
     return sitk_image
 
 

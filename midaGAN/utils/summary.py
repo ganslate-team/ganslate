@@ -82,7 +82,6 @@ def summary(model, input_size, batch_size=-1, device=torch.device('cuda:0'), dty
     model.apply(register_hook)
 
     # make a forward pass
-    # print(x.shape)
     model(*x)
 
     # remove these hooks
