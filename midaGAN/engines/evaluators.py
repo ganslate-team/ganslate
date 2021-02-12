@@ -92,15 +92,12 @@ class BaseEvaluator(BaseEngineWithInference):
         if "masks" in visuals:
             for label, mask in visuals["masks"].items():
                 mask = mask.to(pred.device)
-                # Mask the predicted and target
-                masked_pred = pred * mask
-                masked_target = target * mask
+                visuals[label] = 2. * mask - 1
                 # Get metrics on masked images
                 metrics = {f"{k}_{label}": v \
-                    for k,v in self.metricizer.get_metrics(masked_pred, masked_target).items()}
+                    for k,v in self.metricizer.get_metrics(pred, target, mask=mask).items()}
                 mask_metrics.update(metrics)
-                visuals[label] = 2. * mask - 1
-
+            
             visuals.pop("masks")
 
         return mask_metrics

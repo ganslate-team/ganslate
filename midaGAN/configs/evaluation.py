@@ -15,7 +15,7 @@ class EvalMetricsConfig:
     # MSE
     mse: bool = True
     # Abs diff between the two images
-    abs_diff: bool = True
+    mae: bool = True
     # Set to true if cycle metrics need to be logged
     # i.e A->B->A followed by comparison between the A
     cycle_metrics: bool = True

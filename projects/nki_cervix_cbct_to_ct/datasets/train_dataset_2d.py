@@ -68,7 +68,6 @@ class CBCTtoCT2DDataset(Dataset):
         self.slice_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
         self.apply_mask = conf.train.dataset.enable_masking
-        self.apply_bound = conf.train.dataset.enable_bounding
         self.cbct_mask_threshold = conf.train.dataset.cbct_mask_threshold
         self.ct_mask_threshold = conf.train.dataset.ct_mask_threshold
 
