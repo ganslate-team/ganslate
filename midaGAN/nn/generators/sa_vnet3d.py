@@ -40,7 +40,7 @@ class SAVnet3DConfig(configs.base.BaseGeneratorConfig):
     is_separable: bool = False
 
     # Need to correspond to the same length as the number of down blocks
-    enable_attention_block: Tuple[bool] = (True, True, True, True)
+    enable_attention_block: Tuple[bool] = (False, False, True, True)
 
 
 class SAVnet3D(nn.Module):
