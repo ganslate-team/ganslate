@@ -3,18 +3,10 @@
 # Changes added by Maastro-CDS-Imaging-Group : https://github.com/Maastro-CDS-Imaging-Group/midaGAN
 # Clean and simplify SSIM computation similar to fastMRI SSIM. 
 
-
-# Taken from: https://github.com/VainF/pytorch-msssim/blob/master/pytorch_msssim/ssim.py
-# Licensed under MIT.
-# Copyright 2020 by Gongfan Fang, Zhejiang University.
-# All rights reserved.
-# Some changes are made to work together with DIRECT.
-
 # ----------------------------------------------------
 # Taken from DIRECT https://github.com/directgroup/direct
 # Copyright (c) DIRECT Contributors
 # Added support for mixed precision by allowing one image to be of type `half` and the other `float`.
-
 # ----------------------------------------------------
 
 import torch
@@ -82,8 +74,7 @@ class SSIMLoss(torch.nn.Module):
 
         C1 = (K1 * data_range)**2
         C2 = (K2 * data_range)**2
-        win = win.to(X.device, dtype=X.dtype)
-
+        
         mu1 = gaussian_filter(X, win)
         mu2 = gaussian_filter(Y, win)
 
