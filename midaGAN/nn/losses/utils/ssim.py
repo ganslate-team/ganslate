@@ -1,7 +1,14 @@
 # coding=utf-8
 # Copyright (c) midaGAN Contributors
 # Changes added by Maastro-CDS-Imaging-Group : https://github.com/Maastro-CDS-Imaging-Group/midaGAN
-# Clean and simplify SSIM computation similar to fastMRI SSIM.
+# Clean and simplify SSIM computation similar to fastMRI SSIM. 
+
+
+# Taken from: https://github.com/VainF/pytorch-msssim/blob/master/pytorch_msssim/ssim.py
+# Licensed under MIT.
+# Copyright 2020 by Gongfan Fang, Zhejiang University.
+# All rights reserved.
+# Some changes are made to work together with DIRECT.
 
 # ----------------------------------------------------
 # Taken from DIRECT https://github.com/directgroup/direct
@@ -11,7 +18,6 @@
 
 import torch
 import torch.nn.functional as F
-
 
 def _fspecial_gauss_1d(size, sigma, device=None, dtype=None):
     """
@@ -33,7 +39,6 @@ def _fspecial_gauss_1d(size, sigma, device=None, dtype=None):
     # Return window as 1x1xsize
     return g.view(1, 1, *g.shape)
 
-
 def gaussian_filter(input, win):
     """
     Blur input with 1D kernel
@@ -41,10 +46,11 @@ def gaussian_filter(input, win):
     out = F.conv2d(input, win, stride=1, padding=0, groups=input.shape[1])
     return F.conv2d(out, win.transpose(2, 3), stride=1, padding=0, groups=input.shape[1])
 
-
 class SSIMLoss(torch.nn.Module):
-
-    def __init__(self, win_size=11, win_sigma=1.5, K=(0.01, 0.03)):
+    def __init__(self,
+                 win_size=11,
+                 win_sigma=1.5,
+                 K=(0.01, 0.03)):
         r""" class for ssim
         Args:
             data_range (float or int, optional): value range of input images. (usually 1.0 or 255)
@@ -69,12 +75,13 @@ class SSIMLoss(torch.nn.Module):
         # Create 1D gaussian window and repeat it over channel dims
         win = _fspecial_gauss_1d(self.win_size, self.win_sigma, dtype=X.dtype, device=X.device)
         win = win.repeat(channels, 1, 1, 1)
-
+        
         K1, K2 = self.K
         compensation = 1.0
 
         C1 = (K1 * data_range)**2
         C2 = (K2 * data_range)**2
+        win = win.to(X.device, dtype=X.dtype)
 
         mu1 = gaussian_filter(X, win)
         mu2 = gaussian_filter(Y, win)
