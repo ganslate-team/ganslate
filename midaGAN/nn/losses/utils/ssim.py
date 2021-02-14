@@ -82,7 +82,7 @@ class SSIMLoss(torch.nn.Module):
 
         C1 = (K1 * data_range)**2
         C2 = (K2 * data_range)**2
-        win = win.to(X.device, dtype=X.dtype)
+
 
         mu1 = gaussian_filter(X, win)
         mu2 = gaussian_filter(Y, win)
