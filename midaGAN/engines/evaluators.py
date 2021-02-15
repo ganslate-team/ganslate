@@ -42,7 +42,8 @@ class BaseEvaluator(BaseEngineWithInference):
 
                 # A dataset object has to have a `save()` method if it
                 # wishes to save the outputs in a particular way or format
-                if saver := getattr(self.dataset, "save", False):
+                saver = getattr(self.dataset, "save", False)
+                if saver:
                     save_dir = self.output_dir / "saved" / prefix
                     if current_idx is not None:
                         save_dir = save_dir / str(current_idx)
@@ -59,7 +60,8 @@ class BaseEvaluator(BaseEngineWithInference):
         pred, target = visuals["fake_B"], visuals["B"]
 
         # Check if dataset has `denormalize` method defined,
-        if denormalize := getattr(self.dataset, "denormalize", False):
+        denormalize = getattr(self.dataset, "denormalize", False)
+        if denormalize:
             pred, target = denormalize(pred), denormalize(target)
 
         metrics = self.metricizer.get_metrics(pred, target)
