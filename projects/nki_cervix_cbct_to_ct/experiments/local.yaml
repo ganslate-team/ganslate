@@ -58,8 +58,8 @@ train:
 val:
     freq: 2
     dataset: 
-        name: CBCTtoCTValDataset
-        root: /repos/Maastro/nki_cervix/valid
+        name: ElektaPhantomDataset
+        root: /repos/Maastro/nki_cervix/phantom
     sliding_window:
         window_size: "${train.dataset.patch_size}"
 
