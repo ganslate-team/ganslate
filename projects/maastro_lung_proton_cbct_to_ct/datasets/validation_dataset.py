@@ -82,6 +82,21 @@ class CBCTtoCTValidationDataset(Dataset):
     def __len__(self):
         return len(self.pairs)
 
+    def denormalize(self, tensor):
+        """Allows the Tester and Validator to calculate the metrics in
+        the original range of values.
+        """
+        # tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
+
+        # # Offset tensor with hu_min to get CT number from HU
+        # # Useful for things like PSNR calculations
+        # return tensor - self.hu_min
+
+
+        # TODO: TEMPORARYYYYY
+        return (tensor + 1) / 2
+
+
     def save(self, tensor, save_dir, metadata):
         tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)

@@ -1,0 +1,53 @@
+project_dir: "./projects/brats_flair_to_t1w/datasets/"
+
+train:
+    output_dir: "./checkpoints/brats_flair_tw1/"
+    cuda: True
+    n_iters: 20000
+    n_iters_decay: 0
+    batch_size: 1
+    mixed_precision: False
+
+    logging:
+        freq: 50
+        wandb:
+            project: "CUT-BraTS"
+        
+    checkpointing:
+        freq: 2000
+
+    dataset: 
+        name: "BratsDataset"
+        root: "/mnt/particija/Task01_BrainTumour/imagesTr"
+        num_workers: 4
+        patch_size: [32, 128, 128]
+    
+    gan:  
+        name: "CUT"
+        nce_layers: [0, 1, 2, 3, 4]
+        generator:  
+            name: "Vnet3D"
+            use_memory_saving: False
+            use_inverse: False
+            in_channels: 1
+            down_blocks: [2, 2, 3]
+            up_blocks: [3, 3, 3]
+
+        discriminator:  
+            name: "PatchGAN3D"
+            n_layers: 3
+            in_channels: 1
+
+        optimizer:
+            lr_D: 0.0002
+            lr_G: 0.0004
+
+val:
+    freq: 5000
+    dataset: 
+        name: "BratsValTestDataset"
+        root: "/mnt/particija/Task01_BrainTumour/imagesTsMini"
+    sliding_window:
+        window_size: ${train.dataset.patch_size}
+    metrics:
+        cycle_metrics: False

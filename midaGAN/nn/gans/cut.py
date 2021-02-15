@@ -54,14 +54,14 @@ class CUT(BaseGAN):
     def __init__(self, conf):
         super().__init__(conf)
 
-        self.lambda_adv = conf.gan.optimizer.lambda_adv
-        self.lambda_nce = conf.gan.optimizer.lambda_nce
-        self.lambda_nce_idt = conf.gan.optimizer.lambda_nce_idt
-        self.lambda_pixel_idt = conf.gan.optimizer.lambda_pixel_idt
+        self.lambda_adv = conf.train.gan.optimizer.lambda_adv
+        self.lambda_nce = conf.train.gan.optimizer.lambda_nce
+        self.lambda_nce_idt = conf.train.gan.optimizer.lambda_nce_idt
+        self.lambda_pixel_idt = conf.train.gan.optimizer.lambda_pixel_idt
 
-        self.nce_layers = conf.gan.nce_layers
-        self.num_patches = conf.gan.num_patches
-        self.use_equivariance_flip = conf.gan.use_equivariance_flip
+        self.nce_layers = conf.train.gan.nce_layers
+        self.num_patches = conf.train.gan.num_patches
+        self.use_equivariance_flip = conf.train.gan.use_equivariance_flip
         self.is_flipped = False
 
         # Inputs and Outputs of the model

@@ -40,6 +40,8 @@ class BaseEvaluationConfig(base.BaseEngineConfig):
 class ValidationConfig(BaseEvaluationConfig):
     # How frequently to validate (each `freq` iters)
     freq: int = MISSING
+    # How many first iters to skip validation
+    start_val_after: int = 0
 
 
 @dataclass
