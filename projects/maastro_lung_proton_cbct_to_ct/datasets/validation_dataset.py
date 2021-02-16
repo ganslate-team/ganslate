@@ -30,22 +30,19 @@ class CBCTtoCTValidationDataset(Dataset):
     def __init__(self, conf):
         self.root_path = Path(conf.val.dataset.root).resolve()
 
-        self.pairs = []
-        for CT_CBCT_pair_dir in self.root_path.iterdir():
-            CT_CBCT_pair_dir = self.root_path / CT_CBCT_pair_dir
-
-            CBCT = list(CT_CBCT_pair_dir.rglob('CBCT.nrrd'))[0]
-            CT = list(CT_CBCT_pair_dir.rglob('CT.nrrd'))[0]
-            self.pairs.append((CBCT, CT))
-
+        self.pairs = io.make_recursive_dataset_of_directories(self.root_path, "nrrd")
+        print(self.pairs)
         # Min and max HU values for clipping and normalization
         self.hu_min, self.hu_max = conf.val.dataset.hounsfield_units_range
 
     def __getitem__(self, index):
-        path_CBCT, path_CT = self.pairs[index]
+        path_CBCT = self.pairs[index] / "target.nrrd"
+        path_CT = self.pairs[index] / "deformed.nrrd"
 
         CBCT = sitk_utils.load(path_CBCT)
         CT = sitk_utils.load(path_CT)
+
+        # TODO: implement masks
 
         metadata = {
             'path': str(path_CBCT),
