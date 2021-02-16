@@ -51,17 +51,11 @@ class PixelIdentityLoss(nn.Module):
         self.criterion = self._init_criterion(conf)
 
     def _init_criterion(self, conf):
-        self.mode = conf.gan.optimizer.pixel_idt_mode
+        self.mode = conf.train.gan.optimizer.pixel_idt_mode
 
         # SSIM
         if self.mode == 'ssim':
-            channels_ssim = conf.gan.generator.in_channels
-            if 'patch_size' in conf.dataset.keys():
-                channels_ssim = conf.dataset.patch_size[0]
-
-            return ssim.SSIM(data_range=1,
-                             channel=channels_ssim,
-                             nonnegative_ssim=True)
+            return ssim.SSIMLoss()
         # L1
         elif self.mode == 'l1':
             return nn.L1Loss()
@@ -73,10 +67,6 @@ class PixelIdentityLoss(nn.Module):
         # TODO: take care of this in SSIM for both CycleLoss and this loss,
         # make it do this always by abstracting it away
         if self.mode == "ssim":
-            # Merge channel and slice dimensions of volume inputs to allow calculation of SSIM
-            real = reshape_to_4D_if_5D(real)
-            idt = reshape_to_4D_if_5D(idt)
-
             # Data range needs to be positive and normalized
             # https://github.com/VainF/pytorch-msssim#2-normalized-input
             real = (real + 1) / 2
