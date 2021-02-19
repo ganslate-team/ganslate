@@ -29,9 +29,7 @@ class CBCTtoCTValidationDataset(Dataset):
 
     def __init__(self, conf):
         self.root_path = Path(conf.val.dataset.root).resolve()
-
         self.pairs = io.make_recursive_dataset_of_directories(self.root_path, "nrrd")
-        print(self.pairs)
         # Min and max HU values for clipping and normalization
         self.hu_min, self.hu_max = conf.val.dataset.hounsfield_units_range
 

@@ -14,6 +14,8 @@ class TrainMetricsConfig:
 class TrainCheckpointingConfig(base.CheckpointingConfig):
     # How often (in iters) to save checkpoints during training
     freq: int = 2000
+    # After which iteration should checkpointing begin
+    start_after: int = 0
     # If False, the saved optimizers won't be loaded when continuing training
     load_optimizers: bool = True
     # Iteration number of the checkpoint to load for continuing training
