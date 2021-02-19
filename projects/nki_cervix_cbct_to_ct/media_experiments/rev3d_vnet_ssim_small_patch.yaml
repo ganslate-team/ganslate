@@ -1,0 +1,69 @@
+project_dir: "./projects/nki_cervix_cbct_to_ct/datasets"
+
+train:
+    cuda: True
+    n_iters: 15000
+    n_iters_decay: 15000
+    batch_size: 1
+    output_dir: /midagan/checkpoints/ssim_small_patch
+    seed: 42
+    
+    logging:
+        freq: 100
+        wandb:
+            project: "Media_Experiments_V1"
+            image_filter: [0.289 ,0.40]
+            run: ssim_small_patch
+
+    checkpointing:
+        freq: 2000
+
+    dataset: 
+        name: "CBCTtoCTDataset"
+        root: /data/train
+        num_workers: 4
+        patch_size: [16, 256, 256]
+        enable_masking: True
+
+    gan:  
+        name: "PiCycleGAN"
+
+        generator:
+            name: Vnet3D
+            in_channels: 1
+            use_memory_saving: False
+            use_inverse: True
+            is_separable: False
+            down_blocks: [2, 2, 3]
+            up_blocks: [3, 3, 3]
+
+        discriminator:
+            name: "PatchGAN3D"
+            n_layers: 2
+            in_channels: 1
+
+        optimizer:
+            lambda_A: 5.0
+            lambda_B: 5.0
+            lambda_identity: 0.0
+            lambda_inverse: 0.0
+            proportion_ssim: 0.84
+            lr_D: 0.0002
+            lr_G: 0.0004
+
+    metrics: 
+        output_distributions_D: True
+        ssim: True
+    
+val:
+    freq: 2000
+    datasets: 
+    -   name: CBCTtoCTValDataset
+        root:  /data/valid
+        
+    -   name: ElektaPhantomDataset
+        root:  /data/phantom
+
+    sliding_window:
+        window_size: "${train.dataset.patch_size}"
+
