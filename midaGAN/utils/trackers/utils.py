@@ -2,11 +2,13 @@ import torch
 
 
 def visuals_to_combined_2d_grid(visuals, grid_depth='full'):
-    # if images are 3D (5D tensors)
-    if len(list(visuals.values())[0].shape) == 5:  # TODO make nicer
+    assert isinstance(visuals, dict)
+    visuals_list = list(visuals.values())
+
+    if visuals_list[0].ndim == 5:  # TODO make nicer
         # Concatenate slices that are at the same level from different visuals along width.
-        # Each tensor from visuals.values() is NxCxDxHxW, hence dim=4.
-        combined_slices = torch.cat(tuple(visuals.values()), dim=4)
+        # Each tensor from visuals is NxCxDxHxW, hence dim=4.
+        combined_slices = torch.cat(tuple(visuals_list), dim=4)
         # We plot a single volume from the batch
         combined_slices = combined_slices[0]
         # CxDxHxW -> DxCxHxW
@@ -21,7 +23,7 @@ def visuals_to_combined_2d_grid(visuals, grid_depth='full'):
             combined_image = combined_slices[mid_slice]
     else:
         # NxCxHxW
-        combined_image = torch.cat(tuple(visuals.values()), dim=3)
+        combined_image = torch.cat(tuple(visuals_list), dim=3)
         combined_image = combined_image[0]
 
     # Convert data range [-1,1] to [0,1]. Important when saving images.
