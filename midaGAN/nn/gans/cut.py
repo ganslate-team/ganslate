@@ -4,7 +4,7 @@ from torch import nn
 
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-from midaGAN.nn.losses.cut_losses import PatchNCELoss, PixelIdentityLoss
+from midaGAN.nn.losses.cut_losses import PatchNCELoss
 from midaGAN.nn.utils import init_net, get_network_device
 
 # Config imports
@@ -21,10 +21,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_nce: float = 1
     # weight for NCE loss for identity mapping: NCE(G(Y), Y)), weighted sum with nce_loss
     lambda_nce_idt: float = 0.5
-    # weight for the pixel loss for identity mapping LOSS(G(Y), Y)
-    lambda_pixel_idt: float = 0
-    # which loss to calculate over pixels in pixel identity loss ["ssim", "l1"] 
-    pixel_idt_mode: str = 'ssim'
     # temperature for NCE loss
     nce_T: float = 0.07
 
@@ -57,7 +53,6 @@ class CUT(BaseGAN):
         self.lambda_adv = conf.train.gan.optimizer.lambda_adv
         self.lambda_nce = conf.train.gan.optimizer.lambda_nce
         self.lambda_nce_idt = conf.train.gan.optimizer.lambda_nce_idt
-        self.lambda_pixel_idt = conf.train.gan.optimizer.lambda_pixel_idt
 
         self.nce_layers = conf.train.gan.nce_layers
         self.num_patches = conf.train.gan.num_patches
@@ -72,7 +67,7 @@ class CUT(BaseGAN):
         self.visuals = {name: None for name in all_visual_names}
 
         # Losses used by the model
-        loss_names = ['D', 'G', 'NCE', 'NCE_idt', 'pixel_idt']
+        loss_names = ['D', 'G', 'NCE', 'NCE_idt']
         self.losses = {name: None for name in loss_names}
 
         # Generators and Discriminators
@@ -116,8 +111,6 @@ class CUT(BaseGAN):
         ]
         if self.lambda_nce_idt > 0:
             self.criterion_nce_idt = torch.nn.L1Loss().to(self.device)
-        if self.lambda_pixel_idt > 0:
-            self.criterion_pixel_idt = PixelIdentityLoss(self.conf).to(self.device)
 
     def optimize_parameters(self):
         self.forward()
@@ -146,7 +139,7 @@ class CUT(BaseGAN):
         self.visuals['real_B'] = input['B'].to(self.device)
 
     def forward(self):
-        using_idt = self.lambda_nce_idt > 0 or self.lambda_pixel_idt > 0
+        using_idt = self.lambda_nce_idt > 0
 
         real_A = self.visuals['real_A']
         if using_idt:
@@ -205,14 +198,7 @@ class CUT(BaseGAN):
                 self.losses['NCE_idt'] = nce_idt_loss
         # ---------------------------------------------------------------
 
-        # ------------------- Pixel Identity Loss -----------------------
-        pixel_idt_loss = 0
-        if self.lambda_pixel_idt:
-            pixel_idt_loss = self.criterion_pixel_idt(real_B, idt_B) * self.lambda_pixel_idt
-            self.losses['pixel_idt'] = pixel_idt_loss
-        # ---------------------------------------------------------------
-
-        combined_loss = adversarial_loss + nce_loss + pixel_idt_loss
+        combined_loss = adversarial_loss + nce_loss
 
         optimizers = (self.optimizers['G'], self.optimizers['mlp'])
         self.backward(loss=combined_loss, optimizer=optimizers, loss_id=1)

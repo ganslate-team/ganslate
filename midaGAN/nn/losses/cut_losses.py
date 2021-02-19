@@ -1,8 +1,6 @@
 import torch
 from torch import nn
 
-from midaGAN.nn.losses.utils import ssim
-from midaGAN.nn.utils import reshape_to_4D_if_5D
 
 class PatchNCELoss(nn.Module):
 
@@ -43,33 +41,3 @@ class PatchNCELoss(nn.Module):
             out, torch.zeros(out.size(0), dtype=torch.long, device=feat_q.device))
 
         return loss
-
-
-class PixelIdentityLoss(nn.Module):
-    def __init__(self, conf):
-        super().__init__()
-        self.criterion = self._init_criterion(conf)
-
-    def _init_criterion(self, conf):
-        self.mode = conf.train.gan.optimizer.pixel_idt_mode
-
-        # SSIM
-        if self.mode == 'ssim':
-            return ssim.SSIMLoss()
-        # L1
-        elif self.mode == 'l1':
-            return nn.L1Loss()
-
-        else:
-            raise NotImplementedError(f'Pixel identity loss mode "{self.mode}" not implemented.')
-
-    def forward(self, real, idt):
-        # TODO: take care of this in SSIM for both CycleLoss and this loss,
-        # make it do this always by abstracting it away
-        if self.mode == "ssim":
-            # Data range needs to be positive and normalized
-            # https://github.com/VainF/pytorch-msssim#2-normalized-input
-            real = (real + 1) / 2
-            idt = (idt + 1) / 2
-
-        return self.criterion(real, idt)
