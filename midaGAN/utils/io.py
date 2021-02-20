@@ -48,10 +48,12 @@ def make_dataset_of_directories(root, extensions):
     paths = [folder for folder in paths if has_files_with_extension(folder, extensions)]
     return sorted(paths)
 
+
 def make_recursive_dataset_of_directories(root, extensions):
     files = make_recursive_dataset_of_files(root, extensions)
     directories = list({f.parent for f in files})
     return directories
+
 
 def has_files_with_extension(folder, extensions):
     for ext in extensions:

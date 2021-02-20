@@ -264,7 +264,7 @@ class BaseGAN(ABC):
 
         # load optimizers
         if self.is_train:
-            if self.conf[self.conf.mode].load_optimizers:
+            if self.conf[self.conf.mode].checkpointing.load_optimizers:
                 self.logger.info("Optimizers' state_dicts are loaded from the checkpoint.")
                 self.optimizers['G'].load_state_dict(checkpoint['optimizer_G'])
                 self.optimizers['D'].load_state_dict(checkpoint['optimizer_D'])

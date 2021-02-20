@@ -85,7 +85,6 @@ class CycleGAN(BaseGAN):
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))
 
-
     def set_input(self, input):
         """Unpack input data from the dataloader.
         Parameters:

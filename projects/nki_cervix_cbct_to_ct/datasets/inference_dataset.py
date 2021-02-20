@@ -10,11 +10,10 @@ import torch
 from midaGAN import configs
 from midaGAN.data.utils.body_mask import apply_body_mask, get_body_mask
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.normalization import (min_max_denormalize,
-                                              min_max_normalize)
+from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
 from midaGAN.data.utils.ops import pad
-from midaGAN.data.utils.registration_methods import (
-    register_CT_to_CBCT, truncate_CT_to_scope_of_CBCT)
+from midaGAN.data.utils.registration_methods import (register_CT_to_CBCT,
+                                                     truncate_CT_to_scope_of_CBCT)
 from midaGAN.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
 from midaGAN.utils import sitk_utils
@@ -113,15 +112,15 @@ class CBCTtoCTInferenceDataset(Dataset):
                 tensor = torch.where(mask, tensor, masking_value)
 
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
-                                                        metadata['spacing'], metadata['direction'],
-                                                        metadata['dtype'])
+                                                         metadata['spacing'], metadata['direction'],
+                                                         metadata['dtype'])
 
             datapoint_path = Path(str(metadata['path']))
             save_path = datapoint_path.relative_to(self.root_path)
 
         else:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor)
-            save_path = f'image_{date.today().strftime("%b-%d-%Y")}.nrrd' 
+            save_path = f'image_{date.today().strftime("%b-%d-%Y")}.nrrd'
 
         # Dataset used has a directory per each datapoint, the name of each datapoint's dir is used to save the output
         save_path = Path(save_dir) / save_path

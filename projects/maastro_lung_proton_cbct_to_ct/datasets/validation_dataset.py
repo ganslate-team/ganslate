@@ -87,10 +87,8 @@ class CBCTtoCTValidationDataset(Dataset):
         # # Useful for things like PSNR calculations
         # return tensor - self.hu_min
 
-
         # TODO: TEMPORARYYYYY
         return (tensor + 1) / 2
-
 
     def save(self, tensor, save_dir, metadata):
         tensor = tensor.squeeze().cpu()

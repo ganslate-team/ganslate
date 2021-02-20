@@ -152,7 +152,7 @@ class CUT(BaseGAN):
                 real_A = real_A.flip(-1)
                 if using_idt:
                     real_B = real_B.flip(-1)
-                
+
         # concat for joint forward?
         self.visuals['fake_B'] = self.networks['G'](real_A)
         if using_idt:

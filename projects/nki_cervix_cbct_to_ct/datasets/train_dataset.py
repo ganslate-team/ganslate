@@ -106,13 +106,15 @@ class CBCTtoCTDataset(Dataset):
         # and bound the z, x, y grid to around the mask
         try:
             CBCT = apply_body_mask(CBCT,
-                              apply_mask=self.apply_mask,
-                              hu_threshold=self.cbct_mask_threshold)
+                                   apply_mask=self.apply_mask,
+                                   hu_threshold=self.cbct_mask_threshold)
         except:
             logger.error(f"Error applying mask in file : {path_CBCT}, ")
 
         try:
-            CT = apply_body_mask(CT, apply_mask=self.apply_mask, hu_threshold=self.ct_mask_threshold)
+            CT = apply_body_mask(CT,
+                                 apply_mask=self.apply_mask,
+                                 hu_threshold=self.ct_mask_threshold)
         except:
             logger.error(f"Error applying mask in file : {path_CT}")
 

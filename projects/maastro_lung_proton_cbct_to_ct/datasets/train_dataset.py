@@ -141,15 +141,9 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
 
-        CBCT = apply_body_mask(CBCT,
-                               apply_mask=True,
-                               masking_value=self.hu_min,
-                               hu_threshold=-800)
+        CBCT = apply_body_mask(CBCT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-800)
 
-        CT = apply_body_mask(CT,
-                             apply_mask=True,
-                             masking_value=self.hu_min,
-                             hu_threshold=-600)
+        CT = apply_body_mask(CT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-600)
 
         CBCT = torch.tensor(CBCT)
         CT = torch.tensor(CT)

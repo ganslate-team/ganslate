@@ -1,6 +1,5 @@
 import torch
 import midaGAN.nn.losses.utils.ssim as ssim
-from midaGAN.nn.utils import reshape_to_4D_if_5D
 
 import logging
 logger = logging.getLogger(__name__)
@@ -28,9 +27,7 @@ class CycleGANLosses:
         # channels_ssim = conf.train.dataset.patch_size[0] if 'patch_size' in conf.train.dataset.keys() \
         #                 else conf.train.dataset.image_channels
         # Cycle-consistency - L1, with optional weighted combination with SSIM
-        self.criterion_cycle = CycleLoss(lambda_A,
-                                         lambda_B,
-                                         proportion_ssim)
+        self.criterion_cycle = CycleLoss(lambda_A, lambda_B, proportion_ssim)
         if lambda_identity > 0:
             self.criterion_idt = IdentityLoss(lambda_identity, lambda_A, lambda_B)
         else:
@@ -71,6 +68,7 @@ class CycleGANLosses:
 
 
 class CycleLoss:
+
     def __init__(self, lambda_A, lambda_B, proportion_ssim):
         self.lambda_A = lambda_A
         self.lambda_B = lambda_B

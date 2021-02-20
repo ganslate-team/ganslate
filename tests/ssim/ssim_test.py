@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class SSIMLoss(nn.Module):
     """
     SSIM loss module.
@@ -28,7 +29,7 @@ class SSIMLoss(nn.Module):
         super().__init__()
         self.win_size = win_size
         self.k1, self.k2 = k1, k2
-        NP = win_size ** 2
+        NP = win_size**2
         self.cov_norm = NP / (NP - 1)
 
     def forward(self, X: torch.Tensor, Y: torch.Tensor, data_range: torch.Tensor):
@@ -41,14 +42,13 @@ class SSIMLoss(nn.Module):
             window_size = (self.win_size, self.win_size, self.win_size)
         else:
             raise f"Unsupported dim {input_dimension} for provided input"
-            
 
         if not hasattr(self, "w"):
-            self.register_buffer("w", torch.ones(1, 1, *window_size) / self.win_size ** 2)
+            self.register_buffer("w", torch.ones(1, 1, *window_size) / self.win_size**2)
 
         data_range = data_range[:, None, None, None]
-        C1 = (self.k1 * data_range) ** 2
-        C2 = (self.k2 * data_range) ** 2
+        C1 = (self.k1 * data_range)**2
+        C2 = (self.k2 * data_range)**2
         ux = conv(X, self.w)  # typing: ignore
         uy = conv(Y, self.w)  #
 
@@ -62,7 +62,7 @@ class SSIMLoss(nn.Module):
         A1, A2, B1, B2 = (
             2 * ux * uy + C1,
             2 * vxy + C2,
-            ux ** 2 + uy ** 2 + C1,
+            ux**2 + uy**2 + C1,
             vx + vy + C2,
         )
         D = B1 * B2
@@ -85,15 +85,11 @@ if __name__ == "__main__":
     array_a = np.clip(sitk.GetArrayFromImage(img_a), MIN_B, MAX_B) - MIN_B
     array_b = np.clip(sitk.GetArrayFromImage(img_b), MIN_B, MAX_B) - MIN_B
 
-
-
     # array_a = (array_a - MIN_B) / (MAX_B - MIN_B)
     # array_b = (array_b - MIN_B) / (MAX_B - MIN_B)
 
-
     tensor_a = torch.Tensor(array_a).unsqueeze(dim=0).unsqueeze(dim=0)
     tensor_b = torch.Tensor(array_b).unsqueeze(dim=0).unsqueeze(dim=0)
-
 
     print(f"Tensor A max: {tensor_a.max()} min: {tensor_a.min()}")
     print(f"Tensor B max: {tensor_b.max()} min: {tensor_b.min()}")

@@ -9,10 +9,9 @@ from midaGAN import configs
 from midaGAN.nn import invertible
 from midaGAN.nn import attention
 
-from midaGAN.nn.generators.vnet3d import (DownBlock, InputBlock, OutBlock,
-                                          UpBlock)
-from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d,
-                              get_norm_layer_3d, is_bias_before_norm)
+from midaGAN.nn.generators.vnet3d import (DownBlock, InputBlock, OutBlock, UpBlock)
+from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, get_norm_layer_3d,
+                              is_bias_before_norm)
 
 logger = logging.getLogger(__name__)
 
@@ -104,16 +103,14 @@ class SAVnet3D(nn.Module):
                 attn_block = attention.SelfAttentionBlock(first_layer_channels * factor * 2, 'relu')
 
             else:
-                attn_block = nn.Identity() 
+                attn_block = nn.Identity()
 
-            attention_blocks += [
-                attn_block
-            ]
+            attention_blocks += [attn_block]
 
             down_channel_factors.append(factor)
 
         self.downs = nn.ModuleList(downs)
-        self.attn_blocks  = nn.ModuleList(attention_blocks)
+        self.attn_blocks = nn.ModuleList(attention_blocks)
 
         # NOTE: in order to be able to use an architecture for CUT, it is necessary to
         # have self.encoder which contains all the layers of the encoder part of the network
@@ -139,7 +136,6 @@ class SAVnet3D(nn.Module):
                         is_separable)
             ]
         self.ups = nn.ModuleList(ups)
-
 
     def forward(self, x, inverse=False):
         if inverse:

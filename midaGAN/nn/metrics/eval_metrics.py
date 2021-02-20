@@ -15,6 +15,7 @@ def get_npy(input):
     input = input.detach().cpu().numpy()
     return input
 
+
 def create_masked_array(input, mask):
     """
     Create a masked array after applying the respective mask. 
@@ -23,23 +24,27 @@ def create_masked_array(input, mask):
     mask = mask.squeeze()
     mask = mask.detach().cpu().numpy()
     mask = mask.astype(np.bool)
-    # Masked array needs negated masks as it decides 
+    # Masked array needs negated masks as it decides
     # what element to ignore based on True values
     negated_mask = ~mask
-    return np.ma.masked_array(input*mask, mask=negated_mask)
+    return np.ma.masked_array(input * mask, mask=negated_mask)
+
 
 # Metrics below are taken from
 # https://github.com/facebookresearch/fastMRI/blob/master/fastmri/evaluate.py
 # Copyright (c) Facebook, Inc. and its affiliates.
 # Added MAE to the list of metrics
 
+
 def mae(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Mean Absolute Error (MAE)"""
     return np.mean(np.abs(gt - pred))
 
+
 def mse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Mean Squared Error (MSE)"""
     return np.mean((gt - pred)**2)
+
 
 def nmse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Normalized Mean Squared Error (NMSE)"""
@@ -61,15 +66,12 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np
 
     return ssim / gt.shape[0]
 
-METRIC_DICT = {
-    "ssim": ssim,
-    "mse":  mse,
-    "nmse": nmse,
-    "psnr": psnr,
-    "mae":  mae
-}
+
+METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}
+
 
 class EvaluationMetrics:
+
     def __init__(self, conf):
         self.conf = conf
 

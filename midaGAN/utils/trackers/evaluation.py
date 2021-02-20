@@ -66,7 +66,7 @@ class EvaluationTracker(BaseTracker):
 
     def _log_message(self, index, metrics):
         message = '\n' + 20 * '-' + ' '
-        message += f'(sample: {index})'
+        message += f'({self.conf.mode} at iter {index})'
         message += ' ' + 20 * '-' + '\n'
 
         for k, v in metrics.items():

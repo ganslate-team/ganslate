@@ -73,9 +73,8 @@ class BaseEvaluator(BaseEngineWithInference):
             "with a `cycle` flag in the model's `infer()` method"
             rec_A = self.infer(visuals["fake_B"], cycle='B')
             cycle_metrics.update(self.metricizer.get_cycle_metrics(rec_A, visuals["A"]))
-    
-        return cycle_metrics
 
+        return cycle_metrics
 
     def _get_masked_metrics(self, pred, target, visuals):
         """
@@ -91,7 +90,7 @@ class BaseEvaluator(BaseEngineWithInference):
                 metrics = {f"{k}_{label}": v \
                     for k,v in self.metricizer.get_metrics(pred, target, mask=mask).items()}
                 mask_metrics.update(metrics)
-            
+
             visuals.pop("masks")
 
         return mask_metrics
