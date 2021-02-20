@@ -15,6 +15,7 @@ class BaseDatasetConfig:
 
 ############ GAN Optimizer, Discriminator, Generator, and Framework #############
 
+
 @dataclass
 class BaseOptimizerConfig:
     adversarial_loss_type: str = "lsgan"

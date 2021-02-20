@@ -5,7 +5,6 @@ import wandb
 class WandbTracker:
 
     def __init__(self, conf):
-        mode = conf.mode
         project = conf[conf.mode].logging.wandb.project
         entity = conf[conf.mode].logging.wandb.entity
         conf_dict = OmegaConf.to_container(conf, resolve=True)
@@ -56,9 +55,8 @@ class WandbTracker:
                 if image_threshold is not None:
                     visual['name'] = f"Sample: {idx} {visual['name']}"
 
-
-                wandb_images.append(self._wandb_image_from_visual(visual, \
-                    image_threshold=image_threshold))
+                visual = self._wandb_image_from_visual(visual, image_threshold)
+                wandb_images.append(visual)
             return wandb_images
 
         # If visual is an image then a single wandb.Image is created

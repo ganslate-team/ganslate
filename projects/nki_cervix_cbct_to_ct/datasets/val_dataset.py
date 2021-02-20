@@ -39,8 +39,7 @@ class CBCTtoCTValDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTValDataset"
     hounsfield_units_range: Tuple[int, int] = field(
         default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
-    mask_labels: List[str] = field(
-        default_factory=lambda: [])
+    mask_labels: List[str] = field(default_factory=lambda: [])
 
 
 class CBCTtoCTValDataset(Dataset):
@@ -99,7 +98,7 @@ class CBCTtoCTValDataset(Dataset):
         body_mask = get_body_mask(CT, hu_threshold=-300)
 
         masks = {k: sitk_utils.get_npy(v) for k, v in masks.items()}
-        
+
         if "BODY" not in masks:
             masks["BODY"] = body_mask
 
@@ -116,7 +115,7 @@ class CBCTtoCTValDataset(Dataset):
         # Add channel dimension (1 = grayscale)
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
-        masks = {k: v.unsqueeze(0) for k,v in masks.items()}
+        masks = {k: v.unsqueeze(0) for k, v in masks.items()}
 
         data_dict = {"A": CBCT, "B": CT, "metadata": metadata}
         if masks:
@@ -140,8 +139,8 @@ class CBCTtoCTValDataset(Dataset):
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
-                                                     metadata['spacing'], metadata['direction'],
-                                                     metadata['dtype'])
+                                                         metadata['spacing'], metadata['direction'],
+                                                         metadata['dtype'])
             datapoint_path = Path(str(metadata['path']))
             save_path = datapoint_path.relative_to(self.root_path)
 

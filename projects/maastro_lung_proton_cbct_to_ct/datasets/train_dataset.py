@@ -126,7 +126,7 @@ class CBCTtoCTDataset(Dataset):
                     f"Could not replace the image for {num_replacements_threshold}"
                     " consecutive times. Please verify your images and the specified config.")
 
-        CT = mask_out_ct(CT, path_CT, self.hu_min)
+        # CT = mask_out_ct(CT, path_CT, self.hu_min)
 
         # Limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
@@ -141,17 +141,9 @@ class CBCTtoCTDataset(Dataset):
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
 
-        CBCT = apply_body_mask(CBCT,
-                               apply_mask=True,
-                               masking_value=self.hu_min,
-                               hu_threshold=-800)
-        CBCT = pad(CBCT, self.patch_size)
+        CBCT = apply_body_mask(CBCT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-800)
 
-        CT = apply_body_mask(CT,
-                             apply_mask=True,
-                             masking_value=self.hu_min,
-                             hu_threshold=-600)
-        CT = pad(CT, self.patch_size)
+        CT = apply_body_mask(CT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-600)
 
         CBCT = torch.tensor(CBCT)
         CT = torch.tensor(CT)

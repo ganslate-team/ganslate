@@ -84,7 +84,7 @@ class ElektaPhantomDataset(Dataset):
 
         # load nrrd as SimpleITK objects
         phantom = sitk_utils.load(phantom_path)
-        
+
         insert_masks = {}
         for label, mask_path in mask_paths.items():
             insert_masks[label] = sitk_utils.load(mask_path)
