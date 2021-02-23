@@ -1,0 +1,6 @@
+omegaconf
+wandb
+memcnn
+monai
+opencv-python
+
