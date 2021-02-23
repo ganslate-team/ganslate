@@ -29,7 +29,7 @@ class CBCTtoCTValidationDataset(Dataset):
 
     def __init__(self, conf):
         self.root_path = Path(conf.val.dataset.root).resolve()
-        self.pairs = io.make_recursive_dataset_of_directories(self.root_path, "nrrd")
+        self.pairs = sorted(io.make_recursive_dataset_of_directories(self.root_path, "nrrd"))
         # Min and max HU values for clipping and normalization
         self.hu_min, self.hu_max = conf.val.dataset.hounsfield_units_range
 
@@ -54,8 +54,6 @@ class CBCTtoCTValidationDataset(Dataset):
         CT = mask_out_ct(CT, path_CT.parent, self.hu_min)
 
         ################ TO RECONSIDER LATER ################
-        # Limit CT so that it only contains part of the body shown in CBCT
-        CT = register_CT_to_CBCT(CT, CBCT)
         CBCT = apply_body_mask(sitk_utils.get_npy(CBCT),
                                apply_mask=True,
                                masking_value=self.hu_min,
