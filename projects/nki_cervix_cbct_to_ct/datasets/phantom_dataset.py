@@ -53,8 +53,8 @@ class ElektaPhantomDatasetConfig(configs.base.BaseDatasetConfig):
 class ElektaPhantomDataset(Dataset):
 
     def __init__(self, conf):
-        self.root_path = Path(conf.val.dataset.root).resolve()
-        self.insert_values = conf.val.dataset.insert_values
+        self.root_path = Path(conf[conf.mode].dataset.root).resolve()
+        self.insert_values = conf[conf.mode].dataset.insert_values
         self.paths = {}
 
         for folder in self.root_path.iterdir():
@@ -105,9 +105,6 @@ class ElektaPhantomDataset(Dataset):
         z_range = np.nonzero(insert_masks["plate"])[0]
         z_min, z_max = z_range.min(), z_range.max()
 
-        phantom = phantom[z_min:z_max]
-        insert_masks = {k: v[z_min:z_max] for k, v in insert_masks.items()}
-
         target_phantom = np.full(phantom.shape, self.hu_min, dtype=phantom.dtype)
         for label, mask in insert_masks.items():
             target_phantom = np.where(mask, self.insert_values[label], target_phantom)
@@ -143,7 +140,7 @@ class ElektaPhantomDataset(Dataset):
 
     def save(self, tensor, save_dir, metadata=None):
         tensor = tensor.squeeze().cpu()
-        tensor = self.denormalize(tensor)
+        tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
