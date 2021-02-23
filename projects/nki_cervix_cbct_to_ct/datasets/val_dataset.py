@@ -46,8 +46,8 @@ class CBCTtoCTValDataset(Dataset):
 
     def __init__(self, conf):
         # self.paths = make_dataset_of_directories(conf.val.dataset.root, EXTENSIONS)
-        self.root_path = Path(conf.val.dataset.root).resolve()
-        self.mask_labels = conf.val.dataset.mask_labels
+        self.root_path = Path(conf[conf.mode].dataset.root).resolve()
+        self.mask_labels = conf[conf.mode].dataset.mask_labels
 
         self.paths = {}
 
@@ -63,7 +63,7 @@ class CBCTtoCTValDataset(Dataset):
 
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.val.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf[conf.mode].dataset.hounsfield_units_range
 
     def __getitem__(self, index):
         patient_index = list(self.paths)[index]
@@ -135,7 +135,8 @@ class CBCTtoCTValDataset(Dataset):
 
     def save(self, tensor, save_dir, metadata=None):
         tensor = tensor.squeeze().cpu()
-        tensor = self.denormalize(tensor)
+        tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
+
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
