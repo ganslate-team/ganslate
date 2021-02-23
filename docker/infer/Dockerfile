@@ -2,7 +2,8 @@
 # ARG CUDNN="7"
 
 # TODO: conda installs its own version of cuda
-FROM ubuntu:18.04
+FROM ubuntu:20.04
+ARG DEBIAN_FRONTEND=noninteractive
 
 # ENV CUDA_PATH /usr/local/cuda
 # ENV CUDA_ROOT /usr/local/cuda/bin
@@ -30,13 +31,13 @@ ENV PATH "/home/midagan/miniconda3/bin::$PATH"
 
 # Setup python packages
 RUN conda update -n base conda -yq
-RUN conda install python=3.7
+RUN conda install python=3.8
 RUN conda install numpy pyyaml mkl mkl-include setuptools cmake cffi typing boost
 
 # RUN conda install pytorch=1.7 torchvision cudatoolkit=${CUDA} -c pytorch
 RUN conda install pytorch=1.7 torchvision cpuonly -c pytorch
 
-RUN conda install scipy pandas scikit-learn scikit-image=0.14 -yq
+RUN conda install scipy pandas scikit-learn scikit-image -yq
 RUN conda install cython tqdm jupyter sqlalchemy -yq
 RUN python -m pip install opencv-python simpleitk h5py -q
 RUN python -m pip install tb-nightly memcnn wandb -q
@@ -44,19 +45,9 @@ RUN python -m pip install omegaconf -q
 
 
 USER root
-# Create midaganories for input and output
-RUN mkdir /data
 RUN mkdir /midagan && chmod 777 /midagan
 
 USER midagan
-
-# RUN jupyter notebook --generate-config
-# ENV CONFIG_PATH "/home/midagan/.jupyter/jupyter_notebook_config.py"
-# COPY "jupyter_notebook_config.py" ${CONFIG_PATH}
-
-# Copy files into the docker
-# COPY [".", "/midagan"]
-
 ENV PYTHONPATH /midagan
 WORKDIR /midagan
 
@@ -68,10 +59,19 @@ ARG test
 RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/data-pipelines.git
 RUN python -m pip install -r data-pipelines/requirements.txt
 
-# Clone repo for midaGAN
-RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/midaGAN.git
-# Clone repo for dicom saving of generated images
-RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/clinical-evaluation.git
+# Run actions for data-pipelines
+WORKDIR data-pipelines
 
+# Clone repo for midaGAN
+WORKDIR /midagan
+RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/midaGAN.git
+WORKDIR midaGAN
+RUN git checkout origin/inference_docker
+RUN pip install -r requirements.txt
+
+# Clone repo for dicom saving of generated images
+
+WORKDIR /midagan
+RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/clinical-evaluation.git
 # Provide an open entrypoint for the docker
-ENTRYPOINT $0 $@
+ENTRYPOINT ["/bin/bash", "/midagan/midaGAN/docker/inference/run_inference_pipeline.sh"]

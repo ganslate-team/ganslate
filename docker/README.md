@@ -1,8 +1,8 @@
 # Use the container (docker ≥ 19.03 required)
 
-To build:
+To build training docker:
 ```
-cd docker/
+cd docker/train
 docker build -t midagan:latest .
 ```
 
