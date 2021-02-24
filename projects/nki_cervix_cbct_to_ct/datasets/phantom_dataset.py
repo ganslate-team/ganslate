@@ -37,7 +37,7 @@ EXTENSIONS = ['.nrrd']
 class ElektaPhantomDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "ElektaPhantomDataset"
     hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
+        default_factory=lambda: (-1000, 2000))
     insert_values: Dict[str, int] = field(
         default_factory=lambda: {
             "Air": -1000,
@@ -100,10 +100,6 @@ class ElektaPhantomDataset(Dataset):
 
         phantom = sitk_utils.get_npy(phantom)
         insert_masks = {k: sitk_utils.get_npy(v) for k, v in insert_masks.items()}
-
-        # Limit phantom to z where plate for Image Quality assessment is present
-        z_range = np.nonzero(insert_masks["plate"])[0]
-        z_min, z_max = z_range.min(), z_range.max()
 
         target_phantom = np.full(phantom.shape, self.hu_min, dtype=phantom.dtype)
         for label, mask in insert_masks.items():

@@ -97,9 +97,9 @@ class Trainer(BaseEngine):
         return Validator(self.conf, self.model)
 
     def run_validation(self):
-        val_freq = self.conf.val.freq
-        val_after = self.conf.val.start_after
         if self.validator and communication.get_local_rank() == 0:
+            val_freq = self.conf.val.freq
+            val_after = self.conf.val.start_after
             if self.iter_idx % val_freq == 0 and self.iter_idx >= val_after:
                 self.validator.run(current_idx=self.iter_idx)
 

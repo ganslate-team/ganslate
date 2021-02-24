@@ -5,7 +5,7 @@ def visuals_to_combined_2d_grid(visuals, grid_depth='full'):
     assert isinstance(visuals, dict)
     visuals_list = list(visuals.values())
 
-    if visuals_list[0].ndim == 5:  # TODO make nicer
+    if visuals_list[0].ndim == 5:
         # Concatenate slices that are at the same level from different visuals along width.
         # Each tensor from visuals is NxCxDxHxW, hence dim=4.
         combined_slices = torch.cat(tuple(visuals_list), dim=4)

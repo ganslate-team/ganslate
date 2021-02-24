@@ -39,7 +39,6 @@ class Piresnet3D(nn.Module):
         # TODO: implement disable_invertibles as in Vnet
 
         keep_input = not use_memory_saving
-        is_inplace = not use_inverse  # activations in invertible blocks are not inplace when invertibility is used
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
@@ -54,7 +53,7 @@ class Piresnet3D(nn.Module):
             self.upconv_ba = self.build_upconv(out_channels, norm_layer, first_layer_channels,
                                                use_bias)
 
-        inv_block = _base_inv_block(first_layer_channels * 2, norm_layer, use_bias, is_inplace)
+        inv_block = _base_inv_block(first_layer_channels * 2, norm_layer, use_bias)
         self.core = invertible.InvertibleSequence(inv_block, depth, keep_input)
 
     def build_downconv(self, in_channels, norm_layer, first_layer_channels, use_bias):
@@ -65,13 +64,17 @@ class Piresnet3D(nn.Module):
                       kernel_size=5,
                       stride=1,
                       padding=0,
-                      bias=use_bias), norm_layer(first_layer_channels), nn.ReLU(),
+                      bias=use_bias),
+            norm_layer(first_layer_channels),
+            nn.ReLU(inplace=True),
             nn.Conv3d(first_layer_channels,
                       first_layer_channels * 2,
                       kernel_size=3,
                       stride=2,
                       padding=1,
-                      bias=use_bias), norm_layer(first_layer_channels * 2), nn.ReLU())
+                      bias=use_bias),
+            norm_layer(first_layer_channels * 2), 
+            nn.ReLU(inplace=True))
 
     def build_upconv(self, out_channels, norm_layer, first_layer_channels, use_bias):
         return nn.Sequential(
@@ -81,7 +84,9 @@ class Piresnet3D(nn.Module):
                                stride=2,
                                padding=1,
                                output_padding=1,
-                               bias=use_bias), norm_layer(first_layer_channels), nn.ReLU(),
+                               bias=use_bias), 
+            norm_layer(first_layer_channels), 
+            nn.ReLU(inplace=True),
             nn.ReplicationPad3d(2),
             nn.Conv3d(first_layer_channels, out_channels, kernel_size=5, padding=0), nn.Tanh())
 
@@ -103,8 +108,8 @@ class Piresnet3D(nn.Module):
         return upconv(out)
 
 
-def _base_inv_block(n_channels, norm_layer, use_bias, is_inplace):
+def _base_inv_block(n_channels, norm_layer, use_bias):
     n_channels = n_channels // 2  # split across channels for invertible module
     return nn.Sequential(norm_layer(n_channels), nn.ReplicationPad3d(1),
                          nn.Conv3d(n_channels, n_channels, kernel_size=3, padding=0, bias=use_bias),
-                         norm_layer(n_channels), nn.ReLU(is_inplace))
+                         norm_layer(n_channels), nn.ReLU(inplace=True))

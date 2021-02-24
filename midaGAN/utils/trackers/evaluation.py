@@ -35,8 +35,8 @@ class EvaluationTracker(BaseTracker):
         """
         if communication.get_local_rank() == 0:
 
-            for visuals in self.visuals:
-                self._save_image(visuals, f"{prefix}_{iter_idx}")
+            for idx, visuals in self.visuals:
+                self._save_image(visuals, f"{prefix}_{iter_idx}_{idx}")
 
             # Averages list of dictionaries within self.metrics
             averaged_metrics = {}
