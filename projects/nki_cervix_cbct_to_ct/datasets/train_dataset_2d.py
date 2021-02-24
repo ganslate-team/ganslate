@@ -1,24 +1,25 @@
-from pathlib import Path
-import random
 import logging
-import numpy as np
-import torch
-from torch.utils.data import Dataset
-
-import midaGAN
-from midaGAN.utils.io import make_recursive_dataset_of_files, load_json
-from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
-from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.body_mask import apply_body_mask
-from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
-
+import random
+from dataclasses import dataclass, field
+from pathlib import Path
 # Config imports
 from typing import Tuple
-from dataclasses import dataclass, field
-from omegaconf import MISSING
+
+import midaGAN
+import numpy as np
+import torch
 from midaGAN import configs
+from midaGAN.data.utils.body_mask import apply_body_mask
+from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
+from midaGAN.data.utils.normalization import (min_max_denormalize,
+                                              min_max_normalize)
+from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
+from midaGAN.data.utils.stochastic_focal_patching import \
+    StochasticFocalPatchSampler
+from midaGAN.utils import sitk_utils
+from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
+from omegaconf import MISSING
+from torch.utils.data import Dataset
 
 logger = logging.getLogger(__name__)
 
@@ -85,19 +86,12 @@ class CBCTtoCT2DDataset(Dataset):
         CT = sitk_utils.load(path_CT)
 
         # Subtract 1024 from CBCT to map values from grayscale to HU approx
-        CBCT = CBCT - 1000
+        CBCT = CBCT - 1024
 
         # Truncate CBCT based on size of FOV in the image
         CBCT = truncate_CBCT_based_on_fov(CBCT)
-
-        CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
-        if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
-            logger.info(
-                "Post-registration truncated CT is smaller than the defined patch size. Passing the whole CT volume."
-            )
-            del CT_truncated
-        else:
-            CT = CT_truncated
+        # Register CT to CBCT using rigid registration
+        CT = register_CT_to_CBCT(CT, CBCT)
 
         # Mask and bound is applied on numpy arrays!
         CBCT = sitk_utils.get_npy(CBCT)
@@ -118,6 +112,9 @@ class CBCTtoCT2DDataset(Dataset):
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")
 
+        CBCT = pad(CBCT, self.patch_size)
+        CT = pad(CT, self.patch_size)
+
         if DEBUG:
             import wandb
 
@@ -126,12 +123,6 @@ class CBCTtoCT2DDataset(Dataset):
                 "CT_3D": wandb.Image(CT[CT.shape[0] // 2], caption=str(path_CT))
             }
             wandb.log(logdict)
-
-        # Convert array to torch tensors
-        CBCT = torch.tensor(CBCT)
-        CT = torch.tensor(CT)
-
-        CBCT, CT = self.slice_sampler.get_patch_pair(CBCT, CT)
 
         if DEBUG:
             import wandb
@@ -143,8 +134,12 @@ class CBCTtoCT2DDataset(Dataset):
 
             wandb.log(logdict)
 
+
+        # Convert array to torch tensors
         CBCT = torch.tensor(CBCT)
         CT = torch.tensor(CT)
+
+        CBCT, CT = self.slice_sampler.get_patch_pair(CBCT, CT)
 
         # Limits the lowest and highest HU unit
         CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
