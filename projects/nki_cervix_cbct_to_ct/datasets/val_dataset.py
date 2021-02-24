@@ -38,7 +38,7 @@ EXTENSIONS = ['.nrrd']
 class CBCTtoCTValDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTValDataset"
     hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
+        default_factory=lambda: (-1000, 2000))
     mask_labels: List[str] = field(default_factory=lambda: [])
 
 
@@ -95,11 +95,10 @@ class CBCTtoCTValDataset(Dataset):
 
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
-        body_mask = get_body_mask(CT, hu_threshold=-300)
-
         masks = {k: sitk_utils.get_npy(v) for k, v in masks.items()}
 
         if "BODY" not in masks:
+            body_mask = get_body_mask(CT, hu_threshold=-300)
             masks["BODY"] = body_mask
 
         CT = torch.tensor(CT)
@@ -109,9 +108,11 @@ class CBCTtoCTValDataset(Dataset):
         # Limits the lowest and highest HU unit
         CT = torch.clamp(CT, self.hu_min, self.hu_max)
         CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
+
         # Normalize Hounsfield units to range [-1,1]
         CT = min_max_normalize(CT, self.hu_min, self.hu_max)
         CBCT = min_max_normalize(CBCT, self.hu_min, self.hu_max)
+        
         # Add channel dimension (1 = grayscale)
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
