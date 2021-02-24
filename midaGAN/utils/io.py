@@ -1,8 +1,8 @@
 import importlib
 import inspect
 import json
+import pkgutil
 from pathlib import Path
-from pkgutil import iter_modules
 from typing import Union
 
 import numpy as np
@@ -77,32 +77,27 @@ def load_json(file):
 
 
 def import_class_from_dirs_and_modules(class_name, dirs_modules):
-    dirs = []
-    for location in dirs_modules:
-        if inspect.ismodule(location):
-            dir_path = Path(location.__file__).parent
+    """Looks for a particular class of `class_name` recursively inside of the
+    given modules and directories. The directories that are given to it need
+    to have __init__.py in order for this function to recognize its modules."""
+
+    # Goes through the given dirs and modules and gets their absolute paths
+    paths = []
+    for path in dirs_modules:
+        if inspect.ismodule(path):
+            dir_path = Path(path.__file__).parent
         else:
-            dir_path = Path(location).resolve()
-        dirs.append(dir_path)
+            dir_path = Path(path).resolve()
+        paths.append(str(dir_path))
 
-    for (importer, module_name, _) in iter_modules(dirs):
-
-        file_path = importer.path / module_name
-        file_path = file_path.resolve().with_suffix('.py')
-
-        if not file_path.exists():
-            continue
-
-        # Import the module from the file path by creating a spec:
-        # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
-        spec = importlib.util.spec_from_file_location(module_name, file_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-
-        # Import the class from the module and return it
+    # Goes through the parsed module and dir paths recursevily
+    for loader, module_name, _ in pkgutil.walk_packages(paths):
+        # Loads a particular module
+        module = loader.find_module(module_name).load_module(module_name)
+        # Goes through the attributes of the module and checks if it
+        # is the one being sought, and if it, returns it.
         for attribute_name in dir(module):
             attribute = getattr(module, attribute_name)
-
             if inspect.isclass(attribute) and class_name == attribute_name:
                 return attribute
 

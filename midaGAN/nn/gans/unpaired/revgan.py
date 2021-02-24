@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import torch
 from midaGAN import configs
 from midaGAN.data.utils.image_pool import ImagePool
-from midaGAN.nn.gans import cyclegan
+from midaGAN.nn.gans.unpaired import cyclegan
 from midaGAN.nn.gans.basegan import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
@@ -70,7 +70,7 @@ class RevGAN(BaseGAN):
         # Standard GAN loss
         self.criterion_adv = AdversarialLoss(
             self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
-        # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
+        # Generator-related losses -- Cycle-consistency and Identity loss
         self.criterion_G = CycleGANLosses(self.conf)
 
     def init_optimizers(self):
@@ -210,7 +210,7 @@ class RevGAN(BaseGAN):
         self.losses['G_B'] = self.criterion_adv(pred_B, target_is_real=True)
         # ---------------------------------------------------------------
 
-        # ------------- G Losses (Cycle, Identity, Inverse) -------------
+        # ------------- G Losses (Cycle, Identity) -------------
         losses_G = self.criterion_G(self.visuals)
         self.losses.update(losses_G)
         # ---------------------------------------------------------------

@@ -15,7 +15,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
     lambda_A: float = 10.0
     lambda_B: float = 10.0
     lambda_identity: float = 0
-    lambda_inverse: float = 0
     proportion_ssim: float = 0.84
 
 
@@ -73,7 +72,7 @@ class CycleGAN(BaseGAN):
         # Standard GAN loss
         self.criterion_adv = AdversarialLoss(
             self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
-        # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
+        # Generator-related losses -- Cycle-consistency and Identity loss
         self.criterion_G = CycleGANLosses(self.conf)
 
     def init_optimizers(self):
@@ -213,7 +212,7 @@ class CycleGAN(BaseGAN):
         self.losses['G_B'] = self.criterion_adv(pred_B, target_is_real=True)
         # ---------------------------------------------------------------
 
-        # ------------- G Losses (Cycle, Identity, Inverse) -------------
+        # ------------- G Losses (Cycle, Identity) -------------
         losses_G = self.criterion_G(self.visuals)
         self.losses.update(losses_G)
         # ---------------------------------------------------------------

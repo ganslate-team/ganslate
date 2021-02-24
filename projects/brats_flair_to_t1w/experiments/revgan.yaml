@@ -1,4 +1,4 @@
-project_dir: "./projects/brats_flair_to_t1w/datasets/"
+project_dir: "./projects/brats_flair_to_t1w/"
 
 train:
     output_dir: "./checkpoints/dke_brats_cyclegan/"
@@ -49,7 +49,6 @@ train:
             lambda_A: 5.0
             lambda_B: 5.0
             lambda_identity: 0
-            lambda_inverse: 0
             proportion_ssim: 0
 
 val:
