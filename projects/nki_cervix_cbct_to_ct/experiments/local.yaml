@@ -24,7 +24,7 @@ train:
         enable_masking: True
       
     gan:  
-        name: "PiCycleGAN"
+        name: "RevGAN"
 
         generator:
             name: Vnet3D

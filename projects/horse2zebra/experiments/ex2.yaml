@@ -22,7 +22,7 @@ dataset:
     flip: True
     
 gan:  
-    name: "PiCycleGAN"
+    name: "RevGAN"
 
     optimizer:
         lambda_A: 10.0

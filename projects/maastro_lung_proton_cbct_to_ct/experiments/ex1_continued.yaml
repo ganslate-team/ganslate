@@ -24,7 +24,7 @@ dataset:
     patch_size: [40, 392, 392]
     
 gan:  
-    name: "PiCycleGAN"
+    name: "RevGAN"
 
     generator:
         name: Vnet3D

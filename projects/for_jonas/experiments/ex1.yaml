@@ -25,7 +25,7 @@ dataset:
     #crop_size: [256, 128]
 
 gan:  
-    name: "PiCycleGAN"
+    name: "RevGAN"
 
 generator:  
     name: "Vnet2D"

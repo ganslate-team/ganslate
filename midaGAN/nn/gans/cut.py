@@ -15,6 +15,7 @@ from midaGAN import configs
 
 @dataclass
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
+    """CUT Optimizer Config"""
     # weight for Adversarial loss： Adv(G(X))
     lambda_adv: float = 1
     # weight for NCE loss: NCE(G(X), X)
@@ -27,7 +28,7 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 
 @dataclass
 class CUTConfig(configs.base.BaseGANConfig):
-    """Contrastive Unpaired Translation (CUT)"""
+    """CUT Config"""
     name: str = "CUT"
     # On which layers to compute the NCE loss. 0 (zero) denotes the input itself.
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)
@@ -41,8 +42,8 @@ class CUTConfig(configs.base.BaseGANConfig):
 
 
 class CUT(BaseGAN):
-    """ This class implements CUT and FastCUT model, described in the paper
-    Contrastive Learning for Unpaired Image-to-Image Translation
+    """CUT and FastCUT architecture, described in the paper
+    `Contrastive Learning for Unpaired Image-to-Image Translation`
     Taesung Park, Alexei A. Efros, Richard Zhang, Jun-Yan Zhu
     ECCV, 2020
     """

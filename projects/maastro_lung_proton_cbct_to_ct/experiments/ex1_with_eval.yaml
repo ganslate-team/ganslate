@@ -23,7 +23,7 @@ train:
         patch_size: [32, 224, 224]
         
     gan:  
-        name: "PiCycleGAN"
+        name: "RevGAN"
 
         generator:
             name: Vnet3D

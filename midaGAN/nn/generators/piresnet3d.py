@@ -18,7 +18,7 @@ from midaGAN import configs
 
 @dataclass
 class Piresnet3DConfig(configs.base.BaseGeneratorConfig):
-    """Partially-invertible Resnet generator."""
+    """Partially-invertible Resnet generator - a version of ResNet compatible with RevGAN."""
     name: str = "Piresnet3D"
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse: bool = True  # Specifies if the inverse forward will be used so that it construct the required layers

@@ -17,15 +17,19 @@ class OptimizerConfig(cyclegan.OptimizerConfig):
 
 
 @dataclass
-class PiCycleGANConfig(configs.base.BaseGANConfig):
-    """Partially-invertible CycleGAN"""
-    name: str = "PiCycleGAN"
+class RevGANConfig(configs.base.BaseGANConfig):
+    """RevGAN Config"""
+    name: str = "RevGAN"
     pool_size: int = 50
     optimizer: OptimizerConfig = OptimizerConfig
 
 
-class PiCycleGAN(BaseGAN):
-    """Partially-invertible CycleGAN"""
+class RevGAN(BaseGAN):
+    """ RevGAN architecture, described in the paper
+    `Reversible GANs for Memory-efficient Image-to-Image Translation`,
+    Tycho F.A. van der Ouderaa, Daniel E. Worrall,
+    CVPR 2019
+    """
 
     def __init__(self, conf):
         super().__init__(conf)

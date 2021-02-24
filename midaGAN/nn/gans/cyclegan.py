@@ -11,6 +11,7 @@ from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 
 @dataclass
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
+    """CycleGAN Optimizer Config"""
     lambda_A: float = 10.0
     lambda_B: float = 10.0
     lambda_identity: float = 0
@@ -20,14 +21,18 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 
 @dataclass
 class CycleGANConfig(configs.base.BaseGANConfig):
-    """CycleGAN"""
+    """CycleGAN Config"""
     name: str = "CycleGAN"
     pool_size: int = 50
     optimizer: OptimizerConfig = OptimizerConfig
 
 
 class CycleGAN(BaseGAN):
-    """CycleGAN"""
+    """CycleGAN architecture, described in the paper
+    `Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks`
+    Jun-Yan Zhu, Taesung Park, Phillip Isola, Alexei A. Efros
+    ICCV, 2017
+    """
 
     def __init__(self, conf):
         super().__init__(conf)
