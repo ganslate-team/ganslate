@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from midaGAN import configs
 
 # Network imports
-from midaGAN.nn.discriminators import patchgan3d
+from midaGAN.nn.discriminators.patchgan import patchgan3d
 
 
 def get_cropped_patch(input: torch.Tensor, scale: int = 1) -> torch.Tensor:
