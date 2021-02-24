@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import torch
 from midaGAN import configs
 from midaGAN.data.utils.image_pool import ImagePool
-from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.gans.base import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 

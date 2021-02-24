@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.gans.base import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.cut_losses import PatchNCELoss
 from midaGAN.nn.utils import init_net, get_network_device
