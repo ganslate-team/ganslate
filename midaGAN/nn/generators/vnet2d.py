@@ -49,7 +49,6 @@ class Vnet2D(nn.Module):
         norm_layer = get_norm_layer_2d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
-        is_inplace = not use_inverse  # activations in invertible blocks are not inplace when invertibility is used
         out_channels = in_channels
 
         # Input (first) layer
@@ -69,7 +68,7 @@ class Vnet2D(nn.Module):
             factor = 2**i  # gives the 1, 2, 4, 8, 16, etc. series
             downs += [
                 DownBlock(first_layer_channels * factor, num_convs, norm_layer, use_bias,
-                          keep_input, use_inverse, is_inplace, disable_invertibles)
+                          keep_input, use_inverse, disable_invertibles)
             ]
             down_channel_factors.append(factor)
 
@@ -88,14 +87,14 @@ class Vnet2D(nn.Module):
         ups = [
             UpBlock(first_layer_channels * up_channel_factors[0],
                     first_layer_channels * up_channel_factors[0], num_convs, norm_layer, use_bias,
-                    keep_input, use_inverse, is_inplace, disable_invertibles)
+                    keep_input, use_inverse, disable_invertibles)
         ]
 
         for i, num_convs in enumerate(up_blocks[1:]):
             ups += [
                 UpBlock(first_layer_channels * up_channel_factors[i],
                         first_layer_channels * up_channel_factors[i + 1], num_convs, norm_layer,
-                        use_bias, keep_input, use_inverse, is_inplace, disable_invertibles)
+                        use_bias, keep_input, use_inverse, disable_invertibles)
             ]
         self.ups = nn.ModuleList(ups)
 
@@ -163,7 +162,7 @@ class InputBlock(nn.Module):
 class DownBlock(nn.Module):
 
     def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse,
-                 is_inplace, disable_invertibles):
+                 disable_invertibles):
         super().__init__()
 
         out_channels = 2 * in_channels
@@ -172,7 +171,7 @@ class DownBlock(nn.Module):
             self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer,
                                                      use_bias)
 
-        inv_block = _base_inv_block(out_channels, norm_layer, use_bias, is_inplace)
+        inv_block = _base_inv_block(out_channels, norm_layer, use_bias)
         self.core = invertible.InvertibleSequence(inv_block, n_conv_blocks, keep_input,
                                                   disable_invertibles)
         self.relu = nn.PReLU(out_channels)
@@ -196,14 +195,14 @@ class DownBlock(nn.Module):
 class UpBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input,
-                 use_inverse, is_inplace, disable_invertibles):
+                 use_inverse, disable_invertibles):
         super().__init__()
 
         self.up_conv_ab = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
         if use_inverse:
             self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
 
-        inv_block = _base_inv_block(out_channels, norm_layer, use_bias, is_inplace)
+        inv_block = _base_inv_block(out_channels, norm_layer, use_bias)
         self.core = invertible.InvertibleSequence(inv_block, n_conv_blocks, keep_input,
                                                   disable_invertibles)
         self.relu = nn.PReLU(out_channels)
@@ -246,7 +245,7 @@ class OutBlock(nn.Module):
         return res
 
 
-def _base_inv_block(n_channels, norm_layer, use_bias, is_inplace):
+def _base_inv_block(n_channels, norm_layer, use_bias):
     n_channels = n_channels // 2  # split across channels for invertible module
     return nn.Sequential(nn.Conv2d(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
-                         norm_layer(n_channels), nn.PReLU(n_channels, is_inplace))
+                         norm_layer(n_channels), nn.PReLU(n_channels))

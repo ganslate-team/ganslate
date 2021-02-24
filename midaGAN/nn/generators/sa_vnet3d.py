@@ -71,7 +71,6 @@ class SAVnet3D(nn.Module):
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
-        is_inplace = not use_inverse  # activations in invertible blocks are not inplace when invertibility is used
         out_channels = in_channels
 
         # Input (first) layer
@@ -96,7 +95,7 @@ class SAVnet3D(nn.Module):
             factor = 2**i  # gives the 1, 2, 4, 8, 16, etc. series
             downs += [
                 DownBlock(first_layer_channels * factor, num_convs, norm_layer, use_bias,
-                          keep_input, use_inverse, is_inplace, disable_invertibles, is_separable)
+                          keep_input, use_inverse, disable_invertibles, is_separable)
             ]
 
             if enable_attention_block[i]:
@@ -125,14 +124,14 @@ class SAVnet3D(nn.Module):
         ups = [
             UpBlock(first_layer_channels * up_channel_factors[0],
                     first_layer_channels * up_channel_factors[0], num_convs, norm_layer, use_bias,
-                    keep_input, use_inverse, is_inplace, disable_invertibles, is_separable)
+                    keep_input, use_inverse, disable_invertibles, is_separable)
         ]
 
         for i, num_convs in enumerate(up_blocks[1:]):
             ups += [
                 UpBlock(first_layer_channels * up_channel_factors[i],
                         first_layer_channels * up_channel_factors[i + 1], num_convs, norm_layer,
-                        use_bias, keep_input, use_inverse, is_inplace, disable_invertibles,
+                        use_bias, keep_input, use_inverse, disable_invertibles,
                         is_separable)
             ]
         self.ups = nn.ModuleList(ups)
