@@ -64,17 +64,13 @@ class Piresnet3D(nn.Module):
                       kernel_size=5,
                       stride=1,
                       padding=0,
-                      bias=use_bias),
-            norm_layer(first_layer_channels),
-            nn.ReLU(inplace=True),
+                      bias=use_bias), norm_layer(first_layer_channels), nn.ReLU(inplace=True),
             nn.Conv3d(first_layer_channels,
                       first_layer_channels * 2,
                       kernel_size=3,
                       stride=2,
                       padding=1,
-                      bias=use_bias),
-            norm_layer(first_layer_channels * 2), 
-            nn.ReLU(inplace=True))
+                      bias=use_bias), norm_layer(first_layer_channels * 2), nn.ReLU(inplace=True))
 
     def build_upconv(self, out_channels, norm_layer, first_layer_channels, use_bias):
         return nn.Sequential(
@@ -84,10 +80,8 @@ class Piresnet3D(nn.Module):
                                stride=2,
                                padding=1,
                                output_padding=1,
-                               bias=use_bias), 
-            norm_layer(first_layer_channels), 
-            nn.ReLU(inplace=True),
-            nn.ReplicationPad3d(2),
+                               bias=use_bias), norm_layer(first_layer_channels),
+            nn.ReLU(inplace=True), nn.ReplicationPad3d(2),
             nn.Conv3d(first_layer_channels, out_channels, kernel_size=5, padding=0), nn.Tanh())
 
     def forward(self, x, inverse=False):

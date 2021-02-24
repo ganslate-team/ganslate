@@ -131,8 +131,7 @@ class SAVnet3D(nn.Module):
             ups += [
                 UpBlock(first_layer_channels * up_channel_factors[i],
                         first_layer_channels * up_channel_factors[i + 1], num_convs, norm_layer,
-                        use_bias, keep_input, use_inverse, disable_invertibles,
-                        is_separable)
+                        use_bias, keep_input, use_inverse, disable_invertibles, is_separable)
             ]
         self.ups = nn.ModuleList(ups)
 

@@ -11,8 +11,7 @@ import torch
 from midaGAN import configs
 from midaGAN.data.utils.body_mask import apply_body_mask
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.normalization import (min_max_denormalize,
-                                              min_max_normalize)
+from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
 from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
 from midaGAN.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
@@ -133,7 +132,6 @@ class CBCTtoCT2DDataset(Dataset):
             }
 
             wandb.log(logdict)
-
 
         # Convert array to torch tensors
         CBCT = torch.tensor(CBCT)

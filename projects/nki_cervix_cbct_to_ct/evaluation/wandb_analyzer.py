@@ -1,14 +1,10 @@
-# Use this script to analyze data from wandb logs. 
+# Use this script to analyze data from wandb logs.
 import wandb
-import pandas as pd 
-
+import pandas as pd
 
 # Ascending means for the metric, lower values are better, and the first value in the ascending sort
 # will be the best value.
-DEFAULT_KEYS = {
-    "descending": ["psnr", "ssim"],
-    "ascending": ["mae", "mse", "nmse"]
-}
+DEFAULT_KEYS = {"descending": ["psnr", "ssim"], "ascending": ["mae", "mse", "nmse"]}
 
 # Lambda fns for some easy ops
 flatten = lambda t: [item for sublist in t for item in sublist]
@@ -17,13 +13,14 @@ is_list_element_substr = lambda list1, string: any([key in string for key in lis
 # Filters a list of columns from the dataframe
 filter_cols = lambda df, cols: df[df.columns[~df.columns.isin(cols)]]
 
+
 def main(args):
     api = wandb.Api()
     all_keys = flatten([v for v in DEFAULT_KEYS.values()])
 
     runs = api.runs(f"{args.entity}/{args.project}")
 
-    for run in runs: 
+    for run in runs:
         if run.state == "finished":
             print(f"Loading {run.name} ...")
             df = pd.DataFrame()
@@ -49,17 +46,17 @@ def main(args):
                         sort = key
                         break
 
-                # Depending on if min-max is specified, rank the 
+                # Depending on if min-max is specified, rank the
                 # list of values
                 ascending = True if sort == 'ascending' else False
                 df[label] = series.rank(ascending=ascending)
-                
-            # Get average rank across all the metrics, if any metrics need 
+
+            # Get average rank across all the metrics, if any metrics need
             # to be filtered, they can be added in the list
             filter_list = ['iteration']
             df['average_rank'] = filter_cols(df, filter_list).mean(axis=1)
             df = df.sort_values(by='average_rank').reset_index()
-            
+
             df.to_csv(f"{run.name}.csv")
             print(f"Top 5 iterations: \n {df[['iteration', 'average_rank']].head()}")
 

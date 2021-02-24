@@ -37,8 +37,7 @@ EXTENSIONS = ['.nrrd']
 @dataclass
 class CBCTtoCTValDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTValDataset"
-    hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1000, 2000))
+    hounsfield_units_range: Tuple[int, int] = field(default_factory=lambda: (-1000, 2000))
     mask_labels: List[str] = field(default_factory=lambda: [])
 
 
@@ -112,7 +111,7 @@ class CBCTtoCTValDataset(Dataset):
         # Normalize Hounsfield units to range [-1,1]
         CT = min_max_normalize(CT, self.hu_min, self.hu_max)
         CBCT = min_max_normalize(CBCT, self.hu_min, self.hu_max)
-        
+
         # Add channel dimension (1 = grayscale)
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
@@ -137,7 +136,6 @@ class CBCTtoCTValDataset(Dataset):
     def save(self, tensor, save_dir, metadata=None):
         tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
-
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
