@@ -1,4 +1,4 @@
-# Config for Reversible 3D VNet
+# Config for RevVNet with SSIM
 project_dir: "./projects/nki_cervix_cbct_to_ct/datasets"
 
 train:
@@ -6,9 +6,10 @@ train:
     n_iters: 15000
     n_iters_decay: 15000
     batch_size: 1
-    output_dir: /midagan/checkpoints/revvnet
+    output_dir: /midagan/checkpoints/ssim
     seed: 42
-
+    mixed_precision: True
+    
     logging:
         freq: 100
         wandb:
@@ -22,7 +23,8 @@ train:
         name: "CBCTtoCTDataset"
         root: /data/train
         num_workers: 4
-        patch_size: [32, 384, 384]
+        # Decide how to use patch size here! 
+        patch_size: [64, 384, 384]
         enable_masking: True
 
     gan:  
@@ -47,7 +49,7 @@ train:
             lambda_B: 10.0
             lambda_identity: 0.0
             lambda_inverse: 0.0
-            proportion_ssim: 0.0
+            proportion_ssim: 0.84
             lr_D: 0.0002
             lr_G: 0.0004
 
@@ -70,3 +72,7 @@ val:
 test:
     datasets: "${val.datasets}"
     sliding_window: "${val.sliding_window}"
+
+
+
+

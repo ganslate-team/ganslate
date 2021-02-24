@@ -11,7 +11,7 @@ train:
     logging:
         freq: 100
         wandb:
-            project: "Media_Experiments_V1"
+            project: "Media_Experiments"
             image_filter: [0.289 ,0.40]
             run: ssim_small_patch
 
@@ -22,7 +22,7 @@ train:
         name: "CBCTtoCTDataset"
         root: /data/train
         num_workers: 4
-        patch_size: [16, 256, 256]
+        patch_size: [16, 128, 128]
         enable_masking: True
 
     gan:  
@@ -43,8 +43,8 @@ train:
             in_channels: 1
 
         optimizer:
-            lambda_A: 5.0
-            lambda_B: 5.0
+            lambda_A: 10.0
+            lambda_B: 10.0
             lambda_identity: 0.0
             lambda_inverse: 0.0
             proportion_ssim: 0.84
@@ -66,4 +66,8 @@ val:
 
     sliding_window:
         window_size: "${train.dataset.patch_size}"
+
+test:
+    datasets: "${val.datasets}"
+    sliding_window: "${val.sliding_window}"
 
