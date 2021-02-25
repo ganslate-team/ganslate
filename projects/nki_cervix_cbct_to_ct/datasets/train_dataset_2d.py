@@ -13,6 +13,8 @@ from midaGAN.data.utils.body_mask import apply_body_mask
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
 from midaGAN.data.utils.normalization import (min_max_denormalize,
                                               min_max_normalize)
+from midaGAN.data.utils.ops import pad
+
 from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
 from midaGAN.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
@@ -112,8 +114,8 @@ class CBCTtoCT2DDataset(Dataset):
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")
 
-        CBCT = pad(CBCT, self.patch_size)
-        CT = pad(CT, self.patch_size)
+        CBCT = pad(CBCT, np.expand_dims(self.patch_size, axis=0))
+        CT = pad(CT, np.expand_dims(self.patch_size, axis=0))
 
         if DEBUG:
             import wandb
