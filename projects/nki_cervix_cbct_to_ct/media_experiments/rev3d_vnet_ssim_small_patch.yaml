@@ -51,7 +51,7 @@ train:
             lr_G: 0.0004
 
     metrics: 
-        output_distributions_D: True
+        discriminator_evolution: True
         ssim: True
     
 val:
