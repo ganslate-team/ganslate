@@ -24,11 +24,11 @@ train:
         root: /data/train
         num_workers: 4
         # Decide how to use patch size here! 
-        patch_size: [64, 384, 384]
+        patch_size: [32, 384, 384]
         enable_masking: True
 
     gan:  
-        name: "PiCycleGAN"
+        name: "RevGAN"
 
         generator:
             name: Vnet3D
@@ -48,7 +48,6 @@ train:
             lambda_A: 10.0
             lambda_B: 10.0
             lambda_identity: 0.0
-            lambda_inverse: 0.0
             proportion_ssim: 0.84
             lr_D: 0.0002
             lr_G: 0.0004

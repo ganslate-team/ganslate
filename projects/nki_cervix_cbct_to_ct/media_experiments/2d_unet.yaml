@@ -9,7 +9,7 @@ train:
     seed: 42
 
     logging:
-        freq: 100
+        freq: 1
         wandb:
             project: "Media_Experiments"
             image_filter: [0.289 ,0.40]
@@ -18,7 +18,7 @@ train:
         freq: 2000
 
     dataset: 
-        name: "CBCTtoCTDataset"
+        name: "CBCTtoCT2DDataset"
         root: /data/train
         num_workers: 4
         image_size: [384, 384]
@@ -40,7 +40,6 @@ train:
             lambda_A: 10.0
             lambda_B: 10.0
             lambda_identity: 0.0
-            lambda_inverse: 0.0
             proportion_ssim: 0.0
             lr_D: 0.0001
             lr_G: 0.0002
@@ -59,7 +58,7 @@ val:
         root:  /data/phantom
 
     sliding_window:
-        window_size: "${train.dataset.patch_size}"
+        window_size: "${train.dataset.image_size}"
 
 test:
     datasets: "${val.datasets}"
