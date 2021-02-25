@@ -36,8 +36,7 @@ EXTENSIONS = ['.nrrd']
 @dataclass
 class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTInferenceDataset"
-    hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1000, 2000))
+    hounsfield_units_range: Tuple[int, int] = field(default_factory=lambda: (-1000, 2000))
     enable_masking: bool = False
     cbct_mask_threshold: int = -700
 
@@ -81,7 +80,6 @@ class CBCTtoCTInferenceDataset(Dataset):
 
         volume = apply_body_mask(volume, apply_mask=self.apply_mask, \
                                     hu_threshold=self.cbct_mask_threshold)
-            
         volume = torch.tensor(volume)
         # Limits the lowest and highest HU unit
         volume = torch.clamp(volume, self.hu_min, self.hu_max)

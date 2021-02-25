@@ -1,4 +1,4 @@
-project_dir: "./projects/maastro_lung_proton_cbct_to_ct/datasets"
+project_dir: "./projects/maastro_lung_proton_cbct_to_ct/"
 cuda: True
 n_iters: 45000  # starting from 40000
 n_iters_decay: 5000
@@ -24,7 +24,7 @@ dataset:
     patch_size: [40, 392, 392]
     
 gan:  
-    name: "PiCycleGAN"
+    name: "RevGAN"
 
     generator:
         name: Vnet3D
@@ -44,7 +44,7 @@ gan:
         lambda_A: 5.0
         lambda_B: 5.0
         lambda_identity: 0.0
-        lambda_inverse: 0.0
+        
         proportion_ssim: 0.84
         lr_D: 0.0002
         lr_G: 0.0004

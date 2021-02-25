@@ -136,7 +136,6 @@ class CBCTtoCT2DDataset(Dataset):
 
             wandb.log(logdict)
 
-
         # Convert array to torch tensors
         CBCT = torch.tensor(CBCT)
         CT = torch.tensor(CT)

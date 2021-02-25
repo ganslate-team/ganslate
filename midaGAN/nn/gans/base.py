@@ -213,7 +213,7 @@ class BaseGAN(ABC):
         """Save all the networks, optimizers and, if used, apex mixed precision's state_dict to the disk.
 
         Parameters:
-            iter_idx (int) -- current iteration; used in the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
+            iter_idx (int) -- current iteration; used in the filenames (e.g. 3000.pth)
         """
         checkpoint = {}
         checkpoint_path = Path(self.output_dir) / f"checkpoints/{iter_idx}.pth"
@@ -239,7 +239,7 @@ class BaseGAN(ABC):
     def load_networks(self, iter_idx):
         """Load all the networks, optimizers and, if used, apex mixed precision's state_dict from the disk.
         Parameters:
-            iter_idx (int) -- current iteration; used to specify the filenames (e.g. 30_net_D_A.pth, 30_optimizers.pth)
+            iter_idx (int) -- current iteration; used to specify the filenames (e.g. 3000.pth)
         """
         checkpoint_path = Path(self.output_dir).resolve() / f"checkpoints/{iter_idx}.pth"
         checkpoint = torch.load(checkpoint_path, map_location=self.device)

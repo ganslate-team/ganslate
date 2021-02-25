@@ -4,30 +4,32 @@ from dataclasses import dataclass
 import torch
 from midaGAN import configs
 from midaGAN.data.utils.image_pool import ImagePool
-from midaGAN.nn.gans.basegan import BaseGAN
+from midaGAN.nn.gans.unpaired import cyclegan
+from midaGAN.nn.gans.base import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 
 
 @dataclass
-class OptimizerConfig(configs.base.BaseOptimizerConfig):
-    lambda_A: float = 10.0
-    lambda_B: float = 10.0
-    lambda_identity: float = 0
-    lambda_inverse: float = 0
-    proportion_ssim: float = 0.84
+class OptimizerConfig(cyclegan.OptimizerConfig):
+    # the same as CycleGAN, kept here for consistency and for possible future changes
+    pass
 
 
 @dataclass
-class CycleGANConfig(configs.base.BaseGANConfig):
-    """CycleGAN"""
-    name: str = "CycleGAN"
+class RevGANConfig(configs.base.BaseGANConfig):
+    """RevGAN Config"""
+    name: str = "RevGAN"
     pool_size: int = 50
     optimizer: OptimizerConfig = OptimizerConfig
 
 
-class CycleGAN(BaseGAN):
-    """CycleGAN"""
+class RevGAN(BaseGAN):
+    """ RevGAN architecture, described in the paper
+    `Reversible GANs for Memory-efficient Image-to-Image Translation`,
+    Tycho F.A. van der Ouderaa, Daniel E. Worrall,
+    CVPR 2019
+    """
 
     def __init__(self, conf):
         super().__init__(conf)
@@ -52,8 +54,8 @@ class CycleGAN(BaseGAN):
         optimizer_names = ['G', 'D']
         self.optimizers = {name: None for name in optimizer_names}
 
-        # Generators and Discriminators
-        network_names = ['G_A', 'G_B', 'D_A', 'D_B'] if self.is_train else ['G_A']
+        # Generator and Discriminators
+        network_names = ['G', 'D_A', 'D_B'] if self.is_train else ['G']
         self.networks = {name: None for name in network_names}
 
         if self.is_train:
@@ -68,7 +70,7 @@ class CycleGAN(BaseGAN):
         # Standard GAN loss
         self.criterion_adv = AdversarialLoss(
             self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
-        # Generator-related losses -- Cycle-consistency, Identity and Inverse loss
+        # Generator-related losses -- Cycle-consistency and Identity loss
         self.criterion_G = CycleGANLosses(self.conf)
 
     def init_optimizers(self):
@@ -77,8 +79,7 @@ class CycleGAN(BaseGAN):
         beta1 = self.conf.train.gan.optimizer.beta1
         beta2 = self.conf.train.gan.optimizer.beta2
 
-        params_G = itertools.chain(self.networks['G_A'].parameters(),
-                                   self.networks['G_B'].parameters())
+        params_G = self.networks['G'].parameters()
         params_D = itertools.chain(self.networks['D_A'].parameters(),
                                    self.networks['D_B'].parameters())
 
@@ -133,18 +134,18 @@ class CycleGAN(BaseGAN):
         real_B = self.visuals['real_B']
 
         # Forward cycle G_A (A to B)
-        fake_B = self.networks['G_A'](real_A)
-        rec_A = self.networks['G_B'](fake_B)
+        fake_B = self.networks['G'](real_A)  # G_A
+        rec_A = self.networks['G'](fake_B, inverse=True)  # G_B
 
         # Backward cycle G_B (B to A)
-        fake_A = self.networks['G_B'](real_B)  # G forward is G_A, G inverse forward is G_B
-        rec_B = self.networks['G_A'](fake_A)
+        fake_A = self.networks['G'](real_B, inverse=True)  # G_B
+        rec_B = self.networks['G'](fake_A)  # G_A
 
         # Visuals for Identity loss
         idt_A, idt_B = None, None
         if self.criterion_G.is_using_identity():
-            idt_A = self.networks['G_B'](real_A)
-            idt_B = self.networks['G_A'](real_B)
+            idt_A = self.networks['G'](real_A, inverse=True)
+            idt_B = self.networks['G'](real_B)
 
         self.visuals.update({
             'fake_B': fake_B,
@@ -181,8 +182,6 @@ class CycleGAN(BaseGAN):
             raise ValueError('The discriminator has to be either "D_A" or "D_B".')
 
         self.pred_real = self.networks[discriminator](real)
-
-        # Detaching fake: https://github.com/pytorch/examples/issues/116
         self.pred_fake = self.networks[discriminator](fake.detach())
 
         loss_real = self.criterion_adv(self.pred_real, target_is_real=True)
@@ -190,7 +189,10 @@ class CycleGAN(BaseGAN):
         self.losses[discriminator] = loss_real + loss_fake
 
         # backprop
-        self.backward(loss=self.losses[discriminator], optimizer=self.optimizers['D'], loss_id=2)
+        self.backward(loss=self.losses[discriminator],
+                      optimizer=self.optimizers['D'],
+                      retain_graph=True,
+                      loss_id=loss_id)
 
     def backward_G(self):
         """Calculate the loss for generators G_A and G_B using all specified losses"""
@@ -208,19 +210,22 @@ class CycleGAN(BaseGAN):
         self.losses['G_B'] = self.criterion_adv(pred_B, target_is_real=True)
         # ---------------------------------------------------------------
 
-        # ------------- G Losses (Cycle, Identity, Inverse) -------------
+        # ------------- G Losses (Cycle, Identity) -------------
         losses_G = self.criterion_G(self.visuals)
         self.losses.update(losses_G)
         # ---------------------------------------------------------------
 
         # combine losses and calculate gradients
         combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
-        self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=0)
+        self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
 
     def infer(self, input, cycle='A'):
         assert cycle in ['A', 'B'], \
             "Infer needs an input of either cycle with A or B domain as input"
-        assert f'G_{cycle}' in self.networks.keys()
+        assert 'G' in self.networks.keys()
 
         with torch.no_grad():
-            return self.networks[f'G_{cycle}'].forward(input)
+            if cycle == 'A':
+                return self.networks['G'].forward(input)
+            elif cycle == 'B':
+                return self.networks['G'].forward(input, inverse=True)

@@ -1,4 +1,4 @@
-project_dir: "./projects/brats_flair_to_t1w/datasets/"
+project_dir: "./projects/brats_flair_to_t1w/"
 
 train:
     output_dir: "./checkpoints/dke_brats_cut/"

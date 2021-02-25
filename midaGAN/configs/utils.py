@@ -25,7 +25,7 @@ def init_config(conf, config_class):
     if not isinstance(conf, DictConfig):
         conf = OmegaConf.load(str(conf))
 
-    # Allows the framework to find user-defined, project-specific, dataset classes and their configs
+    # Allows the framework to find user-defined, project-specific, classes and their configs
     if conf.project_dir:
 
         for key in ["dataset", "datasets"]:
