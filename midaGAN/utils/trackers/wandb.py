@@ -1,6 +1,6 @@
 from omegaconf import OmegaConf
 import wandb
-
+import os
 
 class WandbTracker:
 
@@ -8,10 +8,18 @@ class WandbTracker:
         project = conf[conf.mode].logging.wandb.project
         entity = conf[conf.mode].logging.wandb.entity
         conf_dict = OmegaConf.to_container(conf, resolve=True)
-        wandb.init(project=project, entity=entity, config=conf_dict)
+
+        if wandb.run is None:
+            if conf[conf.mode].checkpointing.load_iter and conf[conf.mode].logging.wandb.id:
+                # Source: https://docs.wandb.ai/library/resuming
+                os.environ["WANDB_RESUME"] = "allow"
+                os.environ["WANDB_RUN_ID"] = conf[conf.mode].logging.wandb.id
+                
+            wandb.init(project=project, entity=entity, config=conf_dict)
 
         if conf[conf.mode].logging.wandb.run:
             wandb.run.name = conf[conf.mode].logging.wandb.run
+
 
         self.image_filter = None
         if conf[conf.mode].logging.wandb.image_filter:
