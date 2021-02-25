@@ -5,7 +5,7 @@ import torch
 class TrainingMetrics:
 
     def __init__(self, conf):
-        self.output_distributions = True if conf.train.metrics.output_distributions_D else False
+        self.output_distributions = True if conf.train.metrics.discriminator_evolution else False
 
         if conf.train.metrics.ssim:
             self.ssim = ssim.SSIMLoss()

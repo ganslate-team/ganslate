@@ -6,7 +6,7 @@ from midaGAN.configs import base
 
 @dataclass
 class TrainMetricsConfig:
-    output_distributions_D: bool = False
+    discriminator_evolution: bool = False
     ssim: bool = False
 
 
