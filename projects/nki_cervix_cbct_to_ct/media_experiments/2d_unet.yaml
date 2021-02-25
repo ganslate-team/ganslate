@@ -15,7 +15,7 @@ train:
             image_filter: [0.289 ,0.40]
 
     checkpointing:
-        freq: 2000
+        freq: 1000
 
     dataset: 
         name: "CBCTtoCT2DDataset"
@@ -49,7 +49,7 @@ train:
         ssim: True
     
 val:
-    freq: 2000
+    freq: 1000
     datasets: 
     -   name: CBCTtoCTValDataset
         root:  /data/valid

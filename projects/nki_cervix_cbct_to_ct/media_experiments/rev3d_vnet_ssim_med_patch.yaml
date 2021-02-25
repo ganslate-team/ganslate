@@ -16,13 +16,13 @@ train:
             run: ssim_small_patch
 
     checkpointing:
-        freq: 2000
+        freq: 1000
 
     dataset: 
         name: "CBCTtoCTDataset"
         root: /data/train
         num_workers: 4
-        patch_size: [24, 256, 256]
+        patch_size: [24, 224, 224]
         enable_masking: True
 
     gan:  
@@ -55,7 +55,7 @@ train:
         ssim: True
     
 val:
-    freq: 2000
+    freq: 1000
     datasets: 
     -   name: CBCTtoCTValDataset
         root:  /data/valid
