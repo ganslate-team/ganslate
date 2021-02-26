@@ -45,20 +45,21 @@ class CBCTtoCT2DDataset(Dataset):
     def __init__(self, conf):
 
         root_path = Path(conf.train.dataset.root).resolve()
-
-        self.paths_CBCT = {}
-        self.paths_CT = {}
+        self.paths_CBCT = []
+        self.paths_CT = []
 
         for patient in root_path.iterdir():
-            self.paths_CBCT[patient.stem] = make_recursive_dataset_of_files(
+            patient_cbcts = make_recursive_dataset_of_files(
                 patient / "CBCT", EXTENSIONS)
-            CT_nrrds = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
-            self.paths_CT[patient.stem] = [path for path in CT_nrrds if path.stem == "CT"]
+            
+            patient_cts = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
+            patient_cts = [path for path in patient_cts if path.stem == "CT"]
 
-        assert len(self.paths_CBCT) == len(self.paths_CT), \
-            "Number of patients should match for CBCT and CT"
+            self.paths_CBCT.extend(patient_cbcts)
+            self.paths_CT.extend(patient_cts)
 
-        self.num_datapoints = len(self.paths_CT)
+        self.num_datapoints_CBCT = len(self.paths_CBCT)
+        self.num_datapoints_CT = len(self.paths_CT)
 
         # Min and max HU values for clipping and normalization
         self.hu_min, self.hu_max = conf.train.dataset.hounsfield_units_range
@@ -72,13 +73,11 @@ class CBCTtoCT2DDataset(Dataset):
         self.ct_mask_threshold = conf.train.dataset.ct_mask_threshold
 
     def __getitem__(self, index):
-        patient_index = list(self.paths_CT)[index]
+        index_CBCT = index % self.num_datapoints_CBCT
+        index_CT = random.randint(0, self.num_datapoints_CT - 1)
 
-        paths_CBCT = self.paths_CBCT[patient_index]
-        paths_CT = self.paths_CT[patient_index]
-
-        path_CBCT = random.choice(paths_CBCT)
-        path_CT = random.choice(paths_CT)
+        path_CBCT = self.paths_CBCT[index_CBCT]
+        path_CT = self.paths_CT[index_CT]
 
         # load nrrd as SimpleITK objects
         CBCT = sitk_utils.load(path_CBCT)
@@ -154,4 +153,4 @@ class CBCTtoCT2DDataset(Dataset):
         return {'A': CBCT, 'B': CT}
 
     def __len__(self):
-        return self.num_datapoints
+        return max(self.num_datapoints_CBCT, self.num_datapoints_CT)
