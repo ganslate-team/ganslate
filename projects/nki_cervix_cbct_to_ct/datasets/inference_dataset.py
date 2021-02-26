@@ -36,19 +36,15 @@ EXTENSIONS = ['.nrrd']
 @dataclass
 class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTInferenceDataset"
-    hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
+    hounsfield_units_range: Tuple[int, int] = field(default_factory=lambda: (-1000, 2000))
     enable_masking: bool = False
-    enable_bounding: bool = True
     cbct_mask_threshold: int = -700
 
 
 class CBCTtoCTInferenceDataset(Dataset):
-    # exit("FIX ALL THESE conf.test. things")
+
     def __init__(self, conf):
-        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! SHOULDN'T BE conf.test
-        # self.paths = make_dataset_of_directories(conf.test.dataset.root, EXTENSIONS)
-        self.root_path = Path(conf.test.dataset.root).resolve()
+        self.root_path = Path(conf.infer.dataset.root).resolve()
 
         self.paths = []
 
@@ -57,11 +53,10 @@ class CBCTtoCTInferenceDataset(Dataset):
 
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.test.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf.infer.dataset.hounsfield_units_range
 
-        self.apply_mask = conf.test.dataset.enable_masking
-        self.apply_bound = conf.test.dataset.enable_bounding
-        self.cbct_mask_threshold = conf.test.dataset.cbct_mask_threshold
+        self.apply_mask = conf.infer.dataset.enable_masking
+        self.cbct_mask_threshold = conf.infer.dataset.cbct_mask_threshold
 
     def __getitem__(self, index):
         path = str(self.paths[index])
@@ -84,10 +79,8 @@ class CBCTtoCTInferenceDataset(Dataset):
 
         volume = sitk_utils.get_npy(volume)
 
-        if self.apply_mask:
-            body_mask = get_body_mask(volume, self.cbct_mask_threshold)
-            volume = np.where(body_mask, volume, -1024)
-            metadata.update({'mask': body_mask})
+        volume = apply_body_mask(volume, apply_mask=self.apply_mask, \
+                                    hu_threshold=self.cbct_mask_threshold)
 
         volume = torch.tensor(volume)
         # Limits the lowest and highest HU unit
@@ -104,13 +97,8 @@ class CBCTtoCTInferenceDataset(Dataset):
     def save(self, tensor, save_dir, metadata=None):
         tensor = tensor.squeeze().cpu()
         tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
-        masking_value = torch.tensor(-1024, dtype=torch.float)
 
         if metadata:
-            if 'mask' in metadata:
-                mask = torch.tensor(metadata['mask'], dtype=bool).squeeze()
-                tensor = torch.where(mask, tensor, masking_value)
-
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
                                                          metadata['spacing'], metadata['direction'],
                                                          metadata['dtype'])

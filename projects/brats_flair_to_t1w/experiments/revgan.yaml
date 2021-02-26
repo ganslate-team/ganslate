@@ -1,7 +1,7 @@
-project_dir: "./projects/maastro_lung_proton_cbct_to_ct/"
+project_dir: "./projects/brats_flair_to_t1w/"
 
 train:
-    output_dir: "./checkpoints/dke_cbct_ct_cyclegan/"
+    output_dir: "./checkpoints/dke_brats_cyclegan/"
     cuda: True
     n_iters: 20000
     n_iters_decay: 20000
@@ -11,26 +11,32 @@ train:
     logging:
         freq: 50
         wandb:
-            project: "CUT-cbct-ct"
+            project: "CUT-BraTS"
         
     checkpointing:
         freq: 5000
 
     dataset: 
-        name: "CBCTtoCTDataset"
-        root: "/workspace/train_val/train"
+        name: "BratsDataset"
+        root: "/workspace/Task01_BrainTumour/imagesTr"
         num_workers: 8
         patch_size: [32, 176, 176]
     
     gan:  
-        name: "CycleGAN"
+        name: "RevGAN"
         generator:  
-            name: "Vnet3D"
-            use_memory_saving: False
-            use_inverse: False
+            # name: "Vnet3D"
+            # use_memory_saving: True
+            # use_inverse: True
+            # in_channels: 1
+            # down_blocks: [2, 2, 3]
+            # up_blocks: [3, 3, 3]
+
+            name: "Piresnet3D"
+            use_memory_saving: True
+            use_inverse: True
             in_channels: 1
-            down_blocks: [2, 2, 3]
-            up_blocks: [3, 3, 3]
+            depth: 5
 
         discriminator:  
             name: "PatchGAN3D"
@@ -48,8 +54,8 @@ train:
 val:
     freq: 40000
     dataset: 
-        name: "CBCTtoCTValidationDataset"
-        root: "/workspace/train_val/val"
+        name: "BratsValTestDataset"
+        root: "/workspace/Task01_BrainTumour/imagesTs"
     sliding_window:
         window_size: ${train.dataset.patch_size}
     metrics:

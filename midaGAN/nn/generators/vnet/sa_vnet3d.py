@@ -1,24 +1,36 @@
 import logging
+from dataclasses import dataclass
+# Config imports
+from typing import Tuple
 
 import torch
 import torch.nn as nn
-
+from midaGAN import configs
 from midaGAN.nn import invertible
+from midaGAN.nn import attention
+
+from midaGAN.nn.generators.vnet.vnet3d import (DownBlock, InputBlock, OutBlock, UpBlock)
 from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, get_norm_layer_3d,
                               is_bias_before_norm)
-
-# Config imports
-from typing import Tuple
-from dataclasses import dataclass
-from midaGAN import configs
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class Vnet3DConfig(configs.base.BaseGeneratorConfig):
-    """Partially-invertible V-Net generator."""
-    name: str = "Vnet3D"
+class SAVnet3DConfig(configs.base.BaseGeneratorConfig):
+    """Partially-invertible V-Net generator with Self-Attention
+
+    Self Attention Blocks are added at each DownBlock. 
+    SA original publication: https://arxiv.org/pdf/1805.08318.pdf
+    Idea: Regions in image can escape locality constraint in CNNs by 
+    forming query and key pairs and comparing generating an attention map
+    based on learnable relations between these pairs. 
+    Usecase: Might be good for CBCT -> CT so that artifacts in different
+    regions can be associated as something that needs to be rectified for CT
+    translation
+    
+    """
+    name: str = "SAVnet3D"
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse: bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
     first_layer_channels: int = 16
@@ -26,8 +38,11 @@ class Vnet3DConfig(configs.base.BaseGeneratorConfig):
     up_blocks: Tuple[int] = (2, 2, 1, 1)
     is_separable: bool = False
 
+    # Need to correspond to the same length as the number of down blocks
+    enable_attention_block: Tuple[bool] = (True, True, True, True)
 
-class Vnet3D(nn.Module):
+
+class SAVnet3D(nn.Module):
 
     def __init__(self,
                  in_channels,
@@ -37,6 +52,7 @@ class Vnet3D(nn.Module):
                  up_blocks=(2, 2, 1, 1),
                  use_memory_saving=True,
                  use_inverse=True,
+                 enable_attention_block=(True, True, True, True),
                  is_separable=False):
         super().__init__()
 
@@ -73,6 +89,7 @@ class Vnet3D(nn.Module):
 
         # Downblocks
         downs = []
+        attention_blocks = []
         down_channel_factors = []
         for i, num_convs in enumerate(down_blocks):
             factor = 2**i  # gives the 1, 2, 4, 8, 16, etc. series
@@ -80,8 +97,19 @@ class Vnet3D(nn.Module):
                 DownBlock(first_layer_channels * factor, num_convs, norm_layer, use_bias,
                           keep_input, use_inverse, disable_invertibles, is_separable)
             ]
+
+            if enable_attention_block[i]:
+                attn_block = attention.SelfAttentionBlock(first_layer_channels * factor * 2, 'relu')
+
+            else:
+                attn_block = nn.Identity()
+
+            attention_blocks += [attn_block]
+
             down_channel_factors.append(factor)
+
         self.downs = nn.ModuleList(downs)
+        self.attn_blocks = nn.ModuleList(attention_blocks)
 
         # NOTE: in order to be able to use an architecture for CUT, it is necessary to
         # have self.encoder which contains all the layers of the encoder part of the network
@@ -103,8 +131,7 @@ class Vnet3D(nn.Module):
             ups += [
                 UpBlock(first_layer_channels * up_channel_factors[i],
                         first_layer_channels * up_channel_factors[i + 1], num_convs, norm_layer,
-                        use_bias, keep_input, use_inverse, disable_invertibles,
-                        is_separable)
+                        use_bias, keep_input, use_inverse, disable_invertibles, is_separable)
             ]
         self.ups = nn.ModuleList(ups)
 
@@ -124,11 +151,15 @@ class Vnet3D(nn.Module):
 
         # Downblocks
         down_outs = []
-        for i, down in enumerate(self.downs):
+        for i, (down, attn) in enumerate(zip(self.downs, self.attn_blocks)):
             if i == 0:
-                down_outs += [down(out1, inverse)]
+                down_out = down(out1, inverse)
+                # Attention goes here
+                down_outs += [attn(down_out)]
             else:
-                down_outs += [down(down_outs[-1], inverse)]
+                down_out = down(down_outs[-1], inverse)
+                # Attention goes here
+                down_outs += [attn(down_out)]
 
         # Upblocks
         # reverse the order of outputs of downblocks to fetch skip connections chronologically
@@ -148,124 +179,6 @@ class Vnet3D(nn.Module):
             out = up(out, skip, inverse)
 
         # Out block
+
         out = out_block(out)
         return out
-
-
-class InputBlock(nn.Module):
-
-    def __init__(self, in_channels, out_channels, norm_layer, use_bias, is_separable):
-        super().__init__()
-        self.n_repeats = out_channels // in_channels  # how many times an image has to be repeated to match `out_channels`
-
-        conv_layer = get_conv_layer_3d(is_separable)
-        self.conv1 = conv_layer(in_channels, out_channels, kernel_size=5, padding=2, bias=use_bias)
-        self.bn1 = norm_layer(out_channels)
-        self.relu = nn.PReLU(out_channels)
-
-    def forward(self, x):
-        out = self.bn1(self.conv1(x))
-        x_repeated = x.repeat(1, self.n_repeats, 1, 1,
-                              1)  # match channel dimension for residual connection
-        out = out + x_repeated
-        return self.relu(out)
-
-
-class DownBlock(nn.Module):
-
-    def __init__(self, in_channels, n_conv_blocks, norm_layer, use_bias, keep_input, use_inverse,
-                 disable_invertibles, is_separable):
-        super().__init__()
-        self.is_separable = is_separable
-
-        out_channels = 2 * in_channels
-        self.down_conv_ab = self.build_down_conv(in_channels, out_channels, norm_layer, use_bias)
-        if use_inverse:
-            self.down_conv_ba = self.build_down_conv(in_channels, out_channels, norm_layer,
-                                                     use_bias)
-
-        inv_block = _base_inv_block(out_channels, norm_layer, use_bias, is_separable)
-        self.core = invertible.InvertibleSequence(inv_block, n_conv_blocks, keep_input,
-                                                  disable_invertibles)
-        self.relu = nn.PReLU(out_channels)
-
-    def build_down_conv(self, in_channels, out_channels, norm_layer, use_bias):
-        conv_layer = get_conv_layer_3d(self.is_separable)
-        return nn.Sequential(
-            conv_layer(in_channels, out_channels, kernel_size=2, stride=2, bias=use_bias),
-            norm_layer(out_channels), nn.PReLU(out_channels))
-
-    def forward(self, x, inverse=False):
-        if inverse:
-            down_conv = self.down_conv_ba
-        else:
-            down_conv = self.down_conv_ab
-        down = down_conv(x)
-        out = self.core(down, inverse)
-        out = out + down
-        return self.relu(out)
-
-
-class UpBlock(nn.Module):
-
-    def __init__(self, in_channels, out_channels, n_conv_blocks, norm_layer, use_bias, keep_input,
-                 use_inverse, disable_invertibles, is_separable):
-        super().__init__()
-        self.is_separable = is_separable
-
-        self.up_conv_ab = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
-        if use_inverse:
-            self.up_conv_ba = self.build_up_conv(in_channels, out_channels, norm_layer, use_bias)
-
-        inv_block = _base_inv_block(out_channels, norm_layer, use_bias, is_separable)
-        self.core = invertible.InvertibleSequence(inv_block, n_conv_blocks, keep_input,
-                                                  disable_invertibles)
-        self.relu = nn.PReLU(out_channels)
-
-    def build_up_conv(self, in_channels, out_channels, norm_layer, use_bias):
-        conv_transp_layer = get_conv_transpose_layer_3d(self.is_separable)
-        return nn.Sequential(
-            conv_transp_layer(in_channels,
-                              out_channels // 2,
-                              kernel_size=2,
-                              stride=2,
-                              bias=use_bias), norm_layer(out_channels // 2),
-            nn.PReLU(out_channels // 2))
-
-    def forward(self, x, skipx, inverse=False):
-        if inverse:
-            up_conv = self.up_conv_ba
-        else:
-            up_conv = self.up_conv_ab
-        up = up_conv(x)
-        xcat = torch.cat((up, skipx), 1)
-        out = self.core(xcat, inverse)
-        out = out + xcat
-        return self.relu(out)
-
-
-class OutBlock(nn.Module):
-
-    def __init__(self, in_channels, out_channels, norm_layer, use_bias, is_separable):
-        super().__init__()
-        conv_layer = get_conv_layer_3d(is_separable)
-
-        self.conv1 = conv_layer(in_channels, in_channels, kernel_size=5, padding=2, bias=use_bias)
-        self.bn1 = norm_layer(in_channels)
-        self.relu1 = nn.PReLU(in_channels)
-        self.conv2 = conv_layer(in_channels, out_channels, kernel_size=1)
-        self.tanh = nn.Tanh()
-
-    def forward(self, x):
-        out = self.relu1(self.bn1(self.conv1(x)))
-        out = self.conv2(out)
-        res = self.tanh(out)
-        return res
-
-
-def _base_inv_block(n_channels, norm_layer, use_bias, is_separable):
-    n_channels = n_channels // 2  # split across channels for invertible module
-    conv_layer = get_conv_layer_3d(is_separable)
-    return nn.Sequential(
-        conv_layer(n_channels, n_channels, kernel_size=5, padding=2, bias=use_bias),
-        norm_layer(n_channels), nn.PReLU(n_channels))

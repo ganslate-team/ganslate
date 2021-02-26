@@ -102,4 +102,3 @@ def get_scheduler(optimizer, conf):
 def get_network_device(network):
     """Returns the device of the network. Assumes that the whole network is on a single device."""
     return next(network.parameters()).device
-
