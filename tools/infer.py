@@ -3,12 +3,8 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-try:
-    import midaGAN
-except ImportError:
-    logger.warning("midaGAN not installed as a package, importing it from the local directory.")
-    sys.path.append('./')
-    import midaGAN
+sys.path.append('./')
+import midaGAN
 
 from midaGAN.engines.inferer import Inferer
 from midaGAN.utils import communication

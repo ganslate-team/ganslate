@@ -106,6 +106,14 @@ def import_class_from_dirs_and_modules(class_name, dirs_modules):
         "If it is located in a project folder, set `project_dir` in config as the project's path.")
 
 
+def reduce(v):
+    if isinstance(v, list):
+        v = np.array([value.item() if isinstance(value, torch.Tensor) else value for value in v])
+    else:
+        v = np.array(v)
+    return v
+
+
 def decollate(batch: Union[dict, list]):
     """
     Function to decollate or get individual elements
@@ -115,8 +123,8 @@ def decollate(batch: Union[dict, list]):
     batch: Batched output, for example, from the Pytorch dataloader
     """
     if isinstance(batch, list):
-        batch = [elem[0] if isinstance(elem[0], str) else np.array(elem) for elem in batch]
+        batch = [elem[0] if isinstance(elem[0], str) else reduce(elem) for elem in batch]
     elif isinstance(batch, dict):
-        batch = {k: v[0] if isinstance(v[0], str) else np.array(v) for k, v in batch.items()}
+        batch = {k: v[0] if isinstance(v[0], str) else reduce(v) for k, v in batch.items()}
 
     return batch
