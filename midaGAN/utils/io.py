@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
+import torch
 
 
 def mkdirs(*paths):

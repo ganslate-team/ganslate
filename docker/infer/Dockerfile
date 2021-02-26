@@ -54,8 +54,7 @@ WORKDIR /midagan
 ARG username
 ARG pass
 
-ARG test1
-
+ARG one
 # Clone repo for preprocessing
 RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/data-pipelines.git
 RUN python -m pip install -r data-pipelines/requirements.txt
@@ -75,5 +74,5 @@ RUN pip install -r requirements.txt
 WORKDIR /midagan
 RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/clinical-evaluation.git
 # Provide an open entrypoint for the docker
-# ENTRYPOINT ["/bin/bash", "/midagan/midaGAN/docker/infer/run_inference_pipeline.sh"]
-ENTRYPOINT $0 $@
+ENTRYPOINT ["/bin/bash", "/midagan/midaGAN/docker/infer/run_inference_pipeline.sh"]
+# ENTRYPOINT $0 $@
