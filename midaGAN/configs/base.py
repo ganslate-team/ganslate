@@ -58,6 +58,8 @@ class WandbConfig:
     entity: Optional[str] = None
     # Name of the wandb run
     run: Optional[str] = None
+    # Run id to be provided incase runs are to be resumed
+    id: Optional[str] = None
     # Min and max value for the image filter # TODO: explain!
     image_filter: Optional[Tuple[float, float]] = None
 
