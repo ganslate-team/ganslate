@@ -43,7 +43,6 @@ class CBCTtoCTDataset(Dataset):
         self.paths_CT = []
 
         for patient in root_path.iterdir():
-
             cbct_dir = patient / "CBCT"
             if cbct_dir.is_dir():
                 patient_cbcts = io.make_dataset_of_directories(cbct_dir, EXTENSIONS)
@@ -71,16 +70,44 @@ class CBCTtoCTDataset(Dataset):
 
         path_CBCT = self.paths_CBCT[index_CBCT]
         path_CT = self.paths_CT[index_CT]
+        
+        # Fetches the scans, and does part of the preprocessing.
+        # If the scan is smaller than the patch size, it will get another one. 
+        CT = self._get_and_preprocess_CT(path_CT)
+        CBCT = self._get_and_preprocess_CBCT(path_CBCT)
 
-        num_replacements_threshold = 10
+        # Limit the slices of CT to correspond to those of CBCT
+        CT = self._limit_CT_to_CBCT(CT, CBCT)
 
+        # Masking is applied on numpy arrays
+        CBCT = sitk_utils.get_npy(CBCT)
+        CT = sitk_utils.get_npy(CT)
+
+        # Perform morphological ops to find the mask of the body and set all the
+        # outside values to the minimum value.
+        CBCT = apply_body_mask(CBCT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-800)
+        CT = apply_body_mask(CT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-600)
+
+        CBCT = torch.tensor(CBCT)
+        CT = torch.tensor(CT)
+
+        # Extract patches
+        CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
+
+        CBCT, CT = clamp_normalize(CBCT, CT, self.hu_min, self.hu_max)
+
+        return {'A': CBCT, 'B': CT}
+
+    def _get_and_preprocess_CT(self, path_CT, num_replacements_threshold=10):
         for i in reversed(range(num_replacements_threshold)):
             # load nrrd as SimpleITK objects
             CT = sitk_utils.load(Path(path_CT) / 'CT.nrrd')
 
             # Selected if it's big enough for the training
             if not sitk_utils.is_image_smaller_than(CT, self.patch_size):
-                break
+                # Mask out the 
+                CT = mask_out_ct(CT, path_CT, self.hu_min)
+                return CT
 
             # Remove from the paths since it's too small for the training.
             # If-statement since the path might already be deleted by another worker.
@@ -97,6 +124,7 @@ class CBCTtoCTDataset(Dataset):
                     f"Could not replace the image for {num_replacements_threshold}"
                     " consecutive times. Please verify your images and the specified config.")
 
+    def _get_and_preprocess_CBCT(self, path_CBCT, num_replacements_threshold=10):
         for i in reversed(range(num_replacements_threshold)):
             # load nrrd as SimpleITK objects
             CBCT = sitk_utils.load(Path(path_CBCT) / 'CBCT.nrrd')
@@ -109,7 +137,7 @@ class CBCTtoCTDataset(Dataset):
 
             # Selected if it's big enough for the training
             if not sitk_utils.is_image_smaller_than(CBCT, self.patch_size):
-                break
+                return CBCT
 
             # Remove from the paths since it's too small for the training.
             # If-statement since the path might already be deleted by another worker.
@@ -126,34 +154,14 @@ class CBCTtoCTDataset(Dataset):
                     f"Could not replace the image for {num_replacements_threshold}"
                     " consecutive times. Please verify your images and the specified config.")
 
-        # CT = mask_out_ct(CT, path_CT, self.hu_min)
-
+    def _limit_CT_to_CBCT(self, CT, CBCT):
         # Limit CT so that it only contains part of the body shown in CBCT
         CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
         if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
             logger.info("Post-registration truncated CT is smaller than the defined patch size."
                         " Passing the whole CT volume.")
-            del CT_truncated
-        else:
-            CT = CT_truncated
-
-        # Mask and bound is applied on numpy arrays!
-        CBCT = sitk_utils.get_npy(CBCT)
-        CT = sitk_utils.get_npy(CT)
-
-        CBCT = apply_body_mask(CBCT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-800)
-
-        CT = apply_body_mask(CT, apply_mask=True, masking_value=self.hu_min, hu_threshold=-600)
-
-        CBCT = torch.tensor(CBCT)
-        CT = torch.tensor(CT)
-
-        # Extract patches
-        CBCT, CT = self.patch_sampler.get_patch_pair(CBCT, CT)
-
-        CBCT, CT = clamp_normalize(CBCT, CT, self.hu_min, self.hu_max)
-
-        return {'A': CBCT, 'B': CT}
+            return CT
+        return CT_truncated
 
     def __len__(self):
         return max(self.num_datapoints_CBCT, self.num_datapoints_CT)

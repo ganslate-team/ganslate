@@ -7,7 +7,6 @@ from torch.utils.data import Dataset
 import midaGAN
 from midaGAN.utils import io, sitk_utils
 from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
 from midaGAN.data.utils.body_mask import apply_body_mask
 
 # Config imports
