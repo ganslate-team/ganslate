@@ -1,24 +1,22 @@
-from pathlib import Path
-import random
 import logging
-import numpy as np
-import torch
-from torch.utils.data import Dataset
+import random
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Tuple
 
 import midaGAN
-from midaGAN.utils import io, sitk_utils
-from midaGAN.data.utils.ops import pad
-from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
-from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.body_mask import apply_body_mask
-from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
-
-# Config imports
-from typing import Tuple
-from dataclasses import dataclass
-from omegaconf import MISSING
+import numpy as np
+import torch
 from midaGAN import configs
+from midaGAN.data.utils.body_mask import apply_body_mask
+from midaGAN.data.utils.ops import pad
+from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
+from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+from midaGAN.utils import io, sitk_utils
+from omegaconf import MISSING
+from torch.utils.data import Dataset
+
+from .common import clamp_normalize, mask_out_ct
 
 logger = logging.getLogger(__name__)
 
@@ -165,47 +163,3 @@ class CBCTtoCTDataset(Dataset):
 
     def __len__(self):
         return max(self.num_datapoints_CBCT, self.num_datapoints_CT)
-
-
-def mask_out_ct(ct_scan, ct_dir_path, masking_value):
-    # Use, by priority, BODY, External or treatment table mask
-    # to mask out unuseful values in the CT
-    mask_exists = True
-    negated_mask = False
-
-    if (ct_dir_path / 'BODY.nrrd').exists():
-        mask_path = ct_dir_path / 'BODY.nrrd'
-    elif paths := io.find_paths_containing_pattern(ct_dir_path, "External*"):
-        mask_path = paths[0]
-    elif paths := io.find_paths_containing_pattern(ct_dir_path, "*_treatment_*"):
-        mask_path = paths[0]
-        # Use negated masking as we want to only mask out the table
-        negated_mask = True
-    else:
-        mask_exists = False
-        logger.info(f'No mask files found for {ct_dir_path}')
-
-    if mask_exists:
-        ct_mask = sitk_utils.load(mask_path)
-        ct_scan = sitk_utils.apply_mask(ct_scan,
-                                        ct_mask,
-                                        masking_value=masking_value,
-                                        set_same_origin=True,
-                                        negated_mask=negated_mask)
-    return ct_scan
-
-
-def clamp_normalize(A, B, min_value, max_value):
-    # Limits the lowest and highest HU unit
-    A = torch.clamp(A, min_value, max_value)
-    B = torch.clamp(B, min_value, max_value)
-
-    # Normalize Hounsfield units to range [-1,1]
-    A = min_max_normalize(A, min_value, max_value)
-    B = min_max_normalize(B, min_value, max_value)
-
-    # Add channel dimension (1 = grayscale)
-    A = A.unsqueeze(0)
-    B = B.unsqueeze(0)
-
-    return A, B
