@@ -50,7 +50,7 @@ train:
     
 val:
     freq: 1000
-    datasets: 
+    dataset: 
     -   name: CBCTtoCTValDataset
         root:  /data/valid
         
@@ -61,6 +61,6 @@ val:
         window_size: "${train.dataset.image_size}"
 
 test:
-    datasets: "${val.datasets}"
+    dataset: "${val.datasets}"
     sliding_window: "${val.sliding_window}"
 

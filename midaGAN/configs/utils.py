@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 IMPORT_LOCATIONS = {
     "dataset": [data],
-    "datasets": [data], 
     "gan": [gans],
     "generator": [generators],
     "discriminator": [discriminators],
@@ -54,12 +53,13 @@ def instantiate_dataclasses_from_yaml(conf):
         field = OmegaConf.select(conf, key)
         # See if that field is a dataclass itself by checking its name
         if is_dataclass(key_name, field):
+            # When a field is a list of dataclasses, e.g. multi-dataset in val and test
             if isinstance(field, ListConfig):
                 dataclasses = []
                 for f in field:
                     dataclass = init_dataclass(key_name, f)
                     dataclasses.append(OmegaConf.merge(dataclass, f))
-                OmegaConf.update(conf, key,dataclasses, merge=False)
+                OmegaConf.update(conf, key, dataclasses, merge=False)
 
             else:
                 dataclass = init_dataclass(key_name, field)
@@ -81,14 +81,9 @@ def init_dataclass(key, field):
 
 def is_dataclass(key, field):
     """If a key is in the keys of IMPORT_LOCATIONS, it is a dataclass."""
-    if isinstance(field, DictConfig):
+    if isinstance(field, (DictConfig, ListConfig)):
         if key in IMPORT_LOCATIONS.keys():
             return True
-
-    if isinstance(field, ListConfig):
-        if key in IMPORT_LOCATIONS.keys():
-            return True
-
     return False
 
 

@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 from dataclasses import dataclass
 from omegaconf import MISSING, II
 from midaGAN.configs import base
@@ -36,7 +36,8 @@ class BaseEvaluationConfig(base.BaseEngineConfig):
     sliding_window: Optional[SlidingWindowConfig] = None
 
     # Evaluation can have multiple datasets provided to it
-    datasets: Optional[Tuple[base.BaseDatasetConfig]] = None
+    # TODO: `Any` used only coz omegaconf doesn't support `Union`
+    dataset: Any = MISSING
 
 @dataclass
 class ValidationConfig(BaseEvaluationConfig):

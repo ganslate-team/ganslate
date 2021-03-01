@@ -55,7 +55,7 @@ train:
 
 val:
     freq: 2000
-    datasets: 
+    dataset: 
     -   name: CBCTtoCTValDataset
         root:  /data/registered
         

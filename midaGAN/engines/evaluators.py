@@ -1,7 +1,7 @@
 from midaGAN.engines.base import BaseEngineWithInference
 from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
 from midaGAN.utils import environment
-from midaGAN.utils.builders import build_gan, build_loaders
+from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.io import decollate
 from midaGAN.utils.trackers.evaluation import EvaluationTracker
 
@@ -11,14 +11,19 @@ class BaseEvaluator(BaseEngineWithInference):
     def __init__(self, conf):
         super().__init__(conf)
 
-        self.data_loaders = build_loaders(self.conf)
+        self.data_loader = build_loader(self.conf)
         self.tracker = EvaluationTracker(self.conf)
         self.metricizer = EvaluationMetrics(self.conf)
 
     def run(self, current_idx=None):
         self.logger.info("Validation started.")
 
-        for dataloader in self.data_loaders:
+        # Val and test modes allow multiple datasets,
+        # this is required to handle when it's a single dataset
+        if not isinstance(self.data_loader, list):
+            self.data_loader = [self.data_loader]
+            
+        for dataloader in self.data_loader:
             self.dataset = dataloader.dataset
             # prefix differentiates between results from 
             # different dataloaders

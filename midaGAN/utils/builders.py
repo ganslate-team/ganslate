@@ -1,3 +1,4 @@
+import copy
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -16,24 +17,25 @@ def build_conf():
     conf = init_config(cli.pop("config"), config_class=Config)
     return OmegaConf.merge(conf, cli)
 
-
-def build_loaders(conf):
+def build_loader(conf):
+    """Builds the dataloader(s). If the config for dataset is a single dataset, it
+    will return a dataloader for it, but if multiple datasets were specified,
+    a list of dataloaders, one for each dataset, will be returnet.
     """
-    Build a list of loaders, needed for validation when
-    multiple datasets are provided.
-    """
-    if conf[conf.mode].datasets:
+    ############## Multi-dataset loaders #################
+    if isinstance(conf[conf.mode].dataset, ListConfig):
+        # Go through each dataset of the multi-dataset config, init
+        # a dataloader for a dataset and add it to `loaders` list
         loaders = []
-        for dataset_conf in conf[conf.mode].datasets:
-            conf[conf.mode].dataset = dataset_conf
-            loaders.append(build_loader(conf))
+        for dataset_conf in conf[conf.mode].dataset:
+            current_conf = copy.deepcopy(conf)
+            # Set the config for the current dataset config
+            current_conf[conf.mode].dataset = dataset_conf
+            # Recursive call of this function to load single dataloaders
+            loaders.append(build_loader(current_conf))
         return loaders
 
-    elif conf[conf.mode].dataset:
-        return [build_loader(conf)]
-
-
-def build_loader(conf):
+    ############## Single dataset loader #################
     name = conf[conf.mode].dataset.name
     dataset_class = import_class_from_dirs_and_modules(name, IMPORT_LOCATIONS["dataset"])
     dataset = dataset_class(conf)
