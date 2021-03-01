@@ -61,7 +61,7 @@ class WandbTracker:
             for idx, visual in enumerate(visuals):
                 # Add sample index to visual name to identify it.
                 if image_threshold is not None:
-                    visual['name'] = f"Sample: {idx} {visual['name']}"
+                    visual['name'] = f"{idx}_{visual['name']}"
 
                 visual = self._wandb_image_from_visual(visual, image_threshold)
                 wandb_images.append(visual)

@@ -111,7 +111,6 @@ class CBCTtoCTValDataset(Dataset):
         # Normalize Hounsfield units to range [-1,1]
         CT = min_max_normalize(CT, self.hu_min, self.hu_max)
         CBCT = min_max_normalize(CBCT, self.hu_min, self.hu_max)
-
         # Add channel dimension (1 = grayscale)
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
