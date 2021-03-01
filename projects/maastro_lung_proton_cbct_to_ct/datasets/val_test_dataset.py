@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class CBCTtoCTValidationDatasetConfig(configs.base.BaseDatasetConfig):
+class CBCTtoCTValTestDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTValidationDataset"
     hounsfield_units_range: Tuple[int, int] = (-1000, 2000)
 
 
-class CBCTtoCTValidationDataset(Dataset):
+class CBCTtoCTValTestDataset(Dataset):
 
     def __init__(self, conf):
         self.root_path = Path(conf[conf.mode].dataset.root).resolve()
