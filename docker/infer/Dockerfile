@@ -54,7 +54,6 @@ WORKDIR /midagan
 ARG username
 ARG pass
 
-ARG one
 # Clone repo for preprocessing
 RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/data-pipelines.git
 RUN python -m pip install -r data-pipelines/requirements.txt
@@ -70,7 +69,6 @@ RUN git checkout origin/inference_docker
 RUN pip install -r requirements.txt
 
 # Clone repo for dicom saving of generated images
-
 WORKDIR /midagan
 RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/clinical-evaluation.git
 # Provide an open entrypoint for the docker
