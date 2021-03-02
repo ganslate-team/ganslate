@@ -36,7 +36,8 @@ class ValTestTracker(BaseTracker):
         if communication.get_local_rank() == 0:
 
             for idx, visuals in enumerate(self.visuals):
-                self._save_image(visuals, f"{prefix}_{iter_idx}_{idx}")
+                name = f"{prefix}_{iter_idx}_{idx}" if prefix != "" else f"{iter_idx}_{idx}"
+                self._save_image(visuals, name)
 
             # Averages list of dictionaries within self.metrics
             averaged_metrics = {}
@@ -49,6 +50,7 @@ class ValTestTracker(BaseTracker):
             self._log_message(iter_idx, averaged_metrics, prefix=prefix)
 
             if self.wandb:
+                mode = prefix if prefix != "" else self.conf.mode
                 self.wandb.log_iter(iter_idx=iter_idx,
                                     learning_rates={},
                                     losses={},
@@ -71,6 +73,7 @@ class ValTestTracker(BaseTracker):
         message += ' ' + 20 * '-' + '\n'
 
         for k, v in metrics.items():
-            message += '%s: %.3f ' % (f'{prefix}_{k}', v)
+            name = f'{prefix}_{k}' if prefix != "" else str(k)
+            message += '%s: %.3f ' % (name, v)
 
         self.logger.info(message)
