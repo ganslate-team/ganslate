@@ -20,15 +20,12 @@ class BaseValTestEngine(BaseEngineWithInference):
 
         # Val and test modes allow multiple datasets,
         # this is required to handle when it's a single dataset
-        if not isinstance(self.data_loader, list):
-            self.data_loader = [self.data_loader]
+        if not isinstance(self.data_loader, dict):
+            # No name needed when it's a single dataloader
+            self.data_loader = {"": self.data_loader}
 
-        for dataloader in self.data_loader:
+        for dataset_name, dataloader in self.data_loader.items():
             self.dataset = dataloader.dataset
-            # prefix differentiates between results from
-            # different dataloaders
-            prefix = self.dataset.__class__.__name__
-            prefix = prefix.strip("Dataset")
 
             for data in dataloader:
                 # Move elements from data that are visuals
@@ -49,7 +46,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                 # wishes to save the outputs in a particular way or format
                 saver = getattr(self.dataset, "save", False)
                 if saver:
-                    save_dir = self.output_dir / "saved" / prefix
+                    save_dir = self.output_dir / "saved" / dataset_name
                     if current_idx is not None:
                         save_dir = save_dir / str(current_idx)
 
@@ -58,7 +55,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                     else:
                         saver(visuals['fake_B'], save_dir)
 
-            self.tracker.push_samples(current_idx, prefix=prefix)
+            self.tracker.push_samples(current_idx, prefix=dataset_name)
 
     def _calculate_metrics(self, visuals):
         # TODO: Decide if cycle metrics also need to be scaled

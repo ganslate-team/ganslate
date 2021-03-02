@@ -45,11 +45,15 @@ train:
 
 val:
     freq: 1
-    dataset:
-        - name: "CBCTtoCTValTestDataset"
-          root: "/mnt/particija/train_val_mini/val"
-        - name: "CBCTtoCTValTestDataset"
-          root: "/mnt/particija/phantoms_registered" #"/mnt/particija/train_val_mini/val"
+    multi_dataset:
+        lungs:
+            name: "CBCTtoCTValTestDataset"
+            root: "/mnt/particija/train_val_mini/val"
+        
+        phantoms:
+            name: "CBCTtoCTValTestDataset"
+            root: "/mnt/particija/phantoms_registered"
+            
     sliding_window:
         window_size: ${train.dataset.patch_size}
         batch_size: 8

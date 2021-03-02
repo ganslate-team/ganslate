@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Any
+from typing import Optional, Tuple, Any, Dict
 from dataclasses import dataclass
 from omegaconf import MISSING, II
 from midaGAN.configs import base
@@ -37,7 +37,8 @@ class BaseValTestConfig(base.BaseEngineConfig):
 
     # Val/test can have multiple datasets provided to it
     # TODO: `Any` used only coz omegaconf doesn't support `Union`
-    dataset: Any = MISSING
+    dataset: Optional[base.BaseDatasetConfig] = None
+    multi_dataset: Optional[Dict[str, base.BaseDatasetConfig]] = None
 
 
 @dataclass
