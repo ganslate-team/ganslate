@@ -103,6 +103,7 @@ def set_seed(seed=0):
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
 
+
 def setup_threading():
     """
     Sets max threads for SimpleITK and Opencv.

@@ -39,6 +39,7 @@ class BaseValTestConfig(base.BaseEngineConfig):
     # TODO: `Any` used only coz omegaconf doesn't support `Union`
     dataset: Any = MISSING
 
+
 @dataclass
 class ValidationConfig(BaseValTestConfig):
     # How frequently to validate (each `freq` iters)

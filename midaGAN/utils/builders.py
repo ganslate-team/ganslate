@@ -17,6 +17,7 @@ def build_conf():
     conf = init_config(cli.pop("config"), config_class=Config)
     return OmegaConf.merge(conf, cli)
 
+
 def build_loader(conf):
     """Builds the dataloader(s). If the config for dataset is a single dataset, it
     will return a dataloader for it, but if multiple datasets were specified,

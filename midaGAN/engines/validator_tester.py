@@ -22,10 +22,10 @@ class BaseValTestEngine(BaseEngineWithInference):
         # this is required to handle when it's a single dataset
         if not isinstance(self.data_loader, list):
             self.data_loader = [self.data_loader]
-            
+
         for dataloader in self.data_loader:
             self.dataset = dataloader.dataset
-            # prefix differentiates between results from 
+            # prefix differentiates between results from
             # different dataloaders
             prefix = self.dataset.__class__.__name__
             prefix = prefix.strip("Dataset")
