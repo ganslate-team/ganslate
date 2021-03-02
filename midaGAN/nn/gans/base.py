@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 from torch.nn.parallel import DistributedDataParallel
 
-from midaGAN.nn.metrics.train_metrics import TrainingMetrics
+from midaGAN.utils.metrics.train_metrics import TrainingMetrics
 from midaGAN.nn.utils import get_scheduler
 from midaGAN.utils import communication, io
 from midaGAN.utils.builders import build_D, build_G

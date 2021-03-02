@@ -6,7 +6,7 @@ from midaGAN.utils.trackers.utils import visuals_to_combined_2d_grid
 from midaGAN.utils.trackers.base import BaseTracker
 
 
-class EvaluationTracker(BaseTracker):
+class ValTestTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)

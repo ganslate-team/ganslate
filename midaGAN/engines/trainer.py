@@ -2,7 +2,7 @@ import logging
 
 import torch
 from midaGAN.engines.base import BaseEngine
-from midaGAN.engines.evaluators import Validator
+from midaGAN.engines.validator_tester import Validator
 from midaGAN.utils import communication, environment
 from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.trackers.training import TrainingTracker
@@ -89,7 +89,7 @@ class Trainer(BaseEngine):
 
     def _init_validator(self):
         """
-        Intitialize evaluation parameters from training conf
+        Intitialize validation parameters from training conf
         """
         # Validation conf is built from training conf
         if not self.conf.val:

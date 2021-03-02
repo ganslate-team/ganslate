@@ -1,22 +1,22 @@
 from midaGAN.engines.base import BaseEngineWithInference
-from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
+from midaGAN.utils.metrics.val_test_metrics import ValTestMetrics
 from midaGAN.utils import environment
 from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.io import decollate
-from midaGAN.utils.trackers.evaluation import EvaluationTracker
+from midaGAN.utils.trackers.validation_testing import ValTestTracker
 
 
-class BaseEvaluator(BaseEngineWithInference):
+class BaseValTestEngine(BaseEngineWithInference):
 
     def __init__(self, conf):
         super().__init__(conf)
 
         self.data_loader = build_loader(self.conf)
-        self.tracker = EvaluationTracker(self.conf)
-        self.metricizer = EvaluationMetrics(self.conf)
+        self.tracker = ValTestTracker(self.conf)
+        self.metricizer = ValTestMetrics(self.conf)
 
     def run(self, current_idx=None):
-        self.logger.info("Validation started.")
+        self.logger.info(f'{"Validation" if self.conf.mode == "val" else "Testing"} started.')
 
         # Val and test modes allow multiple datasets,
         # this is required to handle when it's a single dataset
@@ -111,7 +111,7 @@ class BaseEvaluator(BaseEngineWithInference):
         return mask_metrics
 
 
-class Validator(BaseEvaluator):
+class Validator(BaseValTestEngine):
 
     def __init__(self, conf, model):
         super().__init__(conf)
@@ -121,7 +121,7 @@ class Validator(BaseEvaluator):
         self.conf.mode = 'val'
 
 
-class Tester(BaseEvaluator):
+class Tester(BaseValTestEngine):
 
     def __init__(self, conf):
         super().__init__(conf)

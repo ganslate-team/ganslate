@@ -5,7 +5,7 @@ from midaGAN.configs import base
 
 
 @dataclass
-class EvalMetricsConfig:
+class ValTestMetricsConfig:
     # SSIM metric between the images
     ssim: bool = True
     # PSNR metric between the images
@@ -31,16 +31,16 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class BaseEvaluationConfig(base.BaseEngineConfig):
-    metrics: EvalMetricsConfig = EvalMetricsConfig()
+class BaseValTestConfig(base.BaseEngineConfig):
+    metrics: ValTestMetricsConfig = ValTestMetricsConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
 
-    # Evaluation can have multiple datasets provided to it
+    # Val/test can have multiple datasets provided to it
     # TODO: `Any` used only coz omegaconf doesn't support `Union`
     dataset: Any = MISSING
 
 @dataclass
-class ValidationConfig(BaseEvaluationConfig):
+class ValidationConfig(BaseValTestConfig):
     # How frequently to validate (each `freq` iters)
     freq: int = MISSING
     # After which iteration should validation begin
@@ -48,5 +48,5 @@ class ValidationConfig(BaseEvaluationConfig):
 
 
 @dataclass
-class TestConfig(BaseEvaluationConfig):
+class TestConfig(BaseValTestConfig):
     checkpointing: base.CheckpointingConfig = base.CheckpointingConfig()

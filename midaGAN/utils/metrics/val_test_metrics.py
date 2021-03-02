@@ -70,7 +70,7 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np
 METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}
 
 
-class EvaluationMetrics:
+class ValTestMetrics:
 
     def __init__(self, conf):
         self.conf = conf
