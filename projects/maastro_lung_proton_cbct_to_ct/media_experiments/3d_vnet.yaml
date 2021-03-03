@@ -65,8 +65,3 @@ val:
 
     sliding_window:
         window_size: "${train.dataset.patch_size}"
-
-test:
-    dataset: "${val.datasets}"
-    sliding_window: "${val.sliding_window}"
-
