@@ -53,7 +53,7 @@ val:
         phantoms:
             name: "CBCTtoCTValTestDataset"
             root: "/mnt/particija/phantoms_registered"
-            
+ 
     sliding_window:
         window_size: ${train.dataset.patch_size}
         batch_size: 8
