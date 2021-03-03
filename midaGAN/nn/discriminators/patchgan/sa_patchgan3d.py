@@ -28,7 +28,7 @@ class SAPatchGAN3D(nn.Module):
         kw = kernel_size
         padw = 1
         sequence = [
-            nn.Conv3d(in_channels, ndf, kernel_size=kw, stride=2, padding=padw),
+            nn.Conv3d(in_channels, ndf, kernel_size=kw, stride=3, padding=padw),
             nn.LeakyReLU(0.2, True)
         ]
 

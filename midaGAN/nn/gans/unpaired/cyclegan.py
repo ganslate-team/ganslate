@@ -37,14 +37,9 @@ class CycleGAN(BaseGAN):
         super().__init__(conf)
 
         # Inputs and Outputs of the model
-        self.visual_names = {
-            'A': ['real_A', 'fake_B', 'rec_A', 'idt_A'],
-            'B': ['real_B', 'fake_A', 'rec_B', 'idt_B']
-        }
-        # get all the names from the above lists into a single flat list
-        all_visual_names = [name for v in self.visual_names.values() for name in v]
+        visual_names = ['real_A', 'fake_B', 'rec_A', 'idt_A', 'real_B', 'fake_A', 'rec_B', 'idt_B']
         # initialize the visuals as None
-        self.visuals = {name: None for name in all_visual_names}
+        self.visuals = {name: None for name in visual_names}
 
         # Losses used by the model
         loss_names = [

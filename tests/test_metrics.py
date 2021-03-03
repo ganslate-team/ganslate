@@ -9,13 +9,13 @@ except ImportError:
     sys.path.append('./')
     import midaGAN
 
-from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
+from midaGAN.utils.metrics.val_test_metrics import ValTestMetrics
 import torch
 import numpy as np
 
 
 def main(conf):
-    metricizer = EvaluationMetrics(conf)
+    metricizer = ValTestMetrics(conf)
 
     # Target array is 10x100x100 out of which 10x50x50 is of value 1000
     target = torch.zeros((10, 100, 100))

@@ -2,6 +2,7 @@ from omegaconf import OmegaConf
 import wandb
 import os
 
+
 class WandbTracker:
 
     def __init__(self, conf):
@@ -14,12 +15,11 @@ class WandbTracker:
                 # Source: https://docs.wandb.ai/library/resuming
                 os.environ["WANDB_RESUME"] = "allow"
                 os.environ["WANDB_RUN_ID"] = conf[conf.mode].logging.wandb.id
-                
+
             wandb.init(project=project, entity=entity, config=conf_dict)
 
         if conf[conf.mode].logging.wandb.run:
             wandb.run.name = conf[conf.mode].logging.wandb.run
-
 
         self.image_filter = None
         if conf[conf.mode].logging.wandb.image_filter:
@@ -61,7 +61,7 @@ class WandbTracker:
             for idx, visual in enumerate(visuals):
                 # Add sample index to visual name to identify it.
                 if image_threshold is not None:
-                    visual['name'] = f"Sample: {idx} {visual['name']}"
+                    visual['name'] = f"{idx}_{visual['name']}"
 
                 visual = self._wandb_image_from_visual(visual, image_threshold)
                 wandb_images.append(visual)

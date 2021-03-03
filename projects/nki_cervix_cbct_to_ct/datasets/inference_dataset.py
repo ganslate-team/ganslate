@@ -42,7 +42,6 @@ class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
 
 
 class CBCTtoCTInferenceDataset(Dataset):
-
     def __init__(self, conf):
         self.root_path = Path(conf.infer.dataset.root).resolve()
 
@@ -81,7 +80,6 @@ class CBCTtoCTInferenceDataset(Dataset):
 
         volume = apply_body_mask(volume, apply_mask=self.apply_mask, \
                                     hu_threshold=self.cbct_mask_threshold)
-
         volume = torch.tensor(volume)
         # Limits the lowest and highest HU unit
         volume = torch.clamp(volume, self.hu_min, self.hu_max)
