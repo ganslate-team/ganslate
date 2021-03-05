@@ -2,8 +2,8 @@ project_dir: "./projects/nki_cervix_cbct_to_ct/datasets"
 
 train:
     cuda: True
-    n_iters: 15000
-    n_iters_decay: 15000
+    n_iters: 60000
+    n_iters_decay: 60000
     batch_size: 1
     output_dir: /midagan/checkpoints/ssim_small_patch
     seed: 42
