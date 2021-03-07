@@ -52,9 +52,9 @@ class Trainer(BaseEngine):
 
         self.tracker.start_dataloading_timer()
         for i, data in zip(self.iters, self.data_loader):
+            self._set_iter_idx(i)
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
-            self._set_iter_idx(i)
 
             self._do_iteration(data)
             self.tracker.end_computation_timer()

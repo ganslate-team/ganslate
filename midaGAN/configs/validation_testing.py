@@ -35,9 +35,8 @@ class BaseValTestConfig(base.BaseEngineConfig):
     metrics: ValTestMetricsConfig = ValTestMetricsConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
 
-    # Val/test can have multiple datasets provided to it
-    # TODO: `Any` used only coz omegaconf doesn't support `Union`
     dataset: Optional[base.BaseDatasetConfig] = None
+    # Val/test can have multiple datasets provided to it
     multi_dataset: Optional[Dict[str, base.BaseDatasetConfig]] = None
 
 

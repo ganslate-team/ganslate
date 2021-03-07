@@ -37,11 +37,17 @@ class TrainingTracker(BaseTracker):
                 self._save_image(visuals, self.iter_idx)
 
                 if self.wandb:
-                    self.wandb.log_iter(self.iter_idx, learning_rates, losses, visuals, metrics)
+                    self.wandb.log_iter(iter_idx=self.iter_idx,
+                                        learning_rates=learning_rates,
+                                        losses=losses,
+                                        visuals=visuals,
+                                        metrics=metrics,
+                                        mode=self.conf.mode)
 
                 if self.tensorboard:
-                    self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals,
-                                              metrics)
+                    raise NotImplementedError("Tensorboard tracking not implemented")
+                    # self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals,
+                    #                           metrics)
 
     def _log_message(self, learning_rates, losses):
         message = '\n' + 20 * '-' + ' '

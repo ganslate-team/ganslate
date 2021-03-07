@@ -36,12 +36,14 @@ class WandbTracker:
             log_dict['lr_D'] = learning_rates['lr_D']
 
         # Losses
-        for name, loss in losses.items():
-            log_dict[f"loss_{name}"] = loss
+        if losses:
+            for name, loss in losses.items():
+                log_dict[f"loss_{name}"] = loss
 
         # Metrics
-        for name, metric in metrics.items():
-            log_dict[f"{mode} {name}"] = metric
+        if metrics:
+            for name, metric in metrics.items():
+                log_dict[f"{mode} {name}"] = metric
 
         log_dict[f"{mode} Images"] = self.create_wandb_images(visuals)
 

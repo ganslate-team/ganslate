@@ -52,25 +52,32 @@ class ValTestTracker(BaseTracker):
             if self.wandb:
                 mode = prefix if prefix != "" else self.conf.mode
                 self.wandb.log_iter(iter_idx=iter_idx,
-                                    learning_rates={},
-                                    losses={},
+                                    learning_rates=None,
+                                    losses=None,
                                     visuals=self.visuals,
                                     metrics=averaged_metrics,
-                                    mode=prefix)
+                                    mode=mode)
 
-            # TODO: Adapt eval tracker for tensorboard
+            # TODO: revisit tensorboard support
             if self.tensorboard:
-                raise NotImplementedError("Tensorboard eval tracking not implemented")
-                # self.tensorboard.log_iter(iter_idx, {}, {}, visuals, metrics)
+                raise NotImplementedError("Tensorboard tracking not implemented")
+                # self.tensorboard.log_iter(iter_idx, None, None, visuals, metrics)
 
             # Clear stored buffer after pushing the results
             self.metrics = []
             self.visuals = []
 
-    def _log_message(self, index, metrics, prefix=''):
+    def _log_message(self, index, metrics, prefix=""):
         message = '\n' + 20 * '-' + ' '
-        message += f'({self.conf.mode} at iter {index})'
-        message += ' ' + 20 * '-' + '\n'
+        
+        message += f"({self.conf.mode.capitalize()}"
+
+        if index is not None:
+            message += f" at iter {index}"
+        if prefix != "":
+            message += f" for dataset '{prefix}'"
+
+        message += ') ' + 20 * '-' + '\n'
 
         for k, v in metrics.items():
             name = f'{prefix}_{k}' if prefix != "" else str(k)
