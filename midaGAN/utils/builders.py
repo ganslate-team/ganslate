@@ -24,23 +24,23 @@ def build_loader(conf):
     a list of dataloaders, one for each dataset, will be returnet.
     """
     ############## Multi-dataset loaders #################
-    if "multi_dataset" in conf[conf.mode]:
-        if conf[conf.mode].multi_dataset is not None:
-            assert conf[conf.mode].dataset is None, "Use either `dataset` or `multi_dataset`."
+    if "multi_dataset" in conf[conf.mode] and conf[conf.mode].multi_dataset is not None:
+        assert conf[conf.mode].dataset is None, "Use either `dataset` or `multi_dataset`."
 
-            # Go through each dataset of the multi-dataset config,
-            # initialize it, and add to the `loaders` dict
-            loaders = {}
-            for dataset_name, dataset_conf in conf[conf.mode].multi_dataset.items():
-                # Avoids affecting the original conf
-                current_conf = copy.deepcopy(conf)
-                # Set the config for the current dataset config
-                current_conf[conf.mode].dataset = dataset_conf
-                # Allows instantiation of the dataset as otherwise the above assertion fails
-                current_conf[conf.mode].multi_dataset = None
-                # Initialize the single dataloaders and assigning it to its name in dict
-                loaders[dataset_name] = build_loader(current_conf)
-            return loaders
+        # Go through each dataset of the multi-dataset config,
+        # initialize it, and add to the `loaders` dict
+        loaders = {}
+        for dataset_name, dataset_conf in conf[conf.mode].multi_dataset.items():
+            # Avoids affecting the original conf
+            current_conf = copy.deepcopy(conf)
+            # Set the config for the current dataset config
+            current_conf[conf.mode].dataset = dataset_conf
+            # Allows instantiation of the dataset as otherwise the initial assertion fails
+            current_conf[conf.mode].multi_dataset = None
+            # Initialize the single dataloaders and assigning it to its name in dict
+            loaders[dataset_name] = build_loader(current_conf)
+
+        return loaders
 
     ############## Single dataset loader #################
     name = conf[conf.mode].dataset.name
