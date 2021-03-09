@@ -61,7 +61,7 @@ class Inferer(BaseEngineWithInference):
                     saver(out, save_dir)
             self.tracker.end_saving_timer()
 
-            visuals = {"input": data[input_key].to(out.device), "output": out}
+            visuals = {"input": data[input_key], "output": out.cpu()}
             len_dataset=len(self.data_loader.dataset)
             self.tracker.log_iter(visuals, len_dataset)
 

@@ -10,6 +10,7 @@ import logging
 import os
 
 import torch
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ def init_distributed():
             synchronize()
             logger.info(f'Number of GPUs available in world: {num_gpu}.')
         else:
-            raise ValueError("Distributed ON but but running single process")
+            raise ValueError("Distributed ON but but running single process.")
 
 
 def synchronize():
@@ -164,8 +165,16 @@ def reduce(input_data, average=False, all_reduce=False):
     return reduced_data
 
 
-is_not_tensor = lambda x: not isinstance(x, torch.Tensor)
-is_float_or_int = lambda x: isinstance(x, (float, int))
+def is_not_tensor(x):
+    return not isinstance(x, torch.Tensor)
+
+
+def is_float_or_int(x):
+    return isinstance(x, (float, int))
+
+
+def is_numpy_scalar(x):
+    return np.isscalar(x)
 
 
 def reduce_tensor(tensor, average, all_reduce, device):
@@ -206,11 +215,12 @@ def reduce_dict(input_dict, average, all_reduce, device):
         if is_not_tensor(value):
             if is_float_or_int(value):
                 value = torch.Tensor([value])
+            elif is_numpy_scalar(value):
+                value = torch.Tensor([value.item()])
             else:
-                raise NotImplementedError("Dictionary reduction supported only if \
-                                           its values are tensors, floats or integers.")
+                raise NotImplementedError("Dictionary reduction supported only if its values \
+                                           are tensors, numpy scalars floats or integers.")
         values.append(value)
-
     values = torch.stack(values, dim=0).to(device)  # convert the list of tensors to a single tensor
 
     if all_reduce:
@@ -236,6 +246,8 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
         if is_not_tensor(value):
             if is_float_or_int(value):
                 input_data[i] = torch.Tensor([value])
+            elif is_numpy_scalar(value):
+                input_data[i] = torch.Tensor([value.item()])
             else:
                 raise NotImplementedError("List/tuple reduction supported only if"
                                           " its values are tensors, floats or integers.")

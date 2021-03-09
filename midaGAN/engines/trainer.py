@@ -82,7 +82,7 @@ class Trainer(BaseEngine):
         # TODO: save on cancel
         checkpoint_freq = self.conf.train.checkpointing.freq
         checkpoint_after = self.conf.train.checkpointing.start_after
-        if communication.get_local_rank() == 0:
+        if communication.get_rank() == 0:
             if self.iter_idx % checkpoint_freq == 0 and self.iter_idx >= checkpoint_after:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx)
@@ -97,7 +97,7 @@ class Trainer(BaseEngine):
         return Validator(self.conf, self.model)
 
     def run_validation(self):
-        if self.validator and communication.get_local_rank() == 0:
+        if self.validator:
             val_freq = self.conf.val.freq
             val_after = self.conf.val.start_after
             if self.iter_idx % val_freq == 0 and self.iter_idx >= val_after:

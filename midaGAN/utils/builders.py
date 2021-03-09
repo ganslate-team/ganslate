@@ -48,7 +48,7 @@ def build_loader(conf):
     dataset = dataset_class(conf)
 
     if conf.mode == "train":
-        sampler = InfiniteSampler(size=len(dataset), shuffle=conf.train.dataset.shuffle)
+        sampler = InfiniteSampler(size=len(dataset), shuffle=True)
     else:
         sampler = None
         if torch.distributed.is_initialized():
@@ -56,9 +56,7 @@ def build_loader(conf):
                 dataset,
                 shuffle=False,
                 num_replicas=communication.get_world_size(),
-                # TODO: should it be rank instead?
-                rank=communication.get_local_rank())
-
+                rank=communication.get_rank())
     return DataLoader(dataset,
                       sampler=sampler,
                       batch_size=conf[conf.mode].batch_size,

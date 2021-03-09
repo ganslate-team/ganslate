@@ -12,17 +12,17 @@ class BaseValTestEngine(BaseEngineWithInference):
         super().__init__(conf)
 
         self.data_loader = build_loader(self.conf)
+        # Val and test modes allow multiple datasets, this handles when it's a single dataset
+        if not isinstance(self.data_loader, dict):
+            # No name needed when it's a single dataloader
+            self.data_loader = {"": self.data_loader}
+
         self.tracker = ValTestTracker(self.conf)
         self.metricizer = ValTestMetrics(self.conf)
 
     def run(self, current_idx=None):
         self.logger.info(f'{"Validation" if self.conf.mode == "val" else "Testing"} started.')
 
-        # Val and test modes allow multiple datasets,
-        # this is required to handle when it's a single dataset
-        if not isinstance(self.data_loader, dict):
-            # No name needed when it's a single dataloader
-            self.data_loader = {"": self.data_loader}
 
         for dataset_name, dataloader in self.data_loader.items():
             self.dataset = dataloader.dataset

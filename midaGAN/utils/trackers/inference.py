@@ -14,18 +14,15 @@ class InferenceTracker(BaseTracker):
         self.logger = logging.getLogger(type(self).__name__)
 
     def log_iter(self, visuals, len_dataset):
-        self._log_message(len_dataset)
 
         if communication.get_local_rank() == 0:
+            self._log_message(len_dataset)
             visuals = visuals_to_combined_2d_grid(visuals)
             self._save_image(visuals, self.iter_idx)
 
             if self.wandb:
                 self.wandb.log_iter(iter_idx=self.iter_idx,
-                                    learning_rates=None,
-                                    losses=None,
                                     visuals=visuals,
-                                    metrics=None,
                                     mode=self.conf.mode)
 
             # TODO: revisit tensorboard support

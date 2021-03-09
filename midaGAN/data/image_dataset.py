@@ -31,8 +31,8 @@ class ImageDataset(Dataset):
 
     def __init__(self, conf):
 
-        self.dir_A = Path(conf.train.dataset.root) / 'A'
-        self.dir_B = Path(conf.train.dataset.root) / 'B'
+        self.dir_A = Path(conf[conf.mode].dataset.root) / 'A'
+        self.dir_B = Path(conf[conf.mode].dataset.root) / 'B'
 
         self.A_paths = make_dataset_of_files(self.dir_A, EXTENSIONS)
         self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)
@@ -40,7 +40,7 @@ class ImageDataset(Dataset):
         self.B_size = len(self.B_paths)
 
         self.transform = get_transform(conf)
-        self.rgb_or_grayscale = 'RGB' if conf.train.dataset.image_channels == 3 else 'L'
+        self.rgb_or_grayscale = 'RGB' if conf[conf.mode].dataset.image_channels == 3 else 'L'
 
     def __getitem__(self, index):
         index_A = index % self.A_size

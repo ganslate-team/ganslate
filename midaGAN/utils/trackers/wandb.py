@@ -1,7 +1,14 @@
 from omegaconf import OmegaConf
 import wandb
 import os
+import torch
+import numpy as np
 
+
+def torch_npy_to_python(x):
+    if isinstance(x, torch.Tensor) or np.isscalar(x):
+        return x.item()
+    return x
 
 class WandbTracker:
 
@@ -25,7 +32,7 @@ class WandbTracker:
         if conf[conf.mode].logging.wandb.image_filter:
             self.image_filter = conf[conf.mode].logging.wandb.image_filter
 
-    def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics, mode='train'):
+    def log_iter(self, iter_idx, visuals, mode='train',learning_rates=None, losses=None, metrics=None):
         """"""
         mode = mode.capitalize()
         log_dict = {}
@@ -38,12 +45,12 @@ class WandbTracker:
         # Losses
         if losses:
             for name, loss in losses.items():
-                log_dict[f"loss_{name}"] = loss
+                log_dict[f"loss_{name}"] = torch_npy_to_python(loss)
 
         # Metrics
         if metrics:
             for name, metric in metrics.items():
-                log_dict[f"{mode} {name}"] = metric
+                log_dict[f"{mode} {name}"] = torch_npy_to_python(metric)
 
         log_dict[f"{mode} Images"] = self.create_wandb_images(visuals)
 
