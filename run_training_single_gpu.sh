@@ -1,1 +1,0 @@
-CUDA_VISIBLE_DEVICES=0 python tools/train.py config="./projects/cityscapes_label2photo/experiments/cyclegan.yaml"
