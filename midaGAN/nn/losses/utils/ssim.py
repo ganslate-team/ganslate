@@ -3,6 +3,12 @@
 # Changes added by Maastro-CDS-Imaging-Group : https://github.com/Maastro-CDS-Imaging-Group/midaGAN
 # Clean and simplify SSIM computation similar to fastMRI SSIM.
 
+# Taken from: https://github.com/VainF/pytorch-msssim/blob/master/pytorch_msssim/ssim.py
+# Licensed under MIT.
+# Copyright 2020 by Gongfan Fang, Zhejiang University.
+# All rights reserved.
+# Some changes are made to work together with DIRECT.
+
 # ----------------------------------------------------
 # Taken from DIRECT https://github.com/directgroup/direct
 # Copyright (c) DIRECT Contributors

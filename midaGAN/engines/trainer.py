@@ -2,7 +2,7 @@ import logging
 
 import torch
 from midaGAN.engines.base import BaseEngine
-from midaGAN.engines.evaluators import Validator
+from midaGAN.engines.validator_tester import Validator
 from midaGAN.utils import communication, environment
 from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.trackers.training import TrainingTracker
@@ -52,9 +52,9 @@ class Trainer(BaseEngine):
 
         self.tracker.start_dataloading_timer()
         for i, data in zip(self.iters, self.data_loader):
+            self._set_iter_idx(i)
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
-            self._set_iter_idx(i)
 
             self._do_iteration(data)
             self.tracker.end_computation_timer()
@@ -89,7 +89,7 @@ class Trainer(BaseEngine):
 
     def _init_validator(self):
         """
-        Intitialize evaluation parameters from training conf
+        Intitialize validation parameters from training conf
         """
         # Validation conf is built from training conf
         if not self.conf.val:

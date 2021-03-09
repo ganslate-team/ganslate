@@ -1,11 +1,11 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any, Dict
 from dataclasses import dataclass
 from omegaconf import MISSING, II
 from midaGAN.configs import base
 
 
 @dataclass
-class EvalMetricsConfig:
+class ValTestMetricsConfig:
     # SSIM metric between the images
     ssim: bool = True
     # PSNR metric between the images
@@ -31,13 +31,17 @@ class SlidingWindowConfig:
 
 
 @dataclass
-class BaseEvaluationConfig(base.BaseEngineConfig):
-    metrics: EvalMetricsConfig = EvalMetricsConfig()
+class BaseValTestConfig(base.BaseEngineConfig):
+    metrics: ValTestMetricsConfig = ValTestMetricsConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
+
+    dataset: Optional[base.BaseDatasetConfig] = None
+    # Val/test can have multiple datasets provided to it
+    multi_dataset: Optional[Dict[str, base.BaseDatasetConfig]] = None
 
 
 @dataclass
-class ValidationConfig(BaseEvaluationConfig):
+class ValidationConfig(BaseValTestConfig):
     # How frequently to validate (each `freq` iters)
     freq: int = MISSING
     # After which iteration should validation begin
@@ -45,5 +49,5 @@ class ValidationConfig(BaseEvaluationConfig):
 
 
 @dataclass
-class TestConfig(BaseEvaluationConfig):
+class TestConfig(BaseValTestConfig):
     checkpointing: base.CheckpointingConfig = base.CheckpointingConfig()

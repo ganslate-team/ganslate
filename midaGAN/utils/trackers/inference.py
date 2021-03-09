@@ -4,6 +4,7 @@ import time
 
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
+from midaGAN.utils.trackers.utils import visuals_to_combined_2d_grid
 
 
 class InferenceTracker(BaseTracker):
@@ -12,8 +13,29 @@ class InferenceTracker(BaseTracker):
         super().__init__(conf)
         self.logger = logging.getLogger(type(self).__name__)
 
-    def log_message(self, iter_idx, len_dataset):
-        iter_idx *= communication.get_world_size()
+    def log_iter(self, visuals, len_dataset):
+        self._log_message(len_dataset)
+
+        if communication.get_local_rank() == 0:
+            visuals = visuals_to_combined_2d_grid(visuals)
+            self._save_image(visuals, self.iter_idx)
+
+            if self.wandb:
+                self.wandb.log_iter(iter_idx=self.iter_idx,
+                                    learning_rates=None,
+                                    losses=None,
+                                    visuals=visuals,
+                                    metrics=None,
+                                    mode=self.conf.mode)
+
+            # TODO: revisit tensorboard support
+            if self.tensorboard:
+                raise NotImplementedError("Tensorboard tracking not implemented")
+                # self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals,
+                #                             metrics, self.conf.mode)
+    
+    def _log_message(self, len_dataset):
+        iter_idx = self.iter_idx * communication.get_world_size()
 
         # In case of DDP, if (len_dataset % number of processes != 0),
         # it will show more iters than there actually are

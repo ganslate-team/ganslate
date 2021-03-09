@@ -1,58 +1,69 @@
 from midaGAN.engines.base import BaseEngineWithInference
-from midaGAN.nn.metrics.eval_metrics import EvaluationMetrics
+from midaGAN.utils.metrics.val_test_metrics import ValTestMetrics
 from midaGAN.utils import environment
 from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.io import decollate
-from midaGAN.utils.trackers.evaluation import EvaluationTracker
+from midaGAN.utils.trackers.validation_testing import ValTestTracker
 
 
-class BaseEvaluator(BaseEngineWithInference):
+class BaseValTestEngine(BaseEngineWithInference):
 
     def __init__(self, conf):
         super().__init__(conf)
 
         self.data_loader = build_loader(self.conf)
-        self.tracker = EvaluationTracker(self.conf)
-        self.metricizer = EvaluationMetrics(self.conf)
+        self.tracker = ValTestTracker(self.conf)
+        self.metricizer = ValTestMetrics(self.conf)
 
     def run(self, current_idx=None):
-        self.logger.info(f"{self.conf.mode} with {len(self.data_loader.dataset)} samples")
+        self.logger.info(f'{"Validation" if self.conf.mode == "val" else "Testing"} started.')
 
-        for data in self.data_loader:
-            # Move elements from data that are visuals
-            visuals = {
-                "A": data['A'].to(self.model.device),
-                "fake_B": self.infer(data['A']),
-                "B": data['B'].to(self.model.device)
-            }
+        # Val and test modes allow multiple datasets,
+        # this is required to handle when it's a single dataset
+        if not isinstance(self.data_loader, dict):
+            # No name needed when it's a single dataloader
+            self.data_loader = {"": self.data_loader}
 
-            # Add masks to visuals if they are provided
-            if "masks" in data:
-                visuals.update({"masks": data["masks"]})
+        for dataset_name, dataloader in self.data_loader.items():
+            self.dataset = dataloader.dataset
 
-            metrics = self._calculate_metrics(visuals)
-            self.tracker.add_sample(visuals, metrics)
+            for data in dataloader:
+                # Move elements from data that are visuals
+                visuals = {
+                    "A": data['A'].to(self.model.device),
+                    "fake_B": self.infer(data['A']),
+                    "B": data['B'].to(self.model.device)
+                }
 
-            # A dataset object has to have a `save()` method if it
-            # wishes to save the outputs in a particular way or format
-            if saver := getattr(self.data_loader.dataset, "save", False):
-                save_dir = self.output_dir / "saved"
-                if current_idx is not None:
-                    save_dir = save_dir / str(current_idx)
+                # Add masks to visuals if they are provided
+                if "masks" in data:
+                    visuals.update({"masks": data["masks"]})
 
-                if "metadata" in data:
-                    saver(visuals['fake_B'], save_dir, metadata=decollate(data["metadata"]))
-                else:
-                    saver(visuals['fake_B'], save_dir)
+                metrics = self._calculate_metrics(visuals)
+                self.tracker.add_sample(visuals, metrics)
 
-        self.tracker.push_samples(current_idx)
+                # A dataset object has to have a `save()` method if it
+                # wishes to save the outputs in a particular way or format
+                saver = getattr(self.dataset, "save", False)
+                if saver:
+                    save_dir = self.output_dir / "saved" / dataset_name
+                    if current_idx is not None:
+                        save_dir = save_dir / str(current_idx)
+
+                    if "metadata" in data:
+                        saver(visuals['fake_B'], save_dir, metadata=decollate(data["metadata"]))
+                    else:
+                        saver(visuals['fake_B'], save_dir)
+
+            self.tracker.push_samples(current_idx, prefix=dataset_name)
 
     def _calculate_metrics(self, visuals):
         # TODO: Decide if cycle metrics also need to be scaled
         pred, target = visuals["fake_B"], visuals["B"]
 
         # Check if dataset has `denormalize` method defined,
-        if denormalize := getattr(self.data_loader.dataset, "denormalize", False):
+        denormalize = getattr(self.dataset, "denormalize", False)
+        if denormalize:
             pred, target = denormalize(pred), denormalize(target)
 
         metrics = self.metricizer.get_metrics(pred, target)
@@ -90,13 +101,14 @@ class BaseEvaluator(BaseEngineWithInference):
                 metrics = {f"{k}_{label}": v \
                     for k,v in self.metricizer.get_metrics(pred, target, mask=mask).items()}
                 mask_metrics.update(metrics)
+                visuals[label] = 2. * mask - 1
 
             visuals.pop("masks")
 
         return mask_metrics
 
 
-class Validator(BaseEvaluator):
+class Validator(BaseValTestEngine):
 
     def __init__(self, conf, model):
         super().__init__(conf)
@@ -106,7 +118,7 @@ class Validator(BaseEvaluator):
         self.conf.mode = 'val'
 
 
-class Tester(BaseEvaluator):
+class Tester(BaseValTestEngine):
 
     def __init__(self, conf):
         super().__init__(conf)

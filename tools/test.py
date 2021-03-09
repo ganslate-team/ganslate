@@ -12,7 +12,7 @@ except ImportError:
 
 #from midaGAN import configs
 from midaGAN.utils.builders import build_conf, build_gan
-from midaGAN.engines.evaluators import Tester
+from midaGAN.engines.validator_tester import Tester
 from midaGAN.utils import communication, environment
 
 
