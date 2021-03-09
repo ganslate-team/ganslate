@@ -38,33 +38,39 @@ def create_masked_array(input, mask):
 
 def mae(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Mean Absolute Error (MAE)"""
-    return np.mean(np.abs(gt - pred))
-
+    mae_value = np.mean(np.abs(gt - pred))
+    # return float(mae_value)
+    return mae_value.astype(np.float32)
 
 def mse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Mean Squared Error (MSE)"""
-    return np.mean((gt - pred)**2)
-
+    mse_value = np.mean((gt - pred)**2)
+    # return float(mse_value)
+    return mse_value.astype(np.float32)
 
 def nmse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Normalized Mean Squared Error (NMSE)"""
-    return np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
-
+    nmse_value = np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
+    # return float(nmse_value)
+    return nmse_value.astype(np.float32)
 
 def psnr(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
     """Compute Peak Signal to Noise Ratio metric (PSNR)"""
-    return peak_signal_noise_ratio(gt, pred, data_range=gt.max())
-
+    psnr_value = peak_signal_noise_ratio(gt, pred, data_range=gt.max())
+    # return float(psnr_value)
+    return psnr_value.astype(np.float32)
 
 def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np.ndarray:
     """Compute Structural Similarity Index Metric (SSIM)"""
     maxval = gt.max() if maxval is None else maxval
 
-    ssim = 0
+    ssim_value = 0
     for slice_num in range(gt.shape[0]):
-        ssim = ssim + structural_similarity(gt[slice_num], pred[slice_num], data_range=maxval)
+        ssim_value = ssim_value + structural_similarity(gt[slice_num], pred[slice_num], data_range=maxval)
 
-    return ssim / gt.shape[0]
+    ssim_value /= gt.shape[0]
+    # return float(ssim_value)
+    return ssim_value.astype(np.float32)
 
 
 METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}

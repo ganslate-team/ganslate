@@ -9,6 +9,7 @@
 import logging
 import os
 
+import numpy as np
 import torch
 
 logger = logging.getLogger(__name__)
@@ -165,7 +166,7 @@ def reduce(input_data, average=False, all_reduce=False):
 
 
 is_not_tensor = lambda x: not isinstance(x, torch.Tensor)
-is_float_or_int = lambda x: isinstance(x, (float, int))
+is_float_or_int = lambda x: isinstance(x, (float, int, np.float32))
 
 
 def reduce_tensor(tensor, average, all_reduce, device):
@@ -203,6 +204,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
         names.append(k)
         value = input_dict[k]
         # if float or integer and not tensor, convert to tensor
+        print("KEY", k, 'VALUE', type(value))
         if is_not_tensor(value):
             if is_float_or_int(value):
                 value = torch.Tensor([value])
@@ -212,6 +214,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
         values.append(value)
 
     values = torch.stack(values, dim=0).to(device)  # convert the list of tensors to a single tensor
+    print("VALUES-1", values)
 
     if all_reduce:
         torch.distributed.all_reduce(values)
@@ -220,6 +223,7 @@ def reduce_dict(input_dict, average, all_reduce, device):
 
     if average and (get_rank() == 0 or all_reduce):
         values /= get_world_size()
+        print("VALUES-2", values)
 
     reduced_dict = {k: v for k, v in zip(names, values)}
     return reduced_dict

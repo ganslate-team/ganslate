@@ -1,0 +1,1 @@
+python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config="./projects/horse2zebra/experiments/default.yaml"
