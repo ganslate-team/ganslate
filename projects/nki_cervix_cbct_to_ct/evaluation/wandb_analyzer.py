@@ -8,8 +8,10 @@ DEFAULT_KEYS = {"descending": ["psnr", "ssim"], "ascending": ["mae", "mse", "nms
 
 # Lambda fns for some easy ops
 flatten = lambda t: [item for sublist in t for item in sublist]
+
 # Check if any of the items of list1 are substrings of string
 is_list_element_substr = lambda list1, string: any([key in string for key in list1])
+
 # Filters a list of columns from the dataframe
 filter_cols = lambda df, cols: df[df.columns[~df.columns.isin(cols)]]
 
@@ -17,6 +19,10 @@ filter_cols = lambda df, cols: df[df.columns[~df.columns.isin(cols)]]
 def main(args):
     api = wandb.Api()
     all_keys = flatten([v for v in DEFAULT_KEYS.values()])
+
+    # Add Train key to list of keys to ignore
+    ignore_tags = args.ignore_tags
+    ignore_tags.extend(['Train'])
 
     runs = api.runs(f"{args.entity}/{args.project}")
 
@@ -32,7 +38,7 @@ def main(args):
                     # Filter to get keys that contain strings that are defined in DEFAULT_KEYS
                     # and ignore 'Train' keys
                     if is_list_element_substr(all_keys, metric_label) and \
-                        not 'Train' in metric_label:
+                        not is_list_element_substr(ignore_tags, metric_label):
 
                         row_dict[metric_label] = row[metric_label]
                 df = df.append(row_dict, ignore_index=True)
@@ -68,7 +74,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--entity", help="Wandb entity", type=str, default="maastro-clinic")
     parser.add_argument("--project", help="Wandb project", type=str, default="Media_Experiments_V1")
-
+    parser.add_argument("--ignore_tags", help="List of regex tags to ignore in the metric columns", nargs='+', default=[])
     args = parser.parse_args()
 
     main(args)
