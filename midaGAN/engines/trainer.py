@@ -80,9 +80,9 @@ class Trainer(BaseEngine):
 
     def _save_checkpoint(self):
         # TODO: save on cancel
-        checkpoint_freq = self.conf.train.checkpointing.freq
-        checkpoint_after = self.conf.train.checkpointing.start_after
         if communication.get_rank() == 0:
+            checkpoint_freq = self.conf.train.checkpointing.freq
+            checkpoint_after = self.conf.train.checkpointing.start_after
             if self.iter_idx % checkpoint_freq == 0 and self.iter_idx >= checkpoint_after:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx)

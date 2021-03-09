@@ -14,22 +14,20 @@ class InferenceTracker(BaseTracker):
         self.logger = logging.getLogger(type(self).__name__)
 
     def log_iter(self, visuals, len_dataset):
+        self._log_message(len_dataset)
+        visuals = visuals_to_combined_2d_grid(visuals)
+        self._save_image(visuals, self.iter_idx)
 
-        if communication.get_local_rank() == 0:
-            self._log_message(len_dataset)
-            visuals = visuals_to_combined_2d_grid(visuals)
-            self._save_image(visuals, self.iter_idx)
+        if self.wandb:
+            self.wandb.log_iter(iter_idx=self.iter_idx,
+                                visuals=visuals,
+                                mode=self.conf.mode)
 
-            if self.wandb:
-                self.wandb.log_iter(iter_idx=self.iter_idx,
-                                    visuals=visuals,
-                                    mode=self.conf.mode)
-
-            # TODO: revisit tensorboard support
-            if self.tensorboard:
-                raise NotImplementedError("Tensorboard tracking not implemented")
-                # self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals,
-                #                             metrics, self.conf.mode)
+        # TODO: revisit tensorboard support
+        if self.tensorboard:
+            raise NotImplementedError("Tensorboard tracking not implemented")
+            # self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals,
+            #                             metrics, self.conf.mode)
     
     def _log_message(self, len_dataset):
         iter_idx = self.iter_idx * communication.get_world_size()
