@@ -52,11 +52,10 @@ def build_loader(conf):
     else:
         sampler = None
         if torch.distributed.is_initialized():
-            sampler = DistributedSampler(
-                dataset,
-                shuffle=False,
-                num_replicas=communication.get_world_size(),
-                rank=communication.get_rank())
+            sampler = DistributedSampler(dataset,
+                                         shuffle=False,
+                                         num_replicas=communication.get_world_size(),
+                                         rank=communication.get_rank())
     return DataLoader(dataset,
                       sampler=sampler,
                       batch_size=conf[conf.mode].batch_size,

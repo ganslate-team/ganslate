@@ -66,8 +66,8 @@ def setup_logging(use_stdout: Optional[bool] = True,
     logging.captureWarnings(True)
     log_level = getattr(logging, log_level)
 
-    root = logging.getLogger()
-    root.setLevel(log_level)
+    logger = logging.getLogger()
+    logger.setLevel(log_level)
 
     formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
 
@@ -75,13 +75,13 @@ def setup_logging(use_stdout: Optional[bool] = True,
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(log_level)
         handler.setFormatter(formatter)
-        root.addHandler(handler)
+        logger.addHandler(handler)
 
     if filename is not None:
         handler = logging.FileHandler(filename)
         handler.setLevel(log_level)
         handler.setFormatter(formatter)
-        root.addHandler(handler)
+        logger.addHandler(handler)
 
 
 def set_seed(seed=0):

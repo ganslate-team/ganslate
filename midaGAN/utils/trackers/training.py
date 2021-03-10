@@ -3,7 +3,7 @@ from pathlib import Path
 
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
-from midaGAN.utils.trackers.utils import visuals_to_combined_2d_grid
+from midaGAN.utils.trackers.utils import process_visuals_for_logging
 
 
 class TrainingTracker(BaseTracker):
@@ -35,7 +35,10 @@ class TrainingTracker(BaseTracker):
 
             self._log_message(learning_rates, losses)
 
-            visuals = visuals_to_combined_2d_grid(visuals)
+            visuals = process_visuals_for_logging(visuals, single_example=True, grid_depth="full")
+            # `single_example=True` returns a single example from the batch, selecting it
+            visuals = visuals[0]
+            # Gather not necessary as in val/test, it is enough to log one example when training
             self._save_image(visuals, self.iter_idx)
 
             if self.wandb:

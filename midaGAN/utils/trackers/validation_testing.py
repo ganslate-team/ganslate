@@ -1,9 +1,12 @@
 import logging
 from pathlib import Path
 
+import torch
+
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
-from midaGAN.utils.trackers.utils import visuals_to_combined_2d_grid
+from midaGAN.utils.trackers.utils import (process_visuals_for_logging, 
+                                          concat_batch_of_visuals_after_gather)
 
 
 class ValTestTracker(BaseTracker):
@@ -18,16 +21,19 @@ class ValTestTracker(BaseTracker):
     def add_sample(self, visuals, metrics):
         """Parameters: # TODO: update this
         """
-        visuals = {k: v for k, v in visuals.items() if v is not None}
         metrics = {k: v for k, v in metrics.items() if v is not None}
+        visuals = {k: v for k, v in visuals.items() if v is not None}
 
-        # Gather visuals from different processes to the rank 0 process
-        #visuals = communication.gather(visuals)
         # Reduce metrics (avg) and send to the process of rank 0
         metrics = communication.reduce(metrics, average=True, all_reduce=False)
         
-        visuals = visuals_to_combined_2d_grid(visuals, grid_depth='mid')
-        self.visuals.append(visuals)
+        
+        # Gather visuals from different processes to the rank 0 process
+        visuals = communication.gather(visuals)
+        visuals = concat_batch_of_visuals_after_gather(visuals)
+        visuals = process_visuals_for_logging(visuals, single_example=False, grid_depth="mid")
+
+        self.visuals.extend(visuals)
         self.metrics.append(metrics)
 
     def push_samples(self, iter_idx, prefix=''):

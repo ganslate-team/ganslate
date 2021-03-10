@@ -1,35 +1,64 @@
 import torch
+from midaGAN.utils import communication
 
 
-def visuals_to_combined_2d_grid(visuals, grid_depth='full'):
+def concat_batch_of_visuals_after_gather(visuals_list):
+    # Gathering done only for rank 0 when DDP is ON
+    visuals = visuals_list
+    if torch.distributed.is_initialized() and communication.get_rank() == 0:
+        visuals = visuals_list[0]
+        for single_visuals in visuals_list[1:]:
+            for key in single_visuals.keys():
+                visuals[key] = torch.cat((visuals[key], single_visuals[key]), dim=0)
+    return visuals
+
+
+def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"):
+    final_visuals_grids = []
+
+    # When a list of visuals is given, process it recursively
+    if isinstance(visuals, list):
+        for single_visuals in visuals:
+            single_visuals = process_visuals_for_logging(visuals, single_example, grid_depth)
+            final_visuals_grids.extend(single_visuals)
+        return final_visuals_grids
+    
+    # A single instance of visuals is a dict
     assert isinstance(visuals, dict)
     visuals_list = list(visuals.values())
+    is_three_dimensional = visuals_list[0].ndim == 5
 
-    if visuals_list[0].ndim == 5:
-        # Concatenate slices that are at the same level from different visuals along width.
-        # Each tensor from visuals is NxCxDxHxW, hence dim=4.
-        combined_slices = torch.cat(tuple(visuals_list), dim=4)
-        # We plot a single volume from the batch
-        combined_slices = combined_slices[0]
-        # CxDxHxW -> DxCxHxW
-        combined_slices = combined_slices.permute(1, 0, 2, 3)
-        # Concatenate all combined slices along height to form a single 2d image.
-        # Tensors in the tuple are CxHxW, hence dim=1
-        if grid_depth == 'full':
-            combined_image = torch.cat(tuple(combined_slices), dim=1)
+    # Concatenate corresponding images/slices from different visuals along width.
+    # Width, in case of 3D, is fourth dim, while in 2D it's the third.
+    concat_dim = 4 if is_three_dimensional else 3
+    batch_visuals_grids = torch.cat(tuple(visuals_list), dim=concat_dim)
+    # When interested in logging a single example from the batch, go through it only
+    if single_example:
+        batch_visuals_grids = batch_visuals_grids[:1]
 
-        elif grid_depth == 'mid':
-            mid_slice = combined_slices.shape[0] // 2
-            combined_image = combined_slices[mid_slice]
-    else:
-        # NxCxHxW
-        combined_image = torch.cat(tuple(visuals_list), dim=3)
-        combined_image = combined_image[0]
+    for visuals_grid in batch_visuals_grids:
+        if is_three_dimensional:
+            # CxDxHxW -> DxCxHxW
+            visuals_grid = visuals_grid.permute(1, 0, 2, 3)
 
-    # Convert data range [-1,1] to [0,1]. Important when saving images.
-    combined_image = (combined_image + 1) / 2
+            # Whole 3D image into a grid
+            if grid_depth == "full":
+                # Concatenate all combined slices along height to form a single 2D image.
+                # Tensors in the tuple are CxHxW, hence dim=1
+                visuals_grid = torch.cat(tuple(visuals_grid), dim=1)
 
-    # Name would be, e.g., "real_A-fake_B-rec_A-real_B-fake_A-rec_B"
-    name = "-".join(visuals.keys())
-    # NOTE: image format is CxHxW
-    return {'name': name, 'image': combined_image}
+            # Only mid slice from 3D image
+            elif grid_depth == "mid":
+                mid_slice = visuals_grid.shape[0] // 2
+                visuals_grid = visuals_grid[mid_slice]
+
+        # Convert data range [-1,1] to [0,1]. Important when saving images.
+        visuals_grid = (visuals_grid + 1) / 2
+        
+        # Name would be, e.g., "real_A-fake_B-rec_A-real_B-fake_A-rec_B"
+        name = "-".join(visuals.keys())
+
+        # Note that image format is CxHxW
+        final_visuals_grids.append({'name': name, 'image': visuals_grid})
+
+    return final_visuals_grids
