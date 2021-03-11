@@ -3,7 +3,7 @@
 
 # Job configuration ---
 
-#SBATCH --job-name=label2photo_cyclegan-color
+#SBATCH --job-name=label2photo_pix2pix
 #SBATCH --output=/home/zk315372/Chinmay/Git/midaGAN/projects/cityscapes_label2photo/slurm_logs/%j.log
 
 ## OpenMP settings
@@ -30,7 +30,7 @@ echo; echo
 # Execute training
 python_interpreter="/home/zk315372/miniconda3/envs/gan_env/bin/python3"
 training_file="/home/zk315372/Chinmay/Git/midaGAN/tools/train.py"
-config_file="/home/zk315372/Chinmay/Git/midaGAN/projects/cityscapes_label2photo/experiments/cyclegan.yaml"
+config_file="/home/zk315372/Chinmay/Git/midaGAN/projects/cityscapes_label2photo/experiments/pix2pix.yaml"
 
 CUDA_VISIBLE_DEVICES=0 $python_interpreter $training_file config=$config_file
 
@@ -40,4 +40,4 @@ CUDA_VISIBLE_DEVICES=0 $python_interpreter $training_file config=$config_file
 # CUDA_VISIBLE_DEVICES=0 python tools/train.py config="./projects/cityscapes_label2photo/experiments/cyclegan.yaml"
 
 # Run distributed example:
-# python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config="./projects/horse2zebra/experiments/default.yaml"
+# python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config="./projects/cityscapes_label2photo/experiments/cyclegan.yaml"

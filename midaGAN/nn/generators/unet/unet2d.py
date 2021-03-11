@@ -11,6 +11,7 @@ from midaGAN import configs
 class Unet2DConfig(configs.base.BaseGeneratorConfig):
     name: str = 'Unet2D'
     in_channels: int = 1
+    out_channels: int = 1
     num_downs: int = 7
     ngf: int = 64
     use_dropout: bool = False
@@ -19,7 +20,7 @@ class Unet2DConfig(configs.base.BaseGeneratorConfig):
 class Unet2D(nn.Module):
     """Create a Unet-based generator"""
 
-    def __init__(self, in_channels, num_downs, norm_type, ngf=64, use_dropout=False):
+    def __init__(self, in_channels, out_channels, num_downs, norm_type, ngf=64, use_dropout=False):
         """Construct a Unet generator
         Parameters:
             in_channels (int)  -- the number of channels in input images
@@ -31,8 +32,6 @@ class Unet2D(nn.Module):
         It is a recursive process.
         """
         super().__init__()
-
-        out_channels = in_channels
 
         # construct unet structure
         unet_block = UnetSkipConnectionBlock(ngf * 8,

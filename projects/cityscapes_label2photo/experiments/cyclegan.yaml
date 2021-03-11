@@ -20,11 +20,13 @@ train:
     dataset: 
         name: "Label2PhotoTrainDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
-        flip: True
         shuffle: True
-        num_workers: 16
-        load_size: [512, 256]
-        paired: False
+        num_workers: 8
+        random_flip: True
+        random_crop: True
+        load_size: [572, 286]
+        crop_size: [512, 256]
+        paired: True
         masking: False
 
     gan:  

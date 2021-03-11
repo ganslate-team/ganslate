@@ -24,10 +24,12 @@ EXTENSIONS = ['.png']
 @dataclass
 class Label2PhotoTrainDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "Label2PhotoTrainDataset"
-    load_size: Tuple[int, int] = (512, 256)
-    flip: bool = True
+    load_size: Tuple[int, int] = (572, 286)
+    crop_size: Tuple[int, int] = (512, 256)
+    random_flip: bool = True
+    random_crop: bool = True
     paired: bool = True   # `True` for paired training  
-    masking: bool = True
+    masking: bool = True  # `True` to mask away the "void" objects in the photos
 
 
 class Label2PhotoTrainDataset(Dataset):
@@ -41,8 +43,12 @@ class Label2PhotoTrainDataset(Dataset):
         self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)
         self.dataset_size = len(self.A_paths)
 
-        self.flip = conf.train.dataset.flip
+        self.random_flip = conf.train.dataset.random_flip
+        self.random_crop = conf.train.dataset.random_crop
+
         self.load_size = conf.train.dataset.load_size
+        self.crop_size = conf.train.dataset.crop_size
+        
         self.paired = conf.train.dataset.paired
         self.masking = conf.train.dataset.masking
 
@@ -61,12 +67,9 @@ class Label2PhotoTrainDataset(Dataset):
         A_img = A_img.resize(self.load_size, resample=PIL.Image.NEAREST)
         B_img = B_img.resize(self.load_size, resample=PIL.Image.BICUBIC)
 
-        # Transforms
-        r = random.random()
-        if self.flip and r < 0.5:
-            A_img = TF.hflip(A_img)
-            B_img = TF.hflip(B_img)
-
+        # Transform
+        A_img, B_img = self.apply_transform(A_img, B_img)
+        
         # Create a mask of valid (i.e. non-void) regions from GT color images (domain A) 
         # and apply on the photos (domain B)
         # Void class labels are black in GT color images
@@ -84,6 +87,28 @@ class Label2PhotoTrainDataset(Dataset):
 
     def __len__(self):
         return self.dataset_size
+
+
+    def apply_transform(self, A_img, B_img):
+        r = random.random()
+        if self.random_crop and r < 0.66:  # Random crop
+            load_width, load_height = self.load_size
+            crop_width, crop_height = self.crop_size
+            random_left = random.randint(0, load_width - crop_width -1)
+            random_top = random.randint(0, load_height - crop_height -1)
+            A_img = TF.crop(A_img, top=random_top, left=random_left, 
+                            height=crop_height, width=crop_width)
+            B_img = TF.crop(B_img, top=random_top, left=random_left,
+                            height=crop_height, width=crop_width)
+            if self.random_flip and r < 0.33: # Then, Random flip
+                A_img = TF.hflip(A_img)
+                B_img = TF.hflip(B_img)
+            
+        else:
+            A_img = A_img.resize(self.crop_size, resample=PIL.Image.NEAREST)
+            B_img = B_img.resize(self.crop_size, resample=PIL.Image.BICUBIC)
+
+        return A_img, B_img
 
 
     def normalize(self, x_img, validity_mask=None):

@@ -37,11 +37,12 @@ class Label2PhotoValDataset(Dataset):
         self.dir_A = Path(conf.val.dataset.root) / 'A_color'        
         self.dir_B = Path(conf.val.dataset.root) / 'B'
 
-        self.A_paths = make_dataset_of_files(self.dir_A, EXTENSIONS)
-        self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)
+        self.A_paths = make_dataset_of_files(self.dir_A, EXTENSIONS)[:50]  # Consider first 50 images from Val set  
+        self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)[:50]  #
         self.dataset_size = len(self.A_paths)
 
-        self.load_size = conf.val.dataset.load_size        
+        self.load_size = conf.val.dataset.load_size     
+        self.masking = conf.val.dataset.masking
 
 
     def __getitem__(self, index):

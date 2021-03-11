@@ -3,8 +3,8 @@ project_dir: "./projects/cityscapes_label2photo/"
 train:
     output_dir: "./checkpoints/label2photo_pix2pix/"
     cuda: True
-    n_iters: 297500      # 2975 (images) x 100 ("epochs") 
-    n_iters_decay: 297500
+    n_iters: 297500      # 2975 (images) x 100 ("epochs")
+    n_iters_decay: 5000
     batch_size: 1
     mixed_precision: False
 
@@ -20,32 +20,34 @@ train:
     dataset: 
         name: "Label2PhotoTrainDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
-        flip: True
         shuffle: True
         num_workers: 8
-        load_size: [512, 256]
+        random_flip: True
+        random_crop: True
+        load_size: [572, 286]
+        crop_size: [512, 256]
         paired: True
-        masking: True
+        masking: False
 
-    gan:  # Edit this section
+    gan: 
         name: "Pix2PixConditionalGAN"
         generator:  
-            name: "Resnet2D"
-            n_residual_blocks: 9
+            name: "Unet2D"
             in_channels: 3
+            out_channels: 3
+            num_downs: 7
+            ngf: 128
+            use_dropout: True
 
         discriminator:  
             name: "PatchGAN2D"
-            n_layers: 3
-            in_channels: 3
+            n_layers: 4
+            in_channels: 6
 
         optimizer:
             lr_D: 0.0002
             lr_G: 0.0004
-            lambda_A: 5.0
-            lambda_B: 5.0
-            lambda_identity: 0
-            proportion_ssim: 0
+            lambda_l1: 100.0
     
     metrics:
         discriminator_evolution: True
@@ -59,6 +61,7 @@ val:
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/val"
         shuffle: False
         num_workers: 8
-        A_representation: "gt-color"
         load_size: [512, 256]
         masking: False
+    metrics:
+        cycle_metrics: False
