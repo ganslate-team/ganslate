@@ -24,6 +24,7 @@ class Unet2D(nn.Module):
         """Construct a Unet generator
         Parameters:
             in_channels (int)  -- the number of channels in input images
+            out_channels (int) -- the number of channels in model's output
             num_downs (int) -- the number of downsamplings in UNet. For example, # if |num_downs| == 7,
                                 image of size 128x128 will become of size 1x1 # at the bottleneck
             ngf (int)       -- the number of filters in the last conv layer
