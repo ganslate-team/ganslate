@@ -8,8 +8,10 @@
 
 import logging
 import os
+import functools
 
 import torch
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ def init_distributed():
             synchronize()
             logger.info(f'Number of GPUs available in world: {num_gpu}.')
         else:
-            raise ValueError("Distributed ON but but running single process")
+            raise ValueError("Distributed ON but but running single process.")
 
 
 def synchronize():
@@ -115,9 +117,35 @@ def shared_random_seed() -> int:
         torch.distributed.broadcast(seed, 0)
     return int(seed)
 
+@functools.lru_cache()
+def _get_global_gloo_group():
+    """
+    Return a process group based on gloo backend, containing all the ranks
+    The result is cached.
+    """
+    if torch.distributed.get_backend() == "nccl":
+        return torch.distributed.new_group(backend="gloo")
+    return torch.distributed.group.WORLD
+
+# ------------------ Gather -----------------------
+
+def gather(input_data):
+    # TODO: Assert for PyTorch version since `gather_object` present from 1.8.0
+    if get_world_size() < 2:
+        return input_data
+
+    input_data = move_to(input_data, torch.device('cpu'))
+    group = _get_global_gloo_group()
+
+    if torch.distributed.get_rank(group=group) == 0:
+        gather_list = [None for _ in range(get_world_size())]
+        torch.distributed.gather_object(input_data, gather_list, dst=0, group=group)
+        return gather_list
+    else:
+        torch.distributed.gather_object(input_data, dst=0, group=group)
+        return input_data
 
 # ------------ Reduce and All Reduce --------------
-
 
 def reduce(input_data, average=False, all_reduce=False):
     """
@@ -164,10 +192,6 @@ def reduce(input_data, average=False, all_reduce=False):
     return reduced_data
 
 
-is_not_tensor = lambda x: not isinstance(x, torch.Tensor)
-is_float_or_int = lambda x: isinstance(x, (float, int))
-
-
 def reduce_tensor(tensor, average, all_reduce, device):
     """Reduce a tensor"""
     tensor = tensor.clone().to(device)
@@ -206,11 +230,12 @@ def reduce_dict(input_dict, average, all_reduce, device):
         if is_not_tensor(value):
             if is_float_or_int(value):
                 value = torch.Tensor([value])
+            elif is_numpy_scalar(value):
+                value = torch.Tensor([value.item()])
             else:
-                raise NotImplementedError("Dictionary reduction supported only if \
-                                           its values are tensors, floats or integers.")
+                raise NotImplementedError("Dictionary reduction supported only if its values \
+                                           are tensors, numpy scalars floats or integers.")
         values.append(value)
-
     values = torch.stack(values, dim=0).to(device)  # convert the list of tensors to a single tensor
 
     if all_reduce:
@@ -236,6 +261,8 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
         if is_not_tensor(value):
             if is_float_or_int(value):
                 input_data[i] = torch.Tensor([value])
+            elif is_numpy_scalar(value):
+                input_data[i] = torch.Tensor([value.item()])
             else:
                 raise NotImplementedError("List/tuple reduction supported only if"
                                           " its values are tensors, floats or integers.")
@@ -253,3 +280,35 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
     # Cast it back to tuple or list
     reduced_sequence = data_type(values)
     return reduced_sequence
+
+
+# ------------------ Helpers -----------------------
+
+def move_to(obj, device):
+    """Move any combination of list or dict containing tensors to the specific device."""
+    if not isinstance(obj, (torch.Tensor, dict, list)):
+        return obj
+    elif torch.is_tensor(obj):
+        return obj.to(device)
+    elif isinstance(obj, dict):
+        res = {}
+        for k, v in obj.items():
+            res[k] = move_to(v, device)
+        return res
+    elif isinstance(obj, list):
+        res = []
+        for v in obj:
+            res.append(move_to(v, device))
+        return res
+
+
+def is_not_tensor(x):
+    return not isinstance(x, torch.Tensor)
+
+
+def is_float_or_int(x):
+    return isinstance(x, (float, int))
+
+
+def is_numpy_scalar(x):
+    return np.isscalar(x)

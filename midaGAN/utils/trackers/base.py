@@ -27,18 +27,18 @@ class BaseTracker:
         self._save_config(conf)
 
     def _save_config(self, conf):
-        if communication.get_local_rank() == 0:
+        if communication.get_rank() == 0:
             config_path = self.output_dir / f"{self.conf.mode}_config.yaml"
             with open(config_path, "w") as file:
                 file.write(OmegaConf.to_yaml(conf))
 
     def _setup_images_dir(self):
-        if communication.get_local_rank() == 0:
+        if communication.get_rank() == 0:
             io.mkdirs(Path(self.output_dir) / "images")
 
     def _setup_wandb_tensorboard(self, conf):
         wandb, tensorboard = None, None
-        if communication.get_local_rank() == 0:
+        if communication.get_rank() == 0:
             if conf[conf.mode].logging.wandb:
                 wandb = WandbTracker(conf)
             if conf[conf.mode].logging.tensorboard:
@@ -65,10 +65,11 @@ class BaseTracker:
         self.t_data = communication.reduce(self.t_data, average=True, all_reduce=False)
 
     def close(self):
-        if communication.get_local_rank() == 0 and self.tensorboard:
+        if communication.get_rank() == 0 and self.tensorboard:
             self.tensorboard.close()
 
     def _save_image(self, visuals, iter_idx):
-        name, image = visuals['name'], visuals['image']
-        file_path = Path(self.output_dir) / f"images/{iter_idx}_{name}.png"
-        torchvision.utils.save_image(image, file_path)
+        if communication.get_rank() == 0:
+            name, image = visuals['name'], visuals['image']
+            file_path = Path(self.output_dir) / f"images/{iter_idx}_{name}.png"
+            torchvision.utils.save_image(image, file_path)

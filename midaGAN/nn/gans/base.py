@@ -71,8 +71,8 @@ class BaseGAN(ABC):
 
     def _specify_device(self):
         if torch.distributed.is_initialized():
-            rank = communication.get_local_rank()
-            return torch.device(f"cuda:{rank}")  # distributed GPU training
+            local_rank = communication.get_local_rank()
+            return torch.device(f"cuda:{local_rank}")  # distributed GPU training
         elif self.conf[self.conf.mode].cuda:
             return torch.device('cuda:0')  # non-distributed GPU training
         else:

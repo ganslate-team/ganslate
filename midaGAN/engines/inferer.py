@@ -5,7 +5,7 @@ from midaGAN.utils import environment
 from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.io import decollate
 from midaGAN.utils.trackers.inference import InferenceTracker
-
+from midaGAN.utils import communication
 
 class Inferer(BaseEngineWithInference):
 
@@ -32,9 +32,14 @@ class Inferer(BaseEngineWithInference):
         self.logger.info("Inference started.")
 
         self.tracker.start_dataloading_timer()
-        for i, data in enumerate(self.data_loader, start=1):
-            self.tracker.set_iter_idx(i)
-            if i == 1:
+        for i, data in enumerate(self.data_loader):
+            # Iteration index
+            # (1) When using DDP, multiply with world size since each process does an iteration
+            # (2) Multiply with batch size to get accurate info on how many examples are done
+            # (3) Add 1 to start from iter 1 instead of 0 
+            iter_idx = i * communication.get_world_size() * self.conf.infer.batch_size + 1
+            self.tracker.set_iter_idx(iter_idx)
+            if i == 0:
                 input_key = self._get_input_key(data)
 
                 saver = getattr(self.data_loader.dataset, "save", None)
@@ -61,7 +66,7 @@ class Inferer(BaseEngineWithInference):
                     saver(out, save_dir)
             self.tracker.end_saving_timer()
 
-            visuals = {"input": data[input_key].to(out.device), "output": out}
+            visuals = {"input": data[input_key], "output": out.cpu()}
             len_dataset=len(self.data_loader.dataset)
             self.tracker.log_iter(visuals, len_dataset)
 

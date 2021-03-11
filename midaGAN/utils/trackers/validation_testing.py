@@ -1,9 +1,12 @@
 import logging
 from pathlib import Path
 
+import torch
+
 from midaGAN.utils import communication
-from midaGAN.utils.trackers.utils import visuals_to_combined_2d_grid
 from midaGAN.utils.trackers.base import BaseTracker
+from midaGAN.utils.trackers.utils import (process_visuals_for_logging, 
+                                          concat_batch_of_visuals_after_gather)
 
 
 class ValTestTracker(BaseTracker):
@@ -18,54 +21,54 @@ class ValTestTracker(BaseTracker):
     def add_sample(self, visuals, metrics):
         """Parameters: # TODO: update this
         """
-        visuals = {k: v for k, v in visuals.items() if v is not None}
         metrics = {k: v for k, v in metrics.items() if v is not None}
+        visuals = {k: v for k, v in visuals.items() if v is not None}
 
-        # reduce metrics (avg) and send to the process of rank 0
+        # Reduce metrics (avg) and send to the process of rank 0
         metrics = communication.reduce(metrics, average=True, all_reduce=False)
+        
+        
+        # Gather visuals from different processes to the rank 0 process
+        visuals = communication.gather(visuals)
+        visuals = concat_batch_of_visuals_after_gather(visuals)
+        visuals = process_visuals_for_logging(visuals, single_example=False, grid_depth="mid")
 
-        if communication.get_local_rank() == 0:
-            visuals = visuals_to_combined_2d_grid(visuals, grid_depth='mid')
-            self.visuals.append(visuals)
-            self.metrics.append(metrics)
+        self.visuals.extend(visuals)
+        self.metrics.append(metrics)
 
     def push_samples(self, iter_idx, prefix=''):
         """
         Push samples to start logging
         """
-        if communication.get_local_rank() == 0:
+        for idx, visuals in enumerate(self.visuals):
+            name = f"{prefix}_{iter_idx}_{idx}" if prefix != "" else f"{iter_idx}_{idx}"
+            self._save_image(visuals, name)
 
-            for idx, visuals in enumerate(self.visuals):
-                name = f"{prefix}_{iter_idx}_{idx}" if prefix != "" else f"{iter_idx}_{idx}"
-                self._save_image(visuals, name)
+        # Averages list of dictionaries within self.metrics
+        averaged_metrics = {}
+        # Each element of self.metrics has the same metric keys so
+        # so fetching the key names from self.metrics[0] is fine
+        for key in self.metrics[0]:
+            metric_average = sum(metric[key] for metric in self.metrics) / len(self.metrics)
+            averaged_metrics[key] = metric_average
 
-            # Averages list of dictionaries within self.metrics
-            averaged_metrics = {}
-            # Each element of self.metrics has the same metric keys so
-            # so fetching the key names from self.metrics[0] is fine
-            for key in self.metrics[0]:
-                metric_average = sum(metric[key] for metric in self.metrics) / len(self.metrics)
-                averaged_metrics[key] = metric_average
+        self._log_message(iter_idx, averaged_metrics, prefix=prefix)
 
-            self._log_message(iter_idx, averaged_metrics, prefix=prefix)
+        if self.wandb:
+            mode = prefix if prefix != "" else self.conf.mode
+            self.wandb.log_iter(iter_idx=iter_idx,
+                                visuals=self.visuals,
+                                mode=mode,
+                                metrics=averaged_metrics)
 
-            if self.wandb:
-                mode = prefix if prefix != "" else self.conf.mode
-                self.wandb.log_iter(iter_idx=iter_idx,
-                                    learning_rates=None,
-                                    losses=None,
-                                    visuals=self.visuals,
-                                    metrics=averaged_metrics,
-                                    mode=mode)
+        # TODO: revisit tensorboard support
+        if self.tensorboard:
+            raise NotImplementedError("Tensorboard tracking not implemented")
+            # self.tensorboard.log_iter(iter_idx, None, None, visuals, metrics)
 
-            # TODO: revisit tensorboard support
-            if self.tensorboard:
-                raise NotImplementedError("Tensorboard tracking not implemented")
-                # self.tensorboard.log_iter(iter_idx, None, None, visuals, metrics)
-
-            # Clear stored buffer after pushing the results
-            self.metrics = []
-            self.visuals = []
+        # Clear stored buffer after pushing the results
+        self.metrics = []
+        self.visuals = []
 
     def _log_message(self, index, metrics, prefix=""):
         message = '\n' + 20 * '-' + ' '
