@@ -6,27 +6,32 @@ import pandas as pd
 # will be the best value.
 DEFAULT_KEYS = {"descending": ["psnr", "ssim"], "ascending": ["mae", "mse", "nmse"]}
 
-# Lambda fns for some easy ops
-flatten = lambda t: [item for sublist in t for item in sublist]
 
-# Check if any of the items of list1 are substrings of string
-is_list_element_substr = lambda list1, string: any([key in string for key in list1])
+def flatten(list_of_lists):
+    return [item for sublist in list_of_lists for item in sublist]
 
-# Filters a list of columns from the dataframe
-filter_cols = lambda df, cols: df[df.columns[~df.columns.isin(cols)]]
+
+def list_of_strings_has_substring(list_of_strings, string):
+    """Check if any of the strings in `list_of_strings` is  a substrings of `string`"""
+    return any([elem in string for elem in list_of_strings])
+
+
+def filter_columns(df, columns):
+    """Filters a list of columns from the dataframe"""
+    return df[df.columns[~df.columns.isin(columns)]]
 
 
 def main(args):
     api = wandb.Api()
-    all_keys = flatten([v for v in DEFAULT_KEYS.values()])
+    api.entity = args.entity
+
+    all_keys = flatten(DEFAULT_KEYS.values())
 
     # Add Train key to list of keys to ignore
     ignore_tags = args.ignore_tags
     ignore_tags.extend(['Train'])
 
-    runs = api.runs(f"{args.entity}/{args.project}")
-
-    for run in runs:
+    for run in api.runs(f"{args.project}"):
         if run.state == "finished":
             print(f"Loading {run.name} ...")
             df = pd.DataFrame()
@@ -35,36 +40,36 @@ def main(args):
                 row_dict = {'iteration': row['_step']}
 
                 for metric_label in row.keys():
-                    # Filter to get keys that contain strings that are defined in DEFAULT_KEYS
-                    # and ignore 'Train' keys
-                    if is_list_element_substr(all_keys, metric_label) and \
-                        not is_list_element_substr(ignore_tags, metric_label):
+                    # Filter to get keys that contain strings that are 
+                    # defined in DEFAULT_KEYS and ignore 'Train' keys
+                    if list_of_strings_has_substring(all_keys, metric_label):
+                        if not list_of_strings_has_substring(ignore_tags, metric_label):
+                            row_dict[metric_label] = row[metric_label]
 
-                        row_dict[metric_label] = row[metric_label]
                 df = df.append(row_dict, ignore_index=True)
 
             # Drop NaN values
             df = df.dropna()
 
-            for label, series in filter_cols(df, ['iteration']).items():
+            for label, series in filter_columns(df, ['iteration']).items():
                 for key, value in DEFAULT_KEYS.items():
-                    if is_list_element_substr(value, label):
+                    if list_of_strings_has_substring(value, label):
                         sort = key
                         break
 
                 # Depending on if min-max is specified, rank the
                 # list of values
-                ascending = True if sort == 'ascending' else False
+                ascending = sort == 'ascending'
                 df[label] = series.rank(ascending=ascending)
 
             # Get average rank across all the metrics, if any metrics need
             # to be filtered, they can be added in the list
             filter_list = ['iteration']
-            df['average_rank'] = filter_cols(df, filter_list).mean(axis=1)
+            df['average_rank'] = filter_columns(df, filter_list).mean(axis=1)
             df = df.sort_values(by='average_rank').reset_index()
 
             df.to_csv(f"{run.name}.csv")
-            print(f"Top 5 iterations: \n {df[['iteration', 'average_rank']].head()}")
+            print(f"Top 5 iterations: \n {df[['iteration', 'average_rank']].head()}\n")
 
 
 if __name__ == "__main__":
@@ -72,8 +77,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--entity", help="Wandb entity", type=str, default="maastro-clinic")
-    parser.add_argument("--project", help="Wandb project", type=str, default="Media_Experiments_V1")
+    parser.add_argument("--entity", help="Wandb entity", type=str, default=None)
+    parser.add_argument("--project", help="Wandb project", type=str)
     parser.add_argument("--ignore_tags", help="List of regex tags to ignore in the metric columns", nargs='+', default=[])
     args = parser.parse_args()
 
