@@ -1,7 +1,7 @@
 # Use this script to analyze data from wandb logs.
 import wandb
 import pandas as pd
-import copy
+
 # Ascending means for the metric, lower values are better, and the first value in the ascending sort
 # will be the best value.
 DEFAULT_KEYS = {"descending": ["psnr", "ssim"], "ascending": ["mae", "mse", "nmse"]}
