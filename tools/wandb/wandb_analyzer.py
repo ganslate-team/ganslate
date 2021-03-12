@@ -1,6 +1,18 @@
 # Use this script to analyze data from wandb logs.
 import wandb
 import pandas as pd
+from omegaconf import OmegaConf
+from typing import Optional, Tuple, List
+from omegaconf import MISSING, II
+
+from dataclasses import dataclass, field
+
+############################### Analyzer Configuration ########################################
+@dataclass
+class AnalyzerConfig:
+    entity: str = MISSING
+    project: str = MISSING
+    ignore_tags: List = field(default_factory=lambda: [])
 
 # Ascending means for the metric, lower values are better, and the first value in the ascending sort
 # will be the best value.
@@ -15,23 +27,17 @@ def list_of_strings_has_substring(list_of_strings, string):
     """Check if any of the strings in `list_of_strings` is  a substrings of `string`"""
     return any([elem in string for elem in list_of_strings])
 
-
-def filter_columns(df, columns):
-    """Filters a list of columns from the dataframe"""
-    return df[df.columns[~df.columns.isin(columns)]]
-
-
-def main(args):
+def main(conf):
     api = wandb.Api()
-    api.entity = args.entity
+    api.entity = conf.entity
 
     all_keys = flatten(DEFAULT_KEYS.values())
 
     # Add Train key to list of keys to ignore
-    ignore_tags = args.ignore_tags
+    ignore_tags = conf.ignore_tags
     ignore_tags.extend(['Train'])
 
-    for run in api.runs(f"{args.project}"):
+    for run in api.runs(f"{conf.project}"):
         if run.state == "finished":
             print(f"Loading {run.name} ...")
             df = pd.DataFrame()
@@ -65,21 +71,16 @@ def main(args):
             # Get average rank across all the metrics, if any metrics need
             # to be filtered, they can be added in the list
             filter_list = ['iteration']
-            df['average_rank'] = filter_columns(df, filter_list).mean(axis=1)
-            df = df.sort_values(by='average_rank').reset_index()
+            df = df.set_index('iteration')
+            df['mode_rank'] = df.mode(axis=1)[0]
+            df = df.sort_values(by='mode_rank').reset_index()
 
             df.to_csv(f"{run.name}.csv")
-            print(f"Top 5 iterations: \n {df[['iteration', 'average_rank']].head()}\n")
+            print(f"Top 5 iterations: \n {df[['iteration', 'mode_rank']].head()}\n")
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--entity", help="Wandb entity", type=str, default=None)
-    parser.add_argument("--project", help="Wandb project", type=str)
-    parser.add_argument("--ignore_tags", help="List of regex tags to ignore in the metric columns", nargs='+', default=[])
-    args = parser.parse_args()
-
-    main(args)
+    cli = OmegaConf.from_cli()
+    conf = AnalyzerConfig()
+    conf = OmegaConf.merge(conf, cli)
+    main(conf)
