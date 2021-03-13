@@ -41,7 +41,7 @@ class InferenceTracker(BaseTracker):
                 #                           losses,
                 #                           visuals_grid,
                 #                           metrics, self.conf.mode)
-    
+
     def _log_message(self, len_dataset):
         # In case of DDP, if (len_dataset % number of processes != 0),
         # it will show more iters than there actually are

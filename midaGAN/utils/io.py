@@ -106,7 +106,6 @@ def import_class_from_dirs_and_modules(class_name, dirs_modules):
         "If it is located in a project folder, set `project_dir` in config as the project's path.")
 
 
-
 # TODO: All the code below was taken from MONAI source code since this particular code
 # is not available yet in MONAI available through pip. Once is is, remove this code and
 # use it from MONAI. https://docs.monai.io/en/latest/data.html#monai.data.utils.decollate_batch
@@ -123,6 +122,7 @@ def issequenceiterable(obj: Any) -> bool:
     if isinstance(obj, torch.Tensor):
         return int(obj.dim()) > 0  # a 0-d tensor is not iterable
     return isinstance(obj, collections.abc.Iterable) and not isinstance(obj, str)
+
 
 def decollate(data: dict, batch_size: Optional[int] = None) -> List[dict]:
     """De-collate a batch of data (for example, as produced by a `DataLoader`).
@@ -156,7 +156,8 @@ def decollate(data: dict, batch_size: Optional[int] = None) -> List[dict]:
         batch_size: number of batches in data. If `None` is passed, try to figure out batch size.
     """
     if not isinstance(data, dict):
-        raise RuntimeError("Only currently implemented for dictionary data (might be trivial to adapt).")
+        raise RuntimeError(
+            "Only currently implemented for dictionary data (might be trivial to adapt).")
     if batch_size is None:
         for v in data.values():
             if isinstance(v, torch.Tensor):
@@ -185,4 +186,5 @@ def decollate(data: dict, batch_size: Optional[int] = None) -> List[dict]:
                 return [decollate(d, idx) for d in data]
             return data[idx]
         raise TypeError(f"Not sure how to de-collate type: {type(data)}")
+
     return [{key: decollate(data[key], idx) for key in data.keys()} for idx in range(batch_size)]

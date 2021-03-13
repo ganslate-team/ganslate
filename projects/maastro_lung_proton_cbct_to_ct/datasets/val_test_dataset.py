@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from omegaconf import MISSING
 from midaGAN import configs
 
-from .common import (get_ct_body_mask_path, mask_out_ct,
-                     mask_out_registered_cbct_with_ct_mask, clamp_normalize)
+from .common import (get_ct_body_mask_path, mask_out_ct, mask_out_registered_cbct_with_ct_mask,
+                     clamp_normalize)
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +49,12 @@ class CBCTtoCTValTestDataset(Dataset):
             'direction': CBCT.GetDirection(),
             'dtype': sitk_utils.get_npy_dtype(CBCT)
         }
-        
+
         # Apply the mask
         CT = mask_out_ct(CT, path_CT.parent, self.hu_min)
         # Applying the CT mask on CBCT too since they're registered
         CBCT = mask_out_registered_cbct_with_ct_mask(CBCT, path_CT.parent, self.hu_min)
-        
+
         # Mask out the body with morphological ops for consistency w training data
         CBCT = apply_body_mask(sitk_utils.get_npy(CBCT),
                                apply_mask=True,

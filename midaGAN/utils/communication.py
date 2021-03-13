@@ -117,6 +117,7 @@ def shared_random_seed() -> int:
         torch.distributed.broadcast(seed, 0)
     return int(seed)
 
+
 @functools.lru_cache()
 def _get_global_gloo_group():
     """
@@ -127,7 +128,9 @@ def _get_global_gloo_group():
         return torch.distributed.new_group(backend="gloo")
     return torch.distributed.group.WORLD
 
+
 # ------------------ Gather -----------------------
+
 
 def gather(input_data):
     # TODO: Assert for PyTorch version since `gather_object` present from 1.8.0
@@ -145,7 +148,9 @@ def gather(input_data):
         torch.distributed.gather_object(input_data, dst=0, group=group)
         return input_data
 
+
 # ------------ Reduce and All Reduce --------------
+
 
 def reduce(input_data, average=False, all_reduce=False):
     """
@@ -283,6 +288,7 @@ def reduce_list_tuple(input_data, average, all_reduce, device):
 
 
 # ------------------ Helpers -----------------------
+
 
 def move_to(obj, device):
     """Move any combination of list or dict containing tensors to the specific device."""

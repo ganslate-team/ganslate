@@ -42,6 +42,7 @@ class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
 
 
 class CBCTtoCTInferenceDataset(Dataset):
+
     def __init__(self, conf):
         self.root_path = Path(conf.infer.dataset.root).resolve()
 

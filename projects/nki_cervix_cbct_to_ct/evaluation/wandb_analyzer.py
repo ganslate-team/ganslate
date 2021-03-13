@@ -40,7 +40,7 @@ def main(args):
                 row_dict = {'iteration': row['_step']}
 
                 for metric_label in row.keys():
-                    # Filter to get keys that contain strings that are 
+                    # Filter to get keys that contain strings that are
                     # defined in DEFAULT_KEYS and ignore 'Train' keys
                     if list_of_strings_has_substring(all_keys, metric_label):
                         if not list_of_strings_has_substring(ignore_tags, metric_label):
@@ -79,7 +79,10 @@ if __name__ == "__main__":
 
     parser.add_argument("--entity", help="Wandb entity", type=str, default=None)
     parser.add_argument("--project", help="Wandb project", type=str)
-    parser.add_argument("--ignore_tags", help="List of regex tags to ignore in the metric columns", nargs='+', default=[])
+    parser.add_argument("--ignore_tags",
+                        help="List of regex tags to ignore in the metric columns",
+                        nargs='+',
+                        default=[])
     args = parser.parse_args()
 
     main(args)

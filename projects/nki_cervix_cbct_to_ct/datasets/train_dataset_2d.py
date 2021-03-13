@@ -11,8 +11,7 @@ import torch
 from midaGAN import configs
 from midaGAN.data.utils.body_mask import apply_body_mask
 from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.normalization import (min_max_denormalize,
-                                              min_max_normalize)
+from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
 from midaGAN.data.utils.ops import pad
 
 from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
@@ -52,9 +51,8 @@ class CBCTtoCT2DDataset(Dataset):
         self.paths_CT = []
 
         for patient in root_path.iterdir():
-            patient_cbcts = make_recursive_dataset_of_files(
-                patient / "CBCT", EXTENSIONS)
-            
+            patient_cbcts = make_recursive_dataset_of_files(patient / "CBCT", EXTENSIONS)
+
             patient_cts = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
             patient_cts = [path for path in patient_cts if path.stem == "CT"]
 

@@ -7,6 +7,7 @@ from midaGAN.utils.io import decollate
 from midaGAN.utils.trackers.inference import InferenceTracker
 from midaGAN.utils import communication
 
+
 class Inferer(BaseEngineWithInference):
 
     def __init__(self, conf):
@@ -36,7 +37,7 @@ class Inferer(BaseEngineWithInference):
             # Iteration index
             # (1) When using DDP, multiply with world size since each process does an iteration
             # (2) Multiply with batch size to get accurate info on how many examples are done
-            # (3) Add 1 to start from iter 1 instead of 0 
+            # (3) Add 1 to start from iter 1 instead of 0
             iter_idx = i * communication.get_world_size() * self.conf.infer.batch_size + 1
             self.tracker.set_iter_idx(iter_idx)
             if i == 0:
@@ -46,11 +47,10 @@ class Inferer(BaseEngineWithInference):
                 if saver is None:
                     self.logger.warn(
                         "The dataset class used does not have a 'save' method."
-                         " It is not necessary, however, it may be useful in cases"
-                         " where the outputs should be stored individually"
-                         " ('images/' folder saves input and output in a single image), "
-                         " or in a specific format."
-                    )
+                        " It is not necessary, however, it may be useful in cases"
+                        " where the outputs should be stored individually"
+                        " ('images/' folder saves input and output in a single image), "
+                        " or in a specific format.")
 
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
@@ -67,7 +67,7 @@ class Inferer(BaseEngineWithInference):
             self.tracker.end_saving_timer()
 
             visuals = {"input": data[input_key], "output": out.cpu()}
-            len_dataset=len(self.data_loader.dataset)
+            len_dataset = len(self.data_loader.dataset)
             self.tracker.log_iter(visuals, len_dataset)
 
             self.tracker.start_dataloading_timer()
@@ -81,4 +81,4 @@ class Inferer(BaseEngineWithInference):
             return "A"
         else:
             raise ValueError("An inference dataset needs to provide"
-                                "the input data under the dict key 'input' or 'A'.")
+                             "the input data under the dict key 'input' or 'A'.")

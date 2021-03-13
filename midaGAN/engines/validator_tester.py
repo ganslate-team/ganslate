@@ -43,7 +43,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                     # After decollate, it is a list of length equal to batch_size,
                     # containing separate metadata for each tensor in the mini-batch
                     metadata = decollate(data["metadata"], batch_size=len(visuals["fake_B"]))
-                    
+
                 self.save_generated_image(generated_image=visuals["fake_B"],
                                           metadata=metadata,
                                           idx=current_idx,

@@ -13,6 +13,7 @@ IMPORT_LOCATIONS = [midaGAN]
 # would be better. However, that would mean that each `name` will have to be, instead of
 # e.g. "CycleGAN" - "midaGAN.nn.gans.unpaired.cyclegan.CycleGAN". Is it worth it?
 
+
 def init_config(conf, config_class):
     # Run-specific config
     conf = conf if isinstance(conf, DictConfig) else OmegaConf.load(str(conf))
