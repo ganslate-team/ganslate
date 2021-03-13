@@ -2,7 +2,6 @@ from midaGAN.engines.base import BaseEngineWithInference
 from midaGAN.utils.metrics.val_test_metrics import ValTestMetrics
 from midaGAN.utils import environment
 from midaGAN.utils.builders import build_gan, build_loader
-from midaGAN.utils.io import decollate
 from midaGAN.utils.trackers.validation_testing import ValTestTracker
 
 
@@ -38,48 +37,17 @@ class BaseValTestEngine(BaseEngineWithInference):
                 if "masks" in data:
                     visuals.update({"masks": data["masks"]})
 
-                metadata = None
-                if "metadata" in data:
-                    # After decollate, it is a list of length equal to batch_size,
-                    # containing separate metadata for each tensor in the mini-batch
-                    metadata = decollate(data["metadata"], batch_size=len(visuals["fake_B"]))
-
-                self.save_generated_image(generated_image=visuals["fake_B"],
-                                          metadata=metadata,
-                                          idx=current_idx,
-                                          dataset_name=dataset_name)
+                metadata = data["metadata"] if "metadata" in data else None
+                self.save_generated_tensor(generated_tensor=visuals["fake_B"],
+                                           metadata=metadata,
+                                           data_loader=self.current_data_loader,
+                                           idx=current_idx,
+                                           dataset_name=dataset_name)
 
                 metrics = self._calculate_metrics(visuals)
                 self.tracker.add_sample(visuals, metrics)
 
             self.tracker.push_samples(current_idx, prefix=dataset_name)
-
-    def save_generated_image(self, generated_image, metadata=None, idx="", dataset_name=""):
-        # A dataset object has to have a `save()` method if it
-        # wishes to save the outputs in a particular way or format
-        save_fn = getattr(self.current_data_loader.dataset, "save", False)
-
-        if save_fn:
-            # Tolerates `save` methods with and without `metadata` argument
-            def save(tensor, save_dir, metadata=None):
-                if metadata is None:
-                    save_fn(tensor=tensor, save_dir=save_dir)
-                else:
-                    save_fn(tensor=tensor, save_dir=save_dir, metadata=metadata)
-
-            # Output dir
-            save_dir = "saved/"
-            if dataset_name:
-                save_dir += f"{dataset_name}/"
-            if idx:
-                save_dir += f"{idx}/"
-            save_dir = self.output_dir / save_dir
-
-            # Loop over the batch and save each tensor
-            for batch_idx in range(len(generated_image)):
-                tensor = generated_image[batch_idx]
-                current_metadata = metadata[batch_idx] if metadata is not None else metadata
-                save(tensor=tensor, save_dir=save_dir, metadata=current_metadata)
 
     def _calculate_metrics(self, visuals):
         # TODO: Decide if cycle metrics also need to be scaled
