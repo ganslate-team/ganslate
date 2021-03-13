@@ -20,7 +20,7 @@ class BaseValTestEngine(BaseEngineWithInference):
         self.tracker = ValTestTracker(self.conf)
         self.metricizer = ValTestMetrics(self.conf)
 
-    def run(self, current_idx=None):
+    def run(self, current_idx=""):
         self.logger.info(f'{"Validation" if self.conf.mode == "val" else "Testing"} started.')
 
 
@@ -39,23 +39,28 @@ class BaseValTestEngine(BaseEngineWithInference):
                 if "masks" in data:
                     visuals.update({"masks": data["masks"]})
 
+                metadata = None
+                if "metadata" in data:
+                    metadata = data["metadata"]
+
                 metrics = self._calculate_metrics(visuals)
                 self.tracker.add_sample(visuals, metrics)
-
-                # A dataset object has to have a `save()` method if it
-                # wishes to save the outputs in a particular way or format
-                saver = getattr(self.dataset, "save", False)
-                if saver:
-                    save_dir = self.output_dir / "saved" / dataset_name
-                    if current_idx is not None:
-                        save_dir = save_dir / str(current_idx)
-
-                    if "metadata" in data:
-                        saver(visuals['fake_B'], save_dir, metadata=decollate(data["metadata"]))
-                    else:
-                        saver(visuals['fake_B'], save_dir)
+                
+                self.save_generated_image(visuals["fake_B"], metadata, current_idx, dataset_name)
+                
 
             self.tracker.push_samples(current_idx, prefix=dataset_name)
+
+    def save_generated_image(self, generated_image, metadata=None, idx="", dataset_name=""):
+        # A dataset object has to have a `save()` method if it
+        # wishes to save the outputs in a particular way or format
+        saver = getattr(self.dataset, "save", False)
+        if saver:
+            save_dir = self.output_dir / f"saved/{dataset_name}/{idx}"
+            if metadata is not None:
+                saver(generated_image, save_dir, metadata=decollate(metadata))
+            else:
+                saver(generated_image, save_dir)
 
     def _calculate_metrics(self, visuals):
         # TODO: Decide if cycle metrics also need to be scaled
