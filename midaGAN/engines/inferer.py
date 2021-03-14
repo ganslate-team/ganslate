@@ -55,6 +55,7 @@ class Inferer(BaseEngineWithInference):
             self.tracker.end_computation_timer()
 
             self.tracker.start_saving_timer()
+            # Save the output as specified in dataset`s `save` method, if implemented
             metadata = data["metadata"] if "metadata" in data else None
             self.save_generated_tensor(generated_tensor=out,
                                        metadata=metadata,
