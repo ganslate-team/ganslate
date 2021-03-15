@@ -2,13 +2,13 @@ from monai.inferers import SlidingWindowInferer
 import torch
 from typing import Callable, Any
 
-import logging
+from loguru import logger
 
 
 class SlidingWindowInferer(SlidingWindowInferer):
 
     def __init__(self, *args, **kwargs):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logger
         super().__init__(*args, **kwargs)
 
     def __call__(

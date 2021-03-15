@@ -6,14 +6,13 @@
 # - `reduce` and `all_reduce` for various datatypes
 # - `shared_random_seed` uses `torch.distributed.broadcast` instead of `all_gather` from Detectron2.
 
-import logging
+from loguru import logger
 import os
 import functools
 
 import torch
 import numpy as np
 
-logger = logging.getLogger(__name__)
 
 
 def init_distributed():

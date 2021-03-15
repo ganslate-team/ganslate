@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 
 import torch
 import torch.nn as nn
@@ -10,7 +10,6 @@ from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 from dataclasses import dataclass
 from midaGAN import configs
 
-logger = logging.getLogger(__name__)
 
 
 @dataclass

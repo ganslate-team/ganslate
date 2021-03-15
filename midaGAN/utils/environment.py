@@ -1,7 +1,3 @@
-# coding=utf-8
-# Copyright (c) DIRECT Contributors
-
-import logging
 import os
 import random
 import sys
@@ -16,7 +12,7 @@ import torch
 from omegaconf import OmegaConf
 from midaGAN.utils import communication, io
 
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 def setup_logging_with_config(conf, debug=False):
@@ -63,25 +59,14 @@ def setup_logging(use_stdout: Optional[bool] = True,
     if log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'EXCEPTION']:
         raise ValueError(f'Unexpected log level got {log_level}.')
 
-    logging.captureWarnings(True)
-    log_level = getattr(logging, log_level)
+    formatter = "[{time:YYYY-MM-DD HH:mm:ss}][{name}][{level}] - {message}"
 
-    logger = logging.getLogger()
-    logger.setLevel(log_level)
-
-    formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
-
+    # Clear the default handlers
+    logger.remove()
     if use_stdout:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(log_level)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
+        logger.add(sys.stdout, level=log_level, format=formatter)
     if filename is not None:
-        handler = logging.FileHandler(filename)
-        handler.setLevel(log_level)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+        logger.add(filename, level=log_level, format=formatter)
 
 
 def set_seed(seed=0):
