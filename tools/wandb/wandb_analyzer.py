@@ -46,7 +46,7 @@ def main(conf):
                 row_dict = {'iteration': row['_step']}
 
                 for metric_label in row.keys():
-                    # Filter to get keys that contain strings that are 
+                    # Filter to get keys that contain strings that are
                     # defined in DEFAULT_KEYS and ignore 'Train' keys
                     if list_of_strings_has_substring(all_keys, metric_label):
                         if not list_of_strings_has_substring(ignore_tags, metric_label):

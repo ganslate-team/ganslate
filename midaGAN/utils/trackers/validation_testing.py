@@ -5,7 +5,7 @@ import torch
 
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
-from midaGAN.utils.trackers.utils import (process_visuals_for_logging, 
+from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
                                           concat_batch_of_visuals_after_gather)
 
 
@@ -26,8 +26,7 @@ class ValTestTracker(BaseTracker):
 
         # Reduce metrics (avg) and send to the process of rank 0
         metrics = communication.reduce(metrics, average=True, all_reduce=False)
-        
-        
+
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
@@ -36,12 +35,20 @@ class ValTestTracker(BaseTracker):
         self.visuals.extend(visuals)
         self.metrics.append(metrics)
 
-    def push_samples(self, iter_idx, prefix=''):
+    def push_samples(self, iter_idx, prefix):
         """
         Push samples to start logging
         """
-        for idx, visuals in enumerate(self.visuals):
-            name = f"{prefix}_{iter_idx}_{idx}" if prefix != "" else f"{iter_idx}_{idx}"
+        for visuals_idx, visuals in enumerate(self.visuals):
+            name = ""
+            if prefix:
+                name += f"{prefix}/"
+            if iter_idx:
+                name += f"{iter_idx}"
+                # When val, put images in a dir for the iter at which it is validating.
+                # When testing, there aren't multiple iters, so it isn't necessary.
+                name += "/" if self.conf.mode == "val" else "_"
+            name += f"{visuals_idx}"
             self._save_image(visuals, name)
 
         # Averages list of dictionaries within self.metrics
@@ -72,7 +79,7 @@ class ValTestTracker(BaseTracker):
 
     def _log_message(self, index, metrics, prefix=""):
         message = '\n' + 20 * '-' + ' '
-        
+
         message += f"({self.conf.mode.capitalize()}"
 
         if index is not None:

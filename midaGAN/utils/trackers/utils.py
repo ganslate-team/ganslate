@@ -22,7 +22,7 @@ def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"
             single_visuals = process_visuals_for_logging(visuals, single_example, grid_depth)
             final_visuals_grids.extend(single_visuals)
         return final_visuals_grids
-    
+
     # A single instance of visuals is a dict
     assert isinstance(visuals, dict)
     visuals_list = list(visuals.values())
@@ -54,7 +54,7 @@ def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"
 
         # Convert data range [-1,1] to [0,1]. Important when saving images.
         visuals_grid = (visuals_grid + 1) / 2
-        
+
         # Name would be, e.g., "real_A-fake_B-rec_A-real_B-fake_A-rec_B"
         name = "-".join(visuals.keys())
 

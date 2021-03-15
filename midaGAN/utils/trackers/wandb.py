@@ -10,6 +10,7 @@ def torch_npy_to_python(x):
         return x.item()
     return x
 
+
 class WandbTracker:
 
     def __init__(self, conf):
@@ -32,7 +33,13 @@ class WandbTracker:
         if conf[conf.mode].logging.wandb.image_filter:
             self.image_filter = conf[conf.mode].logging.wandb.image_filter
 
-    def log_iter(self, iter_idx, visuals, mode='train',learning_rates=None, losses=None, metrics=None):
+    def log_iter(self,
+                 iter_idx,
+                 visuals,
+                 mode='train',
+                 learning_rates=None,
+                 losses=None,
+                 metrics=None):
         """"""
         mode = mode.capitalize()
         log_dict = {}

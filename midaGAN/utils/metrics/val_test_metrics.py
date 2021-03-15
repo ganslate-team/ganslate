@@ -60,18 +60,19 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np
     maxval = gt.max() if maxval is None else maxval
 
     ssim = 0
-    
+
     for channel in range(gt.shape[0]):
         # Check for either 2D images with multiple channels or 3D images
         # Format is CxHxW or DxHxW
         if gt.ndim == 3:
             ssim = ssim + structural_similarity(gt[channel], pred[channel], data_range=maxval)
-        
+
         # Check for multi-channel 3D images, if so iterate over the channels and depth dims
         # Format is CxDxHxW
         elif gt.ndim == 4:
             for slice_num in range(gt.shape[1]):
-                ssim = ssim + structural_similarity(gt[channel, slice_num], pred[channel, slice_num], data_range=maxval)
+                ssim = ssim + structural_similarity(
+                    gt[channel, slice_num], pred[channel, slice_num], data_range=maxval)
         else:
             raise NotImplementedError(f"SSIM for {gt.ndim} images not implemented")
 

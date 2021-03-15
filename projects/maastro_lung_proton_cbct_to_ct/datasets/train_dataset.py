@@ -68,9 +68,9 @@ class CBCTtoCTDataset(Dataset):
 
         path_CBCT = self.paths_CBCT[index_CBCT]
         path_CT = self.paths_CT[index_CT]
-        
+
         # Fetches the scans, and does part of the preprocessing.
-        # If the scan is smaller than the patch size, it will get another one. 
+        # If the scan is smaller than the patch size, it will get another one.
         CT = self._get_and_preprocess_CT(path_CT)
         CBCT = self._get_and_preprocess_CBCT(path_CBCT)
 
@@ -103,7 +103,7 @@ class CBCTtoCTDataset(Dataset):
 
             # Selected if it's big enough for the training
             if not sitk_utils.is_image_smaller_than(CT, self.patch_size):
-                # Mask out the 
+                # Mask out the
                 CT = mask_out_ct(CT, path_CT, self.hu_min)
                 return CT
 

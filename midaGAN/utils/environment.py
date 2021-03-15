@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def setup_logging_with_config(conf, debug=False):
 
     output_dir = Path(conf[conf.mode].output_dir).resolve()
-    io.mkdirs(output_dir / conf.mode)
+    io.mkdirs(output_dir)
 
     filename = None
     # Log file only for the global main process

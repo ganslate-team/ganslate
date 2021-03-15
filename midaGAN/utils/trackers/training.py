@@ -29,7 +29,7 @@ class TrainingTracker(BaseTracker):
             if metrics:
                 # Reduce metrics (avg) and send to the process of rank 0
                 metrics = communication.reduce(metrics, average=True, all_reduce=False)
-                
+
             # Reduce losses (avg) and send to the process of rank 0
             losses = communication.reduce(losses, average=True, all_reduce=False)
 

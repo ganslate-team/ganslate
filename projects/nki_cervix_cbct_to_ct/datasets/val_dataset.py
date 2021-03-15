@@ -133,8 +133,7 @@ class CBCTtoCTValDataset(Dataset):
         return tensor - self.hu_min
 
     def save(self, tensor, save_dir, metadata=None):
-        tensor = tensor.squeeze().cpu()
-        tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
+        tensor = min_max_denormalize(tensor.clone().cpu(), self.hu_min, self.hu_max)
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
