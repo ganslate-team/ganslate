@@ -109,7 +109,7 @@ class ValTestMetrics:
                     metric_scores.append(metric_fn(target, input))
 
                 # Aggregate metrics over a batch
-                metrics[metric_name] = np.mean(metric_scores)
+                metrics[metric_name] = metric_scores
 
         return metrics
 
@@ -117,7 +117,7 @@ class ValTestMetrics:
         batched_input, batched_target = get_npy(batched_input), get_npy(batched_target)
 
         metrics = {}
-        metrics["cycle_SSIM"] = np.mean([ssim(input, target) \
-                                    for input, target in zip(batched_input, batched_target)])
+        metrics["cycle_SSIM"] = [ssim(input, target) \
+                                    for input, target in zip(batched_input, batched_target)]
 
         return metrics

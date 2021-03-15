@@ -8,6 +8,7 @@ from midaGAN.utils.trackers.base import BaseTracker
 from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
                                           concat_batch_of_visuals_after_gather)
 
+import numpy as np
 
 class ValTestTracker(BaseTracker):
 
@@ -26,7 +27,6 @@ class ValTestTracker(BaseTracker):
 
         # Reduce metrics (avg) and send to the process of rank 0
         metrics = communication.reduce(metrics, average=True, all_reduce=False)
-
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
@@ -51,13 +51,20 @@ class ValTestTracker(BaseTracker):
             name += f"{visuals_idx}"
             self._save_image(visuals, name)
 
-        # Averages list of dictionaries within self.metrics
-        averaged_metrics = {}
-        # Each element of self.metrics has the same metric keys so
-        # so fetching the key names from self.metrics[0] is fine
-        for key in self.metrics[0]:
-            metric_average = sum(metric[key] for metric in self.metrics) / len(self.metrics)
-            averaged_metrics[key] = metric_average
+
+        metrics_dict = {}
+        # self.metrics containts a list of dicts with different metrics
+        for metric in self.metrics:
+            #  Each key in metric dict containts a list of values corresponding to 
+            #  each batch
+            for metric_name, metric_list in metric.items():
+                if metric_name in metrics_dict:
+                    metrics_dict[metric_name].extend(metric_list)
+                else:
+                    metrics_dict[metric_name] = metric_list
+
+        # Averages collected metrics from different iterations and batches
+        averaged_metrics = {k: np.mean(v) for k, v in metrics_dict.items()}
 
         self._log_message(iter_idx, averaged_metrics, prefix=prefix)
 
