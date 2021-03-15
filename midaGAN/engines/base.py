@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 from pathlib import Path
-from loguru import logger
+import logging
 
 from midaGAN.utils import sliding_window_inferer
 from midaGAN.utils.io import decollate
@@ -17,7 +17,7 @@ class BaseEngine(ABC):
 
         self.output_dir = Path(conf[conf.mode].output_dir) / self.conf.mode
         self.model = None
-        self.logger = logger
+        self.logger = logging.getLogger(type(self).__name__)
 
     @abstractmethod
     def _set_mode(self):

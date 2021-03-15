@@ -1,5 +1,5 @@
 from pathlib import Path
-from loguru import logger
+import logging
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -14,6 +14,8 @@ from typing import Tuple
 from dataclasses import dataclass
 from omegaconf import MISSING
 from midaGAN import configs
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass

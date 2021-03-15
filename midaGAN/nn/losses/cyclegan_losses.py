@@ -1,7 +1,8 @@
 import torch
 import midaGAN.nn.losses.utils.ssim as ssim
 
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 class CycleGANLosses:

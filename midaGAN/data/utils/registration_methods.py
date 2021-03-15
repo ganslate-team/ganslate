@@ -1,10 +1,11 @@
 import SimpleITK as sitk
 from numpy import mean
 from itertools import product
-from loguru import logger
+import logging
 import os
 import traceback
 
+logger = logging.getLogger(__name__)
 
 REGISTRATION_MAP = {"Affine": sitk.AffineTransform(3), "Rigid": sitk.Euler3DTransform()}
 

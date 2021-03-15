@@ -2,7 +2,8 @@ from scipy import ndimage
 import cv2
 import numpy as np
 
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 
 def smooth_contour_points(contour: np.ndarray, radius: int = 3, sigma: int = 10) -> np.ndarray:

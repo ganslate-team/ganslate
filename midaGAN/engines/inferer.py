@@ -1,4 +1,4 @@
-from loguru import logger
+import logging
 
 from midaGAN.engines.base import BaseEngineWithInference
 from midaGAN.utils import environment
@@ -11,7 +11,7 @@ class Inferer(BaseEngineWithInference):
 
     def __init__(self, conf):
         super().__init__(conf)
-        self.logger = logger
+        self.logger = logging.getLogger(type(self).__name__)
 
         # Logging, dataloader and tracker only when not in deployment mode
         if not self.conf.infer.is_deployment:

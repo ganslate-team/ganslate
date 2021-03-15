@@ -1,9 +1,10 @@
-from loguru import logger
+import logging
 from omegaconf import DictConfig, OmegaConf
 
 import midaGAN
 from midaGAN.utils.io import import_class_from_dirs_and_modules
 
+logger = logging.getLogger(__name__)
 
 IMPORT_LOCATIONS = [midaGAN]
 

@@ -1,4 +1,4 @@
-from loguru import logger
+import logging
 
 import torch
 from midaGAN.engines.base import BaseEngine

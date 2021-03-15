@@ -1,4 +1,4 @@
-from loguru import logger
+import logging
 from pathlib import Path
 
 import torch
@@ -13,7 +13,7 @@ class ValTestTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)
-        self.logger = logger
+        self.logger = logging.getLogger(type(self).__name__)
 
         self.metrics = []
         self.visuals = []

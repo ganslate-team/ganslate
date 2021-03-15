@@ -1,8 +1,10 @@
-from loguru import logger
+import logging
 
 import numpy as np
 import torchvision.transforms as transforms
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 def get_transform(conf, method=Image.BICUBIC):

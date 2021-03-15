@@ -21,9 +21,13 @@ from midaGAN.utils import sitk_utils
 from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
 from omegaconf import MISSING
 from torch.utils.data import Dataset
-from loguru import logger
 
 DEBUG = False
+
+import logging
+
+logger = logging.getLogger(__name__)
+
 EXTENSIONS = ['.nrrd']
 
 # --------------------------- VALIDATION DATASET ---------------------------------------------

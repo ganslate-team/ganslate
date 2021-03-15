@@ -1,6 +1,6 @@
 import sys
-from loguru import logger
-
+import logging
+logger = logging.getLogger(__name__)
 # --------- midaGAN imports ----------
 try:
     import midaGAN

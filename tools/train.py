@@ -1,5 +1,7 @@
-from loguru import logger
+import logging
 import sys
+
+logger = logging.getLogger(__name__)
 
 try:
     import midaGAN

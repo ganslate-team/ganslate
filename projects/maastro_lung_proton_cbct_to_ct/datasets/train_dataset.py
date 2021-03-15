@@ -1,4 +1,4 @@
-from loguru import logger
+import logging
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +17,8 @@ from omegaconf import MISSING
 from torch.utils.data import Dataset
 
 from .common import clamp_normalize, mask_out_ct
+
+logger = logging.getLogger(__name__)
 
 EXTENSIONS = ['.nrrd']
 
