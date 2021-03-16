@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 import random
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,10 +22,9 @@ from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
 from omegaconf import MISSING
 from torch.utils.data import Dataset
 
-logger = logging.getLogger(__name__)
 
-EXTENSIONS = ['.nrrd']
 DEBUG = False
+EXTENSIONS = ['.nrrd']
 
 
 @dataclass

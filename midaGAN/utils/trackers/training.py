@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 from pathlib import Path
 
 from midaGAN.utils import communication
@@ -10,7 +10,7 @@ class TrainingTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)
-        self.logger = logging.getLogger(type(self).__name__)
+        self.logger = logger
         self.log_freq = conf.train.logging.freq
 
     def log_iter(self, learning_rates, losses, visuals, metrics):
