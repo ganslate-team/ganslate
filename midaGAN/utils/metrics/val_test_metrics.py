@@ -117,7 +117,7 @@ class ValTestMetrics:
         batched_input, batched_target = get_npy(batched_input), get_npy(batched_target)
 
         metrics = {}
-        metrics["cycle_SSIM"] = [ssim(input, target) \
+        metrics["cycle_SSIM"] = [ssim(target, input) \
                                     for input, target in zip(batched_input, batched_target)]
 
         return metrics

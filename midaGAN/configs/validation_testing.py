@@ -20,6 +20,8 @@ class ValTestMetricsConfig:
     # i.e A->B->A followed by comparison between the A
     cycle_metrics: bool = True
 
+    compute_on_input: bool = False
+
 
 @dataclass
 class SlidingWindowConfig:
