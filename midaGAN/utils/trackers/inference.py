@@ -1,5 +1,5 @@
 #from pathlib import Path
-import logging
+from loguru import logger
 import time
 
 import torch
@@ -14,7 +14,7 @@ class InferenceTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)
-        self.logger = logging.getLogger(type(self).__name__)
+        self.logger = logger
 
     def log_iter(self, visuals, len_dataset):
         self._log_message(len_dataset)

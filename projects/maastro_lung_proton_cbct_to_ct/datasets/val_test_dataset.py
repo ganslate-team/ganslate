@@ -1,5 +1,5 @@
 from pathlib import Path
-import logging
+from loguru import logger
 import torch
 from torch.utils.data import Dataset
 
@@ -16,8 +16,6 @@ from midaGAN import configs
 
 from .common import (get_ct_body_mask_path, mask_out_ct, mask_out_registered_cbct_with_ct_mask,
                      clamp_normalize)
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass

@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 from dataclasses import dataclass
 # Config imports
 from typing import Tuple
@@ -12,8 +12,6 @@ from midaGAN.nn import attention
 from midaGAN.nn.generators.vnet.vnet3d import (DownBlock, InputBlock, OutBlock, UpBlock)
 from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, get_norm_layer_3d,
                               is_bias_before_norm)
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass
