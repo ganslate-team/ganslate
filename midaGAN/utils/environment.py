@@ -59,12 +59,13 @@ def setup_logging(use_stdout: Optional[bool] = True,
     if log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'EXCEPTION']:
         raise ValueError(f'Unexpected log level got {log_level}.')
 
-    formatter = "[{time:YYYY-MM-DD HH:mm:ss}][{name}][{level}] - {message}"
+    formatter = "[<white>{time:YYYY-MM-DD HH:mm:ss}</white>][<blue>{name}</blue>][<red>{level}</red>] - {message}"
 
     # Clear the default handlers
     logger.remove()
+    
     if use_stdout:
-        logger.add(sys.stdout, level=log_level, format=formatter)
+        logger.add(sys.stdout, level=log_level, format=formatter, colorize=True)
     if filename is not None:
         logger.add(filename, level=log_level, format=formatter)
 

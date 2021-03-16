@@ -13,6 +13,13 @@ def concat_batch_of_visuals_after_gather(visuals_list):
     return visuals
 
 
+def convert_metrics_to_list_after_gather(metrics):
+    # Gathering done only for rank 0 when DDP is ON
+    if torch.distributed.is_initialized() and communication.get_rank() == 0:
+        return metrics
+    else:
+        return [metrics]
+
 def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"):
     final_visuals_grids = []
 

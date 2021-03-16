@@ -17,6 +17,7 @@ class BaseValTestEngine(BaseEngineWithInference):
             self.data_loaders = {"": self.data_loaders}
         self.current_data_loader = None
 
+
         self.tracker = ValTestTracker(self.conf)
         self.metricizer = ValTestMetrics(self.conf)
         self.visuals = {}
@@ -77,10 +78,17 @@ class BaseValTestEngine(BaseEngineWithInference):
             masks_dict = self.visuals.pop("masks")
             for label, mask in masks_dict.items():
                 mask = mask.to(pred.device)
-                # Get metrics on masked images
+                # Get metrics on translated masked images
                 for name, value in self.metricizer.get_metrics(pred, target, mask=mask).items():
-                    name = f"{name}_{label}"
-                    mask_metrics[name] = value
+                    key = f"{name}_{label}"
+                    mask_metrics[key] = value
+
+                # Get metrics on priginal masked images
+                if self.conf[self.conf.mode].metrics.compute_on_input:
+                    for name, value in self.metricizer.get_metrics(original, target, mask=mask).items():
+                        key = f"Original_{name}_{label}"
+                        mask_metrics[key] = value       
+
                 # Add mask to visuals for logging
                 self.visuals[label] = 2. * mask - 1
         

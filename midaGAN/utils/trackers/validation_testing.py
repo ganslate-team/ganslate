@@ -6,12 +6,12 @@ import torch
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
 from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
-                                          concat_batch_of_visuals_after_gather)
+                                          concat_batch_of_visuals_after_gather, 
+                                          convert_metrics_to_list_after_gather)
 
 import numpy as np
 
 class ValTestTracker(BaseTracker):
-
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logger
@@ -25,15 +25,16 @@ class ValTestTracker(BaseTracker):
         metrics = {k: v for k, v in metrics.items() if v is not None}
         visuals = {k: v for k, v in visuals.items() if v is not None}
 
-        # Reduce metrics (avg) and send to the process of rank 0
-        metrics = communication.reduce(metrics, average=True, all_reduce=False)
+        # Gatther metrics and send to the process of rank 0
+        metrics = communication.gather(metrics)
+        metrics = convert_metrics_to_list_after_gather(metrics)
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
         visuals = process_visuals_for_logging(visuals, single_example=False, grid_depth="mid")
 
         self.visuals.extend(visuals)
-        self.metrics.append(metrics)
+        self.metrics.extend(metrics)
 
     def push_samples(self, iter_idx, prefix):
         """
