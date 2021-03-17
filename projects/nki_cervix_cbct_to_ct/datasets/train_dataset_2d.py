@@ -15,7 +15,7 @@ from midaGAN.data.utils.normalization import (min_max_denormalize,
                                               min_max_normalize)
 from midaGAN.data.utils.ops import pad
 
-from midaGAN.data.utils.registration_methods import register_CT_to_CBCT
+from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
 from midaGAN.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
 from midaGAN.utils import sitk_utils
@@ -87,19 +87,26 @@ class CBCTtoCT2DDataset(Dataset):
         CT = sitk_utils.load(path_CT)
 
         # Subtract 1024 from CBCT to map values from grayscale to HU approx
-        CBCT = CBCT - 1000
+        CBCT = CBCT - 1024
 
         # Truncate CBCT based on size of FOV in the image
         CBCT = truncate_CBCT_based_on_fov(CBCT)
-        # Register CT to CBCT using rigid registration
-        CT = register_CT_to_CBCT(CT, CBCT)
 
-        # Mask and bound is applied on numpy arrays!
+        # Limit CT so that it only contains part of the body shown in CBCT
+        CT_truncated = truncate_CT_to_scope_of_CBCT(CT, CBCT)
+        if sitk_utils.is_image_smaller_than(CT_truncated, self.patch_size):
+            logger.info("Post-registration truncated CT is smaller than the defined patch size."
+                        " Passing the whole CT volume.")
+            del CT_truncated
+        else:
+            CT = CT_truncated
+
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
 
-        # Apply body masking to the CT and CBCT arrays
-        # and bound the z, x, y grid to around the mask
+        CBCT = pad(CBCT, [1, *self.patch_size])
+        CT = pad(CT, [1, *self.patch_size])
+
         try:
             CBCT = apply_body_mask(CBCT, \
                     apply_mask=self.apply_mask,  hu_threshold=self.cbct_mask_threshold)
@@ -113,8 +120,6 @@ class CBCTtoCT2DDataset(Dataset):
         except:
             logger.error(f"Error applying mask and bound in file : {path_CT}")
 
-        CBCT = pad(CBCT, np.expand_dims(self.patch_size, axis=0))
-        CT = pad(CT, np.expand_dims(self.patch_size, axis=0))
 
         if DEBUG:
             import wandb
