@@ -13,6 +13,7 @@ train:
         wandb:
             project: "Media_Experiments"
             image_filter: [0.289 ,0.40]
+            run: baseline_2d
 
     checkpointing:
         freq: 1000
@@ -20,7 +21,7 @@ train:
     dataset: 
         name: "CBCTtoCT2DDataset"
         root: /data/train
-        num_workers: 8
+        num_workers: 12
         image_size: [384, 384]
         enable_masking: True
 

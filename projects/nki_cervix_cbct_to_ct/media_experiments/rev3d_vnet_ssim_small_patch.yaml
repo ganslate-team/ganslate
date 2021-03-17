@@ -21,7 +21,7 @@ train:
     dataset: 
         name: "CBCTtoCTDataset"
         root: /data/train
-        num_workers: 4
+        num_workers: 8
         patch_size: [16, 128, 128]
         enable_masking: True
 
