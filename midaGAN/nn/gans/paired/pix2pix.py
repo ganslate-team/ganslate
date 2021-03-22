@@ -32,7 +32,7 @@ class Pix2PixConditionalGAN(BaseGAN):
         self.visuals = {name: None for name in visual_names}
 
         # Losses used by the model
-        loss_names = ['G', 'D', 'l1_B']
+        loss_names = ['G', 'D', 'l1']
         self.losses = {name: None for name in loss_names}
 
         # Optimizers
@@ -74,17 +74,18 @@ class Pix2PixConditionalGAN(BaseGAN):
         """Calculate losses, gradients, and update network weights. 
         Called in every training iteration.
         """
-        self.forward()  # compute fake images and reconstruction images.
+        self.forward()  # compute fake images
 
         # Compute generator based metrics dependent on visuals
         self.metrics.update(self.training_metrics.compute_metrics_G(self.visuals))
 
-        # ------------------------ G ----------------------------------------------------
+        # ------------------------ G ------------------------
         self.set_requires_grad(self.networks['D'], False)  # D requires no gradients when optimizing G
         self.optimizers['G'].zero_grad()  # set G's gradients to zero
         self.backward_G()  # calculate gradients for G
         self.optimizers['G'].step()  # update G's weights
-        # ------------------------ D ----------------------------------------------------
+
+        # ------------------------ D ------------------------
         self.set_requires_grad(self.networks['D'], True)
         self.optimizers['D'].zero_grad()  # set D's gradients to zero
         self.backward_D()  # calculate gradients for D
@@ -98,21 +99,21 @@ class Pix2PixConditionalGAN(BaseGAN):
     def backward_G(self):
         """Calculate the loss for generator G using all specified losses"""
         
-        real_A = self.visuals['real_A']
-        real_B = self.visuals['real_B']
+        real_A = self.visuals['real_A']  # A
+        real_B = self.visuals['real_B']  # B
         fake_B = self.visuals['fake_B']  # G(A)
         
         # ------------------------- GAN Loss ----------------------------
-        pred = self.networks['D'](torch.cat([real_A, fake_B], dim=1))  # D(A, G(A))
+        pred = self.networks['D'](torch.cat([real_A, fake_B], dim=1))  # D(A, G(A)) 
         self.losses['G'] = self.criterion_adv(pred, target_is_real=True)
         # ---------------------------------------------------------------
 
-        # ------------- L1 Loss  -------------
-        self.losses['l1_B'] = self.criterion_l1(fake_B, real_B)
-        # ------------------------------------
+        # --------------------- L1 Loss  ----------------------
+        self.losses['l1'] = self.criterion_l1(fake_B, real_B)
+        # -----------------------------------------------------
 
         # combine losses and calculate gradients
-        combined_loss_G = self.losses['G'] + self.losses['l1_B']
+        combined_loss_G = self.losses['G'] + self.losses['l1']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'])
 
 
@@ -121,14 +122,14 @@ class Pix2PixConditionalGAN(BaseGAN):
         Compute the discriminator loss.
         Also calls backward() on loss_D to calculate the gradients.
         """
-        real_A = self.visuals['real_A']
-        real_B = self.visuals['real_B']
+        real_A = self.visuals['real_A']  # A
+        real_B = self.visuals['real_B']  # B
         fake_B = self.visuals['fake_B']  # G(A) 
 
-        self.pred_real = self.networks['D'](torch.cat([real_A, real_B], dim=1))
+        self.pred_real = self.networks['D'](torch.cat([real_A, real_B], dim=1))  # D(A, G(A))
 
         # Detaching fake: https://github.com/pytorch/examples/issues/116
-        self.pred_fake = self.networks['D'](torch.cat([real_A, fake_B.detach()], dim=1))
+        self.pred_fake = self.networks['D'](torch.cat([real_A, fake_B.detach()], dim=1))  # D(A, G(A))
 
         loss_real = self.criterion_adv(self.pred_real, target_is_real=True)
         loss_fake = self.criterion_adv(self.pred_fake, target_is_real=False)
@@ -140,14 +141,13 @@ class Pix2PixConditionalGAN(BaseGAN):
 
     def forward(self):
         """Run forward pass; called by both methods <optimize_parameters> and <test>."""
-        real_A = self.visuals['real_A']
-        real_B = self.visuals['real_B']
+        real_A = self.visuals['real_A']  # A
 
         # Forward G
-        fake_B = self.networks['G'](real_A)
+        fake_B = self.networks['G'](real_A)  # G(A)
          
         self.visuals.update({'fake_B': fake_B})
 
     def infer(self, input):
         with torch.no_grad():
-            return self.networks[f'G'].forward(input)
+            return self.networks['G'].forward(input)
