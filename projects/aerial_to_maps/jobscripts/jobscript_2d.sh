@@ -35,4 +35,4 @@ conda activate gan_env
 cd $HOME/Maastro/midaGAN/
 
 ### your code goes here, the second part of the jobscript
-CUDA_VISIBLE_DEVICES=0 python tools/train.py config=projects/aerial_to_maps/experiments/base.yaml
+CUDA_VISIBLE_DEVICES=0 python tools/train.py $@

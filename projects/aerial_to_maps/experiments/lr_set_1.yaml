@@ -1,21 +1,23 @@
 project_dir: "./projects/aerial_to_maps/datasets"
 
 train:
-    output_dir: "/work/vq218944/aerial_to_maps/base"
+    output_dir: "/hpcwork/vq218944/aerial_to_maps/lr_set_1"
     cuda: True
     n_iters: 109600 # (1096 [dataset_size] * 100)
     n_iters_decay: 109600
     batch_size: 4
     mixed_precision: False
+    seed: 42
 
     logging:
-        freq: 1
+        freq: 100
         wandb:
             project: "aerial_to_maps"
             entity: "surajpai"
-    
+            run: "lr_set2"
+
     checkpointing:
-        freq: 20000
+        freq: 40000
 
     dataset: 
         name: "ImageDataset"
@@ -43,11 +45,11 @@ train:
             lambda_B: 10.0
             lambda_identity: 0.0
             proportion_ssim: 0.0
-            lr_D: 0.0001
-            lr_G: 0.0002
+            lr_D: 0.0002
+            lr_G: 0.0004
 
 val:
-    freq: 10
+    freq: 10000
     dataset:
         name: "AerialMapsValDataset"
         root: "/work/vq218944/maps/val"
