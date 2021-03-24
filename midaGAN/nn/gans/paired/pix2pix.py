@@ -6,7 +6,7 @@ from midaGAN import configs
 from midaGAN.data.utils.image_pool import ImagePool
 from midaGAN.nn.gans.base import BaseGAN
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-from midaGAN.nn.losses.pix2pix_losses import L1Loss
+from midaGAN.nn.losses.pix2pix_losses import Pix2PixLoss
 
 
 @dataclass
@@ -32,7 +32,7 @@ class Pix2PixConditionalGAN(BaseGAN):
         self.visuals = {name: None for name in visual_names}
 
         # Losses used by the model
-        loss_names = ['G', 'D', 'l1']
+        loss_names = ['G', 'D', 'pix2pix']
         self.losses = {name: None for name in loss_names}
 
         # Optimizers
@@ -50,8 +50,8 @@ class Pix2PixConditionalGAN(BaseGAN):
         # Standard GAN loss
         self.criterion_adv = AdversarialLoss(
             self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
-        # L1 loss
-        self.criterion_l1 = L1Loss(self.conf)
+        # Pixelwise loss
+        self.criterion_pix2pix = Pix2PixLoss(self.conf)
 
     def init_optimizers(self):
         lr_G = self.conf.train.gan.optimizer.lr_G
@@ -108,12 +108,12 @@ class Pix2PixConditionalGAN(BaseGAN):
         self.losses['G'] = self.criterion_adv(pred, target_is_real=True)
         # ---------------------------------------------------------------
 
-        # --------------------- L1 Loss  ----------------------
-        self.losses['l1'] = self.criterion_l1(fake_B, real_B)
-        # -----------------------------------------------------
+        # --------------------- Pix2Pix Loss  --------------------
+        self.losses['pix2pix'] = self.criterion_pix2pix(fake_B, real_B)
+        # --------------------------------------------------------
 
         # combine losses and calculate gradients
-        combined_loss_G = self.losses['G'] + self.losses['l1']
+        combined_loss_G = self.losses['G'] + self.losses['pix2pix']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'])
 
 

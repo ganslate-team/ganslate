@@ -47,7 +47,7 @@ train:
         optimizer:
             lr_D: 0.0001
             lr_G: 0.0002
-            lambda_l1: 30.0
+            lambda_pix2pix: 30.0
     
     metrics:
         discriminator_evolution: True

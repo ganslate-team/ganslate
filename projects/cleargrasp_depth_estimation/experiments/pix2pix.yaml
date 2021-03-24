@@ -12,7 +12,7 @@ train:
         freq: 100
         wandb:
             project: "cleargrasp_rgb_normal_depth"
-            run: "lambda_l1_1"
+            run: "lambda_pix2pix_1"
         
     checkpointing:
         freq: 5000
@@ -45,7 +45,7 @@ train:
         optimizer:
             lr_D: 0.00005
             lr_G: 0.0002
-            lambda_l1: 1.0
+            lambda_pix2pix: 1.0
     
     metrics:
         discriminator_evolution: True
