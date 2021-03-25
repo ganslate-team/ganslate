@@ -24,7 +24,8 @@ EXTENSIONS = ['.nrrd']
 @dataclass
 class CBCTtoCTDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTDataset"
-    patch_size: Tuple[int, int, int] = (32, 32, 32)
+    # Allows 2D or 3D patches
+    patch_size: Tuple[int] = (32, 32, 32)
     hounsfield_units_range: Tuple[int, int] = (-1000, 2000)
     # Proportion of focal region size compared to original volume size
     focal_region_proportion: float = 0.2
@@ -57,6 +58,7 @@ class CBCTtoCTDataset(Dataset):
 
         focal_region_proportion = conf.train.dataset.focal_region_proportion
         self.patch_size = conf.train.dataset.patch_size
+        assert(len(self.patch_size) in [2,3]), "Patch has to be 2D or 3D."
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
     def __getitem__(self, index):

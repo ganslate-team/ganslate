@@ -1,4 +1,4 @@
-project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
+project_dir: ./projects/maastro_lung_proton_cbct_to_ct
 
 train:
     cuda: True
@@ -11,7 +11,7 @@ train:
     logging:
         freq: 100
         wandb:
-            project: "Media_Experiments_Proton"
+            project: Media_Experiments_Proton
             image_filter: [0.289 ,0.40]
             run: baseline_2d
 
@@ -19,20 +19,20 @@ train:
         freq: 1000
 
     dataset: 
-        name: "CBCTtoCT2DDataset"
-        root: /workspace/train_val/train
+        name: CBCTtoCTDataset
+        root: /mnt/particija/train_val/train
         num_workers: 4
-        image_size: [384, 384]
+        patch_size: [384, 384]
 
     gan:  
-        name: "CycleGAN"
+        name: CycleGAN
 
         generator:
             name: Vnet2D
             in_channels: 1
 
         discriminator:
-            name: "PatchGAN2D"
+            name: PatchGAN2D
             n_layers: 2
             in_channels: 1
 
@@ -53,12 +53,12 @@ val:
 
     multi_dataset:
         lungs:
-            name: "CBCTtoCTValTestDataset"
-            root: "/workspace/train_val/val"
+            name: CBCTtoCTValTestDataset
+            root: /mnt/particija/train_val/val
         
         phantoms:
-            name: "CBCTtoCTValTestDataset"
-            root: "/workspace/train_val/val_phantom"
+            name: CBCTtoCTValTestDataset
+            root: /mnt/particija/train_val/val_phantom
 
     sliding_window:
-        window_size: "${train.dataset.image_size}"
+        window_size: ${train.dataset.patch_size}
