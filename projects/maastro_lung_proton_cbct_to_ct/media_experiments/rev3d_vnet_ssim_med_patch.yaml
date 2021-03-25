@@ -3,11 +3,11 @@ project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
 train:
     mixed_precision: True
     cuda: True
-    n_iters: 15000
-    n_iters_decay: 15000
+    n_iters: 30000
+    n_iters_decay: 30000
     batch_size: 1
     output_dir: ./checkpoints/ssim_med_patch
-    seed: 42
+    seed: 0
     
     logging:
         freq: 100
