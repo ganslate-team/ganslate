@@ -35,6 +35,7 @@ train:
             name: "Resnet2D"
             n_residual_blocks: 9
             in_channels: 3
+            out_channels: 3
 
         discriminator:  
             name: "PatchGAN2D"

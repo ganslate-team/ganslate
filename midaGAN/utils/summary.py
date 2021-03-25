@@ -5,7 +5,7 @@
 #   - gan_summary function that outputs summaries of each unique network architecture in GAN setup
 
 import torch
-import torch.nn as nn
+from torch import nn
 from torch.nn.parallel import DistributedDataParallel
 
 from collections import OrderedDict

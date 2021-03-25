@@ -34,6 +34,7 @@ class BaseDiscriminatorConfig:
 class BaseGeneratorConfig:
     name: str = MISSING
     in_channels: int = MISSING
+    out_channels: int = MISSING
 
 
 @dataclass
