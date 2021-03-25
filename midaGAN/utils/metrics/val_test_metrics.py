@@ -36,31 +36,27 @@ def create_masked_array(input, mask):
 # Added MAE to the list of metrics
 
 
-def mae(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def mae(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Mean Absolute Error (MAE)"""
     mae_value = np.mean(np.abs(gt - pred))
-    # return float(mae_value)
-    return mae_value.astype(np.float32)
+    return float(mae_value)
 
-def mse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def mse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Mean Squared Error (MSE)"""
     mse_value = np.mean((gt - pred)**2)
-    # return float(mse_value)
-    return mse_value.astype(np.float32)
+    return float(mse_value)
 
-def nmse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def nmse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Normalized Mean Squared Error (NMSE)"""
     nmse_value = np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
-    # return float(nmse_value)
-    return nmse_value.astype(np.float32)
+    return float(nmse_value)
 
-def psnr(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def psnr(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Peak Signal to Noise Ratio metric (PSNR)"""
     psnr_value = peak_signal_noise_ratio(gt, pred, data_range=gt.max())
-    # return float(psnr_value)
-    return psnr_value.astype(np.float32)
+    return float(psnr_value)
 
-def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np.ndarray:
+def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> float:
     """Compute Structural Similarity Index Metric (SSIM)"""
     maxval = gt.max() if maxval is None else maxval
 
@@ -69,8 +65,7 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np
         ssim_value = ssim_value + structural_similarity(gt[slice_num], pred[slice_num], data_range=maxval)
 
     ssim_value /= gt.shape[0]
-    # return float(ssim_value)
-    return ssim_value.astype(np.float32)
+    return float(ssim_value)
 
 
 METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}
