@@ -7,7 +7,7 @@ from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
 from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
                                           concat_batch_of_visuals_after_gather, 
-                                          convert_metrics_to_list_after_gather)
+                                          convert_to_list_if_gather_did_not_occur)
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class ValTestTracker(BaseTracker):
 
         # Gatther metrics and send to the process of rank 0
         metrics = communication.gather(metrics)
-        metrics = convert_metrics_to_list_after_gather(metrics)
+        metrics = convert_to_list_if_gather_did_not_occur(metrics)
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)

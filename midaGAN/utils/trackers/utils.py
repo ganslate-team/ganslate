@@ -13,12 +13,18 @@ def concat_batch_of_visuals_after_gather(visuals_list):
     return visuals
 
 
-def convert_metrics_to_list_after_gather(metrics):
+def convert_to_list_if_gather_did_not_occur(value):
+    """When using `communication.gather()` the output is a list of gathered values from
+    all proceses. However, that function gathers the values only on the process with rank 0,
+    while the other processes have the same single value as before the gather. This function
+    converts those values to a list so that the data type is identical to the rank 0 process,
+    allowing more general implementation of logic that operates with these values.
+    """
     # Gathering done only for rank 0 when DDP is ON
     if torch.distributed.is_initialized() and communication.get_rank() == 0:
-        return metrics
+        return value
     else:
-        return [metrics]
+        return [value]
 
 def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"):
     final_visuals_grids = []
