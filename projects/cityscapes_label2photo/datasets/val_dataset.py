@@ -2,15 +2,12 @@ import random
 from pathlib import Path
 from typing import Tuple
 
-import PIL
 from PIL import Image
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-import torchvision.transforms.functional as TF
 
-from midaGAN.data.utils.transforms import get_transform
 from midaGAN.utils.io import make_dataset_of_files
 
 # Config imports
@@ -55,8 +52,8 @@ class Label2PhotoValDataset(Dataset):
         B_img = Image.open(B_path).convert('RGB')
 
         # Resize
-        A_img = A_img.resize(self.load_size, resample=PIL.Image.NEAREST)
-        B_img = B_img.resize(self.load_size, resample=PIL.Image.BICUBIC)
+        A_img = A_img.resize(self.load_size, resample=Image.NEAREST)
+        B_img = B_img.resize(self.load_size, resample=Image.BICUBIC)
 
         # Create a mask of valid regions
         if self.masking: 

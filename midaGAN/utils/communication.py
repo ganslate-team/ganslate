@@ -9,7 +9,6 @@
 import logging
 import os
 
-import numpy as np
 import torch
 
 logger = logging.getLogger(__name__)

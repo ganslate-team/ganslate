@@ -12,7 +12,7 @@ train:
         freq: 100
         wandb:
             project: "cityscapes_label2photo"
-            run: "lambda_l1_30"
+            run: "pix2pix_lambda_30"
         
     checkpointing:
         freq: 5000

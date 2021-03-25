@@ -12,7 +12,7 @@ from midaGAN.nn.losses.pix2pix_losses import Pix2PixLoss
 @dataclass
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
     """Pix2pix Optimizer Config"""
-    lambda_l1: float = 100.0
+    lambda_pix2pix: float = 100.0
     
 
 @dataclass
