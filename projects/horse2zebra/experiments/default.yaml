@@ -41,10 +41,14 @@ train:
         optimizer:
             lambda_A: 10.0
             lambda_B: 10.0
-            lambda_identity: 0.0
-            proportion_ssim: 0.0
+            lambda_identity: 0
+            proportion_ssim: 0
             lr_D: 0.0002
             lr_G: 0.0002
+    
+    metrics:
+        discriminator_evolution: True
+        ssim: True
 
 infer:
     checkpointing:
@@ -58,26 +62,3 @@ infer:
         load_size: 256
         flip: False
 
-# Val and test for testing purposes only, horse2zebra has no paired images
-# so it makes no sense to calculate the metrics between an A and B
-val:
-    freq: 1
-    dataset:
-        name: "ImageDataset"
-        root: "/work/ft002207/horse2zebra/test/"
-        num_workers: 16
-        image_channels: 3
-        preprocess: "resize"
-        load_size: 256
-        flip: False
-test:
-    checkpointing:
-        load_iter: 1
-    dataset:
-        name: "ImageDataset"
-        root: "/work/ft002207/horse2zebra/test/"
-        num_workers: 16
-        image_channels: 3
-        preprocess: "resize"
-        load_size: 256
-        flip: False

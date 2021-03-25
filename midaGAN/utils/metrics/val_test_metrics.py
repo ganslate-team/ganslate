@@ -35,27 +35,27 @@ def create_masked_array(input, mask):
 # Added MAE to the list of metrics
 
 
-def mae(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def mae(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Mean Absolute Error (MAE)"""
-    return np.mean(np.abs(gt - pred))
+    mae_value = np.mean(np.abs(gt - pred))
+    return float(mae_value)
 
-
-def mse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def mse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Mean Squared Error (MSE)"""
-    return np.mean((gt - pred)**2)
+    mse_value = np.mean((gt - pred)**2)
+    return float(mse_value)
 
-
-def nmse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def nmse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Normalized Mean Squared Error (NMSE)"""
-    return np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
+    nmse_value = np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
+    return float(nmse_value)
 
-
-def psnr(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def psnr(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Peak Signal to Noise Ratio metric (PSNR)"""
-    return peak_signal_noise_ratio(gt, pred, data_range=gt.max())
+    psnr_value = peak_signal_noise_ratio(gt, pred, data_range=gt.max())
+    return float(psnr_value)
 
-
-def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np.ndarray:
+def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> float:
     """Compute Structural Similarity Index Metric (SSIM)"""
     maxval = gt.max() if maxval is None else maxval
 

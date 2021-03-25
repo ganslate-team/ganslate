@@ -11,6 +11,7 @@ from midaGAN import configs
 class PatchGAN2DConfig(configs.base.BaseDiscriminatorConfig):
     name: str = "PatchGAN2D"
     in_channels: int = 1
+    out_channels: int = 1
     ndf: int = 64
     n_layers: int = 3
     kernel_size: Tuple[int] = (4, 4)
@@ -18,7 +19,7 @@ class PatchGAN2DConfig(configs.base.BaseDiscriminatorConfig):
 
 class PatchGAN2D(nn.Module):
 
-    def __init__(self, in_channels, ndf, n_layers, kernel_size, norm_type):
+    def __init__(self, in_channels, out_channels, ndf, n_layers, kernel_size, norm_type):
         super().__init__()
 
         norm_layer = get_norm_layer_2d(norm_type)
@@ -61,7 +62,7 @@ class PatchGAN2D(nn.Module):
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv2d(ndf * nf_mult, in_channels, kernel_size=kw, stride=1, padding=padw)]
+        sequence += [nn.Conv2d(ndf * nf_mult, out_channels, kernel_size=kw, stride=1, padding=padw)]
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):
