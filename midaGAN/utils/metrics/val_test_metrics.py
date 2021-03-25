@@ -11,7 +11,6 @@ def get_npy(input):
     Gets numpy array from torch tensor after squeeze op.
     If a mask is provided, a masked array is created.
     """
-    input = input.squeeze()
     input = input.detach().cpu().numpy()
     return input
 
@@ -21,8 +20,8 @@ def create_masked_array(input, mask):
     Create a masked array after applying the respective mask. 
     This mask array will filter values across different operations such as mean
     """
-    mask = mask.squeeze()
     mask = mask.detach().cpu().numpy()
+
     mask = mask.astype(np.bool)
     # Masked array needs negated masks as it decides
     # what element to ignore based on True values
@@ -60,12 +59,23 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> fl
     """Compute Structural Similarity Index Metric (SSIM)"""
     maxval = gt.max() if maxval is None else maxval
 
-    ssim_value = 0
-    for slice_num in range(gt.shape[0]):
-        ssim_value = ssim_value + structural_similarity(gt[slice_num], pred[slice_num], data_range=maxval)
+    ssim_sum = 0
+    size = (gt.shape[0] * gt.shape[1]) if gt.ndim == 4 else gt.shape[0]
 
-    ssim_value /= gt.shape[0]
-    return float(ssim_value)
+    for channel in range(gt.shape[0]):
+        # Format is CxHxW or DxHxW
+        if gt.ndim == 3:
+            ssim_sum = ssim_sum + structural_similarity(gt[channel], pred[channel], data_range=maxval)
+
+        # Format is CxDxHxW
+        elif gt.ndim == 4:
+            for slice_num in range(gt.shape[1]):
+                ssim_sum = ssim_sum + structural_similarity(
+                    gt[channel, slice_num], pred[channel, slice_num], data_range=maxval)
+        else:
+            raise NotImplementedError(f"SSIM for {gt.ndim} images not implemented")
+
+    return ssim_sum / size
 
 
 METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}
@@ -76,25 +86,38 @@ class ValTestMetrics:
     def __init__(self, conf):
         self.conf = conf
 
-    def get_metrics(self, input, target, mask=None):
-        input, target = get_npy(input), get_npy(target)
-
-        # Apply masks if provided
-        if mask is not None:
-            input = create_masked_array(input, mask)
-            target = create_masked_array(target, mask)
+    def get_metrics(self, batched_input, batched_target, mask=None):
+        batched_input, batched_target = get_npy(batched_input), get_npy(batched_target)
+        batched_mask = mask
 
         metrics = {}
+
+        # Iterating over all metrics that need to be computed
         for metric_name, metric_fn in METRIC_DICT.items():
             if getattr(self.conf[self.conf.mode].metrics, metric_name):
-                metrics[metric_name] = metric_fn(target, input)
+                metric_scores = []
+
+                # If batched mask exists then apply the mask to the inputs and targets
+                if batched_mask is not None:
+                    batched_input = [create_masked_array(input, mask) \
+                                            for input, mask in zip(batched_input, batched_mask)]
+                    batched_target = [create_masked_array(target, mask) \
+                                            for target, mask in zip(batched_target, batched_mask)]
+
+                # Iterate over input and target batches and compute metrics
+                for input, target in zip(batched_input, batched_target):
+                    metric_scores.append(metric_fn(target, input))
+
+                # Aggregate metrics over a batch
+                metrics[metric_name] = metric_scores
 
         return metrics
 
-    def get_cycle_metrics(self, input, target):
-        input = get_npy(input)
-        target = get_npy(target)
+    def get_cycle_metrics(self, batched_input, batched_target):
+        batched_input, batched_target = get_npy(batched_input), get_npy(batched_target)
+
         metrics = {}
-        metrics["cycle_SSIM"] = ssim(input, target)
+        metrics["cycle_SSIM"] = [ssim(target, input) \
+                                    for input, target in zip(batched_input, batched_target)]
 
         return metrics

@@ -8,7 +8,6 @@ from omegaconf import MISSING, II
 class BaseDatasetConfig:
     name: str = MISSING
     root: str = MISSING
-    shuffle: bool = True
     num_workers: int = 4
     pin_memory: bool = True
 

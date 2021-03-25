@@ -1,7 +1,6 @@
-import logging
+from loguru import logger
 import sys
 
-logger = logging.getLogger(__name__)
 
 try:
     import midaGAN
@@ -17,9 +16,9 @@ from midaGAN.utils import communication, environment
 
 
 def main():
-    environment.setup_threading()
     # inits distributed mode if ran with torch.distributed.launch
     communication.init_distributed()
+    environment.setup_threading()
 
     conf = build_conf()
 

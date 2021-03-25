@@ -1,9 +1,10 @@
 import copy
 from abc import ABC, abstractmethod
 from pathlib import Path
-import logging
+from loguru import logger
 
 from midaGAN.utils import sliding_window_inferer
+from midaGAN.utils.io import decollate
 
 
 class BaseEngine(ABC):
@@ -16,7 +17,7 @@ class BaseEngine(ABC):
 
         self.output_dir = Path(conf[conf.mode].output_dir) / self.conf.mode
         self.model = None
-        self.logger = logging.getLogger(type(self).__name__)
+        self.logger = logger
 
     @abstractmethod
     def _set_mode(self):
@@ -54,3 +55,40 @@ class BaseEngineWithInference(BaseEngine):
                                                            overlap=sw.overlap,
                                                            mode=sw.mode,
                                                            cval=-1)
+
+    def save_generated_tensor(self,
+                              generated_tensor,
+                              metadata,
+                              data_loader,
+                              idx="",
+                              dataset_name=""):
+        # A dataset object has to have a `save()` method if it
+        # wishes to save the outputs in a particular way or format
+        save_fn = getattr(data_loader.dataset, "save", False)
+        if save_fn:
+            # Tolerates `save` methods with and without `metadata` argument
+            def save(tensor, save_dir, metadata=None):
+                if metadata is None:
+                    save_fn(tensor=tensor, save_dir=save_dir)
+                else:
+                    save_fn(tensor=tensor, save_dir=save_dir, metadata=metadata)
+
+            # Output dir
+            save_dir = "saved/"
+            if dataset_name:
+                save_dir += f"{dataset_name}/"
+            if idx:
+                save_dir += f"{idx}/"
+            save_dir = self.output_dir / save_dir
+
+            # Metadata
+            if metadata:
+                # After decollate, it is a list of length equal to batch_size,
+                # containing separate metadata for each tensor in the mini-batch
+                metadata = decollate(metadata, batch_size=len(generated_tensor))
+
+            # Loop over the batch and save each tensor
+            for batch_idx in range(len(generated_tensor)):
+                tensor = generated_tensor[batch_idx]
+                current_metadata = metadata[batch_idx] if metadata is not None else metadata
+                save(tensor=tensor, save_dir=save_dir, metadata=current_metadata)

@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -11,7 +11,6 @@ from midaGAN.nn.utils import get_scheduler
 from midaGAN.utils import communication, io
 from midaGAN.utils.builders import build_D, build_G
 
-logger = logging.getLogger(__name__)
 
 
 class BaseGAN(ABC):
@@ -35,7 +34,7 @@ class BaseGAN(ABC):
             -- self.optimizers (optimizer list):    define and initialize optimizers. You can define one optimizer for each network. If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         """
 
-        self.logger = logging.getLogger(type(self).__name__)
+        self.logger = logger
         self.conf = conf
         self.is_train = self.conf.mode == "train"
         self.device = self._specify_device()
@@ -71,8 +70,8 @@ class BaseGAN(ABC):
 
     def _specify_device(self):
         if torch.distributed.is_initialized():
-            rank = communication.get_local_rank()
-            return torch.device(f"cuda:{rank}")  # distributed GPU training
+            local_rank = communication.get_local_rank()
+            return torch.device(f"cuda:{local_rank}")  # distributed GPU training
         elif self.conf[self.conf.mode].cuda:
             return torch.device('cuda:0')  # non-distributed GPU training
         else:

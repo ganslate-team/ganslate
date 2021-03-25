@@ -21,13 +21,9 @@ from midaGAN.utils import sitk_utils
 from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
 from omegaconf import MISSING
 from torch.utils.data import Dataset
+from loguru import logger
 
 DEBUG = False
-
-import logging
-
-logger = logging.getLogger(__name__)
-
 EXTENSIONS = ['.nrrd']
 
 # --------------------------- VALIDATION DATASET ---------------------------------------------
@@ -133,8 +129,7 @@ class CBCTtoCTValDataset(Dataset):
         return tensor - self.hu_min
 
     def save(self, tensor, save_dir, metadata=None):
-        tensor = tensor.squeeze().cpu()
-        tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
+        tensor = min_max_denormalize(tensor.clone().cpu(), self.hu_min, self.hu_max)
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],

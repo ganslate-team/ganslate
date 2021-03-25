@@ -1,11 +1,8 @@
-import logging
+from loguru import logger
 
 import torch
 from midaGAN.data.utils.normalization import min_max_normalize
 from midaGAN.utils import io, sitk_utils
-
-logger = logging.getLogger(__name__)
-
 
 
 def mask_out_ct(ct_scan, ct_dir_path, masking_value):
@@ -33,6 +30,7 @@ def mask_out_ct(ct_scan, ct_dir_path, masking_value):
 
     return ct_scan
 
+
 def mask_out_registered_cbct_with_ct_mask(cbct_scan, ct_dir_path, masking_value):
     if path := get_ct_body_mask_path(ct_dir_path):
         ct_mask = sitk_utils.load(path)
@@ -50,6 +48,7 @@ def get_ct_body_mask_path(ct_dir_path):
     elif paths := io.find_paths_containing_pattern(ct_dir_path, "External*"):
         return paths[0]
     return None
+
 
 def clamp_normalize(A, B, min_value, max_value):
     # Limits the lowest and highest HU unit

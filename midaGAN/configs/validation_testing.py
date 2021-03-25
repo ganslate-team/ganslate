@@ -20,6 +20,8 @@ class ValTestMetricsConfig:
     # i.e A->B->A followed by comparison between the A
     cycle_metrics: bool = True
 
+    compute_on_input: bool = False
+
 
 @dataclass
 class SlidingWindowConfig:
@@ -35,9 +37,8 @@ class BaseValTestConfig(base.BaseEngineConfig):
     metrics: ValTestMetricsConfig = ValTestMetricsConfig()
     sliding_window: Optional[SlidingWindowConfig] = None
 
-    # Val/test can have multiple datasets provided to it
-    # TODO: `Any` used only coz omegaconf doesn't support `Union`
     dataset: Optional[base.BaseDatasetConfig] = None
+    # Val/test can have multiple datasets provided to it
     multi_dataset: Optional[Dict[str, base.BaseDatasetConfig]] = None
 
 
