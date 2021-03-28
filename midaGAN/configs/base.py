@@ -4,6 +4,7 @@ from omegaconf import MISSING, II
 
 
 ############################### Dataset ########################################
+
 @dataclass
 class BaseDatasetConfig:
     name: str = MISSING
@@ -13,7 +14,6 @@ class BaseDatasetConfig:
 
 
 ############ GAN Optimizer, Discriminator, Generator, and Framework #############
-
 
 @dataclass
 class BaseOptimizerConfig:
@@ -52,6 +52,7 @@ class BaseGANConfig:
 
 
 ############################### Logging ########################################
+
 @dataclass
 class WandbConfig:
     project: str = "midaGAN-project"
@@ -81,6 +82,7 @@ class LoggingConfig:
 
 
 ############# Config for engines (trainer, tester, inferencer...) ##############
+
 @dataclass
 class BaseEngineConfig:
     """Contains params that all modes need to have, by default they interpolate the value

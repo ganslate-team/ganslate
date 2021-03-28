@@ -60,14 +60,14 @@ class BaseValTestEngine(BaseEngineWithInference):
         denormalize = getattr(self.current_data_loader.dataset, "denormalize", False)
         if denormalize:
             pred, target = denormalize(pred), denormalize(target)
-            if self.conf[self.conf.mode].metrics.compute_on_input:
+            if self.conf[self.conf.mode].metrics.compute_over_input:
                 original = denormalize(original)
 
         # Standard Metrics
         metrics = self.metricizer.get_metrics(pred, target)
         
         # Metrics on input
-        if self.conf[self.conf.mode].metrics.compute_on_input:
+        if self.conf[self.conf.mode].metrics.compute_over_input:
             original_metrics = self.metricizer.get_metrics(original, target)
             metrics.update({f"Original_{k}": v for k,v in original_metrics.items()})
 
@@ -84,7 +84,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                     mask_metrics[key] = value
 
                 # Get metrics on priginal masked images
-                if self.conf[self.conf.mode].metrics.compute_on_input:
+                if self.conf[self.conf.mode].metrics.compute_over_input:
                     for name, value in self.metricizer.get_metrics(original, target, mask=mask).items():
                         key = f"Original_{name}_{label}"
                         mask_metrics[key] = value       
