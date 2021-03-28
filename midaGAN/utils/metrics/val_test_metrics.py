@@ -40,20 +40,24 @@ def mae(gt: np.ndarray, pred: np.ndarray) -> float:
     mae_value = np.mean(np.abs(gt - pred))
     return float(mae_value)
 
+
 def mse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Mean Squared Error (MSE)"""
     mse_value = np.mean((gt - pred)**2)
     return float(mse_value)
+
 
 def nmse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Normalized Mean Squared Error (NMSE)"""
     nmse_value = np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
     return float(nmse_value)
 
+
 def psnr(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Peak Signal to Noise Ratio metric (PSNR)"""
     psnr_value = peak_signal_noise_ratio(gt, pred, data_range=gt.max())
     return float(psnr_value)
+
 
 def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> float:
     """Compute Structural Similarity Index Metric (SSIM)"""
@@ -65,7 +69,8 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> fl
     for channel in range(gt.shape[0]):
         # Format is CxHxW or DxHxW
         if gt.ndim == 3:
-            ssim_sum = ssim_sum + structural_similarity(gt[channel], pred[channel], data_range=maxval)
+            ssim_sum = ssim_sum + structural_similarity(
+                gt[channel], pred[channel], data_range=maxval)
 
         # Format is CxDxHxW
         elif gt.ndim == 4:

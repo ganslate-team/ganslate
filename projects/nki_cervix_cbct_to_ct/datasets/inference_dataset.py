@@ -22,7 +22,6 @@ from omegaconf import MISSING
 from torch.utils.data import Dataset
 from loguru import logger
 
-
 DEBUG = False
 
 EXTENSIONS = ['.nrrd']

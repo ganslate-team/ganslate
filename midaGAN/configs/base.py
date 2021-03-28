@@ -2,8 +2,8 @@ from typing import Optional, Tuple
 from dataclasses import dataclass
 from omegaconf import MISSING, II
 
-
 ############################### Dataset ########################################
+
 
 @dataclass
 class BaseDatasetConfig:
@@ -14,6 +14,7 @@ class BaseDatasetConfig:
 
 
 ############ GAN Optimizer, Discriminator, Generator, and Framework #############
+
 
 @dataclass
 class BaseOptimizerConfig:
@@ -53,6 +54,7 @@ class BaseGANConfig:
 
 ############################### Logging ########################################
 
+
 @dataclass
 class WandbConfig:
     project: str = "midaGAN-project"
@@ -82,6 +84,7 @@ class LoggingConfig:
 
 
 ############# Config for engines (trainer, tester, inferencer...) ##############
+
 
 @dataclass
 class BaseEngineConfig:

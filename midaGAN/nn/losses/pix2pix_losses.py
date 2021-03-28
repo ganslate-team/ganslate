@@ -9,6 +9,7 @@ class Pix2PixLoss:
     """Defines "pixel-to-pixel" loss (applied voxel-to-voxel for 3D omages) 
     L1 distance between fake_B and real_B images
     """
+
     def __init__(self, conf):
         self.lambda_pix2pix = conf.train.gan.optimizer.lambda_pix2pix
         self.criterion = torch.nn.L1Loss()

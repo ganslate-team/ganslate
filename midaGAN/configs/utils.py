@@ -4,7 +4,6 @@ from omegaconf import DictConfig, OmegaConf
 import midaGAN
 from midaGAN.utils.io import import_class_from_dirs_and_modules
 
-
 IMPORT_LOCATIONS = [midaGAN]
 
 # TODO: instead of importing using IMPORT_LOCATIONS, maybe something more explicit,

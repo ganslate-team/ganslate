@@ -26,6 +26,7 @@ def convert_to_list_if_gather_did_not_occur(value):
     else:
         return [value]
 
+
 def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"):
     final_visuals_grids = []
 

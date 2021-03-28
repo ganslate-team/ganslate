@@ -22,7 +22,6 @@ from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
 from omegaconf import MISSING
 from torch.utils.data import Dataset
 
-
 DEBUG = False
 EXTENSIONS = ['.nrrd']
 

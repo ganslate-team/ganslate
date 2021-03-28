@@ -17,7 +17,6 @@ class BaseValTestEngine(BaseEngineWithInference):
             self.data_loaders = {"": self.data_loaders}
         self.current_data_loader = None
 
-
         self.tracker = ValTestTracker(self.conf)
         self.metricizer = ValTestMetrics(self.conf)
         self.visuals = {}
@@ -65,11 +64,11 @@ class BaseValTestEngine(BaseEngineWithInference):
 
         # Standard Metrics
         metrics = self.metricizer.get_metrics(pred, target)
-        
+
         # Metrics on input
         if self.conf[self.conf.mode].metrics.compute_over_input:
             original_metrics = self.metricizer.get_metrics(original, target)
-            metrics.update({f"Original_{k}": v for k,v in original_metrics.items()})
+            metrics.update({f"Original_{k}": v for k, v in original_metrics.items()})
 
         # Mask Metrics
         mask_metrics = {}
@@ -85,13 +84,14 @@ class BaseValTestEngine(BaseEngineWithInference):
 
                 # Get metrics on priginal masked images
                 if self.conf[self.conf.mode].metrics.compute_over_input:
-                    for name, value in self.metricizer.get_metrics(original, target, mask=mask).items():
+                    for name, value in self.metricizer.get_metrics(original, target,
+                                                                   mask=mask).items():
                         key = f"Original_{name}_{label}"
-                        mask_metrics[key] = value       
+                        mask_metrics[key] = value
 
                 # Add mask to visuals for logging
                 self.visuals[label] = 2. * mask - 1
-        
+
         # Cycle Metrics
         cycle_metrics = {}
         if self.conf[self.conf.mode].metrics.cycle_metrics:

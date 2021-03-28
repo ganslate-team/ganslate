@@ -15,6 +15,7 @@ class SlidingWindowConfig:
 
 ######################## Val and Test Metrics Configs #########################
 
+
 @dataclass
 class BaseValTestMetricsConfig:
     # SSIM metric between the images
@@ -42,6 +43,7 @@ class TestMetricsConfig(BaseValTestMetricsConfig):
 
 
 ######################## Val and Test General Configs #########################
+
 
 @dataclass
 class BaseValTestConfig(base.BaseEngineConfig):

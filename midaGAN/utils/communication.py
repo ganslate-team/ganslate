@@ -14,7 +14,6 @@ import torch
 import numpy as np
 
 
-
 def init_distributed():
     """Initialize distributed mode if ran with `torch.distributed.launch --use_env`"""
     if os.environ.get('WORLD_SIZE', None):

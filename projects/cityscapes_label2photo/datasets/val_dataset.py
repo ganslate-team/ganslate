@@ -14,7 +14,6 @@ from midaGAN.utils.io import make_dataset_of_files
 from dataclasses import dataclass
 from midaGAN import configs
 
-
 EXTENSIONS = ['.png']
 
 
@@ -23,24 +22,24 @@ class Label2PhotoValDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "Label2PhotoValDataset"
     load_size: Tuple[int, int] = (512, 256)
     masking: bool = True
-    # No option for flip transform 
-    # No option for paired/unpaired data - Validation images are always paired 
+    # No option for flip transform
+    # No option for paired/unpaired data - Validation images are always paired
 
 
 class Label2PhotoValDataset(Dataset):
 
     def __init__(self, conf):
-           
-        self.dir_A = Path(conf.val.dataset.root) / 'A_color'        
+
+        self.dir_A = Path(conf.val.dataset.root) / 'A_color'
         self.dir_B = Path(conf.val.dataset.root) / 'B'
 
-        self.A_paths = make_dataset_of_files(self.dir_A, EXTENSIONS)[:50]  # Consider first 50 images from Val set  
+        self.A_paths = make_dataset_of_files(
+            self.dir_A, EXTENSIONS)[:50]  # Consider first 50 images from Val set
         self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)[:50]  #
         self.dataset_size = len(self.A_paths)
 
-        self.load_size = conf.val.dataset.load_size     
+        self.load_size = conf.val.dataset.load_size
         self.masking = conf.val.dataset.masking
-
 
     def __getitem__(self, index):
         index = index % self.dataset_size
@@ -56,8 +55,8 @@ class Label2PhotoValDataset(Dataset):
         B_img = B_img.resize(self.load_size, resample=Image.BICUBIC)
 
         # Create a mask of valid regions
-        if self.masking: 
-            validity_mask = np.array(A_img, dtype=np.uint8).mean(axis=2) != 0            
+        if self.masking:
+            validity_mask = np.array(A_img, dtype=np.uint8).mean(axis=2) != 0
         else:
             validity_mask = None
 
@@ -65,19 +64,17 @@ class Label2PhotoValDataset(Dataset):
         B = self.normalize(B_img, validity_mask)
         return {'A': A, 'B': B}
 
-
     def __len__(self):
         return self.dataset_size
 
-
     def normalize(self, x_img, validity_mask=None):
-        x = transforms.ToTensor()(x_img) # Convert to tensor, scales to [0,1] range internally 
-        
+        x = transforms.ToTensor()(x_img)  # Convert to tensor, scales to [0,1] range internally
+
         if validity_mask is not None:
-            validity_mask = torch.tensor(validity_mask) 
-        else: 
+            validity_mask = torch.tensor(validity_mask)
+        else:
             validity_mask = torch.ones_like(x)
-        
+
         x = x * validity_mask
-        x = x * 2 - 1   # Scale to [-1,1] range
-        return x 
+        x = x * 2 - 1  # Scale to [-1,1] range
+        return x

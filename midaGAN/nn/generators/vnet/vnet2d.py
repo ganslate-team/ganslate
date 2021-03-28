@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from midaGAN import configs
 
 
-
 @dataclass
 class Vnet2DConfig(configs.base.BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
