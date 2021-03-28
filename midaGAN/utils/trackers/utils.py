@@ -27,13 +27,17 @@ def convert_to_list_if_gather_did_not_occur(value):
         return [value]
 
 
-def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"):
+def process_visuals_for_logging(visuals, single_example=False, mid_slice_only=False):
+    """Receives a dict of visuals and combines it for logging.
+    `single_example` - selects only one example to log from the mini-batch of visuals.
+    `mid_slice_only` - when visuals are 3D, setting it to True will log only the middle slice"""
+
     final_visuals_grids = []
 
     # When a list of visuals is given, process it recursively
     if isinstance(visuals, list):
         for single_visuals in visuals:
-            single_visuals = process_visuals_for_logging(visuals, single_example, grid_depth)
+            single_visuals = process_visuals_for_logging(visuals, single_example, mid_slice_only)
             final_visuals_grids.extend(single_visuals)
         return final_visuals_grids
 
@@ -55,16 +59,16 @@ def process_visuals_for_logging(visuals, single_example=False, grid_depth="full"
             # CxDxHxW -> DxCxHxW
             visuals_grid = visuals_grid.permute(1, 0, 2, 3)
 
+            # Only mid slice from 3D image
+            if mid_slice_only:
+                mid_slice = visuals_grid.shape[0] // 2
+                visuals_grid = visuals_grid[mid_slice]
+
             # Whole 3D image into a grid
-            if grid_depth == "full":
+            else:
                 # Concatenate all combined slices along height to form a single 2D image.
                 # Tensors in the tuple are CxHxW, hence dim=1
                 visuals_grid = torch.cat(tuple(visuals_grid), dim=1)
-
-            # Only mid slice from 3D image
-            elif grid_depth == "mid":
-                mid_slice = visuals_grid.shape[0] // 2
-                visuals_grid = visuals_grid[mid_slice]
 
         # Convert data range [-1,1] to [0,1]. Important when saving images.
         visuals_grid = (visuals_grid + 1) / 2
