@@ -1,38 +1,39 @@
-project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
+project_dir: ./projects/maastro_lung_proton_cbct_to_ct
 
 train:
-    mixed_precision: True
     cuda: True
-    n_iters: 15000
-    n_iters_decay: 15000
+    n_iters: 100000
+    n_iters_decay: 100000
     batch_size: 1
     output_dir: ./checkpoints/baseline_2d
     seed: 42
 
     logging:
-        freq: 1
+        freq: 100
         wandb:
-            project: "Media_Experiments_Proton"
+            project: Media_Experiments_Proton
             image_filter: [0.289 ,0.40]
+            run: baseline_2d
 
     checkpointing:
         freq: 1000
 
     dataset: 
-        name: "CBCTtoCT2DDataset"
+        name: CBCTtoCTDataset
         root: /workspace/train_val/train
-        num_workers: 8
-        image_size: [384, 384]
+        num_workers: 4
+        patch_size: [384, 384]
 
     gan:  
-        name: "CycleGAN"
+        name: CycleGAN
 
         generator:
-            name: Unet2D  # TODO
+            name: Vnet2D
             in_channels: 1
+            out_channels: 1
 
         discriminator:
-            name: "PatchGAN2D"
+            name: PatchGAN2D
             n_layers: 2
             in_channels: 1
 
@@ -41,8 +42,8 @@ train:
             lambda_B: 5.0
             lambda_identity: 0.0
             proportion_ssim: 0.0
-            lr_D: 0.0001  # TODO
-            lr_G: 0.0002  # TODO
+            lr_D: 0.0002
+            lr_G: 0.0004
 
     metrics: 
         discriminator_evolution: True
@@ -53,12 +54,12 @@ val:
 
     multi_dataset:
         lungs:
-            name: "CBCTtoCTValTestDataset"
-            root: "/workspace/train_val/val"
+            name: CBCTtoCTValTestDataset
+            root: /workspace/train_val/val
         
         phantoms:
-            name: "CBCTtoCTValTestDataset"
-            root: "/workspace/train_val/val_phantom"
+            name: CBCTtoCTValTestDataset
+            root: /workspace/train_val/val_phantom
 
     sliding_window:
-        window_size: "${train.dataset.image_size}"
+        window_size: ${train.dataset.patch_size}

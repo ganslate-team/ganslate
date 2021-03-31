@@ -1,4 +1,4 @@
-import torch.nn as nn
+from torch import nn
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 # Config imports
@@ -9,17 +9,15 @@ from midaGAN import configs
 @dataclass
 class Resnet3DConfig(configs.base.BaseGeneratorConfig):
     name: str = 'Resnet3D'
-    in_channels: int = 1
     n_residual_blocks: int = 9
 
 
 class Resnet3D(nn.Module):
     """Note: Unlike 2D version, this one uses ReplicationPad instead of RefectionPad"""
 
-    def __init__(self, in_channels, norm_type, n_residual_blocks=9):
+    def __init__(self, in_channels, out_channels, norm_type, n_residual_blocks=9):
         super().__init__()
 
-        out_channels = in_channels
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
 

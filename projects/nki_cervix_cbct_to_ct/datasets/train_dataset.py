@@ -20,12 +20,9 @@ from midaGAN.utils import sitk_utils
 from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
 from omegaconf import MISSING
 from torch.utils.data import Dataset
+from loguru import logger
 
 DEBUG = False
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 EXTENSIONS = ['.nrrd']
 
@@ -46,6 +43,7 @@ class CBCTtoCTDatasetConfig(configs.base.BaseDatasetConfig):
 
 
 class CBCTtoCTDataset(Dataset):
+
     def __init__(self, conf):
 
         root_path = Path(conf.train.dataset.root).resolve()
@@ -54,9 +52,8 @@ class CBCTtoCTDataset(Dataset):
         self.paths_CT = []
 
         for patient in root_path.iterdir():
-            patient_cbcts = make_recursive_dataset_of_files(
-                patient / "CBCT", EXTENSIONS)
-            
+            patient_cbcts = make_recursive_dataset_of_files(patient / "CBCT", EXTENSIONS)
+
             patient_cts = make_recursive_dataset_of_files(patient / "CT", EXTENSIONS)
             patient_cts = [path for path in patient_cts if path.stem == "CT"]
 
@@ -102,7 +99,7 @@ class CBCTtoCTDataset(Dataset):
             del CT_truncated
         else:
             CT = CT_truncated
-            
+
         # Mask and bound is applied on numpy arrays!
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)

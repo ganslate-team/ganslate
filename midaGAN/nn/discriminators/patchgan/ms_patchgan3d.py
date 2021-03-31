@@ -1,5 +1,5 @@
 from typing import Tuple
-import torch.nn as nn
+from torch import nn
 import torch
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 import monai

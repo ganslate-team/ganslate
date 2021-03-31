@@ -1,4 +1,4 @@
-project_dir: "./projects/maastro_lung_proton_cbct_to_ct"
+project_dir: ./projects/maastro_lung_proton_cbct_to_ct
 
 train:
     mixed_precision: True
@@ -12,7 +12,7 @@ train:
     logging:
         freq: 100
         wandb:
-            project: "Media_Experiments_Proton"
+            project: Media_Experiments_Proton
             image_filter: [0.289 ,0.40]
             run: 3d_vnet_ssim
 
@@ -20,17 +20,18 @@ train:
         freq: 1000
 
     dataset: 
-        name: "CBCTtoCTDataset"
+        name: CBCTtoCTDataset
         root: /workspace/train_val/train
         num_workers: 8
         patch_size: [32, 384, 384]
 
     gan:  
-        name: "RevGAN"
+        name: RevGAN
 
         generator:
             name: Vnet3D
             in_channels: 1
+            out_channels: 1
             use_memory_saving: False
             use_inverse: True
             is_separable: False
@@ -38,7 +39,7 @@ train:
             up_blocks: [3, 3, 3]
 
         discriminator:
-            name: "PatchGAN3D"
+            name: PatchGAN3D
             n_layers: 2
             in_channels: 1
 
@@ -59,13 +60,13 @@ val:
 
     multi_dataset:
         lungs:
-            name: "CBCTtoCTValTestDataset"
-            root: "/workspace/train_val/val"
+            name: CBCTtoCTValTestDataset
+            root: /workspace/train_val/val
         
         phantoms:
-            name: "CBCTtoCTValTestDataset"
-            root: "/workspace/train_val/val_phantom"
+            name: CBCTtoCTValTestDataset
+            root: /workspace/train_val/val_phantom
 
     sliding_window:
-        window_size: "${train.dataset.patch_size}"
+        window_size: ${train.dataset.patch_size}
 

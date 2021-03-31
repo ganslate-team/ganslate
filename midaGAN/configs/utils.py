@@ -1,10 +1,8 @@
-import logging
+from loguru import logger
 from omegaconf import DictConfig, OmegaConf
 
 import midaGAN
 from midaGAN.utils.io import import_class_from_dirs_and_modules
-
-logger = logging.getLogger(__name__)
 
 IMPORT_LOCATIONS = [midaGAN]
 
@@ -12,6 +10,7 @@ IMPORT_LOCATIONS = [midaGAN]
 # like `__target__` in https://hydra.cc/docs/next/patterns/instantiate_objects/overview/
 # would be better. However, that would mean that each `name` will have to be, instead of
 # e.g. "CycleGAN" - "midaGAN.nn.gans.unpaired.cyclegan.CycleGAN". Is it worth it?
+
 
 def init_config(conf, config_class):
     # Run-specific config

@@ -1,0 +1,68 @@
+project_dir: "./projects/cityscapes_label2photo/datasets"
+
+train:
+    output_dir: "./checkpoints/label2photo_cyclegan/"
+    cuda: True
+    n_iters: 297500      # 2975 x 100 
+    n_iters_decay: 297500
+    batch_size: 1
+    mixed_precision: False
+
+    logging:
+        freq: 50
+        wandb:
+            project: "cityscapes_label2photo"
+            run: "cyclegan_trial"
+        
+    checkpointing:
+        freq: 10000
+
+    dataset: 
+        name: "Label2PhotoTrainDataset"
+        root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
+        shuffle: True
+        num_workers: 8
+        random_flip: True
+        random_crop: True
+        load_size: [572, 286]
+        crop_size: [512, 256]
+        paired: True
+        masking: False
+
+    gan:  
+        name: "CycleGAN"
+        generator:  
+            name: "Resnet2D"
+            n_residual_blocks: 9
+            in_channels: 3
+            out_channels: 3
+
+        discriminator:  
+            name: "PatchGAN2D"
+            n_layers: 3
+            in_channels: 3
+
+        optimizer:
+            lr_D: 0.0002
+            lr_G: 0.0002
+            lambda_A: 10.0
+            lambda_B: 10.0
+            lambda_identity: 0
+            proportion_ssim: 0
+    
+    metrics:
+        discriminator_evolution: True
+        ssim: True
+
+
+val:
+    freq: 2000
+    dataset: 
+        name: "Label2PhotoValDataset"
+        root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/val"
+        shuffle: False
+        num_workers: 16
+        load_size: [512, 256]
+        masking: False
+    metrics:
+        cycle_metrics: False

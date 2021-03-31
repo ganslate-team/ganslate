@@ -1,7 +1,7 @@
 from typing import Union, Dict
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 
 class AdversarialLoss(nn.Module):

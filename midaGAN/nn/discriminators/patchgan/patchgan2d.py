@@ -1,5 +1,5 @@
 from typing import Tuple
-import torch.nn as nn
+from torch import nn
 from midaGAN.nn.utils import get_norm_layer_2d, is_bias_before_norm
 
 # Config imports
@@ -61,7 +61,7 @@ class PatchGAN2D(nn.Module):
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv2d(ndf * nf_mult, in_channels, kernel_size=kw, stride=1, padding=padw)]
+        sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):

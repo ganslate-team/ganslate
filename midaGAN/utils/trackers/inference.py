@@ -1,5 +1,5 @@
 #from pathlib import Path
-import logging
+from loguru import logger
 import time
 
 import torch
@@ -14,7 +14,7 @@ class InferenceTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)
-        self.logger = logging.getLogger(type(self).__name__)
+        self.logger = logger
 
     def log_iter(self, visuals, len_dataset):
         self._log_message(len_dataset)
@@ -22,7 +22,7 @@ class InferenceTracker(BaseTracker):
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
-        visuals = process_visuals_for_logging(visuals, single_example=False, grid_depth="full")
+        visuals = process_visuals_for_logging(visuals, single_example=False)
 
         for i, visuals_grid in enumerate(visuals):
             # In DDP, each process is for a different iter, so incrementing it accordingly
@@ -41,7 +41,7 @@ class InferenceTracker(BaseTracker):
                 #                           losses,
                 #                           visuals_grid,
                 #                           metrics, self.conf.mode)
-    
+
     def _log_message(self, len_dataset):
         # In case of DDP, if (len_dataset % number of processes != 0),
         # it will show more iters than there actually are

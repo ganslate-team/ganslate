@@ -5,7 +5,7 @@
 #   - refactor
 #   - change name to Piresnet (partially-invertible Resnet) as I can't find what EdsrF stands for
 
-import torch.nn as nn
+from torch import nn
 
 from midaGAN.nn import invertible
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
@@ -30,6 +30,7 @@ class Piresnet3D(nn.Module):
 
     def __init__(self,
                  in_channels,
+                 out_channels,
                  norm_type,
                  depth,
                  first_layer_channels=64,
@@ -42,7 +43,6 @@ class Piresnet3D(nn.Module):
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
-        out_channels = in_channels
 
         self.downconv_ab = self.build_downconv(in_channels, norm_layer, first_layer_channels,
                                                use_bias)

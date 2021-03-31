@@ -1,4 +1,4 @@
-import logging
+from loguru import logger
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,15 +18,14 @@ from torch.utils.data import Dataset
 
 from .common import clamp_normalize, mask_out_ct
 
-logger = logging.getLogger(__name__)
-
 EXTENSIONS = ['.nrrd']
 
 
 @dataclass
 class CBCTtoCTDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTDataset"
-    patch_size: Tuple[int, int, int] = (32, 32, 32)
+    # Allows 2D or 3D patches
+    patch_size: Tuple[int] = (32, 32, 32)
     hounsfield_units_range: Tuple[int, int] = (-1000, 2000)
     # Proportion of focal region size compared to original volume size
     focal_region_proportion: float = 0.2
@@ -59,6 +58,7 @@ class CBCTtoCTDataset(Dataset):
 
         focal_region_proportion = conf.train.dataset.focal_region_proportion
         self.patch_size = conf.train.dataset.patch_size
+        assert (len(self.patch_size) in [2, 3]), "Patch has to be 2D or 3D."
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
     def __getitem__(self, index):
@@ -68,9 +68,9 @@ class CBCTtoCTDataset(Dataset):
 
         path_CBCT = self.paths_CBCT[index_CBCT]
         path_CT = self.paths_CT[index_CT]
-        
+
         # Fetches the scans, and does part of the preprocessing.
-        # If the scan is smaller than the patch size, it will get another one. 
+        # If the scan is smaller than the patch size, it will get another one.
         CT = self._get_and_preprocess_CT(path_CT)
         CBCT = self._get_and_preprocess_CBCT(path_CBCT)
 
@@ -103,7 +103,7 @@ class CBCTtoCTDataset(Dataset):
 
             # Selected if it's big enough for the training
             if not sitk_utils.is_image_smaller_than(CT, self.patch_size):
-                # Mask out the 
+                # Mask out the
                 CT = mask_out_ct(CT, path_CT, self.hu_min)
                 return CT
 

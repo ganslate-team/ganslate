@@ -35,47 +35,52 @@ def create_masked_array(input, mask):
 # Added MAE to the list of metrics
 
 
-def mae(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def mae(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Mean Absolute Error (MAE)"""
-    return np.mean(np.abs(gt - pred))
+    mae_value = np.mean(np.abs(gt - pred))
+    return float(mae_value)
 
 
-def mse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def mse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Mean Squared Error (MSE)"""
-    return np.mean((gt - pred)**2)
+    mse_value = np.mean((gt - pred)**2)
+    return float(mse_value)
 
 
-def nmse(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def nmse(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Normalized Mean Squared Error (NMSE)"""
-    return np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
+    nmse_value = np.linalg.norm(gt - pred)**2 / np.linalg.norm(gt)**2
+    return float(nmse_value)
 
 
-def psnr(gt: np.ndarray, pred: np.ndarray) -> np.ndarray:
+def psnr(gt: np.ndarray, pred: np.ndarray) -> float:
     """Compute Peak Signal to Noise Ratio metric (PSNR)"""
-    return peak_signal_noise_ratio(gt, pred, data_range=gt.max())
+    psnr_value = peak_signal_noise_ratio(gt, pred, data_range=gt.max())
+    return float(psnr_value)
 
 
-def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> np.ndarray:
+def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> float:
     """Compute Structural Similarity Index Metric (SSIM)"""
     maxval = gt.max() if maxval is None else maxval
 
-    ssim = 0
-    
+    ssim_sum = 0
+    size = (gt.shape[0] * gt.shape[1]) if gt.ndim == 4 else gt.shape[0]
+
     for channel in range(gt.shape[0]):
-        # Check for either 2D images with multiple channels or 3D images
         # Format is CxHxW or DxHxW
         if gt.ndim == 3:
-            ssim = ssim + structural_similarity(gt[channel], pred[channel], data_range=maxval)
-        
-        # Check for multi-channel 3D images, if so iterate over the channels and depth dims
+            ssim_sum = ssim_sum + structural_similarity(
+                gt[channel], pred[channel], data_range=maxval)
+
         # Format is CxDxHxW
         elif gt.ndim == 4:
             for slice_num in range(gt.shape[1]):
-                ssim = ssim + structural_similarity(gt[channel, slice_num], pred[channel, slice_num], data_range=maxval)
+                ssim_sum = ssim_sum + structural_similarity(
+                    gt[channel, slice_num], pred[channel, slice_num], data_range=maxval)
         else:
             raise NotImplementedError(f"SSIM for {gt.ndim} images not implemented")
 
-    return ssim / gt.shape[0]
+    return ssim_sum / size
 
 
 METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}
@@ -109,7 +114,7 @@ class ValTestMetrics:
                     metric_scores.append(metric_fn(target, input))
 
                 # Aggregate metrics over a batch
-                metrics[metric_name] = np.mean(metric_scores)
+                metrics[metric_name] = metric_scores
 
         return metrics
 
@@ -117,7 +122,7 @@ class ValTestMetrics:
         batched_input, batched_target = get_npy(batched_input), get_npy(batched_target)
 
         metrics = {}
-        metrics["cycle_SSIM"] = np.mean([ssim(input, target) \
-                                    for input, target in zip(batched_input, batched_target)])
+        metrics["cycle_SSIM"] = [ssim(target, input) \
+                                    for input, target in zip(batched_input, batched_target)]
 
         return metrics
