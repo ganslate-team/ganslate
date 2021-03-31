@@ -1,5 +1,5 @@
-from typing import Optional, Tuple
-from dataclasses import dataclass
+from typing import Optional, Tuple, List
+from dataclasses import dataclass, field
 from omegaconf import MISSING, II
 
 
@@ -52,6 +52,13 @@ class BaseGANConfig:
 
 ############################### Logging ########################################
 @dataclass
+class VisualsConfig:
+    # Channel split setting for multimodlity image support- TODO: explain more
+    channel_split_A: List[int] = field(default_factory=lambda: [1,1])
+    channel_split_B: List[int] = field(default_factory=lambda: [1])
+
+
+@dataclass
 class WandbConfig:
     project: str = "midaGAN-project"
     entity: Optional[str] = None
@@ -73,12 +80,14 @@ class CheckpointingConfig:
 class LoggingConfig:
     # How often (in iters) to log during *training* [Not used in other modes]
     freq: int = 50
+    # Image visualization config TODO: explain more
+    visuals: Optional[VisualsConfig] = None
     # Use Tensorboard?
     tensorboard: bool = False
     # Use Weights & Biases?
     wandb: Optional[WandbConfig] = None
 
-
+    
 ############# Config for engines (trainer, tester, inferencer...) ##############
 @dataclass
 class BaseEngineConfig:

@@ -18,6 +18,7 @@ class ValTestTracker(BaseTracker):
 
         self.metrics = []
         self.visuals = []
+        self.visuals_config = conf.train.logging.visuals
 
     def add_sample(self, visuals, metrics):
         """Parameters: # TODO: update this
@@ -31,7 +32,7 @@ class ValTestTracker(BaseTracker):
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
-        visuals = process_visuals_for_logging(visuals, single_example=False, grid_depth="mid")
+        visuals = process_visuals_for_logging(visuals, self.visuals_config, single_example=False, grid_depth="mid")
 
         self.visuals.extend(visuals)
         self.metrics.extend(metrics)

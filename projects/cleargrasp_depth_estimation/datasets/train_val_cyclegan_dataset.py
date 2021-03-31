@@ -10,7 +10,6 @@ from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
 
-from midaGAN.data.utils.transforms import get_transform
 from midaGAN.utils.io import make_dataset_of_files
 
 # Config imports
@@ -23,23 +22,26 @@ EXTENSIONS = ['.jpg', '.exr']
 
 # Max allowed intenity of depthmap images. Specified in metres. 
 # This value is chosen by analyzing max values throughout the dataset.  
-UPPER_DEPTH_INTENSITY_LIMIT = 6.0  
+UPPER_DEPTH_INTENSITY_LIMIT = 8.0  
 
 
 
 @dataclass
-class RGBNormal2DepthDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "RGBNormal2DepthDataset"
+class ClearGraspCycleGANDatasetConfig(configs.base.BaseDatasetConfig):
+    name: str = "ClearGraspCycleGANDataset"
     load_size: Tuple[int, int] = (512, 256)
-    paired: bool = True   # `True` for paired training  
+    paired: bool = False   # `True` for paired A-B  
 
 
 
-class RGBNormal2DepthDataset(Dataset):
+class ClearGraspCycleGANDataset(Dataset):
     """
     Multimodality dataset containing RGB photos, surface normalmaps and depthmaps.
     Curated from Cleargrasp robot-vision dataset.
-    Here, the GAN translation task is:   RGB + Normalmap --> Depthmap  
+    Here, the GAN translation task is:   RGB + Normalmap --> Depthmap 
+    This is the CycleGAN version:  
+        Domain A:  RGB and Normalmap
+        Domain B:  RGB and Depthmap  
     """
     def __init__(self, conf):
         
@@ -58,63 +60,67 @@ class RGBNormal2DepthDataset(Dataset):
         self.load_resize_transform = transforms.Resize(size=(load_size[1], load_size[0]), 
             interpolation=transforms.InterpolationMode.BICUBIC)
         
-        self.paired = conf[conf.mode].dataset.paired
-
 
     def __getitem__(self, index):
         index_A = index % self.dataset_size
         index_B = index_A if self.paired else random.randint(0, self.dataset_size - 1)
         
-        rgb_path = self.rgb_paths[index_A]
+        rgb_A_path = self.rgb_paths[index_A]
         normal_path = self.normal_paths[index_A]        
+        rgb_B_path = self.rgb_paths[index_B]
         depth_path = self.depth_paths[index_B]
 
-        rgb_img = read_rgb_to_tensor(rgb_path)
+        rgb_A = read_rgb_to_tensor(rgb_A_path)
         normalmap = read_normalmap_to_tensor(normal_path)
+        rgb_B = read_rgb_to_tensor(rgb_B_path)
         depthmap = read_depthmap_to_tensor(depth_path)
-        
-        # Resize
-        rgb_img = self.load_resize_transform(rgb_img)
-        normalmap = self.load_resize_transform(normalmap)
-        depthmap = self.load_resize_transform(depthmap)
 
-        # Transforms
-        rgb, normalmap, depthmap = self.apply_transform(rgb_img, normalmap, depthmap)
+        # Resize
+        rgb_A = self.load_resize_transform(rgb_A)
+        normalmap = self.load_resize_transform(normalmap)
+        rgb_B = self.load_resize_transform(rgb_B)
+        depthmap = self.load_resize_transform(depthmap)
+        
+        # Transform
+        rgb_A, normalmap, rgb_B, depthmap = self.apply_transforms(rgb_A, normalmap, rgb_B, depthmap)
 
         # Normalize
-        rgb_img, normalmap, depthmap = self.normalize(rgb_img, normalmap, depthmap)
+        rgb_A, normalmap, rgb_B, depthmap = self.normalize(rgb_A, normalmap, rgb_B, depthmap)
 
-        return {'A': torch.cat([rgb_img, normalmap], dim=0), 'B': depthmap}
+        return {'A1': rgb_A, 'A2': normalmap, 'B1': rgb_B, 'B2': depthmap}
+
 
 
     def __len__(self):
         return self.dataset_size
 
 
-    def apply_transform(self, rgb_img, normalmap, depthmap):
+    def apply_transforms(self, rgb_A, normalmap, rgb_B, depthmap):
         """
         TODO: What transform to use for augmentation? 
         Cannot naively apply random flip and crop, would mess up the normalmap and depthmap info, resp.
         Maybe flipping + changing normalmap colour mapping (by changing order of its RGB channels)
         """
-        return rgb_img, normalmap, depthmap
+        return rgb_A, normalmap, rgb_B, depthmap
 
 
-    def normalize(self, rgb_img, normalmap, depthmap):
+    def normalize(self, rgb_A, normalmap, rgb_B, depthmap):
         """
         Scale to [-1,1] range
         Normalmap already in this range, 
         but still rescale it to avoid offshoots caused by interpolation 
         """
         # Get limits, taking into account out-of-range offshoot values 
-        rgb_min, rgb_max = min(0.0, rgb_img.min()), max(255.0, rgb_img.max())
+        rgb_A_min, rgb_A_max = min(0.0, rgb_A.min()), max(255.0, rgb_A.max())
         normalmap_min, normalmap_max = min(-1.0, normalmap.min()), max(1.0, normalmap.max())
+        rgb_B_min, rgb_B_max = min(0.0, rgb_B.min()), max(255.0, rgb_B.max())
         depthmap_min, depthmap_max = min(0.0, depthmap.min()), max(UPPER_DEPTH_INTENSITY_LIMIT, depthmap.max())
 
-        rgb_img = (rgb_img-rgb_min)/(rgb_max-rgb_min) * 2 - 1
+        rgb_A = (rgb_A-rgb_A_min)/(rgb_A_max-rgb_A_min) * 2 - 1
         normalmap = (normalmap-normalmap_min)/(normalmap_max-normalmap_min) * 2 - 1
+        rgb_B = (rgb_B-rgb_B_min)/(rgb_B_max-rgb_B_min) * 2 - 1
         depthmap = (depthmap-depthmap_min)/(depthmap_max-depthmap_min) * 2 - 1
-        return rgb_img, normalmap, depthmap 
+        return rgb_A, normalmap, rgb_B, depthmap 
 
 
 
@@ -144,3 +150,5 @@ def read_depthmap_to_tensor(path):
     depthmap = cv2.imread(path, cv2.IMREAD_ANYDEPTH)
     depthmap = np.expand_dims(depthmap, axis=0)  # (H,W) to (1,H,W)
     return torch.tensor(depthmap, dtype=torch.float32)
+
+

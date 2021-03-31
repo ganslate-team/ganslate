@@ -3,52 +3,51 @@ project_dir: "./projects/cleargrasp_depth_estimation/"
 train:
     output_dir: "./checkpoints/cleargrasp_depth_estimation/"
     cuda: True
-    n_iters: 250000      # (2500 (images) / batch_size) x 100 ("epochs")
+    n_iters: 250000      # 2500 (images) x 100 ("epochs")
     n_iters_decay: 5000
     batch_size: 2
     mixed_precision: False
 
     logging:
         freq: 100
-        visuals:
-            channel_split_A: [3,3]
-            channel_split_B: [1]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "pix2pix_trial"
+            run: "cyclegan_trial"
         
     checkpointing:
         freq: 5000
 
     dataset: 
-        name: "ClearGraspPix2PixDataset"
+        name: "ClearGraspCycleGANDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
-        paired: True
+        paired: False
+        shuffle: True
         num_workers: 8
 
-    gan: 
-        name: "Pix2PixConditionalGAN"
+    gan:  # TODO: Add config after implementing custom MM cycleGAN
+        name: "CycleGAN"
         generator:  
             name: "Unet2D"
             in_channels: 6
-            out_channels: 1
-            num_downs: 6
+            out_channels: 6
+            num_downs: 5
             ngf: 64
-            use_dropout: True
 
         discriminator:  
             name: "PatchGAN2D"
-            in_channels: 7
-            n_layers: 4
-            kernel_size: [4,4]
-            ndf: 32
-            
+            n_layers: 3
+            in_channels: 3
+            ndf: 64
+
         optimizer:
-            lr_D: 0.00005
-            lr_G: 0.0002
-            lambda_pix2pix: 10.0
-    
+            lr_D: 0.0002
+            lr_G: 0.0001
+            lambda_A: 10.0
+            lambda_B: 10.0
+            lambda_identity: 0
+            proportion_ssim: 0
+
     metrics:
         discriminator_evolution: True
         ssim: True
@@ -57,10 +56,11 @@ train:
 val:
     freq: 5000
     dataset: 
-        name: "ClearGraspPix2PixDataset"
+        name: "ClearGraspCycleGANDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         paired: True
+        shuffle: False
         num_workers: 8
     metrics:
         cycle_metrics: False

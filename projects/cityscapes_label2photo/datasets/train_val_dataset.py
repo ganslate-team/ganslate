@@ -20,35 +20,37 @@ EXTENSIONS = ['.png']
 
 
 @dataclass
-class Label2PhotoTrainDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "Label2PhotoTrainDataset"
+class Label2PhotoDatasetConfig(configs.base.BaseDatasetConfig):
+    name: str = "Label2PhotoDataset"
     load_size: Tuple[int, int] = (572, 286)
     crop_size: Tuple[int, int] = (512, 256)
     random_flip: bool = True
     random_crop: bool = True
     paired: bool = True   # `True` for paired training  
-    masking: bool = True  # `True` to mask away the "void" objects in the photos
+    masking: bool = False  # `True` to mask away the "void" objects in the photos
 
 
-class Label2PhotoTrainDataset(Dataset):
+class Label2PhotoDataset(Dataset):
 
     def __init__(self, conf):
-      
-        self.dir_A = Path(conf.train.dataset.root) / 'A_color'        
-        self.dir_B = Path(conf.train.dataset.root) / 'B'
+        
+        self.mode = conf.mode
+
+        self.dir_A = Path(conf[self.mode].dataset.root) / 'A_color'        
+        self.dir_B = Path(conf[self.mode].dataset.root) / 'B'
 
         self.A_paths = make_dataset_of_files(self.dir_A, EXTENSIONS)
         self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)
         self.dataset_size = len(self.A_paths)
 
-        self.random_flip = conf.train.dataset.random_flip
-        self.random_crop = conf.train.dataset.random_crop
+        self.random_flip = conf[self.mode].dataset.random_flip
+        self.random_crop = conf[self.mode].dataset.random_crop
 
-        self.load_size = conf.train.dataset.load_size
-        self.crop_size = conf.train.dataset.crop_size
+        self.load_size = conf[self.mode].dataset.load_size
+        self.crop_size = conf[self.mode].dataset.crop_size
         
-        self.paired = conf.train.dataset.paired
-        self.masking = conf.train.dataset.masking
+        self.paired = conf[self.mode].dataset.paired
+        self.masking = conf[self.mode].dataset.masking
 
 
     def __getitem__(self, index):
@@ -88,6 +90,9 @@ class Label2PhotoTrainDataset(Dataset):
 
 
     def apply_transform(self, A_img, B_img):
+        if self.mode != 'train':
+            return A_img, B_img
+        
         r = random.random()
         if self.random_crop and r < 0.66:  # Random crop
             load_width, load_height = self.load_size
