@@ -1,5 +1,5 @@
-from typing import Optional, Tuple, List
-from dataclasses import dataclass, field
+from typing import Optional, Tuple
+from dataclasses import dataclass
 from omegaconf import MISSING, II
 
 
@@ -56,8 +56,8 @@ class VisualsConfig:
     # Channel split setting for multimodlity image support.
     # For example: If tensor `real_A` has 4 channels and contains 2 image modalities, having 1 and 3 channels respectively,
     #              then `channel_split_A` is specified as a list `[1, 3]`
-    channel_split_A: List[int] = field(default_factory=lambda: [1])
-    channel_split_B: List[int] = field(default_factory=lambda: [1])
+    channel_split_A: Optional[Tuple[int, ...]] = None
+    channel_split_B: Optional[Tuple[int, ...]] = None
 
 
 @dataclass
