@@ -35,7 +35,7 @@ def process_visuals_for_logging(visuals, visuals_config, single_example=False, g
     assert isinstance(visuals, dict)
 
 
-    # Channel-wise splitting of multi-modality images
+    # Channel-wise splitting of multi-modality images into separate tensors
     visuals = _split_multimodal_visuals(visuals, visuals_config)
     
     # Make all visuals have the same number of channels, if different
@@ -83,50 +83,49 @@ def process_visuals_for_logging(visuals, visuals_config, single_example=False, g
 
 def _split_multimodal_visuals(visuals, visuals_config):
     """
-    TODO: Make the code cleaner
     Separate out multi-modality images from each tensor by splitting it channel-wise.
     The correct channel split for domains A and B should be provided in the visuals_config parameter.
-    The visual names are updated as -- real_A  -->  real_A1 and real_A2 (in case when A contains 2 modalities).
+    The visual names are updated as:  real_A  -->  real_A1 and real_A2 (in case when A contains 2 modalities).
     """
-    # If visuals config is not provided, assume there are each tensor contains single modality, and do nothing 
+    # If visuals config is not provided, assume each visuals tensor contains a single modality, and do nothing
     if visuals_config is None:    
         return visuals
 
     # Split channels and update the visuals dict
-    channel_splits = {'A': visuals_config['channel_split_A'], 'B': visuals_config['channel_split_B']}
+    channel_splits_by_domain = {'A': visuals_config['channel_split_A'], 'B': visuals_config['channel_split_B']}
     visuals_copy = {}
-    for visual_name in visuals.keys():
-        for domain in channel_splits:
-            if domain in visual_name:
-                prev_split_idx = 0
-                for count, split_idx in enumerate(channel_splits[domain]):
-                    start_chan, end_chan = prev_split_idx, prev_split_idx + split_idx
-                    visuals_copy[f"{visual_name}{count+1}"] = visuals[visual_name][:, start_chan:end_chan].clone()
-                    prev_split_idx += split_idx
+    for visual_name in visuals.keys():                  # For each tensor in visuals
+        for domain in channel_splits_by_domain.keys():  # For each domain (A and B)
+            if domain in visual_name: 
+                channel_split = tuple(channel_splits_by_domain[domain])
+                assert sum(channel_split) == visuals[visual_name].shape[1], "Please specify channel-split correctly!"
+                separated_modalities = torch.split(visuals[visual_name], channel_split, dim=1)
+                visuals_copy.update({f"{visual_name}{i+1}": separated_modalities[i] for i in range(len(channel_split))})
     return visuals_copy
 
 
 def _make_all_visuals_channels_equal(visuals):
     """
-    TODO: Better name for the function;  Make the code cleaner
-    Make channels of all visuals equal to the largest number of channels.
-    Especially useful in case of natural images when both RGB and grayscale image types are involved 
-    Limitation:  The max channel number numst be divisible by channel number of all visuals. 
-                 For example, 1-channel image can be made 3-channel, but 2-channel cannot be made 3-channel                   
+    Make #channels of all visuals equal to the largest #channels present.
+    Especially useful in case of natural images when both RGB and grayscale image types are involved.
+    Note:        This function is invoked after _split_multimodal_visuals(), 
+                 and hence expects each tensor to contain just a single modality
+    Limitation:  Every image modality must have #channels equal to either 1 or 3.                
     """
-    max_channels = max([visual.shape[1] for visual in visuals.values()])
-    min_channels = min([visual.shape[1] for visual in visuals.values()])
+    supported_n_channels = (1,3) # Only 1 and 3 channels supported for each separate modality  
+    max_n_channels = max([visual.shape[1] for visual in visuals.values()])
+    min_n_channels = min([visual.shape[1] for visual in visuals.values()])
     
     # If all visuals have the same #channels, then do nothing 
-    if max_channels == min_channels:
+    if max_n_channels == min_n_channels:
         return visuals
 
     # Else, proceed with the operation
     for visual_name in visuals.keys():
         n_channels = visuals[visual_name].shape[1]
-        if n_channels < max_channels:
-            assert max_channels % n_channels == 0  # max_channels should be divisible by n_channels
-            n_repeats = max_channels // n_channels
+        assert n_channels in supported_n_channels, "Every image modality must have #channels equal to either 1 or 3!"
+        if n_channels < max_n_channels:
+            n_repeats = max_n_channels // n_channels
             visuals[visual_name] = torch.repeat_interleave(visuals[visual_name], n_repeats, dim=1)
 
     return visuals

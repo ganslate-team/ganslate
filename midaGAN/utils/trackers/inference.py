@@ -15,6 +15,7 @@ class InferenceTracker(BaseTracker):
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logger
+        self.visuals_config = conf.train.logging.visuals
 
     def log_iter(self, visuals, len_dataset):
         self._log_message(len_dataset)
@@ -22,7 +23,7 @@ class InferenceTracker(BaseTracker):
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
-        visuals = process_visuals_for_logging(visuals, single_example=False, grid_depth="full")
+        visuals = process_visuals_for_logging(visuals, self.visuals_config, single_example=False, grid_depth="full")
 
         for i, visuals_grid in enumerate(visuals):
             # In DDP, each process is for a different iter, so incrementing it accordingly

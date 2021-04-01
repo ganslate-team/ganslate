@@ -9,7 +9,7 @@ train:
     mixed_precision: False
 
     logging:
-        freq: 50
+        freq: 100
         wandb:
             project: "cityscapes_label2photo"
             run: "cyclegan_trial"
@@ -22,8 +22,7 @@ train:
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
         load_size: [572, 286]
         crop_size: [512, 256]
-        paired: False
-        shuffle: True
+        paired: False  # Unpaired, for training
         random_flip: True
         random_crop: True
         masking: False
@@ -55,13 +54,12 @@ train:
 
 
 val:
-    freq: 2000
+    freq: 200
     dataset: 
         name: "Label2PhotoDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/val"
         load_size: [512, 256]
-        paired: True
-        shuffle: False
+        paired: True  # Paired, to compute similarity metrics 
         random_flip: False
         random_crop: False
         masking: False

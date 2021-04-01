@@ -53,8 +53,10 @@ class BaseGANConfig:
 ############################### Logging ########################################
 @dataclass
 class VisualsConfig:
-    # Channel split setting for multimodlity image support- TODO: explain more
-    channel_split_A: List[int] = field(default_factory=lambda: [1,1])
+    # Channel split setting for multimodlity image support.
+    # For example: If tensor `real_A` has 4 channels and contains 2 image modalities, having 1 and 3 channels respectively,
+    #              then `channel_split_A` is specified as a list `[1, 3]`
+    channel_split_A: List[int] = field(default_factory=lambda: [1])
     channel_split_B: List[int] = field(default_factory=lambda: [1])
 
 
@@ -80,7 +82,7 @@ class CheckpointingConfig:
 class LoggingConfig:
     # How often (in iters) to log during *training* [Not used in other modes]
     freq: int = 50
-    # Image visualization config TODO: explain more
+    # Image visualization config. Specifies the channel-wise split setting for multi-modality image visualization. 
     visuals: Optional[VisualsConfig] = None
     # Use Tensorboard?
     tensorboard: bool = False

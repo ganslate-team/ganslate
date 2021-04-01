@@ -3,7 +3,7 @@ project_dir: "./projects/cleargrasp_depth_estimation/"
 train:
     output_dir: "./checkpoints/cleargrasp_depth_estimation/"
     cuda: True
-    n_iters: 250000      # (2500 (images) / batch_size) x 100 ("epochs")
+    n_iters: 250000      # (2500 (images) / batch_size) x 200 ("epochs")
     n_iters_decay: 5000
     batch_size: 2
     mixed_precision: False
@@ -15,7 +15,7 @@ train:
             channel_split_B: [1]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "pix2pix_trial"
+            run: "pix2pix_6layer_patchgan"
         
     checkpointing:
         freq: 5000
@@ -40,7 +40,7 @@ train:
         discriminator:  
             name: "PatchGAN2D"
             in_channels: 7
-            n_layers: 4
+            n_layers: 6
             kernel_size: [4,4]
             ndf: 32
             

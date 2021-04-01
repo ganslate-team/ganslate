@@ -22,7 +22,7 @@ train:
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
         load_size: [572, 286]
         crop_size: [512, 256]
-        paired: True
+        paired: True  # Paired, for training 
         random_flip: True
         random_crop: True
         masking: False
@@ -59,7 +59,7 @@ val:
         name: "Label2PhotoDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/val"
         load_size: [512, 256]
-        paired: True
+        paired: True   # Paired, to compute similarity metrics 
         random_flip: False
         random_crop: False
         masking: False

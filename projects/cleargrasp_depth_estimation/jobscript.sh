@@ -40,4 +40,4 @@ CUDA_VISIBLE_DEVICES=0 $python_interpreter $training_file config=$config_file
 # CUDA_VISIBLE_DEVICES=0 python tools/train.py config="./projects/cleargrasp_depth_estimation/experiments/pix2pix.yaml"
 
 # Run distributed example:
-# python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config="./projects/cleargrasp_depth_estimation/experiments/cyclegan.yaml"
+# python -m torch.distributed.launch --use_env --nproc_per_node 2 tools/train.py config="./projects/cleargrasp_depth_estimation/experiments/pix2pix.yaml"
