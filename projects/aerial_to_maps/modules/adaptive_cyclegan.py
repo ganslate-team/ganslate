@@ -3,6 +3,7 @@ import torch
 from midaGAN.nn.gans.unpaired import cyclegan
 from midaGAN import configs
 from dataclasses import dataclass
+import numpy as np
 
 @dataclass
 class AdaptiveTrainingConfig:
@@ -11,7 +12,9 @@ class AdaptiveTrainingConfig:
     adaptive_lambda: bool = True
     adaptive_lr: bool = False
     
-    change_rate: float = 0.05
+    change_rate: float = 0.01
+
+    # Number of samples to consider for the rt factor
     sample_size: int = 64*4
     
     # TODO: Add link to paper where rt is described
@@ -50,48 +53,38 @@ class AdaptiveCycleGAN(cyclegan.CycleGAN):
         super().backward_D(discriminator)
 
         if len(self.sample_pool) < self.sample_size:
-            D_train = self.pred_real.clone()
-            current_samples = [(_D_train > 0.5).float().mean() for _D_train in D_train]
+            # Look at D_generated instead of D_real
+            # Paper looks at D_real
+            D_generated = self.pred_fake.clone()
+            current_samples = [(_D_generated > 0.5).float().mean() for _D_generated in D_generated]
             self.sample_pool.extend(current_samples)
         else:
             self.adapt_training()
         
     def adapt_training(self):
-        eps = 0.05
         self.current_rt = torch.mean(torch.Tensor(self.sample_pool))
         self.metrics['rt'] = self.current_rt
 
         # If current rt is greater than set rt_factor, D
-        # is potentially overfitting, decrease lambda rate so that
-        # G can focus on adversarial loss.
-        if self.current_rt > (self.rt_factor + eps):
+        # is largely predicting generated voxels as real,
+        # increase lambda rate so that G focuses less on adversarial
+        if self.current_rt > self.rt_factor:
             if self.adaptive_lambda:
-                if self.criterion_G.lambda_A > self.max_lambda:
-                    self.criterion_G.lambda_A = self.max_lambda 
-                else:
-                    self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 - self.change_rate)
-
-                if self.criterion_G.lambda_B > self.max_lambda:
-                    self.criterion_G.lambda_B = self.max_lambda 
-                else:
-                    self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 - self.change_rate)
+                self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 + self.change_rate)
+                self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 + self.change_rate)
 
         # If current rt is smaller than set rt_factor, D is not
-        # discriminative, increase lambda rate so that G can 
-        # focus on cycle consistency over adversarial till D catches up
-        if self.current_rt < (self.rt_factor + eps):
+        # discriminative, decrease lambda rate so that G can 
+        # focus on adversarial till D catches up
+        if self.current_rt < self.rt_factor:
             if self.adaptive_lambda:
-                if self.criterion_G.lambda_A > self.max_lambda:
-                    self.criterion_G.lambda_A = self.max_lambda 
-                else:
-                    self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 + self.change_rate)
+                self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 - self.change_rate)
+                self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 - self.change_rate)
 
-                if self.criterion_G.lambda_B > self.max_lambda:
-                    self.criterion_G.lambda_B = self.max_lambda 
-                else:
-                    self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 + self.change_rate)
+        # Clip lambda values between 0 and max_lambda parameter
+        self.criterion_G.lambda_A = np.clip(self.criterion_G.lambda_A, 0, self.max_lambda)
+        self.criterion_G.lambda_B = np.clip(self.criterion_G.lambda_B, 0, self.max_lambda)
 
-     
         self.metrics['lambda_A'] = torch.tensor(self.criterion_G.lambda_A)
         self.metrics['lambda_B'] = torch.tensor(self.criterion_G.lambda_B)
 
