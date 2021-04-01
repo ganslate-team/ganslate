@@ -55,18 +55,20 @@ class BaseValTestEngine(BaseEngineWithInference):
         # TODO: Decide if cycle metrics also need to be scaled
         original, pred, target = self.visuals["A"], self.visuals["fake_B"], self.visuals["B"]
 
+        # Metrics on input
+        compute_over_input = getattr(self.conf[self.conf.mode].metrics, "compute_over_input", False)
+        
         # Denormalize the data if dataset has `denormalize` method defined.
         denormalize = getattr(self.current_data_loader.dataset, "denormalize", False)
         if denormalize:
             pred, target = denormalize(pred), denormalize(target)
-            if self.conf[self.conf.mode].metrics.compute_over_input:
+            if compute_over_input:
                 original = denormalize(original)
 
         # Standard Metrics
         metrics = self.metricizer.get_metrics(pred, target)
 
-        # Metrics on input
-        if self.conf[self.conf.mode].metrics.compute_over_input:
+        if compute_over_input:
             original_metrics = self.metricizer.get_metrics(original, target)
             metrics.update({f"Original_{k}": v for k, v in original_metrics.items()})
 
@@ -83,7 +85,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                     mask_metrics[key] = value
 
                 # Get metrics on priginal masked images
-                if self.conf[self.conf.mode].metrics.compute_over_input:
+                if compute_over_input:
                     for name, value in self.metricizer.get_metrics(original, target,
                                                                    mask=mask).items():
                         key = f"Original_{name}_{label}"
