@@ -106,7 +106,7 @@ def _split_multimodal_visuals(visuals, multi_modality_split):
         for domain in multi_modality_split:
             # Names of visuals end with _A or _B
             if name.endswith(domain):
-                channel_split = multi_modality_split[domain]
+                channel_split = tuple(multi_modality_split[domain])
                 # Possible that the split is defined for only one of the two domains
                 if channel_split is None:
                     # Then just copy the visual
