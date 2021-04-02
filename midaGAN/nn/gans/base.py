@@ -12,7 +12,6 @@ from midaGAN.utils import communication, io
 from midaGAN.utils.builders import build_D, build_G
 
 
-
 class BaseGAN(ABC):
     """This class is an abstract base class (ABC) for GAN models.
     To create a subclass, you need to implement the following five functions:

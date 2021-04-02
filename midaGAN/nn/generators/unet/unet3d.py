@@ -1,5 +1,5 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 # Config imports
@@ -10,8 +10,6 @@ from midaGAN import configs
 @dataclass
 class Unet3DConfig(configs.base.BaseGeneratorConfig):
     name: str = 'Unet3D'
-    in_channels: int = 1
-    out_channels: int = 1
     num_downs: int = 7
     ngf: int = 64
     use_dropout = False

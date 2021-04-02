@@ -1,7 +1,6 @@
 from loguru import logger
 import sys
 
-
 try:
     import midaGAN
 except ImportError:

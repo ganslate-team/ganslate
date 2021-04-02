@@ -58,7 +58,7 @@ class CBCTtoCTDataset(Dataset):
 
         focal_region_proportion = conf.train.dataset.focal_region_proportion
         self.patch_size = conf.train.dataset.patch_size
-        assert(len(self.patch_size) in [2,3]), "Patch has to be 2D or 3D."
+        assert (len(self.patch_size) in [2, 3]), "Patch has to be 2D or 3D."
         self.patch_sampler = StochasticFocalPatchSampler(self.patch_size, focal_region_proportion)
 
     def __getitem__(self, index):

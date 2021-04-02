@@ -63,7 +63,7 @@ def setup_logging(use_stdout: Optional[bool] = True,
 
     # Clear the default handlers
     logger.remove()
-    
+
     if use_stdout:
         logger.add(sys.stdout, level=log_level, format=formatter, colorize=True)
     if filename is not None:

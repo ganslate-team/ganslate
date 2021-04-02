@@ -6,12 +6,14 @@ import torch
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
 from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
-                                          concat_batch_of_visuals_after_gather, 
-                                          convert_metrics_to_list_after_gather)
+                                          concat_batch_of_visuals_after_gather,
+                                          convert_to_list_if_gather_did_not_occur)
 
 import numpy as np
 
+
 class ValTestTracker(BaseTracker):
+
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logger
@@ -28,7 +30,7 @@ class ValTestTracker(BaseTracker):
 
         # Gatther metrics and send to the process of rank 0
         metrics = communication.gather(metrics)
-        metrics = convert_metrics_to_list_after_gather(metrics)
+        metrics = convert_to_list_if_gather_did_not_occur(metrics)
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
@@ -53,11 +55,10 @@ class ValTestTracker(BaseTracker):
             name += f"{visuals_idx}"
             self._save_image(visuals, name)
 
-
         metrics_dict = {}
         # self.metrics containts a list of dicts with different metrics
         for metric in self.metrics:
-            #  Each key in metric dict containts a list of values corresponding to 
+            #  Each key in metric dict containts a list of values corresponding to
             #  each batch
             for metric_name, metric_list in metric.items():
                 if metric_name in metrics_dict:

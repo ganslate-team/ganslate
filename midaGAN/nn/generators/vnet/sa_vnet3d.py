@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Tuple
 
 import torch
-import torch.nn as nn
+from torch import nn
 from midaGAN import configs
 from midaGAN.nn import invertible
 from midaGAN.nn import attention
@@ -44,6 +44,7 @@ class SAVnet3D(nn.Module):
 
     def __init__(self,
                  in_channels,
+                 out_channels,
                  norm_type,
                  first_layer_channels=16,
                  down_blocks=(1, 2, 3, 2),
@@ -69,7 +70,6 @@ class SAVnet3D(nn.Module):
         norm_layer = get_norm_layer_3d(norm_type)
         use_bias = is_bias_before_norm(norm_type)
         self.use_inverse = use_inverse
-        out_channels = in_channels
 
         # Input (first) layer
         self.in_ab = InputBlock(in_channels, first_layer_channels, norm_layer, use_bias,

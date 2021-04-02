@@ -9,10 +9,11 @@ from dataclasses import dataclass, field
 
 from loguru import logger
 
+
 ############################### Analyzer Configuration ########################################
 @dataclass
 class AnalyzerConfig:
-    # Wandb entity and project 
+    # Wandb entity and project
     entity: str = MISSING
     project: str = MISSING
 
@@ -25,18 +26,18 @@ class AnalyzerConfig:
     # Metric tags to ignore in the analysis
     ignore_tags: List = field(default_factory=lambda: [])
     # Additionally group by metric tags during the ranking process
-    group_by: List = field(default_factory= lambda: [])
-    
-    # Metric tags to include in the analysis 
+    group_by: List = field(default_factory=lambda: [])
+
+    # Metric tags to include in the analysis
     # in descending or ascending format for ranking
-    rank_descending_keys: List = field(default_factory= lambda: ["psnr", "ssim"])
-    rank_ascending_keys: List = field(default_factory= lambda: ["mae", "mse", "nmse"])
+    rank_descending_keys: List = field(default_factory=lambda: ["psnr", "ssim"])
+    rank_ascending_keys: List = field(default_factory=lambda: ["mae", "mse", "nmse"])
 
 
 # Example: python tools/wandb/wandb_analyzer.py entity=maastro-clinic project="Media_Experiments" run_id="348tusn"
 # group_by=[phantom,BODY] ignore_tags=[plate,'phantom psnr','phantom ssim','phantom nmse','phantom mse','cycle']
 
-# The rank is displayed for all metrics, grouped by all metrics that contain "phantom" and "cbcttoct" tag 
+# The rank is displayed for all metrics, grouped by all metrics that contain "phantom" and "cbcttoct" tag
 # All the tags in ignore_tags are not considered for the ranking
 
 #################################################################################################
@@ -50,10 +51,10 @@ def list_of_strings_has_substring(list_of_strings, string):
     """Check if any of the strings in `list_of_strings` is  a substrings of `string`"""
     return any([elem.lower() in string.lower() for elem in list_of_strings])
 
+
 def filter_columns(df, columns):
     """Filters a list of columns from the dataframe"""
     return df[df.columns[~df.columns.isin(columns)]]
-
 
 
 def main(conf):
@@ -77,7 +78,7 @@ def main(conf):
 
                 if conf.last_ckpt and row_dict['iteration'] > conf.last_ckpt:
                     logger.info(f"Stopped collecting samples @{row_dict['iteration']}")
-                    break                    
+                    break
 
                 for metric_label in row.keys():
                     if list_of_strings_has_substring(all_keys, metric_label):
@@ -112,13 +113,13 @@ def main(conf):
                 group_metrics = []
                 for col in df.columns:
                     # Check if grouping key is a substring of the column
-                    if group_key.lower() in col.lower():    
+                    if group_key.lower() in col.lower():
                         group_metrics.append(col)
                 group_df = df[group_metrics]
                 logger.info(f"Metrics in group {group_key}: {group_df.columns}")
                 df[f'mode_rank_across_{group_key}'] = group_df.mode(axis=1)[0]
                 sort_by += [f'mode_rank_across_{group_key}']
-            
+
             for val in sort_by:
                 df = df.sort_values(by=val)
                 df[[val]].to_csv(f"{run.name}_{val}.csv")

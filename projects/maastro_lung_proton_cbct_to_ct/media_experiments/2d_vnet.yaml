@@ -20,7 +20,7 @@ train:
 
     dataset: 
         name: CBCTtoCTDataset
-        root: /mnt/particija/train_val/train
+        root: /workspace/train_val/train
         num_workers: 4
         patch_size: [384, 384]
 
@@ -30,6 +30,7 @@ train:
         generator:
             name: Vnet2D
             in_channels: 1
+            out_channels: 1
 
         discriminator:
             name: PatchGAN2D
@@ -54,11 +55,11 @@ val:
     multi_dataset:
         lungs:
             name: CBCTtoCTValTestDataset
-            root: /mnt/particija/train_val/val
+            root: /workspace/train_val/val
         
         phantoms:
             name: CBCTtoCTValTestDataset
-            root: /mnt/particija/train_val/val_phantom
+            root: /workspace/train_val/val_phantom
 
     sliding_window:
         window_size: ${train.dataset.patch_size}

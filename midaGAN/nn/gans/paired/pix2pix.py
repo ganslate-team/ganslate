@@ -13,7 +13,7 @@ from midaGAN.nn.losses.pix2pix_losses import Pix2PixLoss
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
     """Pix2pix Optimizer Config"""
     lambda_pix2pix: float = 100.0
-    
+
 
 @dataclass
 class Pix2PixConditionalGANConfig(configs.base.BaseGANConfig):
@@ -23,6 +23,7 @@ class Pix2PixConditionalGANConfig(configs.base.BaseGANConfig):
 
 
 class Pix2PixConditionalGAN(BaseGAN):
+
     def __init__(self, conf):
         super().__init__(conf)
 
@@ -45,7 +46,7 @@ class Pix2PixConditionalGAN(BaseGAN):
 
         # Set up networks, optimizers, schedulers, mixed precision, checkpoint loading, network parallelization...
         self.setup()
-    
+
     def init_criterions(self):
         # Standard GAN loss
         self.criterion_adv = AdversarialLoss(
@@ -59,8 +60,12 @@ class Pix2PixConditionalGAN(BaseGAN):
         beta1 = self.conf.train.gan.optimizer.beta1
         beta2 = self.conf.train.gan.optimizer.beta2
 
-        self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(), lr=lr_G, betas=(beta1, beta2))
-        self.optimizers['D'] = torch.optim.Adam(self.networks['D'].parameters(), lr=lr_D, betas=(beta1, beta2))
+        self.optimizers['G'] = torch.optim.Adam(self.networks['G'].parameters(),
+                                                lr=lr_G,
+                                                betas=(beta1, beta2))
+        self.optimizers['D'] = torch.optim.Adam(self.networks['D'].parameters(),
+                                                lr=lr_D,
+                                                betas=(beta1, beta2))
 
     def set_input(self, input):
         """Unpack input data from the dataloader.
@@ -80,7 +85,8 @@ class Pix2PixConditionalGAN(BaseGAN):
         self.metrics.update(self.training_metrics.compute_metrics_G(self.visuals))
 
         # ------------------------ G ------------------------
-        self.set_requires_grad(self.networks['D'], False)  # D requires no gradients when optimizing G
+        self.set_requires_grad(self.networks['D'],
+                               False)  # D requires no gradients when optimizing G
         self.optimizers['G'].zero_grad()  # set G's gradients to zero
         self.backward_G()  # calculate gradients for G
         self.optimizers['G'].step()  # update G's weights
@@ -95,16 +101,16 @@ class Pix2PixConditionalGAN(BaseGAN):
             self.training_metrics.compute_metrics_D('D', self.pred_real, self.pred_fake))
 
         self.optimizers['D'].step()  # update D's weights
-    
+
     def backward_G(self):
         """Calculate the loss for generator G using all specified losses"""
-        
+
         real_A = self.visuals['real_A']  # A
         real_B = self.visuals['real_B']  # B
         fake_B = self.visuals['fake_B']  # G(A)
-        
+
         # ------------------------- GAN Loss ----------------------------
-        pred = self.networks['D'](torch.cat([real_A, fake_B], dim=1))  # D(A, G(A)) 
+        pred = self.networks['D'](torch.cat([real_A, fake_B], dim=1))  # D(A, G(A))
         self.losses['G'] = self.criterion_adv(pred, target_is_real=True)
         # ---------------------------------------------------------------
 
@@ -116,7 +122,6 @@ class Pix2PixConditionalGAN(BaseGAN):
         combined_loss_G = self.losses['G'] + self.losses['pix2pix']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'])
 
-
     def backward_D(self):
         """Calculate GAN loss for the discriminator
         Compute the discriminator loss.
@@ -124,12 +129,13 @@ class Pix2PixConditionalGAN(BaseGAN):
         """
         real_A = self.visuals['real_A']  # A
         real_B = self.visuals['real_B']  # B
-        fake_B = self.visuals['fake_B']  # G(A) 
+        fake_B = self.visuals['fake_B']  # G(A)
 
         self.pred_real = self.networks['D'](torch.cat([real_A, real_B], dim=1))  # D(A, G(A))
 
         # Detaching fake: https://github.com/pytorch/examples/issues/116
-        self.pred_fake = self.networks['D'](torch.cat([real_A, fake_B.detach()], dim=1))  # D(A, G(A))
+        self.pred_fake = self.networks['D'](torch.cat([real_A, fake_B.detach()],
+                                                      dim=1))  # D(A, G(A))
 
         loss_real = self.criterion_adv(self.pred_real, target_is_real=True)
         loss_fake = self.criterion_adv(self.pred_fake, target_is_real=False)
@@ -138,14 +144,13 @@ class Pix2PixConditionalGAN(BaseGAN):
         # backprop
         self.backward(loss=self.losses['D'], optimizer=self.optimizers['D'])
 
-
     def forward(self):
         """Run forward pass; called by both methods <optimize_parameters> and <test>."""
         real_A = self.visuals['real_A']  # A
 
         # Forward G
         fake_B = self.networks['G'](real_A)  # G(A)
-         
+
         self.visuals.update({'fake_B': fake_B})
 
     def infer(self, input):

@@ -5,7 +5,6 @@ from loguru import logger
 import os
 import traceback
 
-
 REGISTRATION_MAP = {"Affine": sitk.AffineTransform(3), "Rigid": sitk.Euler3DTransform()}
 
 
