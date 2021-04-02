@@ -1,4 +1,3 @@
-import copy
 import torch
 from midaGAN.utils import communication
 
@@ -27,11 +26,12 @@ def convert_to_list_if_gather_did_not_occur(value):
     else:
         return [value]
 
+
 def process_visuals_for_logging(conf, visuals, single_example=False, mid_slice_only=False):
     """Receives a dict of visuals and combines it for logging.
     `single_example` - selects only one example to log from the mini-batch of visuals.
     `mid_slice_only` - when visuals are 3D, setting it to True will log only the middle slice"""
-    
+
     final_visuals_grids = []
 
     # When a list of visuals is given, process it recursively
@@ -44,10 +44,9 @@ def process_visuals_for_logging(conf, visuals, single_example=False, mid_slice_o
     # A single instance of visuals is a dict
     assert isinstance(visuals, dict)
 
-
     # Channel-wise splitting of multi-modality images into separate tensors
     visuals = _split_multimodal_visuals(visuals, conf[conf.mode].logging.multi_modality_split)
-    
+
     # Make all visuals have the same number of channels, if different
     visuals = _make_all_visuals_channels_equal(visuals)
 
@@ -88,7 +87,6 @@ def process_visuals_for_logging(conf, visuals, single_example=False, mid_slice_o
         final_visuals_grids.append({'name': name, 'image': visuals_grid})
 
     return final_visuals_grids
-
 
 
 def _split_multimodal_visuals(visuals, multi_modality_split):
@@ -143,7 +141,7 @@ def _make_all_visuals_channels_equal(visuals):
 
     for name in visuals.keys():
         n_channels = visuals[name].shape[1]
-        assert n_channels in (1,3), "Every image must be either 1- or 3-channel image."
+        assert n_channels in (1, 3), "Every image must be either 1- or 3-channel image."
         if n_channels < max_n_channels:
             n_repeats = max_n_channels // n_channels
             visuals[name] = torch.repeat_interleave(visuals[name], n_repeats, dim=1)

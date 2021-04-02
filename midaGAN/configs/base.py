@@ -54,6 +54,7 @@ class BaseGANConfig:
 
 ############################### Logging ########################################
 
+
 @dataclass
 class WandbConfig:
     project: str = "midaGAN-project"
@@ -75,7 +76,7 @@ class CheckpointingConfig:
 @dataclass
 class MultiModalitySplitConfig:
     # Allows logging of multi-modality images by splitting them over channel dimension accordingly.
-    # For example, if tensor `real_A` has 4 channels and contains 2 image modalities, where they 
+    # For example, if tensor `real_A` has 4 channels and contains 2 image modalities, where they
     # have 1 and 3 channels respectively, then `A` attribute needs to be specified as [1, 3].
     # For default cases of single grayscale or RGB images, this config needs not be defined.
     A: Optional[Tuple[int]] = None
@@ -93,7 +94,7 @@ class LoggingConfig:
     # Use Weights & Biases?
     wandb: Optional[WandbConfig] = None
 
-    
+
 ############# Config for engines (trainer, tester, inferencer...) ##############
 
 

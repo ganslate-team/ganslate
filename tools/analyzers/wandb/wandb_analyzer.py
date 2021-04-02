@@ -5,11 +5,11 @@ from omegaconf import OmegaConf
 from typing import Optional, Tuple, List
 from omegaconf import MISSING, II
 
-
 import utils
 from dataclasses import dataclass, field
 
 from loguru import logger
+
 
 ############################### Analyzer Configuration ########################################
 @dataclass
@@ -24,21 +24,22 @@ class AnalyzerConfig:
     # Metric tags to ignore in the analysis
     ignore_tags: List = field(default_factory=lambda: [])
     # Additionally group by metric tags during the ranking process
-    group_by: List = field(default_factory= lambda: [])
+    group_by: List = field(default_factory=lambda: [])
     # Once the metrics are ranked, this determines how the ranks are aggregated
     aggregate_ranks_by: str = "mean"
-    # Sampling frequency applied to total number of iterations 
+    # Sampling frequency applied to total number of iterations
     # If iters_sampling_freq = 10, every 10 iterations are considered for ranking
     iters_sampling_freq: int = 1
-    # Metric tags to include in the analysis 
+    # Metric tags to include in the analysis
     # in descending or ascending format for ranking
-    rank_descending_keys: List = field(default_factory= lambda: ["psnr", "ssim"])
-    rank_ascending_keys: List = field(default_factory= lambda: ["mae", "mse", "nmse"])
+    rank_descending_keys: List = field(default_factory=lambda: ["psnr", "ssim"])
+    rank_ascending_keys: List = field(default_factory=lambda: ["mae", "mse", "nmse"])
 
 
 # Example: python tools/analyzers/wandb/wandb_analyzer.py entity=maastro-clinic project="Media_Experiments" run_id="348tusn"
 # group_by=[phantom,BODY] ignore_tags=['cycle']
 #################################################################################################
+
 
 def main(conf):
     api = wandb.Api()
@@ -60,16 +61,18 @@ def main(conf):
                     logger.warning(f'{label} not in ascending or descending set of keys')
 
             # Aggregate 'all' metrics based on rank and selected method of ordering
-            df[f'{conf.aggregate_ranks_by}_rank_all_metrics'] = utils.get_aggregate_ranks(df, conf.aggregate_ranks_by)
+            df[f'{conf.aggregate_ranks_by}_rank_all_metrics'] = utils.get_aggregate_ranks(
+                df, conf.aggregate_ranks_by)
             sort_by = [f'{conf.aggregate_ranks_by}_rank_all_metrics']
 
             # Check for any provided groups to be inspected among the metrics
             for group_key in conf.group_by:
-                # If group key is present in df columns add it to 
+                # If group key is present in df columns add it to
                 group_metric_cols = [col for col in df.columns if group_key.lower() in col.lower()]
                 group_df = df[group_metric_cols]
                 # Aggregate 'group_key' metrics based on rank and selected method
-                df[f'{conf.aggregate_ranks_by}_rank_{group_key}_metrics'] = utils.get_aggregate_ranks(group_df, conf.aggregate_ranks_by)
+                df[f'{conf.aggregate_ranks_by}_rank_{group_key}_metrics'] = utils.get_aggregate_ranks(
+                    group_df, conf.aggregate_ranks_by)
                 sort_by += [f'{conf.aggregate_ranks_by}_rank_{group_key}_metrics']
 
             # For 'all' metrics and grouped metrics, sort by the aggregate rank
