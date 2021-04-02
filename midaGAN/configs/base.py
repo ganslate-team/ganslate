@@ -54,16 +54,6 @@ class BaseGANConfig:
 
 ############################### Logging ########################################
 
-
-@dataclass
-class VisualsConfig:
-    # Channel split setting for multimodlity image support.
-    # For example: If tensor `real_A` has 4 channels and contains 2 image modalities, having 1 and 3 channels respectively,
-    #              then `channel_split_A` is specified as a list `[1, 3]`
-    channel_split_A: Optional[Tuple[int, ...]] = None
-    channel_split_B: Optional[Tuple[int, ...]] = None
-
-
 @dataclass
 class WandbConfig:
     project: str = "midaGAN-project"
@@ -83,11 +73,21 @@ class CheckpointingConfig:
 
 
 @dataclass
+class MultiModalitySplitConfig:
+    # Allows logging of multi-modality images by splitting them over channel dimension accordingly.
+    # For example, if tensor `real_A` has 4 channels and contains 2 image modalities, where they 
+    # have 1 and 3 channels respectively, then `A` attribute needs to be specified as [1, 3].
+    # For default cases of single grayscale or RGB images, this config needs not be defined.
+    A: Optional[Tuple[int]] = None
+    B: Optional[Tuple[int]] = None
+
+
+@dataclass
 class LoggingConfig:
     # How often (in iters) to log during *training* [Not used in other modes]
     freq: int = 50
-    # Image visualization config. Specifies the channel-wise split setting for multi-modality image visualization. 
-    visuals: Optional[VisualsConfig] = None
+    # Specifies how to split multi modality images for logging purposes.
+    multi_modality_split: Optional[MultiModalitySplitConfig] = None
     # Use Tensorboard?
     tensorboard: bool = False
     # Use Weights & Biases?

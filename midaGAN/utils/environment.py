@@ -59,7 +59,9 @@ def setup_logging(use_stdout: Optional[bool] = True,
     if log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'EXCEPTION']:
         raise ValueError(f'Unexpected log level got {log_level}.')
 
-    formatter = "[<white>{time:YYYY-MM-DD HH:mm:ss}</white>][<blue>{name}</blue>][<red>{level}</red>] - {message}"
+    formatter = ("[<green>{time:YYYY-MM-DD HH:mm:ss}</green>]"
+                 "[<cyan>{name}</cyan>][<level>{level}</level>]"
+                 " - <level>{message}</level>")
 
     # Clear the default handlers
     logger.remove()

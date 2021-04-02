@@ -14,7 +14,7 @@ from loguru import logger
 ############################### Analyzer Configuration ########################################
 @dataclass
 class AnalyzerConfig:
-    # Wandb entity and project 
+    # Wandb entity and project
     entity: str = MISSING
     project: str = MISSING
     # Select a particular run ID to run the analyzer on

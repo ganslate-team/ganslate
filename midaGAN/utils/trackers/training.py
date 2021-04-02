@@ -12,7 +12,6 @@ class TrainingTracker(BaseTracker):
         super().__init__(conf)
         self.logger = logger
         self.log_freq = conf.train.logging.freq
-        self.visuals_config = conf.train.logging.visuals
 
     def log_iter(self, learning_rates, losses, visuals, metrics):
         """Parameters: # TODO: update this
@@ -36,7 +35,7 @@ class TrainingTracker(BaseTracker):
 
             self._log_message(learning_rates, losses)
 
-            visuals = process_visuals_for_logging(visuals, self.visuals_config, single_example=True, grid_depth="full")
+            visuals = process_visuals_for_logging(self.conf, visuals, single_example=True)
             # `single_example=True` returns a single example from the batch, selecting it
             visuals = visuals[0]
             # Gather not necessary as in val/test, it is enough to log one example when training
