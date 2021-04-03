@@ -22,7 +22,7 @@ class InferenceTracker(BaseTracker):
         # Gather visuals from different processes to the rank 0 process
         visuals = communication.gather(visuals)
         visuals = concat_batch_of_visuals_after_gather(visuals)
-        visuals = process_visuals_for_logging(visuals, single_example=False)
+        visuals = process_visuals_for_logging(self.conf, visuals, single_example=False)
 
         for i, visuals_grid in enumerate(visuals):
             # In DDP, each process is for a different iter, so incrementing it accordingly

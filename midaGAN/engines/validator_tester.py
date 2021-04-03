@@ -57,7 +57,7 @@ class BaseValTestEngine(BaseEngineWithInference):
 
         # Metrics on input
         compute_over_input = getattr(self.conf[self.conf.mode].metrics, "compute_over_input", False)
-        
+
         # Denormalize the data if dataset has `denormalize` method defined.
         denormalize = getattr(self.current_data_loader.dataset, "denormalize", False)
         if denormalize:

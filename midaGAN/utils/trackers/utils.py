@@ -27,7 +27,7 @@ def convert_to_list_if_gather_did_not_occur(value):
         return [value]
 
 
-def process_visuals_for_logging(visuals, single_example=False, mid_slice_only=False):
+def process_visuals_for_logging(conf, visuals, single_example=False, mid_slice_only=False):
     """Receives a dict of visuals and combines it for logging.
     `single_example` - selects only one example to log from the mini-batch of visuals.
     `mid_slice_only` - when visuals are 3D, setting it to True will log only the middle slice"""
@@ -43,6 +43,13 @@ def process_visuals_for_logging(visuals, single_example=False, mid_slice_only=Fa
 
     # A single instance of visuals is a dict
     assert isinstance(visuals, dict)
+
+    # Channel-wise splitting of multi-modality images into separate tensors
+    visuals = _split_multimodal_visuals(visuals, conf[conf.mode].logging.multi_modality_split)
+
+    # Make all visuals have the same number of channels, if different
+    visuals = _make_all_visuals_channels_equal(visuals)
+
     visuals_list = list(visuals.values())
     is_three_dimensional = visuals_list[0].ndim == 5
 
@@ -80,3 +87,63 @@ def process_visuals_for_logging(visuals, single_example=False, mid_slice_only=Fa
         final_visuals_grids.append({'name': name, 'image': visuals_grid})
 
     return final_visuals_grids
+
+
+def _split_multimodal_visuals(visuals, multi_modality_split):
+    """
+    Separate out multi-modality images from each tensor by splitting it channel-wise.
+    The correct channel split for domains A and B in `multi_modality_split` of the logging conf.
+    The visual names are updated as: `real_A` -> `real_A1` and `real_A2`, if it has 2 modalities.
+    """
+    # If multi_modality_split not specified, assume each visuals are single modalities.
+    if multi_modality_split is None:
+        return visuals
+
+    splitted_visuals = {}
+    # For each tensor in visuals
+    for name in visuals:
+        # For each domain (A and B)
+        for domain in multi_modality_split:
+            # Names of visuals end with _A or _B
+            if name.endswith(domain):
+                channel_split = tuple(multi_modality_split[domain])
+                # Possible that the split is defined for only one of the two domains
+                if channel_split is None:
+                    # Then just copy the visual
+                    splitted_visuals[name] = visuals[name]
+
+                # Num of channels in split need to correspond to the actual num of channels
+                if sum(channel_split) != visuals[name].shape[1]:
+                    raise ValueError("Please specify channel-split correctly!")
+
+                # Split the modalities and assign them to visuals
+                splitted_modalities = torch.split(visuals[name], channel_split, dim=1)
+                for i in range(len(channel_split)):
+                    splitted_visuals[f"{name}{i+1}"] = splitted_modalities[i]
+
+    return splitted_visuals
+
+
+def _make_all_visuals_channels_equal(visuals):
+    """
+    Make number of channels of all visuals equal to the largest number of channels among them.
+    Especially useful in case of natural images when both RGB and grayscale image types are involved.
+    Note:        This function is invoked after _split_multimodal_visuals(), 
+                 and hence expects each tensor to contain just a single modality
+    Limitation:  Every image modality must have #channels equal to either 1 or 3.                
+    """
+
+    max_n_channels = max([visual.shape[1] for visual in visuals.values()])
+    min_n_channels = min([visual.shape[1] for visual in visuals.values()])
+    # If all visuals have the same number of channels, return them
+    if max_n_channels == min_n_channels:
+        return visuals
+
+    for name in visuals.keys():
+        n_channels = visuals[name].shape[1]
+        assert n_channels in (1, 3), "Every image must be either 1- or 3-channel image."
+        if n_channels < max_n_channels:
+            n_repeats = max_n_channels // n_channels
+            visuals[name] = torch.repeat_interleave(visuals[name], n_repeats, dim=1)
+
+    return visuals
