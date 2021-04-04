@@ -111,6 +111,7 @@ def _split_multimodal_visuals(visuals, multi_modality_split):
                 if channel_split is None:
                     # Then just copy the visual
                     splitted_visuals[name] = visuals[name]
+                    continue
 
                 # Num of channels in split need to correspond to the actual num of channels
                 if sum(channel_split) != visuals[name].shape[1]:
