@@ -98,8 +98,8 @@ class BaseGAN(ABC):
             (3) Loads a checkpoint if continuing training or inferencing
             (4) Applies parallelization to the model if possible
         """
-        assert 'G' or 'G_A' in self.networks.keys(), \
-            "The (main) generator has to be named `G` or `G_A`."
+        assert 'G' or 'G_AB' in self.networks.keys(), \
+            "The (main) generator has to be named `G` or `G_AB`."
 
         if self.conf[self.conf.mode].mixed_precision:
             from apex import amp
@@ -286,10 +286,10 @@ class BaseGAN(ABC):
             self.networks[name].eval()
 
     def infer(self, input):
-        assert 'G' or 'G_A' in self.networks.keys(), \
-            "The network used for inference is either `G` or `G_A`."
+        assert 'G' or 'G_AB' in self.networks.keys(), \
+            "The network used for inference is either `G` or `G_AB`."
 
-        generator = 'G' if 'G' in self.networks.keys() else 'G_A'
+        generator = 'G' if 'G' in self.networks.keys() else 'G_AB'
 
         with torch.no_grad():
             return self.networks[generator].forward(input)

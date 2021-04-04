@@ -41,7 +41,7 @@ class RevGAN(BaseGAN):
 
         # Losses used by the model
         loss_names = [
-            'D_A', 'G_A', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_B', 'cycle_B', 'idt_B', 'inv_B'
+            'D_A', 'G_AB', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_BA', 'cycle_B', 'idt_B', 'inv_B'
         ]
         self.losses = {name: None for name in loss_names}
 
@@ -128,13 +128,13 @@ class RevGAN(BaseGAN):
         real_A = self.visuals['real_A']
         real_B = self.visuals['real_B']
 
-        # Forward cycle G_A (A to B)
-        fake_B = self.networks['G'](real_A)  # G_A
-        rec_A = self.networks['G'](fake_B, inverse=True)  # G_B
+        # Forward cycle G_AB (A to B)
+        fake_B = self.networks['G'](real_A)  # G_AB
+        rec_A = self.networks['G'](fake_B, inverse=True)  # G_BA
 
-        # Backward cycle G_B (B to A)
-        fake_A = self.networks['G'](real_B, inverse=True)  # G_B
-        rec_B = self.networks['G'](fake_A)  # G_A
+        # Backward cycle G_BA (B to A)
+        fake_A = self.networks['G'](real_B, inverse=True)  # G_BA
+        rec_B = self.networks['G'](fake_A)  # G_AB
 
         # Visuals for Identity loss
         idt_A, idt_B = None, None
@@ -190,19 +190,19 @@ class RevGAN(BaseGAN):
                       loss_id=loss_id)
 
     def backward_G(self):
-        """Calculate the loss for generators G_A and G_B using all specified losses"""
+        """Calculate the loss for generators G_AB and G_BA using all specified losses"""
 
-        fake_A = self.visuals['fake_A']  # G_B(B)
-        fake_B = self.visuals['fake_B']  # G_A(A)
+        fake_A = self.visuals['fake_A']  # G_BA(B)
+        fake_B = self.visuals['fake_B']  # G_AB(A)
 
         # ------------------------- GAN Loss ----------------------------
-        pred_A = self.networks['D_A'](fake_B)  # D_A(G_A(A))
-        pred_B = self.networks['D_B'](fake_A)  # D_B(G_B(B))
+        pred_A = self.networks['D_A'](fake_B)  # D_A(G_AB(A))
+        pred_B = self.networks['D_B'](fake_A)  # D_B(G_BA(B))
 
-        # Forward GAN loss D_A(G_A(A))
-        self.losses['G_A'] = self.criterion_adv(pred_A, target_is_real=True)
-        # Backward GAN loss D_B(G_B(B))
-        self.losses['G_B'] = self.criterion_adv(pred_B, target_is_real=True)
+        # Forward GAN loss D_A(G_AB(A))
+        self.losses['G_AB'] = self.criterion_adv(pred_A, target_is_real=True)
+        # Backward GAN loss D_B(G_BA(B))
+        self.losses['G_BA'] = self.criterion_adv(pred_B, target_is_real=True)
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity) -------------
@@ -211,7 +211,7 @@ class RevGAN(BaseGAN):
         # ---------------------------------------------------------------
 
         # combine losses and calculate gradients
-        combined_loss_G = sum(losses_G.values()) + self.losses['G_A'] + self.losses['G_B']
+        combined_loss_G = sum(losses_G.values()) + self.losses['G_AB'] + self.losses['G_BA']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
 
     def infer(self, input, cycle='A'):
