@@ -43,7 +43,8 @@ class CycleGAN(BaseGAN):
 
         # Losses used by the model
         loss_names = [
-            'D_A', 'G_AB', 'cycle_A', 'idt_A', 'inv_A', 'D_B', 'G_BA', 'cycle_B', 'idt_B', 'inv_B'
+            'G_AB', 'D_B', 'cycle_A', 'idt_A',
+            'G_BA', 'D_A', 'cycle_B', 'idt_B',
         ]
         self.losses = {name: None for name in loss_names}
 
@@ -52,7 +53,7 @@ class CycleGAN(BaseGAN):
         self.optimizers = {name: None for name in optimizer_names}
 
         # Generators and Discriminators
-        network_names = ['G_AB', 'G_BA', 'D_A', 'D_B'] if self.is_train else ['G_AB']
+        network_names = ['G_AB', 'G_BA', 'D_B', 'D_A'] if self.is_train else ['G_AB']
         self.networks = {name: None for name in network_names}
 
         if self.is_train:
@@ -78,8 +79,8 @@ class CycleGAN(BaseGAN):
 
         params_G = itertools.chain(self.networks['G_AB'].parameters(),
                                    self.networks['G_BA'].parameters())
-        params_D = itertools.chain(self.networks['D_A'].parameters(),
-                                   self.networks['D_B'].parameters())
+        params_D = itertools.chain(self.networks['D_B'].parameters(),
+                                   self.networks['D_A'].parameters())
 
         self.optimizers['G'] = torch.optim.Adam(params_G, lr=lr_G, betas=(beta1, beta2))
         self.optimizers['D'] = torch.optim.Adam(params_D, lr=lr_D, betas=(beta1, beta2))
@@ -96,7 +97,7 @@ class CycleGAN(BaseGAN):
         """Calculate losses, gradients, and update network weights. 
         Called in every training iteration.
         """
-        discriminators = [self.networks['D_A'], self.networks['D_B']]
+        discriminators = [self.networks['D_B'], self.networks['D_A']]
 
         self.forward()  # compute fake images and reconstruction images.
 
@@ -108,22 +109,22 @@ class CycleGAN(BaseGAN):
         self.optimizers['G'].zero_grad()  # set G's gradients to zero
         self.backward_G()  # calculate gradients for G
         self.optimizers['G'].step()  # update G's weights
-        # ------------------------ D_A and D_B ----------------------------------------------------
+        # ------------------------ D_B and D_A ----------------------------------------------------
         self.set_requires_grad(discriminators, True)
         self.optimizers['D'].zero_grad()  #set D_A and D_B's gradients to zero
-        self.backward_D('D_A')  # calculate gradients for D_A
-
-        # Update metrics for D_A
-        self.metrics.update(
-            self.training_metrics.compute_metrics_D('D_A', self.pred_real, self.pred_fake))
-
         self.backward_D('D_B')  # calculate gradients for D_B
 
         # Update metrics for D_B
         self.metrics.update(
             self.training_metrics.compute_metrics_D('D_B', self.pred_real, self.pred_fake))
 
-        self.optimizers['D'].step()  # update D_A and D_B's weights
+        self.backward_D('D_A')  # calculate gradients for D_A
+
+        # Update metrics for D_A
+        self.metrics.update(
+            self.training_metrics.compute_metrics_D('D_A', self.pred_real, self.pred_fake))
+
+        self.optimizers['D'].step()  # update D_B and D_A's weights
         # -----------------------------------------------------------------------------------------
 
     def forward(self):
@@ -165,13 +166,13 @@ class CycleGAN(BaseGAN):
         Return the discriminator loss.
         Also calls backward() on loss_D to calculate the gradients.
         """
-        if discriminator == 'D_A':
+        if discriminator == 'D_B':
             real = self.visuals['real_B']
             fake = self.visuals['fake_B']
             fake = self.fake_B_pool.query(fake)
             loss_id = 0
 
-        elif discriminator == 'D_B':
+        elif discriminator == 'D_A':
             real = self.visuals['real_A']
             fake = self.visuals['fake_A']
             fake = self.fake_A_pool.query(fake)
@@ -194,17 +195,17 @@ class CycleGAN(BaseGAN):
     def backward_G(self):
         """Calculate the loss for generators G_AB and G_BA using all specified losses"""
 
-        fake_A = self.visuals['fake_A']  # G_BA(B)
         fake_B = self.visuals['fake_B']  # G_AB(A)
+        fake_A = self.visuals['fake_A']  # G_BA(B)
 
         # ------------------------- GAN Loss ----------------------------
-        pred_A = self.networks['D_A'](fake_B)  # D_A(G_AB(A))
-        pred_B = self.networks['D_B'](fake_A)  # D_B(G_BA(B))
+        pred_B = self.networks['D_B'](fake_B)  # D_B(G_AB(A))
+        pred_A = self.networks['D_A'](fake_A)  # D_A(G_BA(B))
 
         # Forward GAN loss D_A(G_AB(A))
-        self.losses['G_AB'] = self.criterion_adv(pred_A, target_is_real=True)
+        self.losses['G_AB'] = self.criterion_adv(pred_B, target_is_real=True)
         # Backward GAN loss D_B(G_BA(B))
-        self.losses['G_BA'] = self.criterion_adv(pred_B, target_is_real=True)
+        self.losses['G_BA'] = self.criterion_adv(pred_A, target_is_real=True)
         # ---------------------------------------------------------------
 
         # ------------- G Losses (Cycle, Identity) -------------
