@@ -103,12 +103,12 @@ class RevGAN(BaseGAN):
 
         # ------------------------ G (A and B) ----------------------------------------------------
         self.set_requires_grad(discriminators, False)  # Ds require no gradients when optimizing Gs
-        self.optimizers['G'].zero_grad()  # set G's gradients to zero
+        self.optimizers['G'].zero_grad(set_to_none=True)
         self.backward_G()  # calculate gradients for G
         self.optimizers['G'].step()  # update G's weights
         # ------------------------ D_B and D_A ----------------------------------------------------
         self.set_requires_grad(discriminators, True)
-        self.optimizers['D'].zero_grad()  #set D_A and D_B's gradients to zero
+        self.optimizers['D'].zero_grad(set_to_none=True)
         self.backward_D('D_B')  # calculate gradients for D_B
 
         # Update metrics for D_B

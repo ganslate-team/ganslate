@@ -87,13 +87,13 @@ class Pix2PixConditionalGAN(BaseGAN):
         # ------------------------ G ------------------------
         self.set_requires_grad(self.networks['D'],
                                False)  # D requires no gradients when optimizing G
-        self.optimizers['G'].zero_grad()  # set G's gradients to zero
+        self.optimizers['G'].zero_grad(set_to_none=True)
         self.backward_G()  # calculate gradients for G
         self.optimizers['G'].step()  # update G's weights
 
         # ------------------------ D ------------------------
         self.set_requires_grad(self.networks['D'], True)
-        self.optimizers['D'].zero_grad()  # set D's gradients to zero
+        self.optimizers['D'].zero_grad(set_to_none=True)
         self.backward_D()  # calculate gradients for D
 
         # Update metrics for D
