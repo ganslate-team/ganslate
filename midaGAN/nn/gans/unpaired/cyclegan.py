@@ -217,8 +217,8 @@ class CycleGAN(BaseGAN):
         combined_loss_G = sum(losses_G.values()) + self.losses['G_AB'] + self.losses['G_BA']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=0)
 
-    def infer(self, input, cycle='A'):
-        assert cycle in ['A', 'B'], \
+    def infer(self, input, cycle='AB'):
+        assert cycle in ['AB', 'BA'], \
             "Infer needs an input of either cycle with A or B domain as input"
         assert f'G_{cycle}' in self.networks.keys()
 

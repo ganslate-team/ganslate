@@ -49,7 +49,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                 metrics = self._calculate_metrics()
                 self.tracker.add_sample(self.visuals, metrics)
 
-            self.tracker.push_samples(current_idx, prefix=dataset_name)
+            self.tracker.log_samples(current_idx, dataset_name=dataset_name)
 
     def _calculate_metrics(self):
         # TODO: Decide if cycle metrics also need to be scaled

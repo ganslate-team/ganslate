@@ -93,7 +93,7 @@ class ValTestMetrics:
     def __init__(self, conf):
         self.conf = conf
 
-    def get_metrics(self, inputs, targets, masks=None):
+    def get_metrics(self, inputs, targets, mask=None):
         metrics = {}
 
         inputs, targets = get_npy(inputs), get_npy(targets)
@@ -103,10 +103,10 @@ class ValTestMetrics:
             if getattr(self.conf[self.conf.mode].metrics, metric_name):
                 metric_scores = []
 
-                # If batched mask exists then apply the mask to the inputs and targets
-                if masks is not None:
-                    inputs = [create_masked_array(i, m) for i, m in zip(inputs, masks)]
-                    targets = [create_masked_array(t, m) for t, m in zip(targets, masks)]
+                # If mask is given, apply it to the inputs and targets
+                if mask is not None:
+                    inputs = [create_masked_array(i, m) for i, m in zip(inputs, mask)]
+                    targets = [create_masked_array(t, m) for t, m in zip(targets, mask)]
 
                 # Iterate over input and target batches and compute metrics
                 for input, target in zip(inputs, targets):
