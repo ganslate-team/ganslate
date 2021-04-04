@@ -63,20 +63,22 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> fl
     """Compute Structural Similarity Index Metric (SSIM)"""
     maxval = gt.max() if maxval is None else maxval
 
-    ssim_sum = 0
     size = (gt.shape[0] * gt.shape[1]) if gt.ndim == 4 else gt.shape[0]
 
+    ssim_sum = 0
     for channel in range(gt.shape[0]):
         # Format is CxHxW or DxHxW
         if gt.ndim == 3:
-            ssim_sum = ssim_sum + structural_similarity(
-                gt[channel], pred[channel], data_range=maxval)
+            target = gt[channel]
+            prediction = pred[channel]
+            ssim_sum += structural_similarity(target, prediction, data_range=maxval)
 
         # Format is CxDxHxW
         elif gt.ndim == 4:
             for slice_num in range(gt.shape[1]):
-                ssim_sum = ssim_sum + structural_similarity(
-                    gt[channel, slice_num], pred[channel, slice_num], data_range=maxval)
+                target = gt[channel, slice_num]
+                prediction = pred[channel, slice_num]
+                ssim_sum += structural_similarity(target, prediction, data_range=maxval)
         else:
             raise NotImplementedError(f"SSIM for {gt.ndim} images not implemented")
 
@@ -91,11 +93,10 @@ class ValTestMetrics:
     def __init__(self, conf):
         self.conf = conf
 
-    def get_metrics(self, batched_input, batched_target, mask=None):
-        batched_input, batched_target = get_npy(batched_input), get_npy(batched_target)
-        batched_mask = mask
-
+    def get_metrics(self, inputs, targets, masks=None):
         metrics = {}
+
+        inputs, targets = get_npy(inputs), get_npy(targets)
 
         # Iterating over all metrics that need to be computed
         for metric_name, metric_fn in METRIC_DICT.items():
@@ -103,14 +104,12 @@ class ValTestMetrics:
                 metric_scores = []
 
                 # If batched mask exists then apply the mask to the inputs and targets
-                if batched_mask is not None:
-                    batched_input = [create_masked_array(input, mask) \
-                                            for input, mask in zip(batched_input, batched_mask)]
-                    batched_target = [create_masked_array(target, mask) \
-                                            for target, mask in zip(batched_target, batched_mask)]
+                if masks is not None:
+                    inputs = [create_masked_array(i, m) for i, m in zip(inputs, masks)]
+                    targets = [create_masked_array(t, m) for t, m in zip(targets, masks)]
 
                 # Iterate over input and target batches and compute metrics
-                for input, target in zip(batched_input, batched_target):
+                for input, target in zip(inputs, targets):
                     metric_scores.append(metric_fn(target, input))
 
                 # Aggregate metrics over a batch
@@ -118,11 +117,10 @@ class ValTestMetrics:
 
         return metrics
 
-    def get_cycle_metrics(self, batched_input, batched_target):
-        batched_input, batched_target = get_npy(batched_input), get_npy(batched_target)
+    def get_cycle_metrics(self, inputs, targets):
+        inputs, targets = get_npy(inputs), get_npy(targets)
 
         metrics = {}
-        metrics["cycle_SSIM"] = [ssim(target, input) \
-                                    for input, target in zip(batched_input, batched_target)]
+        metrics["cycle_SSIM"] = [ssim(t, i) for i, t in zip(inputs, targets)]
 
         return metrics
