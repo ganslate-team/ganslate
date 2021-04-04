@@ -141,10 +141,10 @@ class CycleGAN(BaseGAN):
         rec_B = self.networks['G_AB'](fake_A)
 
         # Visuals for Identity loss
-        idt_A, idt_B = None, None
+        idt_B, idt_A = None, None
         if self.criterion_G.is_using_identity():
-            idt_A = self.networks['G_BA'](real_A)
             idt_B = self.networks['G_AB'](real_B)
+            idt_A = self.networks['G_BA'](real_A)
 
         self.visuals.update({
             'fake_B': fake_B,

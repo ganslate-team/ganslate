@@ -138,10 +138,10 @@ class RevGAN(BaseGAN):
         rec_B = self.networks['G'](fake_A)  # G_AB
 
         # Visuals for Identity loss
-        idt_A, idt_B = None, None
+        idt_B, idt_A = None, None
         if self.criterion_G.is_using_identity():
-            idt_A = self.networks['G'](real_A, inverse=True)
             idt_B = self.networks['G'](real_B)
+            idt_A = self.networks['G'](real_A, inverse=True)
 
         self.visuals.update({
             'fake_B': fake_B,

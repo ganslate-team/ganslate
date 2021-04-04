@@ -45,10 +45,10 @@ class CycleGANLosses:
         # identity loss
         if self.criterion_idt:
             if idt_A is not None and idt_B is not None:
-                losses['idt_A'] = self.lambda_A * self.criterion_idt(
-                    idt_A, real_B)  # || G_AB(real_B) - real_B ||
-                losses['idt_B'] = self.lambda_B * self.criterion_idt(
-                    idt_B, real_A)  # || G_BA(real_A) - real_A ||
+                # || G_AB(real_B) - real_B ||
+                losses['idt_A'] = self.lambda_A * self.criterion_idt(idt_A, real_B)
+                # || G_BA(real_A) - real_A ||
+                losses['idt_B'] = self.lambda_B * self.criterion_idt(idt_B, real_A)
 
             else:
                 raise ValueError(
