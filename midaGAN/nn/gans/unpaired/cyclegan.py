@@ -12,8 +12,8 @@ from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
 @dataclass
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
     """CycleGAN Optimizer Config"""
-    lambda_A: float = 10.0
-    lambda_B: float = 10.0
+    lambda_AB: float = 10.0
+    lambda_BA: float = 10.0
     lambda_identity: float = 0
     proportion_ssim: float = 0.84
 

@@ -44,8 +44,8 @@ train:
         optimizer:
             lr_D: 0.0002
             lr_G: 0.0002
-            lambda_A: 10.0
-            lambda_B: 10.0
+            lambda_AB: 10.0
+            lambda_BA: 10.0
             lambda_identity: 0
             proportion_ssim: 0
     
