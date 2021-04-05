@@ -38,17 +38,18 @@ class CycleGANLosses:
         losses = {}
 
         # cycle-consistency loss
-        losses['cycle_A'] = self.lambda_A * self.criterion_cycle(
-            real_A, rec_A)  # || G_AB(G_BA(real_A)) - real_A||
+        # || G_BA(G_AB(real_A)) - real_A||
+        losses['cycle_A'] = self.lambda_A * self.criterion_cycle(real_A, rec_A) 
+        # || G_AB(G_BA(real_B)) - real_B||
         losses['cycle_B'] = self.lambda_B * self.criterion_cycle(real_B, rec_B)
 
         # identity loss
         if self.criterion_idt:
             if idt_A is not None and idt_B is not None:
                 # || G_AB(real_B) - real_B ||
-                losses['idt_A'] = self.lambda_A * self.criterion_idt(idt_A, real_B)
+                losses['idt_B'] = self.lambda_A * self.criterion_idt(idt_B, real_B)
                 # || G_BA(real_A) - real_A ||
-                losses['idt_B'] = self.lambda_B * self.criterion_idt(idt_B, real_A)
+                losses['idt_A'] = self.lambda_B * self.criterion_idt(idt_A, real_A)
 
             else:
                 raise ValueError(
