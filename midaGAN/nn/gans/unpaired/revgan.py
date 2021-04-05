@@ -40,10 +40,7 @@ class RevGAN(BaseGAN):
         self.visuals = {name: None for name in visual_names}
 
         # Losses used by the model
-        loss_names = [
-            'G_AB', 'D_B', 'cycle_A', 'idt_A',
-            'G_BA', 'D_A', 'cycle_B', 'idt_B',
-        ]
+        loss_names = ['G_AB', 'D_B', 'cycle_A', 'idt_A', 'G_BA', 'D_A', 'cycle_B', 'idt_B']
         self.losses = {name: None for name in loss_names}
 
         # Optimizers
@@ -215,13 +212,10 @@ class RevGAN(BaseGAN):
         combined_loss_G = sum(losses_G.values()) + self.losses['G_AB'] + self.losses['G_BA']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=2)
 
-    def infer(self, input, cycle='A'):
-        assert cycle in ['A', 'B'], \
-            "Infer needs an input of either cycle with A or B domain as input"
+    def infer(self, input, direction='AB'):
+        assert direction in ['AB', 'BA'], "Specify which generator direction, AB or BA, to use."
         assert 'G' in self.networks.keys()
 
         with torch.no_grad():
-            if cycle == 'A':
-                return self.networks['G'].forward(input)
-            elif cycle == 'B':
-                return self.networks['G'].forward(input, inverse=True)
+            inverse = direction == 'BA'
+            return self.networks['G'](input, inverse=inverse)

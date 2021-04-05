@@ -42,10 +42,7 @@ class CycleGAN(BaseGAN):
         self.visuals = {name: None for name in visual_names}
 
         # Losses used by the model
-        loss_names = [
-            'G_AB', 'D_B', 'cycle_A', 'idt_A',
-            'G_BA', 'D_A', 'cycle_B', 'idt_B',
-        ]
+        loss_names = ['G_AB', 'D_B', 'cycle_A', 'idt_A', 'G_BA', 'D_A', 'cycle_B', 'idt_B']
         self.losses = {name: None for name in loss_names}
 
         # Optimizers
@@ -217,10 +214,9 @@ class CycleGAN(BaseGAN):
         combined_loss_G = sum(losses_G.values()) + self.losses['G_AB'] + self.losses['G_BA']
         self.backward(loss=combined_loss_G, optimizer=self.optimizers['G'], loss_id=0)
 
-    def infer(self, input, cycle='AB'):
-        assert cycle in ['AB', 'BA'], \
-            "Infer needs an input of either cycle with A or B domain as input"
-        assert f'G_{cycle}' in self.networks.keys()
+    def infer(self, input, direction='AB'):
+        assert direction in ['AB', 'BA'], "Specify which generator direction, AB or BA, to use."
+        assert f'G_{direction}' in self.networks.keys()
 
         with torch.no_grad():
-            return self.networks[f'G_{cycle}'].forward(input)
+            return self.networks[f'G_{direction}'](input)

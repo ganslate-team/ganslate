@@ -102,7 +102,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                                    " behavior of inference with a `cycle` flag in"
                                    " the model's `infer()` method")
 
-            rec_A = self.infer(self.visuals["fake_B"], cycle='B')
+            rec_A = self.infer(self.visuals["fake_B"], direction='BA')
             cycle_metrics = self.metricizer.get_cycle_metrics(rec_A, self.visuals["A"])
 
         metrics.update(mask_metrics)
