@@ -10,9 +10,12 @@ train:
 
     logging:
         freq: 100
+        visuals:
+            channel_split_A: [3,3]
+            channel_split_B: [3,3]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "cyclegan_trial"
+            run: "cyclegan_compsim_0.01"
         
     checkpointing:
         freq: 5000
@@ -22,11 +25,10 @@ train:
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: False
-        shuffle: True
         num_workers: 8
 
-    gan:  # TODO: Add config after implementing custom MM cycleGAN
-        name: "CycleGAN"
+    gan: 
+        name: "CycleGANMultiModal"
         generator:  
             name: "Unet2D"
             in_channels: 6
@@ -36,17 +38,18 @@ train:
 
         discriminator:  
             name: "PatchGAN2D"
-            n_layers: 3
-            in_channels: 3
+            n_layers: 4
+            in_channels: 6
             ndf: 64
 
         optimizer:
-            lr_D: 0.0002
-            lr_G: 0.0001
+            lr_D: 0.0001
+            lr_G: 0.0002
             lambda_A: 10.0
             lambda_B: 10.0
             lambda_identity: 0
             proportion_ssim: 0
+            lambda_structure: 0.01
 
     metrics:
         discriminator_evolution: True
@@ -60,7 +63,6 @@ val:
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         paired: True
-        shuffle: False
         num_workers: 8
     metrics:
         cycle_metrics: False

@@ -10,9 +10,9 @@ train:
 
     logging:
         freq: 100
-        multi_modality_split:
-            A: [3,3]
-            B: [1]
+        visuals:
+            channel_split_A: [3,3]
+            channel_split_B: [1]
         wandb:
             project: "cleargrasp_depth_estimation"
             run: "pix2pix_6layer_patchgan"
