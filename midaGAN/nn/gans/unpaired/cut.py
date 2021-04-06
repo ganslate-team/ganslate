@@ -116,13 +116,13 @@ class CUT(BaseGAN):
 
         # ------------------------ Discriminator --------------------------------------------------
         self.set_requires_grad(self.networks['D'], True)
-        self.optimizers['D'].zero_grad()
+        self.optimizers['D'].zero_grad(set_to_none=True)
         self.backward_D()
         self.optimizers['D'].step()
         # ------------------------ Generator and MLP ----------------------------------------------
         self.set_requires_grad(self.networks['D'], False)
-        self.optimizers['G'].zero_grad()
-        self.optimizers['mlp'].zero_grad()
+        self.optimizers['G'].zero_grad(set_to_none=True)
+        self.optimizers['mlp'].zero_grad(set_to_none=True)
 
         self.backward_G_and_mlp()
         self.optimizers['G'].step()

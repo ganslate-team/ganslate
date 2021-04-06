@@ -40,8 +40,8 @@ train:
             in_channels: 3
 
         optimizer:
-            lambda_A: 10.0
-            lambda_B: 10.0
+            lambda_AB: 10.0
+            lambda_BA: 10.0
             lambda_identity: 0
             proportion_ssim: 0
             lr_D: 0.0002
