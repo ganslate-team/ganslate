@@ -42,8 +42,8 @@ class StructureLoss:
         self.criterion = torch.nn.L1Loss()
 
     def __call__(self, real_A, real_B, fake_A, fake_B):
-        loss_structure_AB = self.criterion(real_A[:3], fake_B[:3])  # || G_AB(real_A)[RGB] - real_A[RGB] ||
-        loss_structure_BA = self.criterion(real_B[:3], fake_A[:3])  # || G_BA(real_B)[RGB] - real_B[RGB] ||
+        loss_structure_AB = self.criterion(real_A[:, :3], fake_B[:, :3])  # || G_AB(real_A)[RGB] - real_A[RGB] ||
+        loss_structure_BA = self.criterion(real_B[:, :3], fake_A[:, :3])  # || G_BA(real_B)[RGB] - real_B[RGB] ||
 
         loss_structure_AB = loss_structure_AB * self.lambda_A * self.lambda_structure
         loss_structure_BA = loss_structure_BA * self.lambda_B * self.lambda_structure

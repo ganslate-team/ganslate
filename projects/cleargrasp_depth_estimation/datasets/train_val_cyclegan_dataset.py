@@ -30,8 +30,8 @@ UPPER_DEPTH_INTENSITY_LIMIT = 8.0
 class ClearGraspCycleGANDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "ClearGraspCycleGANDataset"
     load_size: Tuple[int, int] = (512, 256)
-    paired: bool = False   # `True` for paired A-B  
-
+    paired: bool = False   # `True` for paired A-B.  Need paired during validation
+    fetch_rgb_b: bool = False  # Whether to fetch noisy RGB photo for domain B
 
 
 class ClearGraspCycleGANDataset(Dataset):
@@ -41,7 +41,8 @@ class ClearGraspCycleGANDataset(Dataset):
     Here, the GAN translation task is:   RGB + Normalmap --> Depthmap 
     This is the CycleGAN version:  
         Domain A:  RGB photo and Normalmap
-        Domain B:  Noisy RGB photo and Depthmap  
+        Domain B:  Several options -- (1) Depthmap (used with CycleGAN multimodal v1)
+                                      (2) Noisy RGB photo and Depthmap (used with v2 and v3) 
     """
     def __init__(self, conf):
         
@@ -61,7 +62,8 @@ class ClearGraspCycleGANDataset(Dataset):
             size=(self.load_size[1], self.load_size[0]), interpolation=transforms.InterpolationMode.BICUBIC
             )
         
-        self.paired = conf[conf.mode].dataset.paired  # Need paired during validation
+        self.paired = conf[conf.mode].dataset.paired 
+        self.fetch_rgb_b = conf[conf.mode].dataset.fetch_rgb_b 
 
 
     def __getitem__(self, index):
@@ -69,13 +71,13 @@ class ClearGraspCycleGANDataset(Dataset):
         index_B = index_A if self.paired else random.randint(0, self.dataset_size - 1)
         
         rgb_A_path = self.rgb_paths[index_A]
-        normal_path = self.normal_paths[index_A]        
-        rgb_B_path = self.rgb_paths[index_B]
+        normal_path = self.normal_paths[index_A] 
+        rgb_B_path = self.rgb_paths[index_B] if self.fetch_rgb_b else None
         depth_path = self.depth_paths[index_B]
 
         rgb_A = read_rgb_to_tensor(rgb_A_path)
         normalmap = read_normalmap_to_tensor(normal_path)
-        rgb_B = read_rgb_to_tensor(rgb_B_path)
+        rgb_B = read_rgb_to_tensor(rgb_B_path) if self.fetch_rgb_b else torch.zeros_like(rgb_A)
         depthmap = read_depthmap_to_tensor(depth_path)
 
         # Resize
@@ -94,9 +96,16 @@ class ClearGraspCycleGANDataset(Dataset):
         rgb_B = rgb_B + torch.normal(mean=0, std=0.1, size=(self.load_size[1], self.load_size[0]))
         rgb_B = torch.clamp(rgb_B, -1, 1)  # Clip to remove out-of-range overshoots
 
-        return {'A': torch.cat([rgb_A, normalmap], dim=0),  
-                'B': torch.cat([rgb_B, depthmap, depthmap, depthmap], dim=0)}
+        # Prepare A and B
+        # TODO: Depthmaps are repeated in B to match the n_channels of A
+        #       because both G's must have same config. Can implement support for separate G config?
+        A = torch.cat([rgb_A, normalmap], dim=0)
+        if self.fetch_rgb_b:
+            B = torch.cat([rgb_B, depthmap, depthmap, depthmap], dim=0)  
+        else:
+            B = torch.repeat_interleave(depthmap, repeats=6, dim=0)
 
+        return {'A': A, 'B': B}
 
 
     def __len__(self):

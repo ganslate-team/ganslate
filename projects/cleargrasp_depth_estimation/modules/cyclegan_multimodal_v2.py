@@ -28,7 +28,7 @@ class CycleGANMultiModalV2(cyclegan.CycleGAN):
         super().__init__(conf)
 
         # Additional losses used by the model
-        structure_loss_names = ['structure_BA', 'structure_BA']
+        structure_loss_names = ['structure_AB', 'structure_BA']
         self.losses.update({name: None for name in structure_loss_names})
 
 
