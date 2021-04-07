@@ -84,9 +84,6 @@ class ClearGraspPix2PixDataset(Dataset):
         # Normalize
         rgb_img, normalmap, depthmap = self.normalize(rgb_img, normalmap, depthmap)
 
-        # Make 3-channel image from 1-channel
-        # depthmap = torch.cat([depthmap,depthmap,depthmap], dim=0)
-
         return {'A': torch.cat([rgb_img, normalmap], dim=0),  'B': depthmap}
 
 

@@ -3,7 +3,7 @@
 
 # Job configuration ---
 
-#SBATCH --job-name=cleargrasp_depth_estimation_pix2pix
+#SBATCH --job-name=cleargrasp_depth_estimation_cyclegan
 #SBATCH --output=/home/zk315372/Chinmay/Git/midaGAN/projects/cleargrasp_depth_estimation/slurm_logs/%j.log
 
 ## OpenMP settings
@@ -30,7 +30,7 @@ echo; echo
 # Execute training
 python_interpreter="/home/zk315372/miniconda3/envs/gan_env/bin/python3"
 training_file="/home/zk315372/Chinmay/Git/midaGAN/tools/train.py"
-config_file="/home/zk315372/Chinmay/Git/midaGAN/projects/cleargrasp_depth_estimation/experiments/pix2pix.yaml"
+config_file="/home/zk315372/Chinmay/Git/midaGAN/projects/cleargrasp_depth_estimation/experiments/cyclegan.yaml"
 
 CUDA_VISIBLE_DEVICES=0 $python_interpreter $training_file config=$config_file
 
