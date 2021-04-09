@@ -15,8 +15,9 @@ class AdaptiveTrainingConfig:
     change_rate: float = 0.01
 
     # Number of samples to consider for the rt factor
-    sample_size: int = 64*4
-    
+    sample_size: int = 256
+    freq: int = 1000
+
     # TODO: Add link to paper where rt is described
     rt: float = 0.6
 
@@ -40,6 +41,7 @@ class AdaptiveCycleGAN(cyclegan.CycleGAN):
         
         self.change_rate = self.adaptive_training_config.change_rate
         self.rt_factor = self.adaptive_training_config.rt
+        self.freq = self.adaptive_training_config.freq
         self.max_lambda = 50
 
     def reset_sample_pool(self):
@@ -48,18 +50,23 @@ class AdaptiveCycleGAN(cyclegan.CycleGAN):
     def init_optimizers(self):
         super().init_optimizers()
         self.init_adaptive_training()
+        self.iter = 1
 
     def backward_D(self, discriminator):
         super().backward_D(discriminator)
 
+        self.iter += 1
+        D_generated = self.pred_fake.clone()
+        n_samples = len(D_generated)
         if len(self.sample_pool) < self.sample_size:
-            # Look at D_generated instead of D_real
-            # Paper looks at D_real
-            D_generated = self.pred_fake.clone()
             current_samples = [(_D_generated > 0.5).float().mean() for _D_generated in D_generated]
             self.sample_pool.extend(current_samples)
+        elif self.iter != self.freq:
+            del self.sample_pool[0:n_samples]
         else:
+            print(f"Adapting training with {len(self.sample_pool)}")
             self.adapt_training()
+            self.iter = 1
         
     def adapt_training(self):
         self.current_rt = torch.mean(torch.Tensor(self.sample_pool))
