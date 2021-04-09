@@ -60,11 +60,8 @@ class AerialMapsValDataset(Dataset):
 
         dummy_mask = np.zeros(A.shape)
         dummy_mask[0:A.shape[0]//2, 0:A.shape[1]//2] = 1
-        masks = {
-            "dummy": dummy_mask
-        }
 
-        return {'A': A, 'B': B, "masks": masks}
+        return {'A': A, 'B': B}
 
     def __len__(self):
         return self.size

@@ -51,7 +51,9 @@ train:
 
         adaptive_training:
             adaptive_lambda: True
-            rt: 0.6
+            patience: 100
+            freq: 1000
+            warmup_iter: 5000
 
 
 val:

@@ -13,13 +13,11 @@ class AdaptiveTrainingConfig:
     adaptive_lr: bool = False
     
     change_rate: float = 0.01
+    change_mode: str = "threshold"
 
-    # Number of samples to consider for the rt factor
-    sample_size: int = 256
-    freq: int = 1000
-
-    # TODO: Add link to paper where rt is described
-    rt: float = 0.6
+    patience: int = 100
+    freq: int = 100
+    warmup_iter: int = 20
 
 
 @dataclass
@@ -31,17 +29,22 @@ class AdaptiveCycleGANConfig(cyclegan.CycleGANConfig):
 
 class AdaptiveCycleGAN(cyclegan.CycleGAN):
     def init_adaptive_training(self):
+        self.iter = 1
+
         self.sample_pool = []
         self.adaptive_training_config = self.conf[self.conf.mode].gan.adaptive_training
-        self.sample_size = self.adaptive_training_config.sample_size
         
         # Check what adaptive mode is enabled.
         self.adaptive_lambda = self.adaptive_training_config.adaptive_lambda
         self.adaptive_lr = self.adaptive_training_config.adaptive_lr
         
         self.change_rate = self.adaptive_training_config.change_rate
-        self.rt_factor = self.adaptive_training_config.rt
+        self.change_mode = self.adaptive_training_config.change_mode
+
+        self.patience = self.adaptive_training_config.patience
         self.freq = self.adaptive_training_config.freq
+        self.warmup_iter = self.adaptive_training_config.warmup_iter
+
         self.max_lambda = 50
 
     def reset_sample_pool(self):
@@ -50,43 +53,51 @@ class AdaptiveCycleGAN(cyclegan.CycleGAN):
     def init_optimizers(self):
         super().init_optimizers()
         self.init_adaptive_training()
-        self.iter = 1
 
-    def backward_D(self, discriminator):
-        super().backward_D(discriminator)
+    def optimize_parameters(self):
+        super().optimize_parameters()
+
+        if self.iter > self.warmup_iter:
+            if self.iter % self.freq == 0:
+                self.adapt_training()
+                self.reset_sample_pool()
+
+            else:
+                # Keep only as many samples as in the patience parameter
+                if self.iter % self.patience:
+                    self.reset_sample_pool()
+
+                current_sample = {
+                    "cycle_A": self.losses['cycle_A'],
+                    "cycle_B": self.losses['cycle_B']
+                }
+
+                self.sample_pool.append(current_sample)
 
         self.iter += 1
-        D_generated = self.pred_fake.clone()
-        n_samples = len(D_generated)
-        if len(self.sample_pool) < self.sample_size:
-            current_samples = [(_D_generated > 0.5).float().mean() for _D_generated in D_generated]
-            self.sample_pool.extend(current_samples)
-        elif self.iter != self.freq:
-            del self.sample_pool[0:n_samples]
-        else:
-            print(f"Adapting training with {len(self.sample_pool)}")
-            self.adapt_training()
-            self.iter = 1
-        
-    def adapt_training(self):
-        self.current_rt = torch.mean(torch.Tensor(self.sample_pool))
-        self.metrics['rt'] = self.current_rt
 
-        # If current rt is greater than set rt_factor, D
-        # is largely predicting generated voxels as real,
-        # increase lambda rate so that G focuses less on adversarial
-        if self.current_rt > self.rt_factor:
-            if self.adaptive_lambda:
+
+    def adapt_training(self):
+        print("Samples=", len(self.sample_pool))
+        min_cycle_A = np.min([loss["cycle_A"] for loss in self.sample_pool])
+        min_cycle_B = np.min([loss["cycle_B"] for loss in self.sample_pool])
+
+        # Check the aggregated sample pool for
+        if self.losses['cycle_A'] >= min_cycle_A:
+            if self.change_mode == "threshold":
                 self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 + self.change_rate)
+
+            elif self.change_mode == "relative":
+                change_rate = (self.prev_sample['cycle_A'] - self.losses['cycle_A'])/self.prev_sample['cycle_A']
+                self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 + change_rate)
+
+        if self.losses['cycle_B'] >= min_cycle_B:
+            if self.change_mode == "threshold":
                 self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 + self.change_rate)
 
-        # If current rt is smaller than set rt_factor, D is not
-        # discriminative, decrease lambda rate so that G can 
-        # focus on adversarial till D catches up
-        if self.current_rt < self.rt_factor:
-            if self.adaptive_lambda:
-                self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 - self.change_rate)
-                self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 - self.change_rate)
+            elif self.change_mode == "relative":
+                change_rate = (self.prev_sample['cycle_B'] - self.losses['cycle_B'])/self.prev_sample['cycle_B']
+                self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 + change_rate)
 
         # Clip lambda values between 0 and max_lambda parameter
         self.criterion_G.lambda_A = np.clip(self.criterion_G.lambda_A, 0, self.max_lambda)
@@ -94,6 +105,6 @@ class AdaptiveCycleGAN(cyclegan.CycleGAN):
 
         self.metrics['lambda_A'] = torch.tensor(self.criterion_G.lambda_A)
         self.metrics['lambda_B'] = torch.tensor(self.criterion_G.lambda_B)
+        print(f"Adapting training with lambda_A={self.metrics['lambda_A']} and lambda_B={self.metrics['lambda_B']} ")
 
-        self.reset_sample_pool()
 
