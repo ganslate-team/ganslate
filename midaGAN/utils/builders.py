@@ -78,16 +78,24 @@ def build_gan(conf):
     return model
 
 
-def build_G(conf, device):
-    return build_network_by_role('generator', conf, device)
+def build_G(conf, direction, device):
+    assert direction in ['AB', 'BA']
+    return build_network_by_role('generator', conf, direction, device)
 
 
-def build_D(conf, device):
-    return build_network_by_role('discriminator', conf, device)
+def build_D(conf, domain, device):
+    assert domain in ['B', 'A'] 
+    return build_network_by_role('discriminator', conf, domain, device)
 
 
-def build_network_by_role(role, conf, device):
-    """Builds a discriminator or generator. TODO: document """
+def build_network_by_role(role, conf, label, device):
+    """Builds a discriminator or generator. TODO: document better 
+    Parameters:
+            role -- `generator` or `discriminator`
+            conf -- conf
+            label -- role-specific label 
+            device -- torch device 
+    """
     assert role in ['discriminator', 'generator']
 
     name = conf.train.gan[role].name
@@ -96,6 +104,20 @@ def build_network_by_role(role, conf, device):
     network_args = dict(conf.train.gan[role])
     network_args.pop("name")
     network_args["norm_type"] = conf.train.gan.norm_type
+    
+    # Handle the network's channels settings
+    if role == 'generator':
+        # Split, for example, `in_out_channels_AB` into `in_channels` and `out_channels` arguments
+        network_args["in_channels"], network_args["out_channels"] = \
+                                     conf.train.gan.generator[f"in_out_channels_{label}" ]   
+        # Remove keys that are invalid class arguments
+        _ = [network_args.pop(key, None) for key in ("in_out_channels", "in_out_channels_AB", "in_out_channels_BA")]
+    
+    elif role == 'discriminator':
+        # Obtain `in_channels` value from, for example, `in_channels_B`
+        network_args["in_channels"] = conf.train.gan.discriminator[f"in_channels_{label}" ]
+        # Remove keys that are invalid class arguments
+        _ = [network_args.pop(key, None) for key in ("in_channels_B", "in_channels_A")]
 
     network = network_class(**network_args)
     return init_net(network, conf, device)

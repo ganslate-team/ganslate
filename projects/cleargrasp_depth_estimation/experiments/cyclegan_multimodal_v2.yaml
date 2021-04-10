@@ -3,44 +3,45 @@ project_dir: "./projects/cleargrasp_depth_estimation/"
 train:
     output_dir: "./checkpoints/cleargrasp_depth_estimation/"
     cuda: True
-    n_iters: 250000      # 2500 (images) x 100 ("epochs")
-    n_iters_decay: 5000
-    batch_size: 1
+    n_iters: 250000      # (2500 (images) / 2 (batch_size)) x 200 ("epochs")
+    n_iters_decay: 5000  # Extra 5000 iters with lr decay
+    batch_size: 2
     mixed_precision: False
 
     logging:
         freq: 50
         multi_modality_split:
             A: [3, 3]
-            B: [3, 3]
+            B: [3, 1]
         wandb:
             project: "cleargrasp_depth_estimation"
             run: "cyclegan_structure_1"
         
     checkpointing:
-        freq: 5000
+        freq: 10000
 
     dataset: 
         name: "ClearGraspCycleGANDataset"
-        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
+        root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: False
-        fetch_rgb_b: True
+        fetch_rgb_b: True  # `True` for v2 
         num_workers: 8
 
     gan: 
         name: "CycleGANMultiModalV2"
         generator:  
             name: "Unet2D"
-            in_channels: 6
-            out_channels: 6
+            in_out_channels_AB: [6, 4]
+            in_out_channels_BA: [4, 6]
             num_downs: 5
             ngf: 64
 
         discriminator:  
             name: "PatchGAN2D"
+            in_channels_B: 4
+            in_channels_A: 6
             n_layers: 4
-            in_channels: 6
             ndf: 64
 
         optimizer:
@@ -61,7 +62,7 @@ val:
     freq: 5000
     dataset: 
         name: "ClearGraspCycleGANDataset"
-        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
+        root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         paired: True
         num_workers: 8

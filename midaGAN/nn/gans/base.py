@@ -45,12 +45,25 @@ class BaseGAN(ABC):
         self.optimizers = {}
         self.networks = {}
 
-    def init_networks(self):
-        for name in self.networks.keys():
+    def init_networks(self):      
+          
+        for name in self.networks.keys():        
+            
+            # Generator
             if name.startswith('G'):
-                self.networks[name] = build_G(self.conf, self.device)
+                # Direction of the generator. `AB` by default, in case of uni-directional models like Pix2Pix and CUT.
+                # In case of CycleGAN, it is inferred from the network name (i.e. from `G_AB` or `G_BA`).
+                direction = name.split('_')[-1] if name.endswith('_AB') or name.endswith('_BA') \
+                            else 'AB'
+                self.networks[name] = build_G(self.conf, direction, self.device)            
+            
+            # Discriminator
             elif name.startswith('D'):
-                self.networks[name] = build_D(self.conf, self.device)
+                # Domain of the discriminator. `B` by default, in case of uni-directional models like Pix2Pix and CUT.
+                # In case of CycleGAN, it is inferred from the network name (i.e. from `D_B` or `D_A`).
+                domain = name.split('_')[-1] if name.endswith('_B') or name.endswith('_A') \
+                         else 'B'
+                self.networks[name] = build_D(self.conf, domain, self.device)
 
     @abstractmethod
     def init_criterions(self):

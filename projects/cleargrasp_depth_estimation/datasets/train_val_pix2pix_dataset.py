@@ -31,7 +31,6 @@ UPPER_DEPTH_INTENSITY_LIMIT = 8.0
 class ClearGraspPix2PixDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "ClearGraspPix2PixDataset"
     load_size: Tuple[int, int] = (512, 256)
-    paired: bool = True   # `True` for paired A-B  
 
 
 class ClearGraspPix2PixDataset(Dataset):
@@ -41,7 +40,7 @@ class ClearGraspPix2PixDataset(Dataset):
     Here, the GAN translation task is:   RGB + Normalmap --> Depthmap  
     This is the Pix2Pix version:  
         Domain A:  RGB and Normalmap
-        Domain B:  Depthmap  
+        Domain B:  Depthmap  (paired with A)
     """
     def __init__(self, conf):
         
@@ -79,7 +78,7 @@ class ClearGraspPix2PixDataset(Dataset):
         depthmap = self.load_resize_transform(depthmap)
 
         # Transforms
-        rgb, normalmap, depthmap = self.apply_transforms(rgb_img, normalmap, depthmap)
+        rgb_img, normalmap, depthmap = self.apply_transforms(rgb_img, normalmap, depthmap)
 
         # Normalize
         rgb_img, normalmap, depthmap = self.normalize(rgb_img, normalmap, depthmap)

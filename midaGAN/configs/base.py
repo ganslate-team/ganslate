@@ -27,15 +27,26 @@ class BaseOptimizerConfig:
 
 @dataclass
 class BaseDiscriminatorConfig:
+    # `in_channels` to be specified for uni-directional models like Pix2Pix and CUT.
+    # `in_channels_B` and `in_channels_A` to be specified for CycleGAN. If only `in_channels_B` 
+    # is specified, `in_channels_A` takes the same value by default.
     name: str = MISSING
-    in_channels: int = MISSING
+    in_channels: Optional[int] = None
+    in_channels_B: Optional[int] = II("train.gan.discriminator.in_channels")
+    in_channels_A: Optional[int] = II("train.gan.discriminator.in_channels_B")
 
 
 @dataclass
 class BaseGeneratorConfig:
+    # `in_out_channels` to be specified for uni-directional models like Pix2Pix and CUT.
+    # `in_out_channels_AB` and `in_out_channels_BA` to be specified for CycleGAN. If only `in_out_channels_AB` 
+    # is specified, then `in_out_channels_BA` is assumed to have the same value.
+    # TODO: Currently, `in_out_channels_BA` takes, by default, same value as `in_out_channels_AB` if not given explicitly.
+    #       Would work in most/all of our existing projects, but need to make it reverse-ordered to be more sensible.
     name: str = MISSING
-    in_channels: int = MISSING
-    out_channels: int = MISSING
+    in_out_channels: Optional[Tuple[int, int]] = None
+    in_out_channels_AB: Optional[Tuple[int, int]] = II("train.gan.generator.in_out_channels")
+    in_out_channels_BA: Optional[Tuple[int, int]] = II("train.gan.generator.in_out_channels_AB")
 
 
 @dataclass

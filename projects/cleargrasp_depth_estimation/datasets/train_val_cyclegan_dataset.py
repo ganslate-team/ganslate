@@ -72,7 +72,7 @@ class ClearGraspCycleGANDataset(Dataset):
         
         rgb_A_path = self.rgb_paths[index_A]
         normal_path = self.normal_paths[index_A] 
-        rgb_B_path = self.rgb_paths[index_B] if self.fetch_rgb_b else None
+        rgb_B_path = self.rgb_paths[index_B]  if self.fetch_rgb_b  else None
         depth_path = self.depth_paths[index_B]
 
         rgb_A = read_rgb_to_tensor(rgb_A_path)
@@ -93,19 +93,19 @@ class ClearGraspCycleGANDataset(Dataset):
         rgb_A, normalmap, rgb_B, depthmap = self.normalize(rgb_A, normalmap, rgb_B, depthmap)
 
         # Add noise in B's RGB photo
-        rgb_B = rgb_B + torch.normal(mean=0, std=0.1, size=(self.load_size[1], self.load_size[0]))
-        rgb_B = torch.clamp(rgb_B, -1, 1)  # Clip to remove out-of-range overshoots
+        if self.fetch_rgb_b:
+            rgb_B = rgb_B + torch.normal(mean=0, std=0.1, size=(self.load_size[1], self.load_size[0]))
+            rgb_B = torch.clamp(rgb_B, -1, 1)  # Clip to remove out-of-range overshoots
 
         # Prepare A and B
-        # TODO: Depthmaps are repeated in B to match the n_channels of A
-        #       because both G's must have same config. Can implement support for separate G config?
         A = torch.cat([rgb_A, normalmap], dim=0)
         if self.fetch_rgb_b:
-            B = torch.cat([rgb_B, depthmap, depthmap, depthmap], dim=0)  
+            B = torch.cat([rgb_B, depthmap], dim=0)  
         else:
-            B = torch.repeat_interleave(depthmap, repeats=6, dim=0)
+            B = depthmap
 
         return {'A': A, 'B': B}
+
 
 
     def __len__(self):
@@ -132,10 +132,18 @@ class ClearGraspCycleGANDataset(Dataset):
         
         # Normalize
         rgb_A = (rgb_A - rgb_min) / (rgb_max - rgb_min) * 2 - 1
-        rgb_B = (rgb_B - rgb_min) / (rgb_max - rgb_min) * 2 - 1
+        if self.fetch_rgb_b:
+            rgb_B = (rgb_B - rgb_min) / (rgb_max - rgb_min) * 2 - 1
         depthmap = (depthmap - depthmap_min) / (depthmap_max - depthmap_min) * 2 - 1
-        return torch.clamp(rgb_A, -1, 1), torch.clamp(normalmap, -1, 1), \
-               torch.clamp(rgb_B, -1, 1), torch.clamp(depthmap, -1, 1) 
+        
+        # Clip to remove out-of-range overshoots
+        rgb_A = torch.clamp(rgb_A, -1, 1)
+        normalmap = torch.clamp(normalmap, -1, 1)
+        if self.fetch_rgb_b:
+            rgb_B = torch.clamp(rgb_B, -1, 1)
+        depthmap = torch.clamp(depthmap, -1, 1)
+
+        return rgb_A, normalmap, rgb_B, depthmap
 
 
 

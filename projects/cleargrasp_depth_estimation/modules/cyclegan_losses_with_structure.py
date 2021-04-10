@@ -12,7 +12,7 @@ class CycleGANLossesWithStructure(cyclegan_losses.CycleGANLosses):
         lambda_structure = conf.train.gan.optimizer.lambda_structure
 
         if lambda_structure > 0:
-            self.criterion_structure = StructureLoss(lambda_structure, self.lambda_A, self.lambda_B)
+            self.criterion_structure = StructureLoss(lambda_structure)
         else: 
             self.criterion_structure = None
 
@@ -24,27 +24,24 @@ class CycleGANLossesWithStructure(cyclegan_losses.CycleGANLosses):
         
         # A1-B1 structure-consistency loss
         if self.criterion_structure is not None:
-            losses['structure_AB'], losses['structure_BA'] = self.criterion_structure(real_A, real_B, fake_A, fake_B)
+            # || G_AB(real_A)[RGB] - real_A[RGB] ||
+            losses['structure_AB'] = self.lambda_AB * self.criterion_structure(real_A, fake_B)
+            # || G_BA(real_B)[RGB] - real_B[RGB] ||
+            losses['structure_BA'] = self.lambda_BA * self.criterion_structure(real_B, fake_A)
 
         return losses
 
 
 class StructureLoss:
     """
-    Structure-consistency loss --  Yang et al. (2018) - Unpaired Brain MR-to-CT Synthesis using a Structure-Constrained CycleGAN  
-    Using L1 now for simplicity. TODO: Change to MIND loss (https://github.com/tomosu/MIND-pytorch)
+    Structure-consistency loss -- Yang et al. (2018) - Unpaired Brain MR-to-CT Synthesis using a Structure-Constrained CycleGAN  
+    Using L1 now for simplicity.  TODO: Change to MIND loss (https://github.com/tomosu/MIND-pytorch)
     Applied here to constrain the A1 and B1 components (here, RGB photos) of multi-modal A and B to have same content
     """
-    def __init__(self, lambda_structure, lambda_A, lambda_B):
+    def __init__(self, lambda_structure):
         self.lambda_structure = lambda_structure
-        self.lambda_A = lambda_A
-        self.lambda_B = lambda_B
         self.criterion = torch.nn.L1Loss()
 
-    def __call__(self, real_A, real_B, fake_A, fake_B):
-        loss_structure_AB = self.criterion(real_A[:, :3], fake_B[:, :3])  # || G_AB(real_A)[RGB] - real_A[RGB] ||
-        loss_structure_BA = self.criterion(real_B[:, :3], fake_A[:, :3])  # || G_BA(real_B)[RGB] - real_B[RGB] ||
-
-        loss_structure_AB = loss_structure_AB * self.lambda_A * self.lambda_structure
-        loss_structure_BA = loss_structure_BA * self.lambda_B * self.lambda_structure
-        return loss_structure_AB, loss_structure_BA
+    def __call__(self, input_, translated):
+        loss_structure = self.criterion(input_[:, :3], translated[:, :3])  
+        return loss_structure * self.lambda_structure

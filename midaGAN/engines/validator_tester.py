@@ -97,9 +97,9 @@ class BaseValTestEngine(BaseEngineWithInference):
         # Cycle Metrics
         cycle_metrics = {}
         if self.conf[self.conf.mode].metrics.cycle_metrics:
-            if "cycle" not in self.model.infer.__code__.co_varnames:
+            if "direction" not in self.model.infer.__code__.co_varnames:
                 raise RuntimeError("If cycle metrics are enabled, please define"
-                                   " behavior of inference with a `cycle` flag in"
+                                   " behavior of inference with a `direction` flag in"
                                    " the model's `infer()` method")
 
             rec_A = self.infer(self.visuals["fake_B"], direction='BA')
