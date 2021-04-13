@@ -1,11 +1,11 @@
 project_dir: "./projects/cleargrasp_depth_estimation/"
 
 train:
-    output_dir: "./checkpoints/cleargrasp_depth_estimation/"
+    output_dir: "./checkpoints/cleargrasp_cyclegan_v1/"
     cuda: True
-    n_iters: 250000      # (2500 (images) / 2 (batch_size)) x 200 ("epochs")
+    n_iters: 250000      # (2500 (images) / 1 (batch_size)) x 100 ("epochs")
     n_iters_decay: 5000  # Extra 5000 iters with lr decay
-    batch_size: 2
+    batch_size: 1
     mixed_precision: False
 
     logging:
@@ -15,7 +15,7 @@ train:
             B: [1]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "cyclegan_v1_trial"
+            run: "cyclegan_v1"
         
     checkpointing:
         freq: 10000
@@ -58,7 +58,7 @@ train:
 
 
 val:
-    freq: 400
+    freq: 5000
     dataset: 
         name: "ClearGraspCycleGANDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"

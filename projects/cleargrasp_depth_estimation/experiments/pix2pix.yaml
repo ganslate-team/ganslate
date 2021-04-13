@@ -5,7 +5,7 @@ train:
     cuda: True
     n_iters: 125000      # (2500 (images) / 2 (batch_size)) x 100 ("epochs")
     n_iters_decay: 5000  # Extra 5000 iters with lr decay
-    batch_size: 2
+    batch_size: 1
     mixed_precision: False
 
     logging:
@@ -15,7 +15,7 @@ train:
             B: [1]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "pix2pix_lambda_1"
+            run: "pix2pix_lambda_10_batchsize_1"
         
     checkpointing:
         freq: 10000
@@ -45,7 +45,7 @@ train:
         optimizer:
             lr_D: 0.0001
             lr_G: 0.0002
-            lambda_pix2pix: 1.0
+            lambda_pix2pix: 10
     
     metrics:
         discriminator_evolution: True
@@ -58,7 +58,6 @@ val:
         name: "ClearGraspPix2PixDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
-        paired: True
         num_workers: 8
     metrics:
         cycle_metrics: False
