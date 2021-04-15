@@ -64,6 +64,7 @@ val:
         root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         paired: True
+        fetch_rgb_b: False  # `False` for v1 
         num_workers: 8
     metrics:
         cycle_metrics: True

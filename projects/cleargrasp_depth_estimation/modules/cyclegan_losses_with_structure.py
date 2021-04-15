@@ -4,19 +4,21 @@ import torch
 from midaGAN.nn.losses import cyclegan_losses
 
 
-MIND_DESCRIPTOR_CONFIG = {'non_local_region_size': 9, 'patch_size': 7, 'neighbor_size': 3, 'gaussian_patch_sigma': 3.0}
+MIND_DESCRIPTOR_CONFIG = {'non_local_region_size': 9, 'patch_size': 7, 'neighbor_size': 3, 'gaussian_patch_sigma': 2.0}
 
 
 class CycleGANLossesWithStructure(cyclegan_losses.CycleGANLosses):
-    """ Additonal constraint: Structure-consistency loss """
+    """ Additonal constraint:  Structure-consistency loss """
 
-    def __init__(self, conf):
+    def __init__(self, conf, cyclegan_design_version):
         super().__init__(conf)
 
         lambda_structure = conf.train.gan.optimizer.lambda_structure
+        use_cuda = conf.train.cuda
+        self.cyclegan_design_version = cyclegan_design_version
 
         if lambda_structure > 0:
-            self.criterion_structure = StructureLoss(lambda_structure)
+            self.criterion_structure = StructureLoss(lambda_structure, use_cuda, cyclegan_design_version)
         else: 
             self.criterion_structure = None
 
@@ -26,11 +28,11 @@ class CycleGANLossesWithStructure(cyclegan_losses.CycleGANLosses):
 
         losses = super().__call__(visuals)
         
-        # A1-B1 structure-consistency loss
+        # A2-B2 structure-consistency loss
         if self.criterion_structure is not None:
-            # || G_AB(real_A)[RGB] - real_A[RGB] ||
+            # MINDLoss(G_AB(real_A)[Depthmap], real_A[Normalmap])
             losses['structure_AB'] = self.lambda_AB * self.criterion_structure(real_A, fake_B)
-            # || G_BA(real_B)[RGB] - real_B[RGB] ||
+            # MINDLoss(G_BA(real_B)[Normalmap], real_B[Depthmap])
             losses['structure_BA'] = self.lambda_BA * self.criterion_structure(real_B, fake_A)
 
         return losses
@@ -39,34 +41,61 @@ class CycleGANLossesWithStructure(cyclegan_losses.CycleGANLosses):
 class StructureLoss:
     """
     Structure-consistency loss -- Yang et al. (2018) - Unpaired Brain MR-to-CT Synthesis using a Structure-Constrained CycleGAN  
-    Applied here to constrain the A1 and B1 components (here, RGB photos) of multi-modal A and B to have same content
+    Applied here in 2 different ways: 
+        v1 -- Between A2 component (normalmap) and B (depthmap) 
+        v2 -- Between A2 (normalmap )and B2 (depthmap) components 
     """
-    def __init__(self, lambda_structure):
+    def __init__(self, lambda_structure, use_cuda, cyclegan_design_version):
         self.lambda_structure = lambda_structure
-        self.mind_descriptor_config = MIND_DESCRIPTOR_CONFIG
-        self.mind_descriptor = MINDDescriptor(**self.mind_descriptor_config).cuda().eval() # TODO: Do .cuda() in a better way
+        self.cyclegan_design_version = cyclegan_design_version
+
+        self.nl_size = MIND_DESCRIPTOR_CONFIG['non_local_region_size']
+        self.mind_descriptor = MINDDescriptor(**MIND_DESCRIPTOR_CONFIG) 
+        if use_cuda: 
+            self.mind_descriptor = self.mind_descriptor.cuda()
 
     def __call__(self, input_, fake):
-
-        # Take RGB photo components
-        input_rgb, fake_rgb = input_[:, :3], fake[:, :3] 
         
-        # Convert to single channel grayscale (descriptor requires this)
-        input_rgb = input_rgb.mean(dim=1).unsqueeze(dim=1) 
-        fake_rgb = fake_rgb.mean(dim=1).unsqueeze(dim=1) 
+        if self.cyclegan_design_version == 'v1':
+            # Get depthmap and normalmap from appropriate tensors
+            if fake.shape[1] == 1:
+                depthmap = fake
+                normalmap = input_[:, 3:]
+            elif fake.shape[1] == 6:
+                depthmap = input_
+                normalmap = fake[:, 3:]
+            
+            # Convert normalmap to single channel grayscale (descriptor requires this)             
+            normalmap = normalmap.mean(dim=1).unsqueeze(dim=1) 
 
-        # Extract MIND features and compute loss
-        input_features = self.mind_descriptor(input_rgb)
-        fake_features = self.mind_descriptor(fake_rgb)
-        l1_distance = torch.norm(input_features - fake_features, 1)
-        loss_structure = l1_distance / (input_.shape[2] * input_.shape[3] * self.mind_descriptor_config['non_local_region_size']**2)
+            # Extract MIND features
+            depthmap_features = self.mind_descriptor(depthmap)
+            normalmap_features = self.mind_descriptor(normalmap)
+            feature_diff = depthmap_features - normalmap_features
+            
+        elif self.cyclegan_design_version == 'v2':
+            # Take the 2nd modality from each tensor
+            input_2nd_mod, fake_2nd_mod = input_[:, 3:], fake[:, 3:] 
+
+            # Convert to single channel grayscale (descriptor requires this)
+            input_2nd_mod = input_2nd_mod.mean(dim=1).unsqueeze(dim=1) 
+            fake_2nd_mod = fake_2nd_mod.mean(dim=1).unsqueeze(dim=1) 
+
+            # Extract MIND features
+            input_features = self.mind_descriptor(input_2nd_mod)
+            fake_features = self.mind_descriptor(fake_2nd_mod)
+            feature_diff = input_features - fake_features
+        
+        # Compute loss
+        l1_distance = torch.norm(feature_diff, 1)
+        loss_structure = l1_distance / (input_.shape[2] * input_.shape[3] * self.nl_size * self.nl_size)
         return loss_structure * self.lambda_structure
 
 
 class MINDDescriptor(torch.nn.Module):
     """
     Taken from the public repository -- https://github.com/tomosu/MIND-pytorch.
-    Minor changes made for readability.
+    Minor changes made in style for better readability.
     """
     def __init__(self, non_local_region_size=9, patch_size=7, neighbor_size=3, gaussian_patch_sigma=3.0):
         super().__init__()
@@ -75,7 +104,7 @@ class MINDDescriptor(torch.nn.Module):
         self.n_size = neighbor_size
         self.sigma2 = gaussian_patch_sigma * gaussian_patch_sigma
 
-        # calc shifted images in non local region
+        # Calculate shifted images in non-local region
         self.image_shifter = torch.nn.Conv2d(in_channels=1, out_channels=self.nl_size * self.nl_size,
                                             kernel_size=(self.nl_size, self.nl_size),
                                             stride=1, padding=((self.nl_size - 1) // 2, (self.nl_size - 1) // 2),
@@ -86,14 +115,14 @@ class MINDDescriptor(torch.nn.Module):
             t[0, i % self.nl_size, i // self.nl_size] = 1
             self.image_shifter.weight.data[i] = t
 
-        # patch summation
+        # Patch summation
         self.summation_patcher = torch.nn.Conv2d(in_channels=self.nl_size * self.nl_size, out_channels=self.nl_size * self.nl_size,
                                               kernel_size=(self.p_size, self.p_size),
                                               stride=1, padding=((self.p_size - 1) // 2, (self.p_size - 1) // 2),
                                               dilation=1, groups=self.nl_size * self.nl_size, bias=False, padding_mode='zeros')
 
         for i in range(self.nl_size * self.nl_size):
-            # gaussian kernel
+            # Gaussian kernel
             t = torch.zeros((1, self.p_size, self.p_size))
             cx = (self.p_size - 1) // 2
             cy = (self.p_size - 1) // 2
@@ -105,7 +134,7 @@ class MINDDescriptor(torch.nn.Module):
 
             self.summation_patcher.weight.data[i] = t
 
-        # neighbor images
+        # Neighbor images
         self.neighbors = torch.nn.Conv2d(in_channels=1, out_channels=self.n_size * self.n_size,
                                         kernel_size=(self.n_size, self.n_size),
                                         stride=1, padding=((self.n_size - 1) // 2, (self.n_size - 1) // 2),
@@ -116,7 +145,7 @@ class MINDDescriptor(torch.nn.Module):
             t[0, i % self.n_size, i // self.n_size] = 1
             self.neighbors.weight.data[i] = t
 
-        # neighbor patcher
+        # Neighbor patcher
         self.neighbor_summation_patcher = torch.nn.Conv2d(in_channels=self.n_size * self.n_size, out_channels=self.n_size * self.n_size,
                                                kernel_size=(self.p_size, self.p_size),
                                                stride=1, padding=((self.p_size - 1) // 2, (self.p_size - 1) // 2),
@@ -130,23 +159,23 @@ class MINDDescriptor(torch.nn.Module):
         assert len(orig.shape) == 4
         assert orig.shape[1] == 1
 
-        # get original image channel stack
+        # Get original image channel stack
         orig_stack = torch.stack([orig.squeeze(dim=1) for i in range(self.nl_size * self.nl_size)], dim=1)
 
-        # get shifted images
+        # Get shifted images
         shifted = self.image_shifter(orig)
 
-        # get image diff
+        # Get image diff
         diff_images = shifted - orig_stack
 
-        # diff's L2 norm
+        # L2 norm of image diff
         Dx_alpha = self.summation_patcher(torch.pow(diff_images, 2.0))
 
-        # calc neighbor's variance
+        # Calculate neighbors' variance
         neighbor_images = self.neighbor_summation_patcher(self.neighbors(orig))
         Vx = neighbor_images.var(dim=1).unsqueeze(dim=1)
 
-        # output mind
+        # Output MIND features
         numerator = torch.exp(- Dx_alpha / (Vx + 1e-8))
         denominator = numerator.sum(dim=1).unsqueeze(dim=1)
         mind_features = numerator / denominator

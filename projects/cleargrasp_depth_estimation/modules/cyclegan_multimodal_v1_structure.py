@@ -9,20 +9,20 @@ from projects.cleargrasp_depth_estimation.modules.cyclegan_losses_with_structure
 
 
 @dataclass
-class OptimizerV2Config(cyclegan.OptimizerConfig):
-    """ Optimizer Config CycleGAN multimodal v2 """
+class OptimizerV1StructureConfig(cyclegan.OptimizerConfig):
+    """ Structure consistency config for CycleGAN multimodal v1 """
     lambda_structure: float = 0
 
 
 @dataclass
-class CycleGANMultiModalV2Config(cyclegan.CycleGANConfig):
-    """ CycleGANMultiModalV2 Config """
-    name: str = "CycleGANMultiModalV2"
-    optimizer: OptimizerV2Config = OptimizerV2Config()
+class CycleGANMultiModalV1StructureConfig(cyclegan.CycleGANConfig):
+    """ CycleGANMultiModalV1Structure Config """
+    name: str = "CycleGANMultiModalV1Structure"
+    optimizer: OptimizerV1StructureConfig = OptimizerV1StructureConfig()
 
 
-class CycleGANMultiModalV2(cyclegan.CycleGAN):
-    """ CycleGAN for multimodal images -- Version 2 """
+class CycleGANMultiModalV1Structure(cyclegan.CycleGAN):
+    """ """
 
     def __init__(self, conf):
         super().__init__(conf)
@@ -37,4 +37,4 @@ class CycleGANMultiModalV2(cyclegan.CycleGAN):
         self.criterion_adv = AdversarialLoss(
             self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
         # G losses - Includes Structure-consistency loss
-        self.criterion_G = CycleGANLossesWithStructure(self.conf, cyclegan_design_version='v2')
+        self.criterion_G = CycleGANLossesWithStructure(self.conf, cyclegan_design_version='v1')
