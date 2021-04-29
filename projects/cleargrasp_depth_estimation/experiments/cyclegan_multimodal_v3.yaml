@@ -3,7 +3,7 @@ project_dir: "./projects/cleargrasp_depth_estimation/"
 train:
     output_dir: "./checkpoints/cleargrasp_cycleganv3_new/"
     cuda: True
-    n_iters: 250000      # (2500 (images) / 2 (batch_size)) x 200 ("epochs")
+    n_iters: 125000      # (2500 (images) / 1 (batch_size)) x 50 ("epochs")
     n_iters_decay: 5000  # Extra 5000 iters with lr decay
     batch_size: 1
     mixed_precision: False
@@ -15,7 +15,7 @@ train:
             B: [3, 1]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "cyclegan_v3"
+            run: "cyclegan_v3-same_speed_Ds"
         
     checkpointing:
         freq: 10000
@@ -45,7 +45,7 @@ train:
             ndf: 64
 
         optimizer:
-            lr_D: 0.0001
+            lr_D: 0.0002
             lr_G: 0.0002
             lambda_AB: 10.0
             lambda_BA: 10.0
