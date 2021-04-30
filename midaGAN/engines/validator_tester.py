@@ -49,7 +49,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                 metrics = self._calculate_metrics()
                 self.tracker.add_sample(self.visuals, metrics)
 
-            self.tracker.push_samples(current_idx, prefix=dataset_name)
+            self.tracker.log_samples(current_idx, dataset_name=dataset_name)
 
     def _calculate_metrics(self):
         # TODO: Decide if cycle metrics also need to be scaled
@@ -57,7 +57,6 @@ class BaseValTestEngine(BaseEngineWithInference):
 
         # Metrics on input
         compute_over_input = getattr(self.conf[self.conf.mode].metrics, "compute_over_input", False)
-        
         # Denormalize the data if dataset has `denormalize` method defined.
         denormalize = getattr(self.current_data_loader.dataset, "denormalize", False)
         if denormalize:
@@ -102,7 +101,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                                    " behavior of inference with a `cycle` flag in"
                                    " the model's `infer()` method")
 
-            rec_A = self.infer(self.visuals["fake_B"], cycle='B')
+            rec_A = self.infer(self.visuals["fake_B"], direction='BA')
             cycle_metrics = self.metricizer.get_cycle_metrics(rec_A, self.visuals["A"])
 
         metrics.update(mask_metrics)

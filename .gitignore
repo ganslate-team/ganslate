@@ -111,6 +111,7 @@ venv.bak/
 \.vscode/
 checkpoints/
 \.wandb
+\wandb
 core.login18*
 IGNORE/
 output_*

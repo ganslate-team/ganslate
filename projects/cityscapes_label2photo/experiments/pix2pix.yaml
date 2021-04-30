@@ -18,16 +18,15 @@ train:
         freq: 5000
 
     dataset: 
-        name: "Label2PhotoTrainDataset"
+        name: "Label2PhotoDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
-        shuffle: True
-        num_workers: 8
-        random_flip: True
-        random_crop: True
         load_size: [572, 286]
         crop_size: [512, 256]
-        paired: True
+        paired: True  # Paired, for training 
+        random_flip: True
+        random_crop: True
         masking: False
+        num_workers: 8
 
     gan: 
         name: "Pix2PixConditionalGAN"
@@ -57,11 +56,13 @@ train:
 val:
     freq: 5000
     dataset: 
-        name: "Label2PhotoValDataset"
+        name: "Label2PhotoDataset"
         root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/val"
-        shuffle: False
-        num_workers: 8
         load_size: [512, 256]
+        paired: True   # Paired, to compute similarity metrics 
+        random_flip: False
+        random_crop: False
         masking: False
+        num_workers: 8        
     metrics:
         cycle_metrics: False

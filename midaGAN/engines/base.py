@@ -41,12 +41,10 @@ class BaseEngineWithInference(BaseEngine):
         # Sliding window (i.e. patch-wise) inference
         if self.sliding_window_inferer:
             return self.sliding_window_inferer(data, self.model.infer, *args, **kwargs)
-
-        return self.model.infer(data)
+        return self.model.infer(data, *args, **kwargs)
 
     def _init_sliding_window_inferer(self):
         sw = self.conf[self.conf.mode].sliding_window
-
         if not sw:
             return None
 

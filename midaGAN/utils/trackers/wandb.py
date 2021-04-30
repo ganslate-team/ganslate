@@ -41,7 +41,6 @@ class WandbTracker:
                  losses=None,
                  metrics=None):
         """"""
-        mode = mode.capitalize()
         log_dict = {}
 
         # Learning rates
@@ -57,7 +56,7 @@ class WandbTracker:
         # Metrics
         if metrics:
             for name, metric in metrics.items():
-                log_dict[f"{mode} {name}"] = torch_npy_to_python(metric)
+                log_dict[f"metric_{mode}_{name}"] = torch_npy_to_python(metric)
 
         log_dict[f"{mode} Images"] = self.create_wandb_images(visuals)
 

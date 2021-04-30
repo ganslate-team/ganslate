@@ -17,12 +17,26 @@ class InferenceTracker(BaseTracker):
         self.logger = logger
 
     def log_iter(self, visuals, len_dataset):
-        self._log_message(len_dataset)
+        
+        def parse_visuals(visuals):
+            # Gather visuals from different processes to the rank 0 process
+            visuals = communication.gather(visuals)
+            visuals = concat_batch_of_visuals_after_gather(visuals)
+            visuals = process_visuals_for_logging(self.conf, visuals, single_example=False)
+            return visuals
+        
+        def log_message():
+            # In case of DDP, if (len_dataset % number of processes != 0),
+            # it will show more iters than there actually are
+            if self.iter_idx > len_dataset:
+                self.iter_idx = len_dataset
 
-        # Gather visuals from different processes to the rank 0 process
-        visuals = communication.gather(visuals)
-        visuals = concat_batch_of_visuals_after_gather(visuals)
-        visuals = process_visuals_for_logging(visuals, single_example=False)
+            message = (f"{self.iter_idx}/{len_dataset} - loading: {self.t_data:.2f}s",
+                       f" | inference: {self.t_comp:.2f}s | saving: {self.t_save:.2f}s")
+            self.logger.info(message)
+
+        visuals = parse_visuals(visuals)
+        log_message()
 
         for i, visuals_grid in enumerate(visuals):
             # In DDP, each process is for a different iter, so incrementing it accordingly
@@ -42,16 +56,6 @@ class InferenceTracker(BaseTracker):
                 #                           visuals_grid,
                 #                           metrics, self.conf.mode)
 
-    def _log_message(self, len_dataset):
-        # In case of DDP, if (len_dataset % number of processes != 0),
-        # it will show more iters than there actually are
-        if self.iter_idx > len_dataset:
-            self.iter_idx = len_dataset
-
-        message = f"{self.iter_idx}/{len_dataset} - loading: {self.t_data:.2f}s"
-        message += f" | inference: {self.t_comp:.2f}s"
-        message += f" | saving: {self.t_save:.2f}s"
-        self.logger.info(message)
 
     def start_saving_timer(self):
         self.saving_start_time = time.time()
