@@ -1,11 +1,11 @@
 project_dir: "./projects/aerial_to_maps"
 
 train:
-    output_dir: "/hpcwork/vq218944/checkpoints/aerial_to_maps/adaptive_lambda"
+    output_dir: "/repos/Maastro/midaGAN/checkpoints/aerial_to_maps/adaptive_lambda"
     cuda: True
     n_iters: 109600 # (1096 [dataset_size] * 100)
     n_iters_decay: 109600
-    batch_size: 4
+    batch_size: 2
     mixed_precision: False
     seed: 42
 
@@ -14,15 +14,15 @@ train:
         wandb:
             project: "aerial_to_maps"
             entity: "surajpai"
-            run: "adaptive_lambda"
+            run: "adaptive_lambda,change_rate=5%"
 
     checkpointing:
         freq: 40000
 
     dataset: 
         name: "ImageDataset"
-        root: "/work/vq218944/maps/train"
-        num_workers: 8
+        root: "/repos/Maastro/midaGAN/projects/aerial_to_maps/datasets/maps/train"
+        num_workers: 4
         image_channels: 3
         preprocess: "resize"
         load_size: 256
@@ -42,8 +42,8 @@ train:
             in_channels: 3
 
         optimizer:
-            lambda_A: 10.0
-            lambda_B: 10.0
+            lambda_AB: 10.0
+            lambda_BA: 10.0
             lambda_identity: 0.0
             proportion_ssim: 0.0
             lr_D: 0.0001
@@ -54,14 +54,14 @@ train:
             patience: 100
             freq: 1000
             warmup_iter: 5000
-
+            change_rate: 0.05
 
 val:
     freq: 20000
     dataset:
         name: "AerialMapsValDataset"
-        root: "/work/vq218944/maps/val"
-        num_workers: 8
+        root: "/repos/Maastro/midaGAN/projects/aerial_to_maps/datasets/maps/val"
+        num_workers: 4
         image_channels: 3
         preprocess: "resize"
         load_size: 256

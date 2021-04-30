@@ -85,26 +85,26 @@ class AdaptiveCycleGAN(cyclegan.CycleGAN):
         # Check the aggregated sample pool for
         if self.losses['cycle_A'] >= min_cycle_A:
             if self.change_mode == "threshold":
-                self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 + self.change_rate)
+                self.criterion_G.lambda_AB = self.criterion_G.lambda_AB * (1 + self.change_rate)
 
             elif self.change_mode == "relative":
                 change_rate = (self.prev_sample['cycle_A'] - self.losses['cycle_A'])/self.prev_sample['cycle_A']
-                self.criterion_G.lambda_A = self.criterion_G.lambda_A * (1 + change_rate)
+                self.criterion_G.lambda_AB = self.criterion_G.lambda_AB * (1 + change_rate)
 
         if self.losses['cycle_B'] >= min_cycle_B:
             if self.change_mode == "threshold":
-                self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 + self.change_rate)
+                self.criterion_G.lambda_BA = self.criterion_G.lambda_BA * (1 + self.change_rate)
 
             elif self.change_mode == "relative":
                 change_rate = (self.prev_sample['cycle_B'] - self.losses['cycle_B'])/self.prev_sample['cycle_B']
-                self.criterion_G.lambda_B = self.criterion_G.lambda_B * (1 + change_rate)
+                self.criterion_G.lambda_BA = self.criterion_G.lambda_BA * (1 + change_rate)
 
         # Clip lambda values between 0 and max_lambda parameter
-        self.criterion_G.lambda_A = np.clip(self.criterion_G.lambda_A, 0, self.max_lambda)
-        self.criterion_G.lambda_B = np.clip(self.criterion_G.lambda_B, 0, self.max_lambda)
+        self.criterion_G.lambda_AB = np.clip(self.criterion_G.lambda_AB, 0, self.max_lambda)
+        self.criterion_G.lambda_BA = np.clip(self.criterion_G.lambda_BA, 0, self.max_lambda)
 
-        self.metrics['lambda_A'] = torch.tensor(self.criterion_G.lambda_A)
-        self.metrics['lambda_B'] = torch.tensor(self.criterion_G.lambda_B)
-        print(f"Adapting training with lambda_A={self.metrics['lambda_A']} and lambda_B={self.metrics['lambda_B']} ")
+        self.metrics['lambda_AB'] = torch.tensor(self.criterion_G.lambda_AB)
+        self.metrics['lambda_BA'] = torch.tensor(self.criterion_G.lambda_BA)
+        print(f"Adapting training with lambda_AB={self.metrics['lambda_AB']} and lambda_BA={self.metrics['lambda_BA']} ")
 
 
