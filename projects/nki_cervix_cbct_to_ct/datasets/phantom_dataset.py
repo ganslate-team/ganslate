@@ -20,13 +20,9 @@ from midaGAN.utils import sitk_utils
 from midaGAN.utils.io import load_json, make_dataset_of_directories
 from omegaconf import MISSING
 from torch.utils.data import Dataset
+from loguru import logger
 
 DEBUG = False
-
-import logging
-
-logger = logging.getLogger(__name__)
-
 EXTENSIONS = ['.nrrd']
 
 # --------------------------- VALIDATION DATASET ---------------------------------------------
@@ -36,8 +32,7 @@ EXTENSIONS = ['.nrrd']
 @dataclass
 class ElektaPhantomDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "ElektaPhantomDataset"
-    hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1024, 2048))  #TODO: what should be the default range
+    hounsfield_units_range: Tuple[int, int] = field(default_factory=lambda: (-1000, 2000))
     insert_values: Dict[str, int] = field(
         default_factory=lambda: {
             "Air": -1000,
@@ -53,8 +48,8 @@ class ElektaPhantomDatasetConfig(configs.base.BaseDatasetConfig):
 class ElektaPhantomDataset(Dataset):
 
     def __init__(self, conf):
-        self.root_path = Path(conf.val.dataset.root).resolve()
-        self.insert_values = conf.val.dataset.insert_values
+        self.root_path = Path(conf[conf.mode].dataset.root).resolve()
+        self.insert_values = conf[conf.mode].dataset.insert_values
         self.paths = {}
 
         for folder in self.root_path.iterdir():
@@ -84,7 +79,7 @@ class ElektaPhantomDataset(Dataset):
 
         # load nrrd as SimpleITK objects
         phantom = sitk_utils.load(phantom_path)
-        
+
         insert_masks = {}
         for label, mask_path in mask_paths.items():
             insert_masks[label] = sitk_utils.load(mask_path)
@@ -100,13 +95,6 @@ class ElektaPhantomDataset(Dataset):
 
         phantom = sitk_utils.get_npy(phantom)
         insert_masks = {k: sitk_utils.get_npy(v) for k, v in insert_masks.items()}
-
-        # Limit phantom to z where plate for Image Quality assessment is present
-        z_range = np.nonzero(insert_masks["plate"])[0]
-        z_min, z_max = z_range.min(), z_range.max()
-
-        phantom = phantom[z_min:z_max]
-        insert_masks = {k: v[z_min:z_max] for k, v in insert_masks.items()}
 
         target_phantom = np.full(phantom.shape, self.hu_min, dtype=phantom.dtype)
         for label, mask in insert_masks.items():
@@ -143,7 +131,7 @@ class ElektaPhantomDataset(Dataset):
 
     def save(self, tensor, save_dir, metadata=None):
         tensor = tensor.squeeze().cpu()
-        tensor = self.denormalize(tensor)
+        tensor = min_max_denormalize(tensor.clone(), self.hu_min, self.hu_max)
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],

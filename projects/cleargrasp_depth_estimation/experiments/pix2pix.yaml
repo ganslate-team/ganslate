@@ -1,0 +1,65 @@
+project_dir: "./projects/cityscapes_label2photo/"
+
+train:
+    output_dir: "./checkpoints/label2photo_pix2pix/"
+    cuda: True
+    n_iters: 250000      # 2500 (images) x 100 ("epochs")
+    n_iters_decay: 5000
+    batch_size: 1
+    mixed_precision: False
+
+    logging:
+        freq: 100
+        wandb:
+            project: "cleargrasp_rgb_normal_depth"
+            run: "lambda_pix2pix_1"
+        
+    checkpointing:
+        freq: 5000
+
+    dataset: 
+        name: "RGBNormal2DepthDataset"
+        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth/train"
+        shuffle: True
+        num_workers: 8
+        load_size: [512, 256]
+        paired: True
+
+    gan: 
+        name: "Pix2PixConditionalGAN"
+        generator:  
+            name: "Unet2D"
+            in_channels: 6
+            out_channels: 1
+            num_downs: 6
+            ngf: 64
+            use_dropout: True
+
+        discriminator:  
+            name: "PatchGAN2D"
+            in_channels: 7
+            n_layers: 6
+            kernel_size: [3,3]
+            ndf: 32
+            
+        optimizer:
+            lr_D: 0.00005
+            lr_G: 0.0002
+            lambda_pix2pix: 1.0
+    
+    metrics:
+        discriminator_evolution: True
+        ssim: True
+
+
+val:
+    freq: 5000
+    dataset: 
+        name: "RGBNormal2DepthDataset"
+        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth/val"
+        shuffle: False
+        num_workers: 8
+        load_size: [512, 256]
+        paired: True
+    metrics:
+        cycle_metrics: False

@@ -2,12 +2,13 @@ from monai.inferers import SlidingWindowInferer
 import torch
 from typing import Callable, Any
 
-import logging
+from loguru import logger
 
 
 class SlidingWindowInferer(SlidingWindowInferer):
+
     def __init__(self, *args, **kwargs):
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logger
         super().__init__(*args, **kwargs)
 
     def __call__(
@@ -23,7 +24,7 @@ class SlidingWindowInferer(SlidingWindowInferer):
             self.logger.debug(
                 f"ROI size: {self.roi_size} and input volume: {inputs.shape[2:]} do not match \n"
                 "Brodcasting ROI size to match input volume size.")
-                
+
             # If they do not match and roi_size is 2D add another dimension to roi size
             if len(self.roi_size) == 2:
                 self.roi_size = [1, *self.roi_size]
@@ -31,7 +32,6 @@ class SlidingWindowInferer(SlidingWindowInferer):
                 raise RuntimeError("Unsupported roi size, cannot broadcast to volume. ")
 
         return super().__call__(inputs, lambda x: self.network_wrapper(network, x))
-
 
     def network_wrapper(self, network, x, *args, **kwargs):
         """

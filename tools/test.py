@@ -1,7 +1,5 @@
-import logging
+from loguru import logger
 import sys
-
-logger = logging.getLogger(__name__)
 
 try:
     import midaGAN
@@ -12,14 +10,14 @@ except ImportError:
 
 #from midaGAN import configs
 from midaGAN.utils.builders import build_conf, build_gan
-from midaGAN.engines.evaluators import Tester
+from midaGAN.engines.validator_tester import Tester
 from midaGAN.utils import communication, environment
 
 
 def main():
-    environment.setup_threading()
     # inits distributed mode if ran with torch.distributed.launch
     communication.init_distributed()
+    environment.setup_threading()
 
     conf = build_conf()
 

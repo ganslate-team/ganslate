@@ -2,18 +2,19 @@ from typing import Optional, Tuple
 from dataclasses import dataclass
 from omegaconf import MISSING, II
 
-
 ############################### Dataset ########################################
+
+
 @dataclass
 class BaseDatasetConfig:
     name: str = MISSING
     root: str = MISSING
-    shuffle: bool = True
     num_workers: int = 4
     pin_memory: bool = True
 
 
 ############ GAN Optimizer, Discriminator, Generator, and Framework #############
+
 
 @dataclass
 class BaseOptimizerConfig:
@@ -34,6 +35,7 @@ class BaseDiscriminatorConfig:
 class BaseGeneratorConfig:
     name: str = MISSING
     in_channels: int = MISSING
+    out_channels: int = MISSING
 
 
 @dataclass
@@ -51,12 +53,16 @@ class BaseGANConfig:
 
 
 ############################### Logging ########################################
+
+
 @dataclass
 class WandbConfig:
     project: str = "midaGAN-project"
     entity: Optional[str] = None
     # Name of the wandb run
     run: Optional[str] = None
+    # Run id to be provided incase runs are to be resumed
+    id: Optional[str] = None
     # Min and max value for the image filter # TODO: explain!
     image_filter: Optional[Tuple[float, float]] = None
 
@@ -78,6 +84,8 @@ class LoggingConfig:
 
 
 ############# Config for engines (trainer, tester, inferencer...) ##############
+
+
 @dataclass
 class BaseEngineConfig:
     """Contains params that all modes need to have, by default they interpolate the value

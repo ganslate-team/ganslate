@@ -1,7 +1,3 @@
-# coding=utf-8
-# Copyright (c) DIRECT Contributors
-
-import logging
 import os
 import random
 import sys
@@ -16,48 +12,37 @@ import torch
 from omegaconf import OmegaConf
 from midaGAN.utils import communication, io
 
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 def setup_logging_with_config(conf, debug=False):
-    use_stdout = communication.get_local_rank() == 0 or debug
-    log_level = 'INFO' if not debug else 'DEBUG'
 
     output_dir = Path(conf[conf.mode].output_dir).resolve()
-    saving_to_message = f'Saving checkpoints, logs and config to: {output_dir}'
-    filename = Path(output_dir) / f'{conf.mode}/{conf.mode}_log.txt'
+    io.mkdirs(output_dir)
 
-    io.mkdirs(output_dir / conf.mode)
+    filename = None
+    # Log file only for the global main process
+    if communication.get_rank() == 0:
+        filename = Path(output_dir) / f"{conf.mode}_log.txt"
+    # Stdout for *local* main process only
+    use_stdout = communication.get_local_rank() == 0 or debug
+    log_level = 'INFO' if not debug else 'DEBUG'
 
     setup_logging(use_stdout, filename, log_level=log_level)
 
     logger.info(f'Configuration:\n{OmegaConf.to_yaml(conf)}')
-    logger.info(saving_to_message)
+    logger.info(f'Saving checkpoints, logs and config to: {output_dir}')
     logger.info(f'Python version: {sys.version.strip()}')
     logger.info(f'PyTorch version: {torch.__version__}')  # noqa
     logger.info(f'CUDA {torch.version.cuda} - cuDNN {torch.backends.cudnn.version()}')
-
-    # These two useful if we decide to keep logs of all processes
-    #logger.info(f'Machine rank: {communication.get_rank()}.')
-    #logger.info(f'Local rank: {communication.get_local_rank()}.')
-
-    # -------------------------------------
-    # TODO: this might come in handy later
-    # if communication.get_local_rank() == 0:
-    # Want to prevent multiple workers from trying to write a directory
-    # This is required in the logging below
-    # pass
-    # experiment_dir.mkdir(parents=True, exist_ok=True)
-    # communication.synchronize()  # Ensure folders are in place.
-    # log_file = experiment_dir / f'log_{machine_rank}_{communication.get_local_rank()}.txt'
+    logger.info(f'Global rank: {communication.get_rank()}')
+    logger.info(f'Local rank: {communication.get_local_rank()}')
 
 
 def setup_logging(use_stdout: Optional[bool] = True,
                   filename: Optional[PathLike] = None,
                   log_level: Optional[str] = 'INFO') -> None:
     """
-    Setup logging for DIRECT.
-
     Parameters
     ----------
     use_stdout : bool
@@ -74,25 +59,15 @@ def setup_logging(use_stdout: Optional[bool] = True,
     if log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'EXCEPTION']:
         raise ValueError(f'Unexpected log level got {log_level}.')
 
-    logging.captureWarnings(True)
-    log_level = getattr(logging, log_level)
+    formatter = "[<white>{time:YYYY-MM-DD HH:mm:ss}</white>][<blue>{name}</blue>][<red>{level}</red>] - {message}"
 
-    root = logging.getLogger('')
-    root.setLevel(log_level)
-
-    formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+    # Clear the default handlers
+    logger.remove()
 
     if use_stdout:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(log_level)
-        handler.setFormatter(formatter)
-        root.addHandler(handler)
-
+        logger.add(sys.stdout, level=log_level, format=formatter, colorize=True)
     if filename is not None:
-        handler = logging.FileHandler(filename)
-        handler.setLevel(log_level)
-        handler.setFormatter(formatter)
-        root.addHandler(handler)
+        logger.add(filename, level=log_level, format=formatter)
 
 
 def set_seed(seed=0):
@@ -102,10 +77,6 @@ def set_seed(seed=0):
     np.random.seed(seed)
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
-
-    # https://pytorch.org/docs/stable/notes/randomness.html#cudnn
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
 
 
 def setup_threading():

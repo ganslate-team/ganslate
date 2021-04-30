@@ -1,15 +1,30 @@
 from omegaconf import OmegaConf
 import wandb
+import os
+import torch
+import numpy as np
+
+
+def torch_npy_to_python(x):
+    if isinstance(x, torch.Tensor) or np.isscalar(x):
+        return x.item()
+    return x
 
 
 class WandbTracker:
 
     def __init__(self, conf):
-        mode = conf.mode
         project = conf[conf.mode].logging.wandb.project
         entity = conf[conf.mode].logging.wandb.entity
         conf_dict = OmegaConf.to_container(conf, resolve=True)
-        wandb.init(project=project, entity=entity, config=conf_dict)
+
+        if wandb.run is None:
+            if conf[conf.mode].checkpointing.load_iter and conf[conf.mode].logging.wandb.id:
+                # Source: https://docs.wandb.ai/library/resuming
+                os.environ["WANDB_RESUME"] = "allow"
+                os.environ["WANDB_RUN_ID"] = conf[conf.mode].logging.wandb.id
+
+            wandb.init(project=project, entity=entity, config=conf_dict)
 
         if conf[conf.mode].logging.wandb.run:
             wandb.run.name = conf[conf.mode].logging.wandb.run
@@ -18,7 +33,13 @@ class WandbTracker:
         if conf[conf.mode].logging.wandb.image_filter:
             self.image_filter = conf[conf.mode].logging.wandb.image_filter
 
-    def log_iter(self, iter_idx, learning_rates, losses, visuals, metrics, mode='train'):
+    def log_iter(self,
+                 iter_idx,
+                 visuals,
+                 mode='train',
+                 learning_rates=None,
+                 losses=None,
+                 metrics=None):
         """"""
         mode = mode.capitalize()
         log_dict = {}
@@ -29,12 +50,14 @@ class WandbTracker:
             log_dict['lr_D'] = learning_rates['lr_D']
 
         # Losses
-        for name, loss in losses.items():
-            log_dict[f"loss_{name}"] = loss
+        if losses:
+            for name, loss in losses.items():
+                log_dict[f"loss_{name}"] = torch_npy_to_python(loss)
 
         # Metrics
-        for name, metric in metrics.items():
-            log_dict[f"{mode} {name}"] = metric
+        if metrics:
+            for name, metric in metrics.items():
+                log_dict[f"{mode} {name}"] = torch_npy_to_python(metric)
 
         log_dict[f"{mode} Images"] = self.create_wandb_images(visuals)
 
@@ -54,11 +77,10 @@ class WandbTracker:
             for idx, visual in enumerate(visuals):
                 # Add sample index to visual name to identify it.
                 if image_threshold is not None:
-                    visual['name'] = f"Sample: {idx} {visual['name']}"
+                    visual['name'] = f"{idx}_{visual['name']}"
 
-
-                wandb_images.append(self._wandb_image_from_visual(visual, \
-                    image_threshold=image_threshold))
+                visual = self._wandb_image_from_visual(visual, image_threshold)
+                wandb_images.append(visual)
             return wandb_images
 
         # If visual is an image then a single wandb.Image is created

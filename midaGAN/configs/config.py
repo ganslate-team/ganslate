@@ -2,7 +2,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 from midaGAN.configs.training import TrainConfig
-from midaGAN.configs.evaluation import ValidationConfig, TestConfig
+from midaGAN.configs.validation_testing import ValidationConfig, TestConfig
 from midaGAN.configs.inference import InferenceConfig
 
 
