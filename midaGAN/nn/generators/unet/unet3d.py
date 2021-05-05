@@ -12,7 +12,7 @@ class Unet3DConfig(configs.base.BaseGeneratorConfig):
     name: str = 'Unet3D'
     num_downs: int = 7
     ngf: int = 64
-    use_dropout = False
+    use_dropout: bool = False
 
 
 class Unet3D(nn.Module):

@@ -1,0 +1,65 @@
+project_dir: "./projects/maastro_hx4_pet_translation/"
+
+train:
+    output_dir: "./checkpoints/hx4_pet_pix2pix/"
+    cuda: True
+    n_iters: 150000      
+    n_iters_decay: 1000  
+    batch_size: 1
+    mixed_precision: False
+
+    logging:
+        freq: 50
+        multi_modality_split:
+            A: [1, 1]
+            B: [1]
+        wandb:
+            project: "maastro_hx4_pet_translation"
+            run: "pix2pix_trial"
+        
+    checkpointing:
+        freq: 10000
+
+    dataset: 
+        name: "HX4PETTranslationTrainDataset"
+        root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
+        paired: True
+        require_ldct: False
+        patch_size: [32, 128, 128]   # (D,H,W)
+        patch_sampling: fdg-pet-weighted
+        num_workers: 8
+
+    gan: 
+        name: "Pix2PixConditionalGAN"
+        generator:  
+            name: "Unet3D"
+            in_out_channels: [2, 1]
+            num_downs: 4
+            ngf: 64
+            use_dropout: True
+
+        discriminator:  
+            name: "PatchGAN3D"
+            in_channels: 3
+            n_layers: 3
+            kernel_size: [4, 4, 4]
+            ndf: 32
+            
+        optimizer:
+            lr_D: 0.0001
+            lr_G: 0.0002
+            lambda_pix2pix: 10
+    
+    metrics:
+        discriminator_evolution: True
+        ssim: True
+
+
+val:
+    freq: 50
+    dataset: 
+        name: "HX4PETTranslationValDataset"
+        root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
+        num_workers: 8
+    metrics:
+        cycle_metrics: False

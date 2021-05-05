@@ -30,9 +30,9 @@ class BaseValTestEngine(BaseEngineWithInference):
                 # Collect visuals
                 device = self.model.device
                 self.visuals = {}
-                self.visuals["A"] = data["A"].to(device)
-                self.visuals["fake_B"] = self.infer(self.visuals["A"])
-                self.visuals["B"] = data["B"].to(device)
+                self.visuals["real_A"] = data["A"].to(device)
+                self.visuals["fake_B"] = self.infer(self.visuals["real_A"])
+                self.visuals["real_B"] = data["B"].to(device)
 
                 # Add masks if provided
                 if "masks" in data:
@@ -53,7 +53,7 @@ class BaseValTestEngine(BaseEngineWithInference):
 
     def _calculate_metrics(self):
         # TODO: Decide if cycle metrics also need to be scaled
-        original, pred, target = self.visuals["A"], self.visuals["fake_B"], self.visuals["B"]
+        original, pred, target = self.visuals["real_A"], self.visuals["fake_B"], self.visuals["real_B"]
 
         # Metrics on input
         compute_over_input = getattr(self.conf[self.conf.mode].metrics, "compute_over_input", False)
@@ -61,9 +61,9 @@ class BaseValTestEngine(BaseEngineWithInference):
         # Denormalize the data if dataset has `denormalize` method defined.
         denormalize = getattr(self.current_data_loader.dataset, "denormalize", False)
         if denormalize:
-            pred, target = denormalize(pred), denormalize(target)
+            pred, target = denormalize(pred.detach().clone()), denormalize(target.detach().clone())
             if compute_over_input:
-                original = denormalize(original)
+                original = denormalize(original.detach().clone())
 
         # Standard Metrics
         metrics = self.metricizer.get_metrics(pred, target)
@@ -84,7 +84,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                     key = f"{name}_{label}"
                     mask_metrics[key] = value
 
-                # Get metrics on priginal masked images
+                # Get metrics on original masked images
                 if compute_over_input:
                     for name, value in self.metricizer.get_metrics(original, target,
                                                                    mask=mask).items():
@@ -103,7 +103,7 @@ class BaseValTestEngine(BaseEngineWithInference):
                                    " the model's `infer()` method")
 
             rec_A = self.infer(self.visuals["fake_B"], direction='BA')
-            cycle_metrics = self.metricizer.get_cycle_metrics(rec_A, self.visuals["A"])
+            cycle_metrics = self.metricizer.get_cycle_metrics(rec_A, self.visuals["real_A"])
 
         metrics.update(mask_metrics)
         metrics.update(cycle_metrics)

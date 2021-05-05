@@ -1,40 +1,47 @@
+"""
+TODO list:
+- Using hx4_pet_reg.nrrd and ldct_reg.nrrd now for unpaired. Use non-reg ones instead? 
+- Should hx4_suv_range be same as fdg_suv_range? Because SUV is the common unit of radioactivity in PET
+- What's a good way to use data augmentation ?
+"""
+
 import os
 import random
 from dataclasses import dataclass
 from typing import Tuple
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 
 from midaGAN import configs
 from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.normalization import min_max_normalize
+
 
 import projects.maastro_hx4_pet_translation.datasets.utils.patch_samplers as patch_samplers
-from projects.maastro_hx4_pet_translation.datasets.utils.basic import sitk2np, np2tensor, apply_body_mask
+from projects.maastro_hx4_pet_translation.datasets.utils.basic import (sitk2np, 
+                                                                       np2tensor, 
+                                                                       apply_body_mask,
+                                                                       clip_and_min_max_normalize)
 
 
 EXTENSIONS = ['.nrrd']
-
-# Body mask settings
-OUT_OF_BODY_HU = -1024
-OUT_OF_BODY_SUV = 0
-HU_THRESHOLD = -300  # TODO: Check table HU and update this
 
 
 @dataclass
 class HX4PETTranslationTrainDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "HX4PETTranslationTrainDataset"
-    paired: bool = True   # True for Pix2Pix training   TODO: Using hx4_pet_reg and ldct_reg now for unpaired. Use non-reg ones instead? 
-    require_ldct: bool = False  # True only for HX4-CycleGAN-balanced
+    paired: bool = True   # 'True' for Pix2Pix training
+    require_ldct: bool = False  # 'True' only for HX4-CycleGAN-balanced
     patch_size: Tuple[int] = (32, 32, 32)
     patch_sampling: str = 'uniform-random' 
     hu_range: Tuple[int, int] = (-1000, 2000)
-    fdg_suv_range: Tuple[int, int] = None   # TODO: Set the range
-    hx4_suv_range: Tuple[int, int] = None   # TODO: Set the range
+    fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  
+    hx4_suv_range: Tuple[float, float] = (0.0, 4.5)  
 
 
 class HX4PETTranslationTrainDataset(Dataset):
+
     def __init__(self, conf):
         
         self.paired = conf.train.dataset.paired
@@ -42,19 +49,20 @@ class HX4PETTranslationTrainDataset(Dataset):
 
         # Image file paths
         root_path = conf.train.dataset.root
+        self.patient_ids = sorted(os.listdir(root_path))
 
         self.image_paths = {'FDG-PET': [], 'pCT': [], 'HX4-PET': [], 'body-mask': []}
         if self.require_ldct:  # If ldCT is also required during unpaired training
             self.image_paths['ldCT'] = [] 
 
-        for patient in sorted(os.listdir(root_path)):
+        for p_id in self.patient_ids:
             patient_image_paths = {}
-            patient_image_paths['FDG-PET'] = f"{root_path}/{patient}/fdg_pet.nrrd"
-            patient_image_paths['pCT'] = f"{root_path}/{patient}/pct.nrrd"
-            patient_image_paths['HX4-PET'] = f"{root_path}/{patient}/hx4_pet_reg.nrrd"
-            patient_image_paths['body-mask'] = f"{root_path}/{patient}/pct_body.nrrd"
+            patient_image_paths['FDG-PET'] = f"{root_path}/{p_id}/fdg_pet.nrrd"
+            patient_image_paths['pCT'] = f"{root_path}/{p_id}/pct.nrrd"
+            patient_image_paths['HX4-PET'] = f"{root_path}/{p_id}/hx4_pet_reg.nrrd"
+            patient_image_paths['body-mask'] = f"{root_path}/{p_id}/pct_body.nrrd"
             if self.require_ldct: 
-                patient_image_paths['ldCT'] = f"{root_path}/{patient}/ldct_reg.nrrd"
+                patient_image_paths['ldCT'] = f"{root_path}/{p_id}/ldct_reg.nrrd"
 
             for k in self.image_paths.keys():
                 self.image_paths[k].append(patient_image_paths[k])
@@ -68,12 +76,12 @@ class HX4PETTranslationTrainDataset(Dataset):
         self.hx4_suv_min, self.hx4_suv_max = conf.train.dataset.hx4_suv_range
 
         # Patch sampler setup
-        self.patch_size = np.array(patch_size)
-        self.patch_sampling = patch_sampling
+        self.patch_size = np.array(conf.train.dataset.patch_size)
+        self.patch_sampling = conf.train.dataset.patch_sampling
         if self.paired:
-            self.patch_sampler = PairedPatchSampler3D(self.patch_size, self.patch_sampling)
+            self.patch_sampler = patch_samplers.PairedPatchSampler3D(self.patch_size, self.patch_sampling)
         else:
-            self.patch_sampler = UnpairedPatchSampler3D(self.patch_size, self.patch_sampling)
+            self.patch_sampler = patch_samplers.UnpairedPatchSampler3D(self.patch_size, self.patch_sampling)
 
 
     def __len__(self):
@@ -132,29 +140,28 @@ class HX4PETTranslationTrainDataset(Dataset):
         images_B = np2tensor(images_B)
 
 
-        # ---------------
-        # Clip and normalize
+        # -----------------------------
+        # Clip and normalize intensties
 
-        images_A['FDG-PET'] = torch.clamp(images_A['FDG-PET'], self.fdg_suv_min, self.fdg_suv_max)
-        images_A['FDG-PET'] = min_max_normalize(images_A['FDG-PET'], self.fdg_suv_min, self.fdg_suv_max)
-
-        images_A['pCT'] = torch.clamp(images_A['pCT'], self.hu_min, self.hu_max)
-        images_A['pCT'] = min_max_normalize(images_A['pCT'], self.hu_min, self.hu_max)
-
-        images_B['HX4-PET'] = torch.clamp(images_B['HX4-PET'], self.hx4_suv_min, self.hx4_suv_max)
-        images_B['HX4-PET'] = min_max_normalize(images_B['HX4-PET'], self.hx4_suv_min, self.hx4_suv_max)
-
+        images_A['FDG-PET'] = clip_and_min_max_normalize(images_A['FDG-PET'], self.fdg_suv_min, self.fdg_suv_max)
+        images_A['pCT'] = clip_and_min_max_normalize(images_A['pCT'], self.hu_min, self.hu_max)
+        images_B['HX4-PET'] = clip_and_min_max_normalize(images_B['HX4-PET'], self.hx4_suv_min, self.hx4_suv_max)
         if self.require_ldct:
-            images_B['ldCT'] = torch.clamp(images_B['ldCT'], self.hu_min, self.hu_max)
-            images_B['ldCT'] = min_max_normalize(images_B['ldCT'], self.hu_min, self.hu_max)
+            images_B['ldCT'] = clip_and_min_max_normalize(images_B['ldCT'], self.hu_min, self.hu_max)
 
 
-        # Return sample dict - A and B to have dims (C,D,H,W)
+        # ---------------------
+        # Construct sample dict  
+        
+        # A and B need to have dims (C,D,H,W)
         A = torch.stack((images_A['FDG-PET'], images_A['pCT']), dim=0)
+        
         if self.require_ldct:
             B = torch.stack((images_B['HX4-PET'], images_B['ldCT']), dim=0)
         else:
             B = images_B['HX4-PET'].unsqueeze(dim=0)
 
-        return {'A': A, 'B': B}
+        sample_dict = {'A': A, 'B': B}
+
+        return sample_dict
 

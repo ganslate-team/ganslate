@@ -1,4 +1,3 @@
-import random
 import numpy as np
 
 
@@ -34,10 +33,14 @@ class PairedPatchSampler3D():
     
         patch_dict_A, patch_dict_B = {}, {}
         for k in image_dict_A.keys():
-            patch_dict_A[k] = image_dict_A[k][z1:z2, x1:x2, y1:y2]
+            patch_dict_A[k] = image_dict_A[k][z1:z2, y1:y2, x1:x2]
         for k in image_dict_B.keys():
-            patch_dict_B[k] = image_dict_B[k][z1:z2, x1:x2, y1:y2]
+            patch_dict_B[k] = image_dict_B[k][z1:z2, y1:y2, x1:x2]
         
+        # Check
+        if tuple(patch_dict_A['FDG-PET'].shape[-3:]) != tuple(self.patch_size):
+            raise RuntimeError(f"Weird patch size - {patch_dict_A['FDG-PET'].shape} |  Focal point - {focal_point}")
+
         return patch_dict_A, patch_dict_B
 
 
@@ -52,11 +55,11 @@ class PairedPatchSampler3D():
         valid_foc_pt_idx_min = np.zeros(3) + np.floor(self.patch_size/2)
         valid_foc_pt_idx_max = np.array(volume_size) - np.ceil(self.patch_size/2)   
 
-        z1, x1, y1 = valid_foc_pt_idx_min.astype(np.uint16)
-        z2, x2, y2 = valid_foc_pt_idx_max.astype(np.uint16)
+        z1, y1, x1 = valid_foc_pt_idx_min.astype(np.uint16)
+        z2, y2, x2 = valid_foc_pt_idx_max.astype(np.uint16)
 
         # Set valid zone values as 1
-        sampling_prob_map[z1:z2, x1:x2, y1:y2] = 1
+        sampling_prob_map[z1:z2, y1:y2, x1:x2] = 1
 
         # Filter out those outside the body region
         sampling_prob_map = sampling_prob_map * body_mask
@@ -82,9 +85,19 @@ class PairedPatchSampler3D():
         return np.array(focal_point).astype(np.uint16)
 
 
+
 class UnpairedPatchSampler3D():
     """
     TODO: implement
     """
     def __init__(self):
         pass
+
+
+
+def sample_from_probability_map(sampling_prob_map):
+    relevant_idxs = np.argwhere(sampling_prob_map > 0)
+    distribution = sampling_prob_map[sampling_prob_map > 0].flatten()
+    s = np.random.choice(len(relevant_idxs), size=1, p=distribution)[0]
+    sampled_idx = relevant_idxs[s]
+    return sampled_idx
