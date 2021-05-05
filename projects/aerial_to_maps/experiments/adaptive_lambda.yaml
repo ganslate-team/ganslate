@@ -1,7 +1,7 @@
 project_dir: "./projects/aerial_to_maps"
 
 train:
-    output_dir: "/repos/Maastro/midaGAN/checkpoints/aerial_to_maps/adaptive_lambda"
+    output_dir: "/repos/Maastro/midaGAN/checkpoints/aerial_to_maps/adaptive_lambda_change_rate_0.1"
     cuda: True
     n_iters: 109600 # (1096 [dataset_size] * 100)
     n_iters_decay: 109600
@@ -14,7 +14,7 @@ train:
         wandb:
             project: "aerial_to_maps"
             entity: "surajpai"
-            run: "adaptive_lambda,change_rate=5%"
+            run: "adaptive_lambda,change_rate=10%"
 
     checkpointing:
         freq: 40000
@@ -54,7 +54,7 @@ train:
             patience: 100
             freq: 1000
             warmup_iter: 5000
-            change_rate: 0.05
+            change_rate: 0.1
 
 val:
     freq: 20000
@@ -66,3 +66,5 @@ val:
         preprocess: "resize"
         load_size: 256
         flip: False
+    metrics:
+        cycle_metrics: False
