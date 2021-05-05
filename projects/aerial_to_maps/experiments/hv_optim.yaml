@@ -1,0 +1,63 @@
+project_dir: "./projects/aerial_to_maps"
+
+train:
+    output_dir: "/repos/Maastro/midaGAN/checkpoints/aerial_to_maps/hv_optim"
+    cuda: True
+    n_iters: 109600 # (1096 [dataset_size] * 100)
+    n_iters_decay: 109600
+    batch_size: 2
+    mixed_precision: False
+    seed: 42
+
+    logging:
+        freq: 100
+        wandb:
+            project: "aerial_to_maps"
+            entity: "surajpai"
+            run: "hv_optim"
+
+    checkpointing:
+        freq: 40000
+
+    dataset: 
+        name: "ImageDataset"
+        root: "/repos/Maastro/midaGAN/projects/aerial_to_maps/datasets/maps/train"
+        num_workers: 4
+        image_channels: 3
+        preprocess: "resize"
+        load_size: 256
+        flip: True
+        
+    gan:  
+        name: "HVOptimizedCycleGAN"
+
+        generator:  
+            name: "Unet2D"
+            in_channels: 3
+            out_channels: 3
+
+        discriminator:  
+            name: "PatchGAN2D"
+            n_layers: 3
+            in_channels: 3
+
+        optimizer:
+            lambda_AB: 1.0
+            lambda_BA: 1.0
+            lambda_identity: 0.0
+            proportion_ssim: 0.0
+            lr_D: 0.0001
+            lr_G: 0.0002
+
+val:
+    freq: 20000
+    dataset:
+        name: "AerialMapsValDataset"
+        root: "/repos/Maastro/midaGAN/projects/aerial_to_maps/datasets/maps/val"
+        num_workers: 4
+        image_channels: 3
+        preprocess: "resize"
+        load_size: 256
+        flip: False
+    metrics:
+        cycle_metrics: False
