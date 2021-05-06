@@ -1,7 +1,7 @@
 project_dir: "./projects/aerial_to_maps"
 
 train:
-    output_dir: "/repos/Maastro/midaGAN/checkpoints/aerial_to_maps/hv_optim"
+    output_dir: "/repos/Maastro/midaGAN/checkpoints/aerial_to_maps/hv_optim_lambda=10"
     cuda: True
     n_iters: 109600 # (1096 [dataset_size] * 100)
     n_iters_decay: 109600
@@ -14,7 +14,7 @@ train:
         wandb:
             project: "aerial_to_maps"
             entity: "surajpai"
-            run: "hv_optim"
+            run: "hv_optim_lambda=10"
 
     checkpointing:
         freq: 40000
@@ -42,12 +42,15 @@ train:
             in_channels: 3
 
         optimizer:
-            lambda_AB: 1.0
-            lambda_BA: 1.0
+            lambda_AB: 10.0
+            lambda_BA: 10.0
             lambda_identity: 0.0
             proportion_ssim: 0.0
             lr_D: 0.0001
             lr_G: 0.0002
+
+        adaptive_training:
+            slack: 0.5
 
 val:
     freq: 20000
