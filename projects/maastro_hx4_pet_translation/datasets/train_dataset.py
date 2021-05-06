@@ -3,6 +3,7 @@ TODO list:
 - Using hx4_pet_reg.nrrd and ldct_reg.nrrd now for unpaired. Use non-reg ones instead? 
 - Should hx4_suv_range be same as fdg_suv_range? Because SUV is the common unit of radioactivity in PET
 - What's a good way to use data augmentation ?
+- Set proper value for `focal_region_proportion`
 """
 
 import os
@@ -35,6 +36,7 @@ class HX4PETTranslationTrainDatasetConfig(configs.base.BaseDatasetConfig):
     require_ldct: bool = False  # 'True' only for HX4-CycleGAN-balanced
     patch_size: Tuple[int] = (32, 32, 32)
     patch_sampling: str = 'uniform-random' 
+    focal_region_proportion: float = 0.2  
     hu_range: Tuple[int, int] = (-1000, 2000)
     fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  
     hx4_suv_range: Tuple[float, float] = (0.0, 4.5)  
@@ -76,12 +78,13 @@ class HX4PETTranslationTrainDataset(Dataset):
         self.hx4_suv_min, self.hx4_suv_max = conf.train.dataset.hx4_suv_range
 
         # Patch sampler setup
-        self.patch_size = np.array(conf.train.dataset.patch_size)
-        self.patch_sampling = conf.train.dataset.patch_sampling
+        patch_size = np.array(conf.train.dataset.patch_size)
+        patch_sampling = conf.train.dataset.patch_sampling
         if self.paired:
-            self.patch_sampler = patch_samplers.PairedPatchSampler3D(self.patch_size, self.patch_sampling)
+            self.patch_sampler = patch_samplers.PairedPatchSampler3D(patch_size, patch_sampling)
         else:
-            self.patch_sampler = patch_samplers.UnpairedPatchSampler3D(self.patch_size, self.patch_sampling)
+            focal_region_proportion = conf.train.dataset.focal_region_proportion
+            self.patch_sampler = patch_samplers.UnpairedPatchSampler3D(patch_size, patch_sampling, focal_region_proportion)
 
 
     def __len__(self):

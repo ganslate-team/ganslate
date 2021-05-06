@@ -1,7 +1,7 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_pix2pix/"
+    output_dir: "./checkpoints/hx4_pet_cyclegan_naive/"
     cuda: True
     n_iters: 150000      
     n_iters_decay: 1000  
@@ -15,7 +15,7 @@ train:
             B: [1]
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "pix2pix_trial"
+            run: "cyclegan_naive_trial"
         
     checkpointing:
         freq: 10000
@@ -23,33 +23,38 @@ train:
     dataset: 
         name: "HX4PETTranslationTrainDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
-        paired: True
-        require_ldct: False
+        paired: False        # Unpaired
+        require_ldct: False  # No ldCT required
         patch_size: [32, 128, 128]   # (D,H,W)
-        patch_sampling: fdg-pet-weighted
+        patch_sampling: fdg-pet-weighted-sf
+        focal_region_proportion: 0.2
         num_workers: 8
 
     gan: 
-        name: "Pix2PixConditionalGAN"
+        name: "CycleGAN"
         generator:  
             name: "Unet3D"
-            in_out_channels: [2, 1]
+            in_out_channels_AB: [2, 1]
+            in_out_channels_BA: [1, 2]
             num_downs: 4
             ngf: 64
-            use_dropout: True
 
         discriminator:  
             name: "PatchGAN3D"
-            in_channels: 3
+            in_channels_B: 1
+            in_channels_A: 2
             n_layers: 3
             kernel_size: [4, 4, 4]
             ndf: 64
-            
+
         optimizer:
             lr_D: 0.0001
             lr_G: 0.0002
-            lambda_pix2pix: 10
-    
+            lambda_AB: 10.0
+            lambda_BA: 10.0
+            lambda_identity: 0
+            proportion_ssim: 0
+
     metrics:
         discriminator_evolution: True
         ssim: True
@@ -62,4 +67,4 @@ val:
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
     metrics:
-        cycle_metrics: False
+        cycle_metrics: True

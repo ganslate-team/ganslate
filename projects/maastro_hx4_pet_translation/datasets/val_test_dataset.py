@@ -2,7 +2,7 @@
 TODO list:
 - Should hx4_suv_range be same as fdg_suv_range? Because SUV is the common unit of radioactivity in PET
 x Return body and GTV masks as tensors within sample dict
-- Test auto mask generation for patient N046
+x Test auto mask generation for patient N046
 x Implement denormalize() method, and test stuff
 x Implement save() method
 - Validation taking too long (mainly, NRRD saving + metric computation)
@@ -32,18 +32,18 @@ EXTENSIONS = ['.nrrd']
 
 
 @dataclass
-class HX4PETTranslationValDatasetConfig(configs.base.BaseDatasetConfig):
+class HX4PETTranslationValTestDatasetConfig(configs.base.BaseDatasetConfig):
     """
     Note: Val dataset is paired, does not supply ldCT and 
     performs full image inference (i.e. no patches)
     """
-    name: str = "HX4PETTranslationValDataset" 
+    name: str = "HX4PETTranslationValTestDataset" 
     hu_range: Tuple[int, int] = (-1000, 2000)
     fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  
     hx4_suv_range: Tuple[float, float] = (0.0, 4.5) 
 
 
-class HX4PETTranslationValDataset(Dataset):
+class HX4PETTranslationValTestDataset(Dataset):
 
     def __init__(self, conf):
         
@@ -160,15 +160,13 @@ class HX4PETTranslationValDataset(Dataset):
         return sample_dict
 
 
-    def denormalize(self, hx4_pet_tensor):
+    def denormalize(self, tensor):
         """Allows the Tester and Validator to calculate the metrics in
         the original range of values.
-        `hx4_pet_tensor` can be either the predicted or the ground truth HX4-PET image
+        `tensor` can be either the predicted or the ground truth HX4-PET image tensor
         """
-        # print(hx4_pet_tensor.min(), hx4_pet_tensor.max())
-        hx4_pet_tensor = min_max_denormalize(hx4_pet_tensor, self.hx4_suv_min, self.hx4_suv_max)
-        # print(hx4_pet_tensor.min(), hx4_pet_tensor.max(), "\n")
-        return hx4_pet_tensor
+        tensor = min_max_denormalize(tensor, self.hx4_suv_min, self.hx4_suv_max)
+        return tensor
 
 
     def save(self, tensor, save_dir, metadata):
