@@ -197,6 +197,12 @@ class UnpairedPatchSampler3D():
 
         focal_region_mask = np.zeros_like(sampling_prob_map)
         focal_region_mask[z_min:z_max, y_min:y_max, x_min:x_max] = 1
+        # print(focal_point, focal_region_size, volume_size)
+        # print((np.array(focal_point) - np.array(focal_region_size)/2).astype(np.uint16))
+        # print((np.array(focal_point) + np.array(focal_region_size)/2).astype(np.uint16))
+        # print(valid_region_min, focal_region_min)
+        # print(valid_region_max, focal_region_max)
+        # print()
 
         # Update the sampling map by taking the intersection with the focal region mask.
         # This is to allow for the sampled focal point to be within the volume's valid region
@@ -223,7 +229,7 @@ def sample_from_probability_map(sampling_prob_map):
     distribution = sampling_prob_map[sampling_prob_map > 0].flatten()
     
     # Sample a single voxel index. This is the focal point.
-    s = np.random.choice(len(relevant_idxs), size=1, p=distribution)[0]
+    s = np.random.choice(len(relevant_idxs), p=distribution)
     sampled_idx = relevant_idxs[s]
     
     return sampled_idx

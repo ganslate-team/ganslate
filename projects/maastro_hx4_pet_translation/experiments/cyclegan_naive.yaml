@@ -27,7 +27,7 @@ train:
         require_ldct: False  # No ldCT required
         patch_size: [32, 128, 128]   # (D,H,W)
         patch_sampling: fdg-pet-weighted-sf
-        focal_region_proportion: 0.2
+        focal_region_proportion: 0.3
         num_workers: 8
 
     gan: 

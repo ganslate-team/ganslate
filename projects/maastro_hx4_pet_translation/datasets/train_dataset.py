@@ -36,7 +36,7 @@ class HX4PETTranslationTrainDatasetConfig(configs.base.BaseDatasetConfig):
     require_ldct: bool = False  # 'True' only for HX4-CycleGAN-balanced
     patch_size: Tuple[int] = (32, 32, 32)
     patch_sampling: str = 'uniform-random' 
-    focal_region_proportion: float = 0.2  
+    focal_region_proportion: float = 0.3   #  0.2 causes patch sampling error because of too small focal region
     hu_range: Tuple[int, int] = (-1000, 2000)
     fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  
     hx4_suv_range: Tuple[float, float] = (0.0, 4.5)  
