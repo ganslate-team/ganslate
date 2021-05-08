@@ -21,13 +21,9 @@ from midaGAN.utils import sitk_utils
 from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
 from omegaconf import MISSING
 from torch.utils.data import Dataset
+from loguru import logger
 
 DEBUG = False
-
-import logging
-
-logger = logging.getLogger(__name__)
-
 EXTENSIONS = ['.nrrd']
 
 # --------------------------- VALIDATION DATASET ---------------------------------------------
@@ -37,18 +33,16 @@ EXTENSIONS = ['.nrrd']
 @dataclass
 class CBCTtoCTValDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "CBCTtoCTValDataset"
-    hounsfield_units_range: Tuple[int, int] = field(
-        default_factory=lambda: (-1000, 2000))  #TODO: what should be the default range
-    mask_labels: List[str] = field(
-        default_factory=lambda: [])
+    hounsfield_units_range: Tuple[int, int] = field(default_factory=lambda: (-1000, 2000))
+    mask_labels: List[str] = field(default_factory=lambda: [])
 
 
 class CBCTtoCTValDataset(Dataset):
 
     def __init__(self, conf):
         # self.paths = make_dataset_of_directories(conf.val.dataset.root, EXTENSIONS)
-        self.root_path = Path(conf.val.dataset.root).resolve()
-        self.mask_labels = conf.val.dataset.mask_labels
+        self.root_path = Path(conf[conf.mode].dataset.root).resolve()
+        self.mask_labels = conf[conf.mode].dataset.mask_labels
 
         self.paths = {}
 
@@ -64,7 +58,7 @@ class CBCTtoCTValDataset(Dataset):
 
         self.num_datapoints = len(self.paths)
         # Min and max HU values for clipping and normalization
-        self.hu_min, self.hu_max = conf.val.dataset.hounsfield_units_range
+        self.hu_min, self.hu_max = conf[conf.mode].dataset.hounsfield_units_range
 
     def __getitem__(self, index):
         patient_index = list(self.paths)[index]
@@ -96,11 +90,10 @@ class CBCTtoCTValDataset(Dataset):
 
         CBCT = sitk_utils.get_npy(CBCT)
         CT = sitk_utils.get_npy(CT)
-        body_mask = get_body_mask(CT, hu_threshold=-300)
-
         masks = {k: sitk_utils.get_npy(v) for k, v in masks.items()}
-        
+
         if "BODY" not in masks:
+            body_mask = get_body_mask(CT, hu_threshold=-300)
             masks["BODY"] = body_mask
 
         CT = torch.tensor(CT)
@@ -110,13 +103,14 @@ class CBCTtoCTValDataset(Dataset):
         # Limits the lowest and highest HU unit
         CT = torch.clamp(CT, self.hu_min, self.hu_max)
         CBCT = torch.clamp(CBCT, self.hu_min, self.hu_max)
+
         # Normalize Hounsfield units to range [-1,1]
         CT = min_max_normalize(CT, self.hu_min, self.hu_max)
         CBCT = min_max_normalize(CBCT, self.hu_min, self.hu_max)
         # Add channel dimension (1 = grayscale)
         CT = CT.unsqueeze(0)
         CBCT = CBCT.unsqueeze(0)
-        masks = {k: v.unsqueeze(0) for k,v in masks.items()}
+        masks = {k: v.unsqueeze(0) for k, v in masks.items()}
 
         data_dict = {"A": CBCT, "B": CT, "metadata": metadata}
         if masks:
@@ -135,13 +129,12 @@ class CBCTtoCTValDataset(Dataset):
         return tensor - self.hu_min
 
     def save(self, tensor, save_dir, metadata=None):
-        tensor = tensor.squeeze().cpu()
-        tensor = self.denormalize(tensor)
+        tensor = min_max_denormalize(tensor.clone().cpu(), self.hu_min, self.hu_max)
 
         if metadata:
             sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
-                                                     metadata['spacing'], metadata['direction'],
-                                                     metadata['dtype'])
+                                                         metadata['spacing'], metadata['direction'],
+                                                         metadata['dtype'])
             datapoint_path = Path(str(metadata['path']))
             save_path = datapoint_path.relative_to(self.root_path)
 

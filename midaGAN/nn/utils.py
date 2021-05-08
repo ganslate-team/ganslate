@@ -5,7 +5,6 @@ from torch.optim import lr_scheduler
 from midaGAN.nn import separable
 
 
-
 def init_net(network, conf, device):
     init_weights(network, conf.train.gan.weight_init_type, conf.train.gan.weight_init_gain)
     return network.to(device)
@@ -103,9 +102,3 @@ def get_scheduler(optimizer, conf):
 def get_network_device(network):
     """Returns the device of the network. Assumes that the whole network is on a single device."""
     return next(network.parameters()).device
-
-
-def reshape_to_4D_if_5D(tensor):
-    if len(tensor.shape) == 5:
-        return tensor.view(-1, *tensor.shape[2:])
-    return tensor

@@ -31,29 +31,35 @@ ENV PATH "/home/midagan/miniconda3/bin:/tmp/bart/:$PATH:$CUDA_ROOT"
 RUN conda update -n base conda -yq
 RUN conda install python=3.7
 RUN conda install numpy pyyaml mkl mkl-include setuptools cmake cffi typing boost
-RUN conda install pytorch=1.6 torchvision cudatoolkit=${CUDA} -c pytorch
+RUN conda install pytorch==1.8 torchvision cudatoolkit=="10.2" -c pytorch
 RUN conda install scipy pandas scikit-learn scikit-image=0.14 -yq
 RUN conda install cython tqdm jupyter sqlalchemy -yq
+
 RUN python -m pip install opencv-python simpleitk h5py -q
-RUN python -m pip install tb-nightly memcnn wandb -q
-RUN python -m pip install --pre omegaconf -q
+RUN python -m pip install tb-nightly wandb -q
+RUN python -m pip install monai memcnn -q
+RUN python -m pip install omegaconf loguru -q
 
 USER root
-# Create midaganories for input and output
-RUN mkdir /data
-RUN mkdir /midagan && chmod 777 /midagan
 
-USER midagan
+# Create runner for input and output
+RUN mkdir /data
+RUN mkdir /runner && chmod 777 /runner
+
+USER runner
 
 RUN jupyter notebook --generate-config
-ENV CONFIG_PATH "/home/midagan/.jupyter/jupyter_notebook_config.py"
+ENV CONFIG_PATH "/home/runner/.jupyter/jupyter_notebook_config.py"
 COPY "jupyter_notebook_config.py" ${CONFIG_PATH}
 
 # Copy files into the docker
-COPY [".", "/midagan"]
+COPY [".", "/runner"]
 
-ENV PYTHONPATH /midagan
-WORKDIR /midagan
+WORKDIR /runner
+
+ARG username
+ARG pass
+RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/midaGAN.git
 
 # Provide an open entrypoint for the docker
 ENTRYPOINT $0 $@

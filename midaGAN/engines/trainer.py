@@ -1,8 +1,8 @@
-import logging
+from loguru import logger
 
 import torch
 from midaGAN.engines.base import BaseEngine
-from midaGAN.engines.evaluators import Validator
+from midaGAN.engines.validator_tester import Validator
 from midaGAN.utils import communication, environment
 from midaGAN.utils.builders import build_gan, build_loader
 from midaGAN.utils.trackers.training import TrainingTracker
@@ -52,9 +52,9 @@ class Trainer(BaseEngine):
 
         self.tracker.start_dataloading_timer()
         for i, data in zip(self.iters, self.data_loader):
+            self._set_iter_idx(i)
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
-            self._set_iter_idx(i)
 
             self._do_iteration(data)
             self.tracker.end_computation_timer()
@@ -80,15 +80,16 @@ class Trainer(BaseEngine):
 
     def _save_checkpoint(self):
         # TODO: save on cancel
-        checkpoint_freq = self.conf.train.checkpointing.freq
-        if communication.get_local_rank() == 0:
-            if self.iter_idx % checkpoint_freq == 0:
+        if communication.get_rank() == 0:
+            checkpoint_freq = self.conf.train.checkpointing.freq
+            checkpoint_after = self.conf.train.checkpointing.start_after
+            if self.iter_idx % checkpoint_freq == 0 and self.iter_idx >= checkpoint_after:
                 self.logger.info(f'Saving the model after {self.iter_idx} iterations.')
                 self.model.save_checkpoint(self.iter_idx)
 
     def _init_validator(self):
         """
-        Intitialize evaluation parameters from training conf
+        Intitialize validation parameters from training conf
         """
         # Validation conf is built from training conf
         if not self.conf.val:
@@ -96,8 +97,11 @@ class Trainer(BaseEngine):
         return Validator(self.conf, self.model)
 
     def run_validation(self):
-        if self.validator and (self.iter_idx % self.conf.val.freq == 0):
-            self.validator.run(current_idx=self.iter_idx)
+        if self.validator:
+            val_freq = self.conf.val.freq
+            val_after = self.conf.val.start_after
+            if self.iter_idx % val_freq == 0 and self.iter_idx >= val_after:
+                self.validator.run(current_idx=self.iter_idx)
 
     def _set_iter_idx(self, iter_idx):
         self.iter_idx = iter_idx

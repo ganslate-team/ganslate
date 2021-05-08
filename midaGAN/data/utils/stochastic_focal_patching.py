@@ -14,6 +14,7 @@ class StochasticFocalPatchSampler:
     The added stochasticity in steps (4) and (5) aims to account for possible differences in positioning
     of the object between volumes.
     """
+
     def __init__(self, patch_size, focal_region_proportion):
         self.focal_region_proportion = focal_region_proportion
         self.dims = len(patch_size)
@@ -107,8 +108,10 @@ class StochasticFocalPatchSampler:
         valid_start_region = volume_size - self.patch_size
 
         if np.any(valid_start_region < 0):
-            raise RuntimeError(f"The volume, {volume_size} provided to the sampler is smaller than the patch size: {self.patch_size}")
-        
+            raise RuntimeError(
+                f"The volume, {volume_size} provided to the sampler is smaller than the patch size: {self.patch_size}"
+            )
+
         return valid_start_region
 
     def get_size(self, volume):
