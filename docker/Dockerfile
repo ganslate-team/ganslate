@@ -16,23 +16,23 @@ RUN apt-get update && apt-get install -y libxext6 libsm6 libxrender1 build-essen
 RUN ldconfig
 
 # Make a user
-RUN adduser --disabled-password --gecos '' midagan
-RUN adduser midagan sudo
+RUN adduser --disabled-password --gecos '' runner
+RUN adduser runner sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-USER midagan
+USER runner
 
 WORKDIR /tmp
 RUN wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 RUN bash Miniconda3-latest-Linux-x86_64.sh -b
 
-ENV PATH "/home/midagan/miniconda3/bin:/tmp/bart/:$PATH:$CUDA_ROOT"
+ENV PATH "/home/runner/miniconda3/bin:$PATH:$CUDA_ROOT"
 
 # Setup python packages
 RUN conda update -n base conda -yq
-RUN conda install python=3.7
+RUN conda install python=3.8
 RUN conda install numpy pyyaml mkl mkl-include setuptools cmake cffi typing boost
-RUN conda install pytorch==1.8 torchvision cudatoolkit=="10.2" -c pytorch
-RUN conda install scipy pandas scikit-learn scikit-image=0.14 -yq
+RUN conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
+RUN conda install scipy pandas scikit-learn scikit-image -yq
 RUN conda install cython tqdm jupyter sqlalchemy -yq
 
 RUN python -m pip install opencv-python simpleitk h5py -q
@@ -44,6 +44,7 @@ USER root
 
 # Create runner for input and output
 RUN mkdir /data
+RUN mkdir /code
 RUN mkdir /runner && chmod 777 /runner
 
 USER runner
@@ -56,10 +57,6 @@ COPY "jupyter_notebook_config.py" ${CONFIG_PATH}
 COPY [".", "/runner"]
 
 WORKDIR /runner
-
-ARG username
-ARG pass
-RUN git clone https://${username}:${pass}@github.com/Maastro-CDS-Imaging-Group/midaGAN.git
 
 # Provide an open entrypoint for the docker
 ENTRYPOINT $0 $@
