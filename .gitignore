@@ -125,3 +125,5 @@ results
 *.nrrd
 Untitled.ipynb
 core.*
+
+projects/maastro_lung_proton_cbct_to_ct/experiments/2d_vnet_local.yaml

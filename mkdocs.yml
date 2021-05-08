@@ -1,0 +1,9 @@
+site_name: GANslate
+
+nav:
+    - Home: index.md
+    - Installation: installation.md
+    - Tutorials:
+        - Your First Run: tutorials/your_first_run.md
+
+theme: readthedocs
