@@ -1,10 +1,10 @@
 # Installation
 
 ## Docker
+*Supported operating systems: Linux, [Windows with WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html)*
 
-Dockerized setup is the easiest way to get started with the framework. 
+Dockerized setup is the easiest way to get started with the framework. If you do not have docker installed, you can follow instructions [here](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
 
-Supported operating systems: Linux, [Windows with WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html)
 
 Here is a step-by-step walkthrough of how to install the framework with docker,
 
