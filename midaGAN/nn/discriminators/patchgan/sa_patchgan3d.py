@@ -26,6 +26,8 @@ class SAPatchGAN3D(nn.Module):
 
         kw = kernel_size
         padw = 1
+
+        # Stride changed to 3 to allow memory to fit!
         sequence = [
             nn.Conv3d(in_channels, ndf, kernel_size=kw, stride=3, padding=padw),
             nn.LeakyReLU(0.2, True)
@@ -47,6 +49,8 @@ class SAPatchGAN3D(nn.Module):
                 nn.LeakyReLU(0.2, True)
             ]
 
+        sequence += [attention.SelfAttentionBlock(ndf * nf_mult, 'relu')]
+
         nf_mult_prev = nf_mult
         nf_mult = min(2**n_layers, 8)
         sequence += [
@@ -59,6 +63,7 @@ class SAPatchGAN3D(nn.Module):
             norm_layer(ndf * nf_mult),
             nn.LeakyReLU(0.2, True)
         ]
+
         sequence += [attention.SelfAttentionBlock(ndf * nf_mult, 'relu')]
         sequence += [nn.Conv3d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
         self.model = nn.Sequential(*sequence)

@@ -5,18 +5,24 @@ import torch
 
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
+from midaGAN.utils.csv_saver import Saver
 from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
                                           concat_batch_of_visuals_after_gather,
                                           convert_to_list_if_gather_did_not_occur)
 
 import numpy as np
 
-
 class ValTestTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logger
+        
+        # Save to csv
+        if getattr(self.conf[self.conf.mode].metrics, "save_to_csv", False):
+            self.saver = Saver()
+        else:
+            self.saver = None
 
         self.metrics = []
         self.visuals = []
@@ -48,6 +54,7 @@ class ValTestTracker(BaseTracker):
     def log_samples(self, iter_idx, dataset_name):
         """
         """
+
         def get_metrics():
             metrics_dict = {}
             # self.metrics containts a list of dicts with different metrics
@@ -59,6 +66,7 @@ class ValTestTracker(BaseTracker):
                         metrics_dict[metric_name].extend(metric_list)
                     else:
                         metrics_dict[metric_name] = metric_list
+ 
 
             # Averages collected metrics from different iterations and batches
             return {k: np.mean(v) for k, v in metrics_dict.items()}
@@ -94,9 +102,17 @@ class ValTestTracker(BaseTracker):
             self.metrics = []
             self.visuals = []
 
+            
         metrics = get_metrics()
         log_message()
         log_visuals()
+            
+        # Save individual metrics if enabled
+        if self.saver:
+            for metric in self.metrics:
+                self.saver.add(metric)
+            filepath = Path(self.output_dir) / "metrics.csv"
+            self.saver.write(filepath)
 
         if self.wandb:
             mode = self.conf.mode
