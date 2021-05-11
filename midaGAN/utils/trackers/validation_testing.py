@@ -54,6 +54,19 @@ class ValTestTracker(BaseTracker):
     def log_samples(self, iter_idx, dataset_name):
         """
         """
+        def save_metrics(metrics_dict):
+            # Save individual metrics if enabled
+            if self.saver:
+                n_samples = len(list(metrics_dict.values())[0])
+                for index in range(n_samples):
+                    row = {}
+                    for metric_name, metric_list in metrics_dict.items():
+                        row[metric_name] = metric_list[index]
+                    self.saver.add(row)
+
+                filepath = Path(self.output_dir) / "metrics.csv"
+                self.saver.write(filepath)
+
 
         def get_metrics():
             metrics_dict = {}
@@ -67,7 +80,7 @@ class ValTestTracker(BaseTracker):
                     else:
                         metrics_dict[metric_name] = metric_list
  
-
+            save_metrics(metrics_dict)
             # Averages collected metrics from different iterations and batches
             return {k: np.mean(v) for k, v in metrics_dict.items()}
 
@@ -107,13 +120,6 @@ class ValTestTracker(BaseTracker):
         log_message()
         log_visuals()
             
-        # Save individual metrics if enabled
-        if self.saver:
-            for metric in self.metrics:
-                self.saver.add(metric)
-            filepath = Path(self.output_dir) / "metrics.csv"
-            self.saver.write(filepath)
-
         if self.wandb:
             mode = self.conf.mode
             if dataset_name:
