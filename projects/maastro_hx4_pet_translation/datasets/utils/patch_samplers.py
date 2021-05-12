@@ -1,22 +1,22 @@
 import numpy as np
 
 
-PAIRED_SAMPLING_SCHEMES = ('uniform-random', 'fdg-pet-weighted')
-UNPAIRED_SAMPLING_SCHEMES = ('uniform-random-sf', 'fdg-pet-weighted-sf')
+PAIRED_SAMPLING_SCHEMES = ('uniform-random-within-body', 'fdg-pet-weighted')
+UNPAIRED_SAMPLING_SCHEMES = ('uniform-random-within-body-sf', 'fdg-pet-weighted-sf')
 
 
 class PairedPatchSampler3D():
     """3D patch sampler for paired training.
 
     Available patch sampling schemes:
-        1. 'uniform-random'
+        1. 'uniform-random-within-body'
         2. 'fdg-pet-weighted'
     """
     def __init__(self, patch_size, sampling):
 
         if sampling not in PAIRED_SAMPLING_SCHEMES:
             raise ValueError(f"`{sampling}` not a valid paired patch sampling scheme. \
-                               Available schemes are: {PAIRED_SAMPLING_SCHEMES}")
+                               Available schemes: {PAIRED_SAMPLING_SCHEMES}")
 
         self.patch_size = np.array(patch_size)
         self.sampling = sampling
@@ -47,11 +47,12 @@ class PairedPatchSampler3D():
         body_mask = image_dict_A['body-mask']
         volume_size = body_mask.shape[-3:]  # DHW
 
-        # Initialize sampling probability map as zeros
+        # Initialize sampling probability map as a volumetric mask of body region contained inside the 
+        # volume's valid patch region (i.e. suffieciently away from the volume borders)
         sampling_prob_map = init_sampling_probability_map(volume_size, self.patch_size, body_mask)
 
         # Depending on the sampling technique, construct the probability map
-        if self.sampling == 'uniform-random':
+        if self.sampling == 'uniform-random-within-body':
             # Uniform random over all valid focal points
             sampling_prob_map = sampling_prob_map / np.sum(sampling_prob_map)
 
@@ -87,7 +88,7 @@ class UnpairedPatchSampler3D():
 
         if sampling not in UNPAIRED_SAMPLING_SCHEMES:
             raise ValueError(f"`{sampling}` not a valid unpaired patch sampling scheme. \
-                               Available schemes are: {UNPAIRED_SAMPLING_SCHEMES}")
+                               Available schemes: {UNPAIRED_SAMPLING_SCHEMES}")
 
         self.patch_size = np.array(patch_size)
         self.sampling = sampling
@@ -127,11 +128,12 @@ class UnpairedPatchSampler3D():
         body_mask = image_dict_A['body-mask']
         volume_size = body_mask.shape  # DHW
 
-        # Initialize sampling probability map as zeros
+        # Initialize sampling probability map as a volumetric mask of body region contained inside the 
+        # volume's valid patch region (i.e. suffieciently away from the volume borders)
         sampling_prob_map = sampling_prob_map = init_sampling_probability_map(volume_size, self.patch_size, body_mask)
 
         # Depending on the sampling technique, construct the probability map
-        if self.sampling == 'uniform-random-sf':
+        if self.sampling == 'uniform-random-within-body-sf':
             # Uniform random over all valid focal points
             sampling_prob_map = sampling_prob_map / np.sum(sampling_prob_map)
 
@@ -195,18 +197,19 @@ class UnpairedPatchSampler3D():
         z_min, y_min, x_min = focal_region_min
         z_max, y_max, x_max = focal_region_max        
 
+        # Check whether or not the focal region limits are reasonable
+        if z_min >= z_max or y_min >= y_max or x_min >= x_max:
+            raise RuntimeError("Focal region couldn't be properly defined. \
+                Likely causes: Specified `focal_region_proportion` too small.")
+
         focal_region_mask = np.zeros_like(sampling_prob_map)
         focal_region_mask[z_min:z_max, y_min:y_max, x_min:x_max] = 1
-        # print(focal_point, focal_region_size, volume_size)
-        # print((np.array(focal_point) - np.array(focal_region_size)/2).astype(np.uint16))
-        # print((np.array(focal_point) + np.array(focal_region_size)/2).astype(np.uint16))
-        # print(valid_region_min, focal_region_min)
-        # print(valid_region_max, focal_region_max)
-        # print()
 
         # Update the sampling map by taking the intersection with the focal region mask.
-        # This is to allow for the sampled focal point to be within the volume's valid region
-        # AND within body region AND within focal region
+        # This is to make sure the sampled focal point is:  
+        #   1. Within the volume's valid region  
+        #   2. AND, Within body region 
+        #   3. AND, Within focal region
         sampling_prob_map = sampling_prob_map * focal_region_mask
         sampling_prob_map = sampling_prob_map / np.sum(sampling_prob_map)
 
@@ -236,6 +239,9 @@ def sample_from_probability_map(sampling_prob_map):
 
 
 def init_sampling_probability_map(volume_size, patch_size, body_mask):
+    """Initialize sampling probability map as a volumetric mask of body region contained inside the 
+    volume's valid patch region (i.e. suffieciently away from the volume borders)
+    """
     # Initialize sampling probability map as zeros
     sampling_prob_map = np.zeros(volume_size)
 

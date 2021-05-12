@@ -28,9 +28,6 @@ from projects.maastro_hx4_pet_translation.datasets.utils.basic import (sitk2np,
                                                                        clip_and_min_max_normalize)
 
 
-EXTENSIONS = ['.nrrd']
-
-
 @dataclass
 class HX4PETTranslationValTestDatasetConfig(configs.base.BaseDatasetConfig):
     """
@@ -40,7 +37,11 @@ class HX4PETTranslationValTestDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "HX4PETTranslationValTestDataset" 
     hu_range: Tuple[int, int] = (-1000, 2000)
     fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  
-    hx4_suv_range: Tuple[float, float] = (0.0, 4.5) 
+    hx4_suv_range: Tuple[float, float] = (0.0, 4.5)
+    # Use sliding window inference - If True, the val test engine takes care of it. 
+    # Patch size value is interpolated from training patch size
+    using_patch_based_inference: bool = False    
+    model_is_hx4_cyclegan_balanced: bool = False
 
 
 class HX4PETTranslationValTestDataset(Dataset):
@@ -70,6 +71,12 @@ class HX4PETTranslationValTestDataset(Dataset):
         self.hu_min, self.hu_max = conf.val.dataset.hu_range
         self.fdg_suv_min, self.fdg_suv_max = conf.val.dataset.fdg_suv_range
         self.hx4_suv_min, self.hx4_suv_max = conf.val.dataset.hx4_suv_range
+
+        # Using sliding window inferer or performing full-image inference ?
+        self.using_patch_based_inference = conf.val.dataset.using_patch_based_inference
+
+        # Is HX4-CycleGAN-balanced the model being validated/tested ?
+        self.model_is_hx4_cyclegan_balanced = conf.val.dataset.model_is_hx4_cyclegan_balanced
 
 
     def __len__(self):
@@ -125,10 +132,13 @@ class HX4PETTranslationValTestDataset(Dataset):
         
         
         # --------------------------------------------------------
-        # Pad images to have a standard size of (64, 512, 512),
+        # Pad images if needed
+
+        # If doing full-image inference, pad images to have a standard size of (64, 512, 512)
         # to avoid issues with UNet's up- and downsampling
-        for k in images.keys():
-            images[k] = pad(images[k], target_shape=(64, 512, 512))
+        if not self.using_patch_based_inference:
+            for k in images.keys():
+                images[k] = pad(images[k], target_shape=(64, 512, 512))
 
         # Convert to tensors 
         images = np2tensor(images)
@@ -147,7 +157,14 @@ class HX4PETTranslationValTestDataset(Dataset):
 
         # A and B need to have dims (C,D,H,W)
         A = torch.stack((images['FDG-PET'], images['pCT']), dim=0)
-        B = images['HX4-PET'].unsqueeze(dim=0)
+
+        if self.model_is_hx4_cyclegan_balanced:
+            # Create a dummy array to fill up the 2nd channel
+            zeros_dummy = torch.zeros_like(images['HX4-PET'])
+            B =  torch.stack([images['HX4-PET'], zeros_dummy], dim=0)
+        else:
+            B = images['HX4-PET'].unsqueeze(dim=0)
+        
         sample_dict = {'A': A, 'B': B}
         
         # Include masks
@@ -172,8 +189,16 @@ class HX4PETTranslationValTestDataset(Dataset):
     def save(self, tensor, save_dir, metadata):
         """ Save predicted tensors as NRRD
         """
-        tensor = min_max_denormalize(tensor.cpu(), self.hx4_suv_min, self.hx4_suv_max)
+        
+        # If the model is HX4-CycleGAN-balanced, tensor is 2-channel with the 
+        # 1st channel containing HX4-PET and 2nd channel containing a dummy array. 
+        if self.model_is_hx4_cyclegan_balanced:
+            tensor = tensor[0]  # Dim 1 is the channel dim
+        else:
+            tensor = tensor.squeeze()
 
+        tensor = min_max_denormalize(tensor.cpu(), self.hx4_suv_min, self.hx4_suv_max)
+        
         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
                                                      metadata['spacing'], metadata['direction'],
                                                      metadata['dtype'])

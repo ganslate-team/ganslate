@@ -3,7 +3,7 @@ TODO list:
 - Using hx4_pet_reg.nrrd and ldct_reg.nrrd now for unpaired. Use non-reg ones instead? 
 - Should hx4_suv_range be same as fdg_suv_range? Because SUV is the common unit of radioactivity in PET
 - What's a good way to use data augmentation ?
-- Set proper value for `focal_region_proportion`
+x Set proper value for `focal_region_proportion`
 """
 
 import os
@@ -26,16 +26,14 @@ from projects.maastro_hx4_pet_translation.datasets.utils.basic import (sitk2np,
                                                                        clip_and_min_max_normalize)
 
 
-EXTENSIONS = ['.nrrd']
-
 
 @dataclass
 class HX4PETTranslationTrainDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "HX4PETTranslationTrainDataset"
     paired: bool = True   # 'True' for Pix2Pix training
     require_ldct: bool = False  # 'True' only for HX4-CycleGAN-balanced
-    patch_size: Tuple[int] = (32, 32, 32)
-    patch_sampling: str = 'uniform-random' 
+    patch_size: Tuple[int] = (32, 128, 128)
+    patch_sampling: str = 'uniform-random-within-body' 
     focal_region_proportion: float = 0.3   #  0.2 causes patch sampling error because of too small focal region
     hu_range: Tuple[int, int] = (-1000, 2000)
     fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  

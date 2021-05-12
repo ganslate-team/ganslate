@@ -1,7 +1,7 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_cyclegan_naive_sw/"
+    output_dir: "./checkpoints/hx4_pet_cyclegan_balanced_sw/"
     cuda: True
     n_iters: 150000      
     n_iters_decay: 1000  
@@ -13,10 +13,10 @@ train:
         freq: 50
         multi_modality_split:
             A: [1, 1]
-            B: [1]
+            B: [1, 1]  # ldCT is the 2nd component
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "cyclegan_naive_trial_sw"
+            run: "cyclegan_balanced_trial_sw"
         
     checkpointing:
         freq: 10000
@@ -24,26 +24,26 @@ train:
     dataset: 
         name: "HX4PETTranslationTrainDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
-        paired: False        # Unpaired
-        require_ldct: False  # ldCT not required
+        paired: False       # Unpaired
+        require_ldct: True  # ldCT required
         patch_size: [32, 128, 128]   # (D,H,W)
         patch_sampling: uniform-random-within-body-sf
         focal_region_proportion: 0.3
         num_workers: 8
 
     gan: 
-        name: "CycleGAN"
+        name: "HX4CycleGANBalanced"
         generator:  
             name: "Unet3D"
-            in_out_channels_AB: [2, 1]
-            in_out_channels_BA: [1, 2]
+            in_out_channels_AB: [2, 1]  # Both G's take 2 inputs and predict 1 output
+            in_out_channels_BA: [2, 1]  #
             num_downs: 4
             ngf: 64
 
         discriminator:  
             name: "PatchGAN3D"
-            in_channels_B: 1
-            in_channels_A: 2
+            in_channels_B: 1  # Both D's evaluate a single modality (the PETs)
+            in_channels_A: 1  #
             n_layers: 3
             kernel_size: [4, 4, 4]
             ndf: 64
@@ -58,7 +58,7 @@ train:
 
     metrics:
         discriminator_evolution: True
-        ssim: False   # `False`, to match with HX4-CycleGAN-balanced
+        ssim: False  # `False` because it's computed by with the dummy array included, and is hence wrong
 
 
 val:
@@ -67,8 +67,9 @@ val:
         name: "HX4PETTranslationValTestDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
+        model_is_hx4_cyclegan_balanced: True  # Using HX4-CycleGAN-balanced
         using_patch_based_inference: True #
     sliding_window:                       # Enable sliding window inferer
         window_size: ${train.dataset.patch_size}
     metrics:
-        cycle_metrics: False  # `False`, to match with HX4-CycleGAN-balanced
+        cycle_metrics: False  # `False` because cycle in validation is hardcoded to be the default (naive) way

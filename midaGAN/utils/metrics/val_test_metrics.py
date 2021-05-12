@@ -95,7 +95,13 @@ class ValTestMetrics:
 
     def get_metrics(self, inputs, targets, mask=None):
         metrics = {}
-
+        
+        # Chinmay HX4-specific hack: If the tensors have 2 channels, take only the 1st channel (HX4-PET)
+        # Need this in case of HX4-CycleGAN-balanced 
+        if inputs.shape[1] == 2:   
+            inputs = inputs[:, :1]
+            targets = targets[:, :1]
+        
         inputs, targets = get_npy(inputs), get_npy(targets)
 
         # Iterating over all metrics that need to be computed
