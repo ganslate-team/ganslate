@@ -5,18 +5,24 @@ import torch
 
 from midaGAN.utils import communication
 from midaGAN.utils.trackers.base import BaseTracker
+from midaGAN.utils.csv_saver import Saver
 from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
                                           concat_batch_of_visuals_after_gather,
                                           convert_to_list_if_gather_did_not_occur)
 
 import numpy as np
 
-
 class ValTestTracker(BaseTracker):
 
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logger
+        
+        # Save to csv
+        if getattr(self.conf[self.conf.mode].metrics, "save_to_csv", False):
+            self.saver = Saver()
+        else:
+            self.saver = None
 
         self.metrics = []
         self.visuals = []
@@ -48,6 +54,20 @@ class ValTestTracker(BaseTracker):
     def log_samples(self, iter_idx, dataset_name):
         """
         """
+        def save_metrics(metrics_dict):
+            # Save individual metrics if enabled
+            if self.saver:
+                n_samples = len(list(metrics_dict.values())[0])
+                for index in range(n_samples):
+                    row = {}
+                    for metric_name, metric_list in metrics_dict.items():
+                        row[metric_name] = metric_list[index]
+                    self.saver.add(row)
+
+                filepath = Path(self.output_dir) / "metrics.csv"
+                self.saver.write(filepath)
+
+
         def get_metrics():
             metrics_dict = {}
             # self.metrics containts a list of dicts with different metrics
@@ -59,7 +79,8 @@ class ValTestTracker(BaseTracker):
                         metrics_dict[metric_name].extend(metric_list)
                     else:
                         metrics_dict[metric_name] = metric_list
-
+ 
+            save_metrics(metrics_dict)
             # Averages collected metrics from different iterations and batches
             return {k: np.mean(v) for k, v in metrics_dict.items()}
 
@@ -94,10 +115,11 @@ class ValTestTracker(BaseTracker):
             self.metrics = []
             self.visuals = []
 
+            
         metrics = get_metrics()
         log_message()
         log_visuals()
-
+            
         if self.wandb:
             mode = self.conf.mode
             if dataset_name:

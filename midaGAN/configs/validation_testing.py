@@ -40,6 +40,8 @@ class ValMetricsConfig(BaseValTestMetricsConfig):
 class TestMetricsConfig(BaseValTestMetricsConfig):
     # True if the metrics comparing input and ground truth are to be computed be as well
     compute_over_input: bool = False
+    # Save per image metrics to a CSV for further analysis
+    save_to_csv: bool = True
 
 
 ######################## Val and Test General Configs #########################
