@@ -102,7 +102,7 @@ class ValTestTracker(BaseTracker):
                 name = ""
                 if dataset_name:
                     name += f"{dataset_name}/"
-                if iter_idx:
+                if iter_idx is not None:
                     name += f"{iter_idx}"
                     # When val, put images in a dir for the iter at which it is validating.
                     # When testing, there aren't multiple iters, so it isn't necessary.

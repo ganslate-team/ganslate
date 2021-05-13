@@ -21,7 +21,7 @@ class BaseValTestEngine(BaseEngineWithInference):
         self.metricizer = ValTestMetrics(self.conf)
         self.visuals = {}
 
-    def run(self, current_idx=""):
+    def run(self, current_idx=None):
         self.logger.info(f'{"Validation" if self.conf.mode == "val" else "Testing"} started.')
 
         for dataset_name, data_loader in self.data_loaders.items():
