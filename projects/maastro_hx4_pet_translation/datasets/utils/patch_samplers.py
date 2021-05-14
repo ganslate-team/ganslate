@@ -77,8 +77,9 @@ class UnpairedPatchSampler3D():
 
     Variations of Stochastic Focal patch sampling, where different schemes 
     differ in the way the focal point is sampled from domain A image(s).
-    Essentially, the schemes provide different prior probability distributions
-    to sample from.
+    Essentially, the schemes implement different "prior" patch sampling 
+    probability distributions.
+
 
     Available patch sampling schemes:
         1. 'uniform-random-sf'
@@ -92,7 +93,7 @@ class UnpairedPatchSampler3D():
 
         self.patch_size = np.array(patch_size)
         self.sampling = sampling
-        self.focal_region_proportion = focal_region_proportion
+        self.focal_region_proportion = np.array(focal_region_proportion)
 
 
     def get_patch_pair(self, image_dict_A, image_dict_B):
@@ -199,6 +200,10 @@ class UnpairedPatchSampler3D():
 
         # Check whether or not the focal region limits are reasonable
         if z_min >= z_max or y_min >= y_max or x_min >= x_max:
+            print("Volume size:", volume_size)
+            print("Focal point:", focal_point)
+            print("Focal point region:", focal_region_size)
+            print(z_min, z_max)
             raise RuntimeError("Focal region couldn't be properly defined. \
                 Likely causes: Specified `focal_region_proportion` too small.")
 
@@ -225,6 +230,10 @@ class UnpairedPatchSampler3D():
 def sample_from_probability_map(sampling_prob_map):
     """TODO: Doc
     """
+    # Check if samplig prob map is a proper distribution
+    epsilon = 0.001
+    assert np.sum(sampling_prob_map) > 1 - epsilon and np.sum(sampling_prob_map) < 1 + epsilon 
+
     # Select relevant indices to sample from (i.e. those having a non-zero probability)
     relevant_idxs = np.argwhere(sampling_prob_map > 0)
 

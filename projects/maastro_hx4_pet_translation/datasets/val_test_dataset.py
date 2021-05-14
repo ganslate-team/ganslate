@@ -5,7 +5,7 @@ x Return body and GTV masks as tensors within sample dict
 x Test auto mask generation for patient N046
 x Implement denormalize() method, and test stuff
 x Implement save() method
-- Validation taking too long (mainly, NRRD saving + metric computation)
+x Validation taking too long (mainly, NRRD saving + metric computation)
 - Implement project-specific metrics
 """
 
@@ -31,8 +31,7 @@ from projects.maastro_hx4_pet_translation.datasets.utils.basic import (sitk2np,
 @dataclass
 class HX4PETTranslationValTestDatasetConfig(configs.base.BaseDatasetConfig):
     """
-    Note: Val dataset is paired, does not supply ldCT and 
-    performs full image inference (i.e. no patches)
+    Note: Val dataset is paired, and does not supply ldCT
     """
     name: str = "HX4PETTranslationValTestDataset" 
     hu_range: Tuple[int, int] = (-1000, 2000)
@@ -40,7 +39,7 @@ class HX4PETTranslationValTestDatasetConfig(configs.base.BaseDatasetConfig):
     hx4_suv_range: Tuple[float, float] = (0.0, 4.5)
     # Use sliding window inference - If True, the val test engine takes care of it. 
     # Patch size value is interpolated from training patch size
-    using_patch_based_inference: bool = False    
+    use_patch_based_inference: bool = False    
     model_is_hx4_cyclegan_balanced: bool = False
 
 
@@ -73,7 +72,7 @@ class HX4PETTranslationValTestDataset(Dataset):
         self.hx4_suv_min, self.hx4_suv_max = conf.val.dataset.hx4_suv_range
 
         # Using sliding window inferer or performing full-image inference ?
-        self.using_patch_based_inference = conf.val.dataset.using_patch_based_inference
+        self.use_patch_based_inference = conf.val.dataset.use_patch_based_inference
 
         # Is HX4-CycleGAN-balanced the model being validated/tested ?
         self.model_is_hx4_cyclegan_balanced = conf.val.dataset.model_is_hx4_cyclegan_balanced
@@ -99,7 +98,7 @@ class HX4PETTranslationValTestDataset(Dataset):
         # Load NRRD as SimpleITK objects (WHD)
         images = {}
         for k in image_path.keys():
-            # One patient in val set (N046) doesn't have a body mask
+            # One patient in val set (N046) doesn't have a pCT body mask
             try: 
                 images[k] = sitk_utils.load(image_path[k])         
             except RuntimeError:
@@ -128,7 +127,12 @@ class HX4PETTranslationValTestDataset(Dataset):
         # Convert to numpy (DHW)
         images = sitk2np(images)
 
-        images = apply_body_mask(images)
+        if self.patient_ids[index] == 'N046':
+            generate_body_mask = True
+        else:
+            generate_body_mask = False
+
+        images = apply_body_mask(images, generate_body_mask)
         
         
         # --------------------------------------------------------
@@ -136,7 +140,7 @@ class HX4PETTranslationValTestDataset(Dataset):
 
         # If doing full-image inference, pad images to have a standard size of (64, 512, 512)
         # to avoid issues with UNet's up- and downsampling
-        if not self.using_patch_based_inference:
+        if not self.use_patch_based_inference:
             for k in images.keys():
                 images[k] = pad(images[k], target_shape=(64, 512, 512))
 

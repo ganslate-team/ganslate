@@ -1,10 +1,10 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_cyclegan_balanced_sw/"
+    output_dir: "./checkpoints/hx4_pet_cyclegan_balanced_noreg/"
     cuda: True
-    n_iters: 150000      
-    n_iters_decay: 1000  
+    n_iters: 30000      
+    n_iters_decay: 30000  
     batch_size: 1
     mixed_precision: False
     seed: 1
@@ -16,19 +16,19 @@ train:
             B: [1, 1]  # ldCT is the 2nd component
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "cyclegan_balanced_trial_sw"
+            run: "cyclegan_balanced_trial_noreg"
         
     checkpointing:
-        freq: 10000
+        freq: 1000
 
     dataset: 
         name: "HX4PETTranslationTrainDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
-        paired: False       # Unpaired
-        require_ldct: True  # ldCT required
+        paired: False                    # Unpaired training
+        require_ldct_for_training: True  # ldCT required for training
         patch_size: [32, 128, 128]   # (D,H,W)
         patch_sampling: uniform-random-within-body-sf
-        focal_region_proportion: 0.3
+        focal_region_proportion: [0.6, 0.2, 0.2]  # (D,H,W)
         num_workers: 8
 
     gan: 
@@ -39,6 +39,7 @@ train:
             in_out_channels_BA: [2, 1]  #
             num_downs: 4
             ngf: 64
+            use_dropout: True
 
         discriminator:  
             name: "PatchGAN3D"
@@ -62,14 +63,14 @@ train:
 
 
 val:
-    freq: 10000
+    freq: 1000
     dataset: 
         name: "HX4PETTranslationValTestDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
         model_is_hx4_cyclegan_balanced: True  # Using HX4-CycleGAN-balanced
-        using_patch_based_inference: True #
-    sliding_window:                       # Enable sliding window inferer
+        use_patch_based_inference: True #
+    sliding_window:                     # Enable sliding window inferer
         window_size: ${train.dataset.patch_size}
     metrics:
         cycle_metrics: False  # `False` because cycle in validation is hardcoded to be the default (naive) way

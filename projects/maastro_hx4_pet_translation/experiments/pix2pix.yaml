@@ -3,10 +3,11 @@ project_dir: "./projects/maastro_hx4_pet_translation/"
 train:
     output_dir: "./checkpoints/hx4_pet_pix2pix/"
     cuda: True
-    n_iters: 150000      
-    n_iters_decay: 1000  
+    n_iters: 30000      
+    n_iters_decay: 30000  
     batch_size: 1
     mixed_precision: False
+    seed: 1
 
     logging:
         freq: 50
@@ -18,15 +19,14 @@ train:
             run: "pix2pix_trial"
         
     checkpointing:
-        freq: 10000
+        freq: 1000
 
     dataset: 
         name: "HX4PETTranslationTrainDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
-        paired: True
-        require_ldct: False
+        paired: True    # Paired training
         patch_size: [32, 128, 128]   # (D,H,W)
-        patch_sampling: fdg-pet-weighted
+        patch_sampling: uniform-random-within-body
         num_workers: 8
 
     gan: 
@@ -52,14 +52,14 @@ train:
     
     metrics:
         discriminator_evolution: True
-        ssim: True
 
 
 val:
-    freq: 10000
+    freq: 1000
     dataset: 
         name: "HX4PETTranslationValTestDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
-    metrics:
-        cycle_metrics: False
+        use_patch_based_inference: True #
+    sliding_window:                     # Enable sliding window inferer
+        window_size: ${train.dataset.patch_size}
