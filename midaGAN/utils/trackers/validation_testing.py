@@ -88,19 +88,19 @@ class ValTestTracker(BaseTracker):
             message = '\n' + 20 * '-' + f" ({self.conf.mode.capitalize()}"
             if iter_idx is not None:
                 message += f" at iter {iter_idx}"
-            if dataset_name != "":
+            if dataset_name is not None:
                 message += f" for dataset '{dataset_name}'"
             message += ') ' + 20 * '-' + '\n'
 
             for k, v in metrics.items():
-                name = f'{dataset_name}_{k}' if dataset_name != "" else str(k)
+                name = f'{dataset_name}_{k}' if dataset_name is not None else str(k)
                 message += f"{name}: {v:.3f} "
             self.logger.info(message)
 
         def log_visuals():
             for visuals_idx, visuals in enumerate(self.visuals):
                 name = ""
-                if dataset_name:
+                if dataset_name is not None:
                     name += f"{dataset_name}/"
                 if iter_idx is not None:
                     name += f"{iter_idx}"
@@ -122,7 +122,7 @@ class ValTestTracker(BaseTracker):
             
         if self.wandb:
             mode = self.conf.mode
-            if dataset_name:
+            if dataset_name is not None:
                 mode = f"{mode}_{dataset_name}"
             self.wandb.log_iter(iter_idx=iter_idx,
                                 visuals=self.visuals,

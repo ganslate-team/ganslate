@@ -14,7 +14,7 @@ class BaseValTestEngine(BaseEngineWithInference):
         # Val and test modes allow multiple datasets, this handles when it's a single dataset
         if not isinstance(self.data_loaders, dict):
             # No name needed when it's a single dataloader
-            self.data_loaders = {"": self.data_loaders}
+            self.data_loaders = {None: self.data_loaders}
         self.current_data_loader = None
 
         self.tracker = ValTestTracker(self.conf)
