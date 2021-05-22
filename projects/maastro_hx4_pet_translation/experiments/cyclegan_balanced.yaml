@@ -1,7 +1,7 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_cyclegan_balanced_noreg/"
+    output_dir: "./checkpoints/hx4_pet_cyclegan_balanced/"
     cuda: True
     n_iters: 30000      
     n_iters_decay: 30000  
@@ -16,7 +16,7 @@ train:
             B: [1, 1]  # ldCT is the 2nd component
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "cyclegan_balanced_trial_noreg"
+            run: "cyclegan_balanced_trial"
         
     checkpointing:
         freq: 1000
@@ -28,7 +28,7 @@ train:
         require_ldct_for_training: True  # ldCT required for training
         patch_size: [32, 128, 128]   # (D,H,W)
         patch_sampling: uniform-random-within-body-sf
-        focal_region_proportion: [0.6, 0.2, 0.2]  # (D,H,W)
+        focal_region_proportion: [0.6, 0.3, 0.3]  # (D,H,W)
         num_workers: 8
 
     gan: 
@@ -68,9 +68,17 @@ val:
         name: "HX4PETTranslationValTestDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
+        supply_masks: False  # Do not supply masks -> less number of val metrics to compute, faster training 
         model_is_hx4_cyclegan_balanced: True  # Using HX4-CycleGAN-balanced
         use_patch_based_inference: True #
     sliding_window:                     # Enable sliding window inferer
         window_size: ${train.dataset.patch_size}
-    metrics:
+    metrics:   # Enabled metrics: MSE, MAE, PSNR, SSIM, NMI, Chi-squared histogram distance
+        mse: True
+        mae: True
+        nmse: False
+        psnr: True
+        ssim: True
+        nmi: True
+        chi_sq: True
         cycle_metrics: False  # `False` because cycle in validation is hardcoded to be the default (naive) way

@@ -230,7 +230,7 @@ class UnpairedPatchSampler3D():
 def sample_from_probability_map(sampling_prob_map):
     """TODO: Doc
     """
-    # Check if samplig prob map is a proper distribution
+    # Check if samplig prob map is a proper distribution (i.e. its sum is approx. equal to 1)
     epsilon = 0.001
     assert np.sum(sampling_prob_map) > 1 - epsilon and np.sum(sampling_prob_map) < 1 + epsilon 
 

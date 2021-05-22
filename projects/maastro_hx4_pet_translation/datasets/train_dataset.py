@@ -1,7 +1,5 @@
 """
 TODO list:
-x Using hx4_pet_reg.nrrd and ldct_reg.nrrd now for unpaired. Use non-reg ones instead? 
-- Should hx4_suv_range be same as fdg_suv_range? Because SUV is the common unit of radioactivity in PET
 - What's a good way to use data augmentation ?
 x Set proper value for `focal_region_proportion`
 """
@@ -12,6 +10,7 @@ from dataclasses import dataclass
 from typing import Tuple
 
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
@@ -36,8 +35,8 @@ class HX4PETTranslationTrainDatasetConfig(configs.base.BaseDatasetConfig):
     patch_sampling: str = 'uniform-random-within-body' 
     focal_region_proportion: Tuple[float, float, float] = (0.4, 0.2, 0.2)  # DHW
     hu_range: Tuple[int, int] = (-1000, 2000)
-    fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  
-    hx4_suv_range: Tuple[float, float] = (0.0, 4.5)  
+    fdg_suv_range: Tuple[float, float] = (0.0, 15.0)  
+    hx4_tbr_range: Tuple[float, float] = (0.0, 3.0)    
 
 
 class HX4PETTranslationTrainDataset(Dataset):
@@ -51,8 +50,8 @@ class HX4PETTranslationTrainDataset(Dataset):
         root_path = conf.train.dataset.root
         self.patient_ids = sorted(os.listdir(root_path))
 
-        self.image_paths = {'FDG-PET': [], 'pCT': [], 'HX4-PET': [], 'body-mask': []}
-        if not self.paired:  
+        self.image_paths = {'FDG-PET': [], 'pCT': [], 'HX4-PET': [], 'body-mask-A': [], 'body-mask-B': []}
+        if self.require_ldct_for_training:  
             self.image_paths['ldCT'] = [] 
 
         for p_id in self.patient_ids:
@@ -60,15 +59,19 @@ class HX4PETTranslationTrainDataset(Dataset):
             
             patient_image_paths['FDG-PET'] = f"{root_path}/{p_id}/fdg_pet.nrrd"
             patient_image_paths['pCT'] = f"{root_path}/{p_id}/pct.nrrd"
-            patient_image_paths['body-mask'] = f"{root_path}/{p_id}/pct_body.nrrd"
-            
+            patient_image_paths['body-mask-A'] = f"{root_path}/{p_id}/pct_body.nrrd"
+
             if self.paired:  
-                # If paired, get HX4-PET-reg
+                # If paired, get HX4-PET-reg and use the pCT's body mask
                 patient_image_paths['HX4-PET'] = f"{root_path}/{p_id}/hx4_pet_reg.nrrd"
+                patient_image_paths['body-mask-B'] = patient_image_paths['body-mask-A']
             else:  
-                # Else, get unregistered HX4-PET 
-                # Also need corresponding ldCT for body mask generation, whether or not it's required for training
-                patient_image_paths['HX4-PET'] = f"{root_path}/{p_id}/hx4_pet.nrrd"
+                # Else, get unregistered HX4-PET and use the ldCT's auto generated body mask
+                patient_image_paths['HX4-PET'] = f"{root_path}/{p_id}/hx4_pet.nrrd"                
+                patient_image_paths['body-mask-B'] = f"{root_path}/{p_id}/ldct_body.nrrd"
+
+            if self.require_ldct_for_training:  
+                # If ldCT image is required to be fetched
                 patient_image_paths['ldCT'] = f"{root_path}/{p_id}/ldct.nrrd"
 
             for k in self.image_paths.keys():
@@ -76,14 +79,16 @@ class HX4PETTranslationTrainDataset(Dataset):
 
         self.num_datapoints_A = len(self.image_paths['FDG-PET'])
         self.num_datapoints_B = len(self.image_paths['HX4-PET'])
-        
-        # Body mask generation param
-        self.generate_body_mask_for_B = not self.paired
+
+        # SUVmean_aorta values for normalizing HX4-PET SUV to TBR
+        suv_aorta_mean_file =  f"{os.path.dirname(root_path)}/SUVmean_aorta_HX4.csv"
+        self.suv_aorta_mean_values = pd.read_csv(suv_aorta_mean_file, index_col=0)
+        self.suv_aorta_mean_values = self.suv_aorta_mean_values.to_dict()['HX4 aorta SUVmean baseline']
 
         # Clipping ranges
         self.hu_min, self.hu_max = conf.train.dataset.hu_range
         self.fdg_suv_min, self.fdg_suv_max = conf.train.dataset.fdg_suv_range
-        self.hx4_suv_min, self.hx4_suv_max = conf.train.dataset.hx4_suv_range
+        self.hx4_tbr_min, self.hx4_tbr_max = conf.train.dataset.hx4_tbr_range
 
         # Patch sampler setup
         patch_size = np.array(conf.train.dataset.patch_size)
@@ -111,12 +116,11 @@ class HX4PETTranslationTrainDataset(Dataset):
         image_path_A['pCT'] = self.image_paths['pCT'][index_A]
         image_path_B['HX4-PET'] = self.image_paths['HX4-PET'][index_B]
         
-        if self.generate_body_mask_for_B:
+        if self.require_ldct_for_training:
             image_path_B['ldCT'] = self.image_paths['ldCT'][index_B]
 
-        image_path_A['body-mask'] = self.image_paths['body-mask'][index_A]
-        if self.paired:
-            image_path_B['body-mask'] = image_path_A['body-mask']
+        image_path_A['body-mask'] = self.image_paths['body-mask-A'][index_A]
+        image_path_B['body-mask'] = self.image_paths['body-mask-B'][index_B]
 
         # Load NRRD as SimpleITK objects (WHD)
         images_A, images_B = {}, {}
@@ -125,8 +129,8 @@ class HX4PETTranslationTrainDataset(Dataset):
         for k in image_path_B.keys():
             images_B[k] = sitk_utils.load(image_path_B[k])
         
-        if self.generate_body_mask_for_B:
-            images_B['body-mask'] = None
+        # if self.generate_body_mask_for_B:
+        #     images_B['body-mask'] = None
 
         # ---------
         # Transform
@@ -141,7 +145,7 @@ class HX4PETTranslationTrainDataset(Dataset):
         images_B = sitk2np(images_B)
 
         images_A = apply_body_mask(images_A)
-        images_B = apply_body_mask(images_B, self.generate_body_mask_for_B)
+        images_B = apply_body_mask(images_B)
         
 
         # -----------
@@ -155,12 +159,17 @@ class HX4PETTranslationTrainDataset(Dataset):
         images_B = np2tensor(images_B)
 
 
-        # -----------------------------
-        # Clip and normalize intensties
+        # -------------
+        # Normalization
 
+        # Normalize HX4-PET SUVs with SUVmean_aorta
+        patient_id = self.patient_ids[index_B]
+        images_B['HX4-PET'] = images_B['HX4-PET'] / self.suv_aorta_mean_values[patient_id]
+
+        # Clip and then rescale all intensties to range [-1, 1]
         images_A['FDG-PET'] = clip_and_min_max_normalize(images_A['FDG-PET'], self.fdg_suv_min, self.fdg_suv_max)
         images_A['pCT'] = clip_and_min_max_normalize(images_A['pCT'], self.hu_min, self.hu_max)
-        images_B['HX4-PET'] = clip_and_min_max_normalize(images_B['HX4-PET'], self.hx4_suv_min, self.hx4_suv_max)
+        images_B['HX4-PET'] = clip_and_min_max_normalize(images_B['HX4-PET'], self.hx4_tbr_min, self.hx4_tbr_max)
         if self.require_ldct_for_training:
             images_B['ldCT'] = clip_and_min_max_normalize(images_B['ldCT'], self.hu_min, self.hu_max)
 

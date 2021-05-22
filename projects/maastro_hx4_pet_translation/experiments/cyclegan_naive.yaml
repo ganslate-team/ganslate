@@ -1,7 +1,7 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_cyclegan_naive_noreg/"
+    output_dir: "./checkpoints/hx4_pet_cyclegan_naive/"
     cuda: True
     n_iters: 30000      
     n_iters_decay: 30000  
@@ -16,7 +16,7 @@ train:
             B: [1]
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "cyclegan_naive_trial_noreg"
+            run: "cyclegan_naive_trial"
         
     checkpointing:
         freq: 1000
@@ -68,8 +68,16 @@ val:
         name: "HX4PETTranslationValTestDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
+        supply_masks: False  # Do not supply masks -> less number of val metrics to compute, faster training 
         use_patch_based_inference: True #
     sliding_window:                     # Enable sliding window inferer
         window_size: ${train.dataset.patch_size}
-    metrics:
+    metrics:   # Enabled metrics: MSE, MAE, PSNR, SSIM, NMI, Chi-squared histogram distance
+        mse: True
+        mae: True
+        nmse: False
+        psnr: True
+        ssim: True
+        nmi: True
+        chi_sq: True
         cycle_metrics: False  # `False`, to match with HX4-CycleGAN-balanced

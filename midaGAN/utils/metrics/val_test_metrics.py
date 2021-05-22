@@ -3,6 +3,7 @@ import numpy as np
 from typing import Optional
 
 import numpy as np
+from scipy.stats import entropy
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
 
@@ -85,7 +86,44 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> fl
     return ssim_sum / size
 
 
-METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}
+def nmi(gt: np.ndarray, pred: np.ndarray) -> float:
+    """Normalized Mutual Information.
+    Implementation taken from scikit-image 0.19.0.dev0 source --
+        https://github.com/scikit-image/scikit-image/blob/main/skimage/metrics/simple_metrics.py#L193-L261
+    Not using scikit-image because NMI is supported only in >=0.19.
+    """
+    bins = 100  # 100 bins by default 
+    hist, bin_edges = np.histogramdd(
+            [np.reshape(gt, -1), np.reshape(pred, -1)],
+            bins=bins,
+            density=True,
+            )
+    H0 = entropy(np.sum(hist, axis=0))
+    H1 = entropy(np.sum(hist, axis=1))
+    H01 = entropy(np.reshape(hist, -1))
+    nmi_value = (H0 + H1) / H01
+    return float(nmi_value)
+
+
+def chi_sq(gt: np.ndarray, pred: np.ndarray) -> float:
+    """Chi-squared distance computed between histograms of the GT and the prediction.
+    """
+    bins = 100  # 100 bins by default
+    
+    # Compute histograms
+    gt_histogram, gt_bin_edges = np.histogram(gt, bins=bins)
+    pred_histogram, pred_bin_edges = np.histogram(pred, bins=bins)
+    
+    # Normalize the histograms to convert them into discrete distributions
+    gt_histogram = gt_histogram / gt_histogram.sum()
+    pred_histogram = pred_histogram / pred_histogram.sum()
+    
+    # Compute chi-squared distance
+    chi_sq_dist_value = np.sum((pred_histogram - gt_histogram)**2 / (pred_histogram + gt_histogram))
+    return float(chi_sq_dist_value)
+
+
+METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae, "nmi": nmi, "chi_sq": chi_sq}
 
 
 class ValTestMetrics:
@@ -96,8 +134,9 @@ class ValTestMetrics:
     def get_metrics(self, inputs, targets, mask=None):
         metrics = {}
         
-        # Chinmay HX4-specific hack: If the tensors have 2 channels, take only the 1st channel (HX4-PET)
-        # Need this in case of HX4-CycleGAN-balanced 
+        # Chinmay HX4-specific hack: If the tensors have 2 channels, take only the 1st channel (HX4-PET),
+        # because the 2nd channel is a dummy.
+        # Need this in case of HX4-CycleGAN-balanced.
         if inputs.shape[1] == 2:   
             inputs = inputs[:, :1]
             targets = targets[:, :1]

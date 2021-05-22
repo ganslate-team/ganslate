@@ -1,19 +1,9 @@
-"""
-TODO list:
-- Should hx4_suv_range be same as fdg_suv_range? Because SUV is the common unit of radioactivity in PET
-x Return body and GTV masks as tensors within sample dict
-x Test auto mask generation for patient N046
-x Implement denormalize() method, and test stuff
-x Implement save() method
-x Validation taking too long (mainly, NRRD saving + metric computation)
-- Implement project-specific metrics
-"""
-
 import os
 from dataclasses import dataclass
 from typing import Tuple
 from loguru import logger
 
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
@@ -35,11 +25,15 @@ class HX4PETTranslationValTestDatasetConfig(configs.base.BaseDatasetConfig):
     """
     name: str = "HX4PETTranslationValTestDataset" 
     hu_range: Tuple[int, int] = (-1000, 2000)
-    fdg_suv_range: Tuple[float, float] = (0.0, 20.0)  
-    hx4_suv_range: Tuple[float, float] = (0.0, 4.5)
+    fdg_suv_range: Tuple[float, float] = (0.0, 15.0)  
+    hx4_tbr_range: Tuple[float, float] = (0.0, 3.0)
     # Use sliding window inference - If True, the val test engine takes care of it. 
     # Patch size value is interpolated from training patch size
-    use_patch_based_inference: bool = False    
+    use_patch_based_inference: bool = False        
+    # Option to supply body and GTV masks in the sample_dict. If supplied, masked metrics will
+    # be computed additionally during validation which would slow down the training. 
+    supply_masks: bool = False
+    # Is the model HX4CycleGANBalanced? If so, need to do a small hack while supplying HX4-PET 
     model_is_hx4_cyclegan_balanced: bool = False
 
 
@@ -66,16 +60,24 @@ class HX4PETTranslationValTestDataset(Dataset):
 
         self.num_datapoints = len(self.image_paths['FDG-PET'])
         
+        # SUVmean_aorta values for normalizing HX4-PET SUV to TBR
+        suv_aorta_mean_file =  f"{os.path.dirname(root_path)}/SUVmean_aorta_HX4.csv"
+        self.suv_aorta_mean_values = pd.read_csv(suv_aorta_mean_file, index_col=0)
+        self.suv_aorta_mean_values = self.suv_aorta_mean_values.to_dict()['HX4 aorta SUVmean baseline']
+
         # Clipping ranges
         self.hu_min, self.hu_max = conf.val.dataset.hu_range
         self.fdg_suv_min, self.fdg_suv_max = conf.val.dataset.fdg_suv_range
-        self.hx4_suv_min, self.hx4_suv_max = conf.val.dataset.hx4_suv_range
+        self.hx4_tbr_min, self.hx4_tbr_max = conf.val.dataset.hx4_tbr_range
 
         # Using sliding window inferer or performing full-image inference ?
-        self.use_patch_based_inference = conf.val.dataset.use_patch_based_inference
+        self.use_patch_based_inference = conf.val.dataset.use_patch_based_inference        
+
+        # Supply body and GTV masks ?
+        self.supply_masks = conf.val.dataset.supply_masks
 
         # Is HX4-CycleGAN-balanced the model being validated/tested ?
-        self.model_is_hx4_cyclegan_balanced = conf.val.dataset.model_is_hx4_cyclegan_balanced
+        self.model_is_hx4_cyclegan_balanced = conf.val.dataset.model_is_hx4_cyclegan_balanced        
 
 
     def __len__(self):
@@ -135,7 +137,7 @@ class HX4PETTranslationValTestDataset(Dataset):
         images = apply_body_mask(images, generate_body_mask)
         
         
-        # --------------------------------------------------------
+        # --------------------
         # Pad images if needed
 
         # If doing full-image inference, pad images to have a standard size of (64, 512, 512)
@@ -147,13 +149,17 @@ class HX4PETTranslationValTestDataset(Dataset):
         # Convert to tensors 
         images = np2tensor(images)
 
+        # -------------
+        # Normalization
 
-        # ------------------------------
-        # Clip and normalize intensities
+        # Normalize HX4-PET SUVs with SUVmean_aorta
+        patient_id = self.patient_ids[index]
+        images['HX4-PET'] = images['HX4-PET'] / self.suv_aorta_mean_values[patient_id]
 
+        # Clip and then rescale all intensties to range [-1, 1]
         images['FDG-PET'] = clip_and_min_max_normalize(images['FDG-PET'], self.fdg_suv_min, self.fdg_suv_max)
         images['pCT'] = clip_and_min_max_normalize(images['pCT'], self.hu_min, self.hu_max)
-        images['HX4-PET'] = clip_and_min_max_normalize(images['HX4-PET'], self.hx4_suv_min, self.hx4_suv_max)
+        images['HX4-PET'] = clip_and_min_max_normalize(images['HX4-PET'], self.hx4_tbr_min, self.hx4_tbr_max)
 
 
         # ---------------------
@@ -171,9 +177,10 @@ class HX4PETTranslationValTestDataset(Dataset):
         
         sample_dict = {'A': A, 'B': B}
         
-        # Include masks
-        sample_dict['masks'] = {'BODY': images['body-mask'].unsqueeze(dim=0), 
-                                'GTV': images['gtv-mask'].unsqueeze(dim=0)}
+        # Include masks, if needed
+        if self.supply_masks:
+            sample_dict['masks'] = {'BODY': images['body-mask'].unsqueeze(dim=0), 
+                                    'GTV': images['gtv-mask'].unsqueeze(dim=0)}
         
         # Include metadata
         sample_dict['metadata'] = metadata
@@ -186,7 +193,7 @@ class HX4PETTranslationValTestDataset(Dataset):
         the original range of values.
         `tensor` can be either the predicted or the ground truth HX4-PET image tensor
         """
-        tensor = min_max_denormalize(tensor, self.hx4_suv_min, self.hx4_suv_max)
+        tensor = min_max_denormalize(tensor, self.hx4_tbr_min, self.hx4_tbr_max)
         return tensor
 
 
@@ -201,13 +208,17 @@ class HX4PETTranslationValTestDataset(Dataset):
         else:
             tensor = tensor.squeeze()
 
-        tensor = min_max_denormalize(tensor.cpu(), self.hx4_suv_min, self.hx4_suv_max)
+        # Rescale back to [self.hx4_tbr_min, self.hx4_tbr_max]
+        tensor = min_max_denormalize(tensor.cpu(), self.hx4_tbr_min, self.hx4_tbr_max)
         
+        # Denormalize TBR to SUV
+        patient_id = metadata['patient_id']
+        tensor = tensor * self.suv_aorta_mean_values[patient_id]
+
         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
                                                      metadata['spacing'], metadata['direction'],
                                                      metadata['dtype'])
         # Write to file
         os.makedirs(save_dir, exist_ok=True)
-        patient_id = metadata['patient_id']
         save_path = f"{save_dir}/{patient_id}.nrrd"
         sitk_utils.write(sitk_image, save_path)
