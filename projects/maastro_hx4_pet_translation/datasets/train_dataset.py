@@ -31,13 +31,13 @@ class HX4PETTranslationTrainDatasetConfig(configs.base.BaseDatasetConfig):
     name: str = "HX4PETTranslationTrainDataset"
     paired: bool = True   # `True` only for Pix2Pix
     require_ldct_for_training: bool = False  # `True` only for HX4-CycleGAN-balanced
-    patch_size: Tuple[int, int, int] = (32, 128, 128)  # DHW
-    patch_sampling: str = 'uniform-random-within-body' 
-    focal_region_proportion: Tuple[float, float, float] = (0.4, 0.2, 0.2)  # DHW
     hu_range: Tuple[int, int] = (-1000, 2000)
     fdg_suv_range: Tuple[float, float] = (0.0, 15.0)  
     hx4_tbr_range: Tuple[float, float] = (0.0, 3.0)    
-
+    patch_size: Tuple[int, int, int] = (32, 128, 128)  # DHW
+    patch_sampling: str = 'uniform-random-within-body' 
+    # Focal region proportion only applies when training is unpaired
+    focal_region_proportion: Tuple[float, float, float] = (0.6, 0.3, 0.3)  # DHW
 
 class HX4PETTranslationTrainDataset(Dataset):
 
@@ -129,8 +129,6 @@ class HX4PETTranslationTrainDataset(Dataset):
         for k in image_path_B.keys():
             images_B[k] = sitk_utils.load(image_path_B[k])
         
-        # if self.generate_body_mask_for_B:
-        #     images_B['body-mask'] = None
 
         # ---------
         # Transform
@@ -148,7 +146,7 @@ class HX4PETTranslationTrainDataset(Dataset):
         images_B = apply_body_mask(images_B)
         
 
-        # -----------
+        # --------------
         # Sample patches
 
         # Get patches

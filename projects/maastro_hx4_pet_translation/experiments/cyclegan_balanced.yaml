@@ -1,7 +1,7 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_cyclegan_balanced/"
+    output_dir: "/workspace/Chinmay-Checkpoints-Ephemeral/HX4-PET-Translation/hx4_pet_cyclegan_balanced/"
     cuda: True
     n_iters: 30000      
     n_iters_decay: 30000  
@@ -80,5 +80,5 @@ val:
         psnr: True
         ssim: True
         nmi: True
-        chi_sq: True
+        histogram_chi2: True
         cycle_metrics: False  # `False` because cycle in validation is hardcoded to be the default (naive) way

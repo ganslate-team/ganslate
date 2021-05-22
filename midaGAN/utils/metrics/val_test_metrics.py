@@ -1,8 +1,6 @@
 # import midaGAN.nn.losses.ssim as ssim
 import numpy as np
 from typing import Optional
-
-import numpy as np
 from scipy.stats import entropy
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
@@ -105,7 +103,7 @@ def nmi(gt: np.ndarray, pred: np.ndarray) -> float:
     return float(nmi_value)
 
 
-def chi_sq(gt: np.ndarray, pred: np.ndarray) -> float:
+def histogram_chi2(gt: np.ndarray, pred: np.ndarray) -> float:
     """Chi-squared distance computed between histograms of the GT and the prediction.
     """
     bins = 100  # 100 bins by default
@@ -119,11 +117,14 @@ def chi_sq(gt: np.ndarray, pred: np.ndarray) -> float:
     pred_histogram = pred_histogram / pred_histogram.sum()
     
     # Compute chi-squared distance
-    chi_sq_dist_value = np.sum((pred_histogram - gt_histogram)**2 / (pred_histogram + gt_histogram))
-    return float(chi_sq_dist_value)
+    bin_to_bin_distances = (pred_histogram - gt_histogram)**2 / (pred_histogram + gt_histogram)
+    # Remove NaN values caused by 0/0 division. Equivalent to manually setting them as 0.
+    bin_to_bin_distances = bin_to_bin_distances[np.logical_not(np.isnan(bin_to_bin_distances))]
+    chi2_distance_value = np.sum(bin_to_bin_distances)
+    return float(chi2_distance_value)
 
 
-METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae, "nmi": nmi, "chi_sq": chi_sq}
+METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae, "nmi": nmi, "histogram_chi2": histogram_chi2}
 
 
 class ValTestMetrics:

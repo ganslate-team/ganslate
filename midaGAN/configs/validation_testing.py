@@ -31,7 +31,7 @@ class BaseValTestMetricsConfig:
     # Normalized Mutual Information
     nmi: bool = False
     # Chi-squared Histogram Distance
-    chi_sq: bool = False
+    histogram_chi2: bool = False
 
 
 @dataclass

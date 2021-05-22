@@ -1,7 +1,7 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_pix2pix_lambda10_new_val_metrics/"
+    output_dir: "/workspace/Chinmay-Checkpoints-Ephemeral/HX4-PET-Translation/hx4_pet_pix2pix_lambda10/"
     cuda: True
     n_iters: 30000      
     n_iters_decay: 30000  
@@ -16,7 +16,7 @@ train:
             B: [1]
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "pix2pix_lambda10_new_val_metrics"
+            run: "pix2pix_lambda10"
         
     checkpointing:
         freq: 1000
@@ -71,5 +71,5 @@ val:
         psnr: True
         ssim: True
         nmi: True
-        chi_sq: True
+        histogram_chi2: True
         cycle_metrics: False 

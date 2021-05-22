@@ -1,7 +1,7 @@
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
-    output_dir: "./checkpoints/hx4_pet_cyclegan_naive/"
+    output_dir: "/workspace/Chinmay-Checkpoints-Ephemeral/HX4-PET-Translation/hx4_pet_cyclegan_naive/"
     cuda: True
     n_iters: 30000      
     n_iters_decay: 30000  
@@ -16,7 +16,7 @@ train:
             B: [1]
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "cyclegan_naive_trial"
+            run: "cyclegan_naive_lambdas10"
         
     checkpointing:
         freq: 1000
@@ -79,5 +79,5 @@ val:
         psnr: True
         ssim: True
         nmi: True
-        chi_sq: True
+        histogram_chi2: True
         cycle_metrics: False  # `False`, to match with HX4-CycleGAN-balanced
