@@ -47,6 +47,14 @@ def build_loader(conf):
     dataset_class = import_class_from_dirs_and_modules(name, IMPORT_LOCATIONS)
     dataset = dataset_class(conf)
 
+    # Prevent DDP from running on a dataset smaller than the total batch size over processes
+    if torch.distributed.is_initialized():
+        ddp_batch_size = communication.get_world_size() * conf[conf.mode].dataset.batch_size
+        if ddp_batch_size > len(dataset):
+            raise RuntimeError(f"Dataset has {len(dataset)} examples, while the effective "
+                               f"batch size equals to {ddp_batch_size}. Distributed mode does "
+                               f"not work as expected in this situation.")
+
     if conf.mode == "train":
         sampler = InfiniteSampler(size=len(dataset), shuffle=True)
     else:

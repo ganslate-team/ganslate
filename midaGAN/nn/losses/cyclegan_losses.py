@@ -12,8 +12,8 @@ class CycleGANLosses:
     """
 
     def __init__(self, conf):
-        self.lambda_A = conf.train.gan.optimizer.lambda_A
-        self.lambda_B = conf.train.gan.optimizer.lambda_B
+        self.lambda_AB = conf.train.gan.optimizer.lambda_AB
+        self.lambda_BA = conf.train.gan.optimizer.lambda_BA
 
         lambda_identity = conf.train.gan.optimizer.lambda_identity
         proportion_ssim = conf.train.gan.optimizer.proportion_ssim
@@ -38,15 +38,18 @@ class CycleGANLosses:
         losses = {}
 
         # cycle-consistency loss
-        losses['cycle_A'] = self.lambda_A * self.criterion_cycle(real_A, rec_A) # || G_A(G_B(real_A)) - real_A||
-        losses['cycle_B'] = self.lambda_B * self.criterion_cycle(real_B, rec_B)
-
+        # || G_BA(G_AB(real_A)) - real_A||
+        losses['cycle_A'] = self.lambda_AB * self.criterion_cycle(real_A, rec_A) 
+        # || G_AB(G_BA(real_B)) - real_B||
+        losses['cycle_B'] = self.lambda_BA * self.criterion_cycle(real_B, rec_B)
 
         # identity loss
         if self.criterion_idt:
             if idt_A is not None and idt_B is not None:
-                losses['idt_A'] = self.lambda_A * self.criterion_idt(idt_A, real_B)  # || G_A(real_B) - real_B ||
-                losses['idt_B'] = self.lambda_B * self.criterion_idt(idt_B, real_A) # || G_B(real_A) - real_A ||
+                # || G_AB(real_B) - real_B ||
+                losses['idt_B'] = self.lambda_AB * self.criterion_idt(idt_B, real_B)
+                # || G_BA(real_A) - real_A ||
+                losses['idt_A'] = self.lambda_BA * self.criterion_idt(idt_A, real_A)
 
             else:
                 raise ValueError(
@@ -56,6 +59,7 @@ class CycleGANLosses:
 
 
 class CycleLoss:
+
     def __init__(self, proportion_ssim):
         self.criterion = torch.nn.L1Loss()
         if proportion_ssim > 0:
@@ -68,7 +72,7 @@ class CycleLoss:
 
     def __call__(self, real, reconstructed):
         # regular L1 cycle-consistency
-        cycle_loss_L1 = self.criterion(reconstructed, real)  
+        cycle_loss_L1 = self.criterion(reconstructed, real)
 
         # cycle-consistency using a weighted combination of SSIM and L1
         if self.ssim_criterion:
@@ -79,7 +83,7 @@ class CycleLoss:
 
             # SSIM criterion returns distance metric
             cycle_loss_ssim = self.ssim_criterion(ssim_reconstructed, ssim_real, data_range=1)
-            
+
             # weighted sum of SSIM and L1 losses for both forward and backward cycle losses
             return self.alpha * cycle_loss_ssim + self.beta * cycle_loss_L1
         else:
@@ -87,10 +91,11 @@ class CycleLoss:
 
 
 class IdentityLoss:
+
     def __init__(self, lambda_identity):
         self.lambda_identity = lambda_identity
         self.criterion = torch.nn.L1Loss()
 
     def __call__(self, idt, real):
-        loss_idt = self.criterion(idt, real) 
+        loss_idt = self.criterion(idt, real)
         return loss_idt * self.lambda_identity
