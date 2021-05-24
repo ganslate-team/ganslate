@@ -28,7 +28,7 @@ train:
         require_ldct_for_training: False  # ldCT not required for training
         patch_size: [32, 128, 128]   # (D,H,W)
         patch_sampling: uniform-random-within-body-sf
-        focal_region_proportion: [0.6, 0.3, 0.3]  # (D,H,W)
+        focal_region_proportion: [0.6, 0.35, 0.35]  # (D,H,W)
         num_workers: 8
 
     gan: 

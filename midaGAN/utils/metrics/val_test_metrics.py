@@ -105,6 +105,8 @@ def nmi(gt: np.ndarray, pred: np.ndarray) -> float:
 
 def histogram_chi2(gt: np.ndarray, pred: np.ndarray) -> float:
     """Chi-squared distance computed between histograms of the GT and the prediction.
+    More about comparing two histograms -- 
+        https://stackoverflow.com/questions/6499491/comparing-two-histograms
     """
     bins = 100  # 100 bins by default
     

@@ -16,7 +16,7 @@ train:
             B: [1, 1]  # ldCT is the 2nd component
         wandb:
             project: "maastro_hx4_pet_translation"
-            run: "cyclegan_balanced_trial"
+            run: "cyclegan_balanced_lambdas10"
         
     checkpointing:
         freq: 1000
@@ -28,7 +28,7 @@ train:
         require_ldct_for_training: True  # ldCT required for training
         patch_size: [32, 128, 128]   # (D,H,W)
         patch_sampling: uniform-random-within-body-sf
-        focal_region_proportion: [0.6, 0.3, 0.3]  # (D,H,W)
+        focal_region_proportion: [0.6, 0.35, 0.35]  # (D,H,W)
         num_workers: 8
 
     gan: 

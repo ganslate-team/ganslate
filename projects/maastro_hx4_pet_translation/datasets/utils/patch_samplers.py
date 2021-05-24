@@ -1,4 +1,5 @@
 import numpy as np
+from loguru import logger
 
 
 PAIRED_SAMPLING_SCHEMES = ('uniform-random-within-body', 'fdg-pet-weighted')
@@ -176,37 +177,25 @@ class UnpairedPatchSampler3D():
 
 
     def _apply_stochastic_focal_method(self, focal_point, focal_region_size, sampling_prob_map):
-        
+    
         # Create a focal region mask having the same size as the volume      
-        volume_size = sampling_prob_map.shape
-        valid_region_min, valid_region_max = get_valid_region_corner_points(volume_size, self.patch_size)
-        
+        volume_size = sampling_prob_map.shape       
         focal_region_min, focal_region_max = [], [] 
-        
+
         for axis in range(len(focal_point)):
             # Find the lowest and highest position between which to focus for this axis
             min_position = int(focal_point[axis] - focal_region_size[axis] / 2)
             max_position = int(focal_point[axis] + focal_region_size[axis] / 2)            
 
-            # If one of the boundaries of the focus is outside of the valid area, cap it
-            min_position = max(min_position, valid_region_min[axis])
-            max_position = min(max_position, valid_region_max[axis])
+            # If one of the boundaries of the focus is outside of the volume size, cap it
+            min_position = max(min_position, 0)
+            max_position = min(max_position, volume_size[axis])
 
             focal_region_min.append(min_position)
             focal_region_max.append(max_position)
 
         z_min, y_min, x_min = focal_region_min
         z_max, y_max, x_max = focal_region_max        
-
-        # Check whether or not the focal region limits are reasonable
-        if z_min >= z_max or y_min >= y_max or x_min >= x_max:
-            print("Volume size:", volume_size)
-            print("Focal point:", focal_point)
-            print("Focal point region:", focal_region_size)
-            print(z_min, z_max)
-            raise RuntimeError("Focal region couldn't be properly defined. \
-                Likely causes: Specified `focal_region_proportion` too small.")
-
         focal_region_mask = np.zeros_like(sampling_prob_map)
         focal_region_mask[z_min:z_max, y_min:y_max, x_min:x_max] = 1
 
@@ -215,10 +204,21 @@ class UnpairedPatchSampler3D():
         #   1. Within the volume's valid region  
         #   2. AND, Within body region 
         #   3. AND, Within focal region
-        sampling_prob_map = sampling_prob_map * focal_region_mask
-        sampling_prob_map = sampling_prob_map / np.sum(sampling_prob_map)
+        intersection_mask = sampling_prob_map * focal_region_mask
+        if 1 not in list(np.unique(intersection_mask)):
+            # Edge case: If no intersection region is found between (1+2) and (3),
+            # just sample a B-image patch from anywhere within (1+2) region, i.e. valid body region
+            logger.warning("Stochastic focal sampling failed in a domain B image. \
+                A likely cause might be a too small `focal_region_proportion` value. \
+                Sampling a random valid patch from within the body region.")
+            sampling_prob_map = sampling_prob_map / np.sum(sampling_prob_map)
+            focal_point_B = sample_from_probability_map(sampling_prob_map)
+            return focal_point_B
+        
+        # Otherwise, continue with using the intersection mask and update the sampling probability map
+        sampling_prob_map = intersection_mask / np.sum(intersection_mask)
 
-        # Sample focal point using this probability map
+        # Sample focal point using this updated probability map
         focal_point_after_sf = sample_from_probability_map(sampling_prob_map)
         return focal_point_after_sf
 
@@ -247,7 +247,7 @@ def sample_from_probability_map(sampling_prob_map):
     return sampled_idx
 
 
-def init_sampling_probability_map(volume_size, patch_size, body_mask):
+def init_sampling_probability_map(volume_size, patch_size, body_mask=None):
     """Initialize sampling probability map as a volumetric mask of body region contained inside the 
     volume's valid patch region (i.e. suffieciently away from the volume borders)
     """
@@ -262,8 +262,9 @@ def init_sampling_probability_map(volume_size, patch_size, body_mask):
     # Set valid zone values as 1
     sampling_prob_map[z_min:z_max, y_min:y_max, x_min:x_max] = 1
 
-    # Filter out those outside the body region. To avoid sampling patches from the background areas.
-    sampling_prob_map = sampling_prob_map * body_mask
+    # If body mask is given, filter out voxels outside the body region to avoid sampling patches from the background areas.
+    if body_mask is not None:
+        sampling_prob_map = sampling_prob_map * body_mask  # Implemented as taking an intersection between the 2 volumes.
 
     return sampling_prob_map
 
