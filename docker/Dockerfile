@@ -16,10 +16,17 @@ RUN apt-get update && apt-get install -y libxext6 libsm6 libxrender1 build-essen
 RUN ldconfig
 
 # Make a user
+
+
 RUN adduser --disabled-password --gecos '' runner
-RUN adduser runner sudo
+# RUN adduser runner sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+ARG USER_ID
+ARG GROUP_ID
+RUN usermod -u ${USER_ID} runner
+RUN usermod -g ${GROUP_ID} runner
 USER runner
+
 
 WORKDIR /tmp
 RUN wget -q https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
@@ -43,20 +50,14 @@ RUN python -m pip install omegaconf loguru -q
 USER root
 
 # Create runner for input and output
-RUN mkdir /data
-RUN mkdir /code
 RUN mkdir /runner && chmod 777 /runner
-
+RUN mkdir /runner/ganslate && chmod 777 /runner/ganslate
+RUN mkdir /runner/datasets && chmod 777 /runner/datasets
 USER runner
-
-RUN jupyter notebook --generate-config
-ENV CONFIG_PATH "/home/runner/.jupyter/jupyter_notebook_config.py"
-COPY "jupyter_notebook_config.py" ${CONFIG_PATH}
 
 # Copy files into the docker
 COPY [".", "/runner"]
 
 WORKDIR /runner
 
-# Provide an open entrypoint for the docker
 ENTRYPOINT $0 $@
