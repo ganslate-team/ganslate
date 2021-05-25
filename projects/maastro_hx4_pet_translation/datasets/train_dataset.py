@@ -108,6 +108,7 @@ class HX4PETTranslationTrainDataset(Dataset):
         
         # ------------
         # Fetch images
+        
         index_A = index % self.num_datapoints_A
         index_B = index_A if self.paired else random.randint(0, self.num_datapoints_B - 1)
 

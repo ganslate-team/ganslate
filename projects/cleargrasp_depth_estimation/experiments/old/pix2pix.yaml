@@ -1,10 +1,10 @@
 project_dir: "./projects/cleargrasp_depth_estimation/"
 
 train:
-    output_dir: "./checkpoints/cleargrasp_depth_estimation/"
+    output_dir: "/home/zk315372/Chinmay/Cleargrasp-Depth-Estimation/pix2pix_lambda100/"
     cuda: True
-    n_iters: 125000      # (2500 (images) / 2 (batch_size)) x 100 ("epochs")
-    n_iters_decay: 5000  # Extra 5000 iters with lr decay
+    n_iters: 62500      # (2500 (images) / 1 (batch_size)) x 25 ("epochs")
+    n_iters_decay: 62500  # Extra 62500 iters with lr decay
     batch_size: 1
     mixed_precision: False
 
@@ -15,14 +15,14 @@ train:
             B: [1]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "pix2pix_lambda_10_batchsize_1"
+            run: "pix2pix_lambda_100"
         
     checkpointing:
-        freq: 10000
+        freq: 5000
 
     dataset: 
         name: "ClearGraspPix2PixDataset"
-        root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/train"
+        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         num_workers: 8
 
@@ -31,32 +31,32 @@ train:
         generator:  
             name: "Unet2D"
             in_out_channels: [6, 1]
-            num_downs: 6
+            num_downs: 4
             ngf: 64
             use_dropout: True
 
         discriminator:  
             name: "PatchGAN2D"
             in_channels: 7
-            n_layers: 4
+            n_layers: 3
             kernel_size: [4, 4]
-            ndf: 32
+            ndf: 64
             
         optimizer:
             lr_D: 0.0001
             lr_G: 0.0002
-            lambda_pix2pix: 10
+            lambda_pix2pix: 100
     
     metrics:
         discriminator_evolution: True
-        ssim: True
+        ssim: False
 
 
 val:
-    freq: 5000
+    freq: 2500
     dataset: 
         name: "ClearGraspPix2PixDataset"
-        root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"
+        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         num_workers: 8
     metrics:

@@ -143,6 +143,14 @@ class ValTestMetrics:
         if inputs.shape[1] == 2:   
             inputs = inputs[:, :1]
             targets = targets[:, :1]
+
+        # Chinmay Cleargrasp-specific hack: If the tensors have 4 channels, take only the last channel (depthmap),
+        # because the first 3 are a dummy array.
+        # Need this in case of CycleGAN-balanced applied to Cleargrasp (i.e. version 3 in this project).
+        if inputs.shape[1] == 4:   
+            inputs = inputs[:, 3:]
+            targets = targets[:, 3:]
+
         
         inputs, targets = get_npy(inputs), get_npy(targets)
 

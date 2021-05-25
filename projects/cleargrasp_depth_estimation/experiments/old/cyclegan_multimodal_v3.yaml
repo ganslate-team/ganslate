@@ -1,10 +1,10 @@
 project_dir: "./projects/cleargrasp_depth_estimation/"
 
 train:
-    output_dir: "./checkpoints/cleargrasp_cyclegan_v1/"
+    output_dir: "/home/zk315372/Chinmay/Cleargrasp-Depth-Estimation/cyclegan_balanced/"
     cuda: True
-    n_iters: 250000      # (2500 (images) / 1 (batch_size)) x 100 ("epochs")
-    n_iters_decay: 5000  # Extra 5000 iters with lr decay
+    n_iters: 62500      # (2500 (images) / 1 (batch_size)) x 25 ("epochs")
+    n_iters_decay: 62500  # Extra 62500 iters with lr decay
     batch_size: 1
     mixed_precision: False
 
@@ -12,36 +12,38 @@ train:
         freq: 50
         multi_modality_split:
             A: [3, 3]
-            B: [1]
+            B: [3, 1]
         wandb:
             project: "cleargrasp_depth_estimation"
-            run: "cyclegan_v1"
+            run: "cyclegan_balanced"
         
     checkpointing:
-        freq: 10000
+        freq: 5000
 
     dataset: 
         name: "ClearGraspCycleGANDataset"
-        root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/train"
+        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: False
-        fetch_rgb_b: False  # `False` for v1 
+        fetch_rgb_b: True  # `True` for v3
         num_workers: 8
 
     gan: 
-        name: "CycleGAN"
+        name: "CycleGANMultiModalV3"
         generator:  
             name: "Unet2D"
-            in_out_channels_AB: [6, 1]
-            in_out_channels_BA: [1, 6]
-            num_downs: 5
+            in_out_channels_AB: [6, 1]  # RGB + Normal -> Depth
+            in_out_channels_BA: [4, 3]  # RGB + Depth -> Normal
+            num_downs: 4
             ngf: 64
+            use_dropout: True
 
         discriminator:  
             name: "PatchGAN2D"
             in_channels_B: 1
-            in_channels_A: 6
-            n_layers: 4
+            in_channels_A: 3
+            n_layers: 3
+            kernel_size: [4, 4]
             ndf: 64
 
         optimizer:
@@ -54,17 +56,17 @@ train:
 
     metrics:
         discriminator_evolution: True
-        ssim: True
+        ssim: False
 
 
 val:
-    freq: 5000
+    freq: 2500
     dataset: 
         name: "ClearGraspCycleGANDataset"
-        root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"
+        root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
+        fetch_rgb_b: True  # `True` for v3
         paired: True
-        fetch_rgb_b: False  # `False` for v1 
         num_workers: 8
     metrics:
-        cycle_metrics: True
+        cycle_metrics: False

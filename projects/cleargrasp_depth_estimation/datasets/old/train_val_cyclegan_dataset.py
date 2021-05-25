@@ -94,8 +94,8 @@ class ClearGraspCycleGANDataset(Dataset):
 
         # Add noise in B's RGB photo
         if self.fetch_rgb_b:
-            rgb_B = rgb_B + torch.normal(mean=0, std=0.1, size=(self.load_size[1], self.load_size[0]))
-            rgb_B = torch.clamp(rgb_B, -1, 1)  # Clip to remove out-of-range overshoots
+            rgb_B = rgb_B + torch.normal(mean=0, std=0.05, size=(self.load_size[1], self.load_size[0]))
+            rgb_B = torch.clamp(rgb_B, -1, 1)  # Clip to remove out-of-range values
 
         # Prepare A and B
         A = torch.cat([rgb_A, normalmap], dim=0)

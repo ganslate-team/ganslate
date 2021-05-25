@@ -3,8 +3,8 @@
 
 # Job configuration ---
 
-#SBATCH --job-name=cleargrasp_depth_estimation_cyclegan
-#SBATCH --output=/home/zk315372/Chinmay/Git/midaGAN/projects/cleargrasp_depth_estimation/slurm_logs/%j.log
+#SBATCH --job-name=pix2pix_lambda100
+#SBATCH --output=/home/zk315372/Chinmay/Cleargrasp-Depth-Estimation/pix2pix_lambda100/slurm-%j.log
 
 ## OpenMP settings
 #SBATCH --cpus-per-task=8
@@ -13,7 +13,7 @@
 ## Request for a node with 2 Tesla P100 GPUs
 #SBATCH --gres=gpu:pascal:2
 
-#SBATCH --time=5:00:00
+#SBATCH --time=10:00:00
 
 ## TO use the UM DKE project account
 # #SBATCH --account=um_dke
@@ -30,7 +30,7 @@ echo; echo
 # Execute training
 python_interpreter="/home/zk315372/miniconda3/envs/gan_env/bin/python3"
 training_file="/home/zk315372/Chinmay/Git/midaGAN/tools/train.py"
-config_file="/home/zk315372/Chinmay/Git/midaGAN/projects/cleargrasp_depth_estimation/experiments/cyclegan.yaml"
+config_file="/home/zk315372/Chinmay/Git/midaGAN/projects/cleargrasp_depth_estimation/experiments/pix2pix_lambda100.yaml"
 
 CUDA_VISIBLE_DEVICES=0 $python_interpreter $training_file config=$config_file
 

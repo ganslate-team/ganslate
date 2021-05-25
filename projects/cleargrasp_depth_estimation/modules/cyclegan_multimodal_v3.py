@@ -17,6 +17,8 @@ class CycleGANMultiModalV3Config(cyclegan.CycleGANConfig):
 
 class CycleGANMultiModalV3(cyclegan.CycleGAN):
     """ CycleGAN for multimodal images -- Version 3 
+    a.k.a CycleGAN-balanced
+    
     Notation:
         A1, A2 -- rgb_A, normalmap
         B1, B2 -- rgb_B, depthmap        
@@ -48,11 +50,12 @@ class CycleGANMultiModalV3(cyclegan.CycleGAN):
         rec_B2 = self.networks['G_AB'](torch.cat([real_B1, fake_A2], dim=1))  # Compute depthmap recon.
 
         # Hack -- Use dummy zeros arrays to fill up the channels of rgb components
+        dummy_array = torch.zeros_like(real_A1)
         self.visuals.update({ 
-            'fake_B': torch.cat([torch.zeros_like(real_B1), fake_B2], dim=1),
-            'rec_A': torch.cat([torch.zeros_like(real_A1), rec_A2], dim=1),
-            'fake_A': torch.cat([torch.zeros_like(real_A1), fake_A2], dim=1),
-            'rec_B': torch.cat([torch.zeros_like(real_B1), rec_B2], dim=1),
+            'fake_B': torch.cat([dummy_array, fake_B2], dim=1),
+            'rec_A': torch.cat([dummy_array, rec_A2], dim=1),
+            'fake_A': torch.cat([dummy_array, fake_A2], dim=1),
+            'rec_B': torch.cat([dummy_array, rec_B2], dim=1),
         })
 
     def backward_D(self, discriminator):
