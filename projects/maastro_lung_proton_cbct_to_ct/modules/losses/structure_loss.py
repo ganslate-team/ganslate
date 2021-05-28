@@ -1,10 +1,12 @@
 import torch
 from midaGAN.nn.losses import cyclegan_losses
 from projects.maastro_lung_proton_cbct_to_ct.modules.losses import loss_ops
+import monai 
 
 LOSS_CRITERION = {
-    "L1": torch.nn.L1Loss(),
-    "L2": torch.nn.MSELoss(),
+    "Frequency-L1": torch.nn.L1Loss(),
+    "Frequency-L2": torch.nn.MSELoss(),
+    "Registration": monai.losses.LocalNormalizedCrossCorrelationLoss()
 
 }
 
@@ -34,6 +36,7 @@ class CycleGANLossesWithStructure(cyclegan_losses.CycleGANLosses):
         return losses
 
 
+
 class StructureLoss:
     """
     A holder class for different type of structure losses - a structure loss enforces mappings between
@@ -41,13 +44,18 @@ class StructureLoss:
     """
     def __init__(self, lambda_structure, structure_criterion):
         self.lambda_structure = lambda_structure
+        self.type = structure_criterion.split("-")[0]
         self.criterion = LOSS_CRITERION[structure_criterion]
 
     def __call__(self, input, target):
         self.device = input.device
 
-        f_input = loss_ops.get_freq_transform(input)
-        f_target = loss_ops.get_freq_transform(target)
+        if self.type == "Frequency":
+            input = loss_ops.get_freq_transform(input)
+            target = loss_ops.get_freq_transform(target)
+           
+        loss = self.criterion(input, target)
+        loss = torch.tanh(loss)
+        loss = (loss + 1)/2
 
-        return self.lambda_structure * self.criterion(f_input, f_target)
-
+        return self.lambda_structure * loss
