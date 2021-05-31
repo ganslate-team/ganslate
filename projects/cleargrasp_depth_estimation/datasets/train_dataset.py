@@ -1,8 +1,3 @@
-"""
-TODO: Consolidate training code from `train_val_pix2pix_dataset` and `train_val_cyclegan_dataset` into a common `train_dataset`,
-and validation code into a common `val_test_dataset`. Very similar to the HX4 project's dataset code
-"""
-
 import random
 from pathlib import Path
 from typing import Tuple
@@ -85,6 +80,7 @@ class ClearGraspTrainDataset(Dataset):
 
         index_A = index % self.dataset_size
         index_B = index_A if self.paired else random.randint(0, self.dataset_size - 1)
+        index_A, index_B = 9, 1  ##
         
         image_path_A, image_path_B = {}, {}
         image_path_A['RGB'] = self.image_paths['RGB'][index_A]

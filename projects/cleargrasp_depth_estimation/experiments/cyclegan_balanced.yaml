@@ -1,12 +1,15 @@
 project_dir: "./projects/cleargrasp_depth_estimation/"
 
+
+
 train:
-    output_dir: "/home/zk315372/Chinmay/Cleargrasp-Depth-Estimation/cyclegan_balanced/"
+    output_dir: "/home/zk315372/Chinmay/Cleargrasp-Depth-Estimation/cyclegan_balanced/"  
     cuda: True
     n_iters: 62500        # (2500 (images) / 1 (batch_size)) x 25 ("epochs")
     n_iters_decay: 62500  # Extra 62500 iters with lr decay
     batch_size: 1
     mixed_precision: False
+    seed: 1
 
     logging:
         freq: 50
@@ -18,7 +21,8 @@ train:
             run: "cyclegan_balanced"
         
     checkpointing:
-        freq: 2500
+        freq: 25000
+        # load_iter: 125000  ##
 
     dataset: 
         name: "ClearGraspTrainDataset"

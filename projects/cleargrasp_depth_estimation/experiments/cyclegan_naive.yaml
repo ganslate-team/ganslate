@@ -1,5 +1,6 @@
 project_dir: "./projects/cleargrasp_depth_estimation/"
 
+# output_dir: 
 train:
     output_dir: "/home/zk315372/Chinmay/Cleargrasp-Depth-Estimation/cyclegan_naive/"
     cuda: True
@@ -7,6 +8,7 @@ train:
     n_iters_decay: 62500  # Extra 62500 iters with lr decay
     batch_size: 1
     mixed_precision: False
+    seed: 1
 
     logging:
         freq: 50
@@ -18,7 +20,8 @@ train:
             run: "cyclegan_naive"
         
     checkpointing:
-        freq: 2500
+        freq: 25000
+        # load_iter: 125000  ##
 
     dataset: 
         name: "ClearGraspTrainDataset"

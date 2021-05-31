@@ -1,7 +1,3 @@
-"""
-TODO: Consolidate training code from `train_val_pix2pix_dataset` and `train_val_cyclegan_dataset` into a common `train_dataset`,
-and validation code into a common `val_test_dataset`. Very similar to the HX4 project's dataset code
-"""
 import os
 import random
 from pathlib import Path
