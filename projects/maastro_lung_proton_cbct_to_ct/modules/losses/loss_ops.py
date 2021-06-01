@@ -5,7 +5,6 @@ def get_freq_transform(image):
     """
     Returns tanh(magnitude spectrum) of the FFT transform of an image
     """
-
     image = (image + 1)/2
     # Half precision needs to be converted to single precision
     # due to lack of support in pytorch for half-fft

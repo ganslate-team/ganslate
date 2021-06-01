@@ -6,7 +6,7 @@ train:
     n_iters: 15000
     n_iters_decay: 15000
     batch_size: 1
-    output_dir: ./checkpoints/structure_loss_l1
+    output_dir: /hpcwork/vq218944/checkpoints/structure_loss_l1
     seed: 42
 
     logging:
@@ -46,7 +46,7 @@ train:
             lambda_identity: 0.0
             proportion_ssim: 0.0
             lambda_structure: 20
-            structure_criterion: "L1"
+            structure_criterion: "Frequency-L1"
             lr_D: 0.0002
             lr_G: 0.0004
 
