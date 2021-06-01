@@ -63,3 +63,4 @@ class StructureLoss:
 
         return self.lambda_structure * loss
 
+        return self.lambda_structure * loss
