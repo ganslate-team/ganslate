@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from dataclasses import dataclass
 
 from midaGAN.configs.training import TrainConfig
@@ -9,7 +9,7 @@ from midaGAN.configs.inference import InferenceConfig
 @dataclass
 class Config:
     # Enables importing project-specific classes located in the project's dir
-    project_dir: Optional[str] = None
+    project_dir: Optional[Any] = None
     # Modes handled internally
     mode: str = "train"
 
