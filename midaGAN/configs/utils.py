@@ -1,5 +1,5 @@
 from loguru import logger
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf, ListConfig
 
 import midaGAN
 from midaGAN.utils.io import import_class_from_dirs_and_modules
@@ -18,8 +18,16 @@ def init_config(conf, config_class):
 
     # Allows the framework to find user-defined, project-specific, classes and their configs
     if conf.project_dir:
-        IMPORT_LOCATIONS.append(conf.project_dir)
-        logger.info(f"Project directory {conf.project_dir} added to the"
+
+        assert isinstance(conf.project_dir, (ListConfig, str)), \
+            "project_dir needs to be a list or str"
+
+        if isinstance(conf.project_dir, ListConfig):
+            IMPORT_LOCATIONS.extend(conf.project_dir)
+        else:
+            IMPORT_LOCATIONS.append(conf.project_dir)
+
+        logger.info(f"Project directories {conf.project_dir} added to the"
                     " path to allow imports of modules from it.")
 
     # Make yaml mergeable by instantiating the dataclasses
