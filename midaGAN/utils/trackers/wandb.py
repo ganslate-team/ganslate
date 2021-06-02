@@ -17,6 +17,7 @@ class WandbTracker:
         project = conf[conf.mode].logging.wandb.project
         entity = conf[conf.mode].logging.wandb.entity
         conf_dict = OmegaConf.to_container(conf, resolve=True)
+        run_dir = conf[conf.mode].output_dir
 
         if wandb.run is None:
             if conf[conf.mode].checkpointing.load_iter and conf[conf.mode].logging.wandb.id:
@@ -24,7 +25,7 @@ class WandbTracker:
                 os.environ["WANDB_RESUME"] = "allow"
                 os.environ["WANDB_RUN_ID"] = conf[conf.mode].logging.wandb.id
 
-            wandb.init(project=project, entity=entity, config=conf_dict)
+            wandb.init(project=project, entity=entity, config=conf_dict, dir=run_dir)
 
         if conf[conf.mode].logging.wandb.run:
             wandb.run.name = conf[conf.mode].logging.wandb.run
