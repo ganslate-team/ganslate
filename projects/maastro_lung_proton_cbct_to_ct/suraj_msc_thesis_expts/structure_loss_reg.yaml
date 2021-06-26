@@ -1,23 +1,24 @@
-project_dir: ./projects/maastro_lung_proton_cbct_to_ct
-
+project_dir: 
+    - ./projects/maastro_lung_proton_cbct_to_ct
+    - ./modules
 train:
     mixed_precision: False
     cuda: True
     n_iters: 15000
     n_iters_decay: 15000
     batch_size: 1
-    output_dir: /hpcwork/vq218944/checkpoints/structure_loss_reg
-    seed: 42
+    output_dir: /work/vq218944/checkpoints/structure_loss_reg
+    seed: 24
 
     logging:
-        freq: 1
+        freq: 100
         wandb:
             project: Thesis_CBCT
             image_filter: [0.289 ,0.40]
             run: structure_loss_reg
 
     checkpointing:
-        freq: 1000
+        freq: 2000
 
     dataset: 
         name: CBCTtoCTDataset
@@ -55,7 +56,8 @@ train:
         ssim: True
     
 val:
-    freq: 1000
+    freq: 2000
+    start_after: 10000
 
     multi_dataset:
         lungs:
