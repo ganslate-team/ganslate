@@ -4,12 +4,12 @@ from modules.losses import frequency_loss
 from modules.losses import mind_loss
 from modules.losses import registration_loss
 
+
 LOSS_CRITERION = {
     "Frequency-L1": frequency_loss.FrequencyLoss(distance=torch.nn.L1Loss),
     "Frequency-L2": frequency_loss.FrequencyLoss(distance=torch.nn.MSELoss),
     "Registration": registration_loss.RegistrationLoss(),
     "MIND": mind_loss.MINDLoss()
-
 }
 
 class CycleGANLossesWithStructure(cyclegan_losses.CycleGANLosses):
@@ -46,8 +46,17 @@ class StructureLoss(torch.nn.Module):
     """
     def __init__(self, lambda_structure, structure_criterion):
         super().__init__()
+
+        assert len(lambda_structure) == len(structure_criterion), \
+            "Length of lambda and structure does not match"
+
         self.lambda_structure = lambda_structure
-        self.criterion = LOSS_CRITERION[structure_criterion]
+        self.criterion = []
+        for criterion in structure_criterion:
+            self.criterion.append(LOSS_CRITERION[criterion])
 
     def forward(self, input, target):
-        return self.lambda_structure * self.criterion(input, target)
+        loss = 0
+        for _lambda, criterion in zip(self.lambda_structure, self.criterion):
+            loss += _lambda * criterion(input, target)
+        return loss

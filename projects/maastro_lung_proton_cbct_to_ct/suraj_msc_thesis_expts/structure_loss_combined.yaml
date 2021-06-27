@@ -7,15 +7,15 @@ train:
     n_iters: 15000
     n_iters_decay: 15000
     batch_size: 1
-    output_dir: ./checkpoints/structure_loss_l1
+    output_dir: ./checkpoints/structure_loss_combo
     seed: 42
 
     logging:
         freq: 100
         wandb:
-            project: cbct_improvement_constraints
+            project: Thesis_CBCT
             image_filter: [0.289 ,0.40]
-            run: structure_loss_l1
+            run: structure_loss_combo
 
     checkpointing:
         freq: 2000
@@ -46,8 +46,8 @@ train:
             lambda_BA: 5.0
             lambda_identity: 0.0
             proportion_ssim: 0.0
-            lambda_structure: 20
-            structure_criterion: "Frequency-L1"
+            lambda_structure: [20.0, 5.0]
+            structure_criterion: ["Frequency-L1", "MIND"]
             lr_D: 0.0002
             lr_G: 0.0004
 

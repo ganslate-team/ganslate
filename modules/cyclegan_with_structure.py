@@ -1,22 +1,22 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import torch
 from midaGAN.nn.gans.unpaired import cyclegan
 from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
 from modules.losses import structure_loss
+from typing import Tuple
 
 
 @dataclass
 class CycleGANwStructureOptimizerConfig(cyclegan.OptimizerConfig):
     """ Structure consistency config for CycleGAN multimodal v1 """
-    lambda_structure: float = 0
-    structure_criterion: str = "L1"
+    lambda_structure: Tuple[float] = field(default_factory=lambda: (0, ))
+    structure_criterion: Tuple[str] = field(default_factory=lambda: ("Frequency-L1",))
 
 @dataclass
 class CycleGANwStructureConfig(cyclegan.CycleGANConfig):
     name: str = "CycleGANwStructure"
     optimizer: CycleGANwStructureOptimizerConfig = CycleGANwStructureOptimizerConfig()
-
 
 
 class CycleGANwStructure(cyclegan.CycleGAN):
