@@ -14,14 +14,14 @@ class BaseValTestEngine(BaseEngineWithInference):
         # Val and test modes allow multiple datasets, this handles when it's a single dataset
         if not isinstance(self.data_loaders, dict):
             # No name needed when it's a single dataloader
-            self.data_loaders = {"": self.data_loaders}
+            self.data_loaders = {None: self.data_loaders}
         self.current_data_loader = None
 
         self.tracker = ValTestTracker(self.conf)
         self.metricizer = ValTestMetrics(self.conf)
         self.visuals = {}
 
-    def run(self, current_idx=""):
+    def run(self, current_idx=None):
         self.logger.info(f'{"Validation" if self.conf.mode == "val" else "Testing"} started.')
 
         for dataset_name, data_loader in self.data_loaders.items():
@@ -95,7 +95,8 @@ class BaseValTestEngine(BaseEngineWithInference):
 
         # Cycle Metrics
         cycle_metrics = {}
-        if self.conf[self.conf.mode].metrics.cycle_metrics:
+        compute_cycle_metrics = getattr(self.conf[self.conf.mode].metrics, "cycle_metrics", False)
+        if compute_cycle_metrics:
             if "direction" not in self.model.infer.__code__.co_varnames:
                 raise RuntimeError("If cycle metrics are enabled, please define"
                                    " behavior of inference with a `direction` flag in"

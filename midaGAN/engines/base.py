@@ -58,8 +58,8 @@ class BaseEngineWithInference(BaseEngine):
                               generated_tensor,
                               metadata,
                               data_loader,
-                              idx="",
-                              dataset_name=""):
+                              idx=None,
+                              dataset_name=None):
         # A dataset object has to have a `save()` method if it
         # wishes to save the outputs in a particular way or format
         save_fn = getattr(data_loader.dataset, "save", False)
@@ -73,9 +73,9 @@ class BaseEngineWithInference(BaseEngine):
 
             # Output dir
             save_dir = "saved/"
-            if dataset_name:
+            if dataset_name is not None:
                 save_dir += f"{dataset_name}/"
-            if idx:
+            if idx is not None:
                 save_dir += f"{idx}/"
             save_dir = self.output_dir / save_dir
 

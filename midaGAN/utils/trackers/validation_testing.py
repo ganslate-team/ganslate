@@ -54,6 +54,19 @@ class ValTestTracker(BaseTracker):
     def log_samples(self, iter_idx, dataset_name):
         """
         """
+        def save_metrics(metrics_dict):
+            # Save individual metrics if enabled
+            if self.saver:
+                n_samples = len(list(metrics_dict.values())[0])
+                for index in range(n_samples):
+                    row = {}
+                    for metric_name, metric_list in metrics_dict.items():
+                        row[metric_name] = metric_list[index]
+                    self.saver.add(row)
+
+                filepath = Path(self.output_dir) / "metrics.csv"
+                self.saver.write(filepath)
+
 
         def get_metrics():
             metrics_dict = {}
@@ -67,7 +80,7 @@ class ValTestTracker(BaseTracker):
                     else:
                         metrics_dict[metric_name] = metric_list
  
-
+            save_metrics(metrics_dict)
             # Averages collected metrics from different iterations and batches
             return {k: np.mean(v) for k, v in metrics_dict.items()}
 
@@ -75,21 +88,21 @@ class ValTestTracker(BaseTracker):
             message = '\n' + 20 * '-' + f" ({self.conf.mode.capitalize()}"
             if iter_idx is not None:
                 message += f" at iter {iter_idx}"
-            if dataset_name != "":
+            if dataset_name is not None:
                 message += f" for dataset '{dataset_name}'"
             message += ') ' + 20 * '-' + '\n'
 
             for k, v in metrics.items():
-                name = f'{dataset_name}_{k}' if dataset_name != "" else str(k)
+                name = f'{dataset_name}_{k}' if dataset_name is not None else str(k)
                 message += f"{name}: {v:.3f} "
             self.logger.info(message)
 
         def log_visuals():
             for visuals_idx, visuals in enumerate(self.visuals):
                 name = ""
-                if dataset_name:
+                if dataset_name is not None:
                     name += f"{dataset_name}/"
-                if iter_idx:
+                if iter_idx is not None:
                     name += f"{iter_idx}"
                     # When val, put images in a dir for the iter at which it is validating.
                     # When testing, there aren't multiple iters, so it isn't necessary.
@@ -107,16 +120,9 @@ class ValTestTracker(BaseTracker):
         log_message()
         log_visuals()
             
-        # Save individual metrics if enabled
-        if self.saver:
-            for metric in self.metrics:
-                self.saver.add(metric)
-            filepath = Path(self.output_dir) / "metrics.csv"
-            self.saver.write(filepath)
-
         if self.wandb:
             mode = self.conf.mode
-            if dataset_name:
+            if dataset_name is not None:
                 mode = f"{mode}_{dataset_name}"
             self.wandb.log_iter(iter_idx=iter_idx,
                                 visuals=self.visuals,
