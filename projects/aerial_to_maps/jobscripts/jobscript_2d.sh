@@ -20,11 +20,11 @@
 #SBATCH --mem=24G
 #SBATCH --cpus-per-task=24
 #SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=1
 
 ### Request a host with a Volta GPU
 ### If you need two GPUs, change the number accordingly
-#SBATCH --gres=gpu:pascal:2
-
+#SBATCH --gres=gpu:volta:2
 
 ### if needed: switch to your working directory (where you saved your program)
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
@@ -35,4 +35,4 @@ conda activate gan_env
 cd $HOME/Maastro/midaGAN/
 
 ### your code goes here, the second part of the jobscript
-CUDA_VISIBLE_DEVICES=0 python tools/train.py $@
+CUDA_VISIBLE_DEVICES=1 python tools/train.py $@

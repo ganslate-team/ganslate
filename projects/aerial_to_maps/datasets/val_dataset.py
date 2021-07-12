@@ -31,21 +31,22 @@ class AerialMapsValDataset(Dataset):
 
     def __init__(self, conf):
 
-        self.dir_A = Path(conf.train.dataset.root) / 'A'
-        self.dir_B = Path(conf.train.dataset.root) / 'B'
+        self.dir_A = Path(conf[conf.mode].dataset.root) / 'A'
+        self.dir_B = Path(conf[conf.mode].dataset.root) / 'B'
 
         self.A_paths = make_dataset_of_files(self.dir_A, EXTENSIONS)
-        self.A_path_dict = {fn.stem.strip('_')[0]:fn for fn in self.A_paths}
+        self.A_path_dict = {fn.stem.split('_')[0]:fn for fn in self.A_paths}
 
         self.B_paths = make_dataset_of_files(self.dir_B, EXTENSIONS)
-        self.B_path_dict = {fn.stem.strip('_')[0]:fn for fn in self.B_paths}
+        self.B_path_dict = {fn.stem.split('_')[0]:fn for fn in self.B_paths}
 
         assert self.A_path_dict.keys() == self.B_path_dict.keys()
 
         self.size = len(self.A_path_dict)
+        print("Size", self.size)
 
         self.transform = get_transform(conf)
-        self.rgb_or_grayscale = 'RGB' if conf.train.dataset.image_channels == 3 else 'L'
+        self.rgb_or_grayscale = 'RGB' if conf[conf.mode].dataset.image_channels == 3 else 'L'
 
     def __getitem__(self, index):
         key = list(self.A_path_dict.keys())[index]

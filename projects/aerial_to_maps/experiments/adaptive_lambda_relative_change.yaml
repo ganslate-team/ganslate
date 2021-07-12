@@ -1,11 +1,11 @@
 project_dir: "./projects/aerial_to_maps"
 
 train:
-    output_dir: "/hpcwork/vq218944/checkpoints/aerial_to_maps/adaptive_lambda_batch_32"
+    output_dir: "/hpcwork/vq218944/checkpoints/aerial_to_maps/adaptive_lambda"
     cuda: True
     n_iters: 109600 # (1096 [dataset_size] * 100)
     n_iters_decay: 109600
-    batch_size: 32
+    batch_size: 4
     mixed_precision: False
     seed: 42
 
@@ -14,7 +14,7 @@ train:
         wandb:
             project: "aerial_to_maps"
             entity: "surajpai"
-            run: "adaptive_lambda_batch_size_32"
+            run: "adaptive_lambda"
 
     checkpointing:
         freq: 40000
@@ -51,10 +51,10 @@ train:
 
         adaptive_training:
             adaptive_lambda: True
-            sample_size: 128
-            freq: 2000
-            rt: 0.6
-
+            patience: 100
+            freq: 1000
+            change_mode: "relative"
+            warmup_iter: 5000
 
 
 val:

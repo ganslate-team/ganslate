@@ -1,7 +1,7 @@
 project_dir: "./projects/aerial_to_maps/datasets"
 
 train:
-    output_dir: "/hpcwork/vq218944/checkpoints/aerial_to_maps/base"
+    output_dir: "/hpcwork/vq218944/aerial_to_maps/base"
     cuda: True
     n_iters: 109600 # (1096 [dataset_size] * 100)
     n_iters_decay: 109600
@@ -34,6 +34,8 @@ train:
         generator:  
             name: "Unet2D"
             in_channels: 3
+            out_channels: 3
+
 
         discriminator:  
             name: "PatchGAN2D"
@@ -41,8 +43,8 @@ train:
             in_channels: 3
 
         optimizer:
-            lambda_A: 10.0
-            lambda_B: 10.0
+            lambda_AB: 10.0
+            lambda_BA: 10.0
             lambda_identity: 0.0
             proportion_ssim: 0.0
             lr_D: 0.0001
@@ -53,6 +55,18 @@ val:
     dataset:
         name: "AerialMapsValDataset"
         root: "/work/vq218944/maps/val"
+        num_workers: 8
+        image_channels: 3
+        preprocess: "resize"
+        load_size: 256
+        flip: False
+
+
+test:
+    batch_size: 128
+    dataset:
+        name: "AerialMapsValDataset"
+        root: "/work/vq218944/maps/test"
         num_workers: 8
         image_channels: 3
         preprocess: "resize"

@@ -1,11 +1,11 @@
-project_dir: "./projects/aerial_to_maps/datasets"
+project_dir: "./projects/aerial_to_maps"
 
 train:
     output_dir: "/hpcwork/vq218944/aerial_to_maps/ssim"
     cuda: True
     n_iters: 109600 # (1096 [dataset_size] * 100)
     n_iters_decay: 109600
-    batch_size: 1
+    batch_size: 32
     mixed_precision: False
 
     logging:
@@ -22,17 +22,18 @@ train:
         name: "ImageDataset"
         root: "/work/vq218944/maps/train"
         num_workers: 8
-        image_channels: 3
+        image_channels: 3 
         preprocess: "resize"
         load_size: 256
         flip: True
         
     gan:  
-        name: "CycleGAN"
+        name: "AdaptiveCycleGAN"
 
         generator:  
             name: "Unet2D"
             in_channels: 3
+            out_channels: 3
 
         discriminator:  
             name: "PatchGAN2D"

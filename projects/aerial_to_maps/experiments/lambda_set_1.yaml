@@ -12,9 +12,9 @@ train:
     logging:
         freq: 100
         wandb:
-            project: "aerial_to_maps"
+            project: "aerial_to_maps_test"
             entity: "surajpai"
-            run: "lambda_set1"
+            run: "lambda=1"
 
     checkpointing:
         freq: 40000
@@ -34,6 +34,7 @@ train:
         generator:  
             name: "Unet2D"
             in_channels: 3
+            out_channels: 3
 
         discriminator:  
             name: "PatchGAN2D"
@@ -41,8 +42,8 @@ train:
             in_channels: 3
 
         optimizer:
-            lambda_A: 1.0
-            lambda_B: 1.0
+            lambda_AB: 1.0
+            lambda_BA: 1.0
             lambda_identity: 0.0
             proportion_ssim: 0.0
             lr_D: 0.0001
@@ -53,6 +54,18 @@ val:
     dataset:
         name: "AerialMapsValDataset"
         root: "/work/vq218944/maps/val"
+        num_workers: 8
+        image_channels: 3
+        preprocess: "resize"
+        load_size: 256
+        flip: False
+
+test:
+    batch_size: 128
+
+    dataset:
+        name: "AerialMapsValDataset"
+        root: "/work/vq218944/maps/test"
         num_workers: 8
         image_channels: 3
         preprocess: "resize"
