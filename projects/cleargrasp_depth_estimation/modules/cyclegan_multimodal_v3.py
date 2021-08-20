@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 import torch
 
-from midaGAN.nn.gans.unpaired import cyclegan
-from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
+from ganslate.nn.gans.unpaired import cyclegan
+from ganslate.nn.losses.adversarial_loss import AdversarialLoss
 
 from projects.cleargrasp_depth_estimation.modules.cyclegan_losses_for_v3 \
     import CycleGANLossesForV3

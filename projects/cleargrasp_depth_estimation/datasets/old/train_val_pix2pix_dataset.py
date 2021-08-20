@@ -11,11 +11,11 @@ from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as TF
 
-from midaGAN.utils.io import make_dataset_of_files
+from ganslate.utils.io import make_dataset_of_files
 
 # Config imports
 from dataclasses import dataclass
-from midaGAN import configs
+from ganslate import configs
 
 
 EXTENSIONS = ['.jpg', '.exr']

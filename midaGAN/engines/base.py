@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from loguru import logger
 
-from midaGAN.utils import sliding_window_inferer
-from midaGAN.utils.io import decollate
+from ganslate.utils import sliding_window_inferer
+from ganslate.utils.io import decollate
 
 
 class BaseEngine(ABC):

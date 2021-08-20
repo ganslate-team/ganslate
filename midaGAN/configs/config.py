@@ -1,9 +1,9 @@
 from typing import Optional, Any
 from dataclasses import dataclass
 
-from midaGAN.configs.training import TrainConfig
-from midaGAN.configs.validation_testing import ValidationConfig, TestConfig
-from midaGAN.configs.inference import InferenceConfig
+from ganslate.configs.training import TrainConfig
+from ganslate.configs.validation_testing import ValidationConfig, TestConfig
+from ganslate.configs.inference import InferenceConfig
 
 
 @dataclass

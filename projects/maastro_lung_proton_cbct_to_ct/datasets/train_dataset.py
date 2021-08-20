@@ -4,15 +4,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple
 
-import midaGAN
+import ganslate
 import numpy as np
 import torch
-from midaGAN import configs
-from midaGAN.data.utils.body_mask import apply_body_mask
-from midaGAN.data.utils.ops import pad
-from midaGAN.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
-from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
-from midaGAN.utils import io, sitk_utils
+from ganslate import configs
+from ganslate.data.utils.body_mask import apply_body_mask
+from ganslate.data.utils.ops import pad
+from ganslate.data.utils.registration_methods import truncate_CT_to_scope_of_CBCT
+from ganslate.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+from ganslate.utils import io, sitk_utils
 from omegaconf import MISSING
 from torch.utils.data import Dataset
 

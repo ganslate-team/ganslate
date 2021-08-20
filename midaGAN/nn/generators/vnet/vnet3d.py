@@ -3,14 +3,14 @@ from loguru import logger
 import torch
 from torch import nn
 
-from midaGAN.nn import invertible
-from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, get_norm_layer_3d,
+from ganslate.nn import invertible
+from ganslate.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, get_norm_layer_3d,
                               is_bias_before_norm)
 
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

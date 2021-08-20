@@ -7,13 +7,13 @@
 
 from torch import nn
 
-from midaGAN.nn import invertible
-from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
+from ganslate.nn import invertible
+from ganslate.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 # Config imports
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

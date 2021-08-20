@@ -2,7 +2,7 @@ from torch import nn
 from torch.nn import init
 from torch.optim import lr_scheduler
 
-from midaGAN.nn import separable
+from ganslate.nn import separable
 
 
 def init_net(network, conf, device):

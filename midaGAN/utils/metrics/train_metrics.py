@@ -1,4 +1,4 @@
-import midaGAN.nn.losses.utils.ssim as ssim
+import ganslate.nn.losses.utils.ssim as ssim
 import torch
 
 

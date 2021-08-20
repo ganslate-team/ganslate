@@ -14,8 +14,8 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-from midaGAN import configs
-from midaGAN.utils import sitk_utils
+from ganslate import configs
+from ganslate.utils import sitk_utils
 
 
 import projects.maastro_hx4_pet_translation.datasets.utils.patch_samplers as patch_samplers

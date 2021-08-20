@@ -1,11 +1,11 @@
 from loguru import logger
 
 import torch
-from midaGAN.engines.base import BaseEngine
-from midaGAN.engines.validator_tester import Validator
-from midaGAN.utils import communication, environment
-from midaGAN.utils.builders import build_gan, build_loader
-from midaGAN.utils.trackers.training import TrainingTracker
+from ganslate.engines.base import BaseEngine
+from ganslate.engines.validator_tester import Validator
+from ganslate.utils import communication, environment
+from ganslate.utils.builders import build_gan, build_loader
+from ganslate.utils.trackers.training import TrainingTracker
 
 
 class Trainer(BaseEngine):

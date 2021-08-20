@@ -1,4 +1,4 @@
-# import midaGAN.nn.losses.ssim as ssim
+# import ganslate.nn.losses.ssim as ssim
 import numpy as np
 from typing import Optional
 from scipy.stats import entropy

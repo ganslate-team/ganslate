@@ -14,7 +14,7 @@ import itertools
 import torch
 
 from torch.utils.data.sampler import Sampler
-from midaGAN.utils import communication
+from ganslate.utils import communication
 
 
 class InfiniteSampler(Sampler):

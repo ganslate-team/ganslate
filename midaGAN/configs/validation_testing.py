@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, Any, Dict
 from dataclasses import dataclass
 from omegaconf import MISSING, II
-from midaGAN.configs import base
+from ganslate.configs import base
 
 
 @dataclass

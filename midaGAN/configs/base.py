@@ -67,7 +67,7 @@ class BaseGANConfig:
 
 @dataclass
 class WandbConfig:
-    project: str = "midaGAN-project"
+    project: str = "ganslate-project"
     entity: Optional[str] = None
     # Name of the wandb run
     run: Optional[str] = None

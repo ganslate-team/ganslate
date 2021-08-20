@@ -1,8 +1,8 @@
-from midaGAN.engines.base import BaseEngineWithInference
-from midaGAN.utils.metrics.val_test_metrics import ValTestMetrics
-from midaGAN.utils import environment
-from midaGAN.utils.builders import build_gan, build_loader
-from midaGAN.utils.trackers.validation_testing import ValTestTracker
+from ganslate.engines.base import BaseEngineWithInference
+from ganslate.utils.metrics.val_test_metrics import ValTestMetrics
+from ganslate.utils import environment
+from ganslate.utils.builders import build_gan, build_loader
+from ganslate.utils.trackers.validation_testing import ValTestTracker
 
 
 class BaseValTestEngine(BaseEngineWithInference):

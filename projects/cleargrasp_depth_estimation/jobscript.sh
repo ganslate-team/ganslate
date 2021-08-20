@@ -29,8 +29,8 @@ echo; echo
 
 # Execute training
 python_interpreter="/home/zk315372/miniconda3/envs/gan_env/bin/python3"
-training_file="/home/zk315372/Chinmay/Git/midaGAN/tools/train.py"
-config_file="/home/zk315372/Chinmay/Git/midaGAN/projects/cleargrasp_depth_estimation/experiments/pix2pix_new.yaml"
+training_file="/home/zk315372/Chinmay/Git/ganslate/tools/train.py"
+config_file="/home/zk315372/Chinmay/Git/ganslate/projects/cleargrasp_depth_estimation/experiments/pix2pix_new.yaml"
 
 CUDA_VISIBLE_DEVICES=0 $python_interpreter $training_file config=$config_file
 

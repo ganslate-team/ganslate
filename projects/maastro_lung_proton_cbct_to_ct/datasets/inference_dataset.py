@@ -4,16 +4,16 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-import midaGAN
-from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.body_mask import apply_body_mask
+import ganslate
+from ganslate.utils import sitk_utils
+from ganslate.data.utils.normalization import min_max_normalize, min_max_denormalize
+from ganslate.data.utils.body_mask import apply_body_mask
 
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

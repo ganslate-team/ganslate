@@ -1,18 +1,18 @@
 import sys
 from loguru import logger
 
-# --------- midaGAN imports ----------
+# --------- ganslate imports ----------
 try:
-    import midaGAN
+    import ganslate
 except ImportError:
-    logger.warning("midaGAN not installed as a package, importing it from the local directory.")
+    logger.warning("ganslate not installed as a package, importing it from the local directory.")
     sys.path.append('./')
-    import midaGAN
+    import ganslate
 
-from midaGAN.engines.trainer import Trainer
-from midaGAN.configs.builders import build_conf
-from midaGAN.utils import communication, environment
-from midaGAN.data import build_loader
+from ganslate.engines.trainer import Trainer
+from ganslate.configs.builders import build_conf
+from ganslate.utils import communication, environment
+from ganslate.data import build_loader
 from omegaconf import OmegaConf
 import wandb
 

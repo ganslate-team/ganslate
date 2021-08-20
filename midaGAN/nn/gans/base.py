@@ -6,10 +6,10 @@ from pathlib import Path
 import torch
 from torch.nn.parallel import DistributedDataParallel
 
-from midaGAN.utils.metrics.train_metrics import TrainingMetrics
-from midaGAN.nn.utils import get_scheduler
-from midaGAN.utils import communication, io
-from midaGAN.utils.builders import build_D, build_G
+from ganslate.utils.metrics.train_metrics import TrainingMetrics
+from ganslate.nn.utils import get_scheduler
+from ganslate.utils import communication, io
+from ganslate.utils.builders import build_D, build_G
 
 
 class BaseGAN(ABC):

@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass, field
-from midaGAN import configs
+from ganslate import configs
 
 DUMMY_PATCH_SIZE = [32, 32, 32]
 

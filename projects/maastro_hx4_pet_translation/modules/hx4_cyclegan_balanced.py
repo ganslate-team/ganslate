@@ -2,8 +2,8 @@ from dataclasses import dataclass
 
 import torch
 
-from midaGAN.nn.gans.unpaired import cyclegan
-from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
+from ganslate.nn.gans.unpaired import cyclegan
+from ganslate.nn.losses.adversarial_loss import AdversarialLoss
 
 from projects.maastro_hx4_pet_translation.modules.hx4_cyclegan_balanced_losses \
     import HX4CycleGANBalancedLosses

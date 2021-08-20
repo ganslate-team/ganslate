@@ -10,7 +10,7 @@ import numpy as np
 import SimpleITK as sitk
 import torch
 from omegaconf import OmegaConf
-from midaGAN.utils import communication, io
+from ganslate.utils import communication, io
 
 from loguru import logger
 

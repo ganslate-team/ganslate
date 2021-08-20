@@ -4,9 +4,9 @@ import time
 
 import torch
 
-from midaGAN.utils import communication
-from midaGAN.utils.trackers.base import BaseTracker
-from midaGAN.utils.trackers.utils import (process_visuals_for_logging,
+from ganslate.utils import communication
+from ganslate.utils.trackers.base import BaseTracker
+from ganslate.utils.trackers.utils import (process_visuals_for_logging,
                                           concat_batch_of_visuals_after_gather)
 
 

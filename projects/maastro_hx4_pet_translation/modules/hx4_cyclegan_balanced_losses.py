@@ -1,7 +1,7 @@
 import math
 import torch
 
-from midaGAN.nn.losses import cyclegan_losses
+from ganslate.nn.losses import cyclegan_losses
 
 
 class HX4CycleGANBalancedLosses(cyclegan_losses.CycleGANLosses):

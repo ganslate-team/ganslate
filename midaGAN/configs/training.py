@@ -1,7 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN.configs import base
+from ganslate.configs import base
 
 
 @dataclass

@@ -2,12 +2,12 @@ import itertools
 from dataclasses import dataclass
 
 import torch
-from midaGAN import configs
-from midaGAN.data.utils.image_pool import ImagePool
-from midaGAN.nn.gans.unpaired import cyclegan
-from midaGAN.nn.gans.base import BaseGAN
-from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-from midaGAN.nn.losses.cyclegan_losses import CycleGANLosses
+from ganslate import configs
+from ganslate.data.utils.image_pool import ImagePool
+from ganslate.nn.gans.unpaired import cyclegan
+from ganslate.nn.gans.base import BaseGAN
+from ganslate.nn.losses.adversarial_loss import AdversarialLoss
+from ganslate.nn.losses.cyclegan_losses import CycleGANLosses
 
 
 @dataclass

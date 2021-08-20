@@ -1,6 +1,6 @@
 # coding=utf-8
-# Copyright (c) midaGAN Contributors
-# Changes added by Maastro-CDS-Imaging-Group : https://github.com/Maastro-CDS-Imaging-Group/midaGAN
+# Copyright (c) ganslate Contributors
+# Changes added by Maastro-CDS-Imaging-Group : https://github.com/Maastro-CDS-Imaging-Group/ganslate
 # Clean and simplify SSIM computation similar to fastMRI SSIM.
 
 # Taken from: https://github.com/VainF/pytorch-msssim/blob/master/pytorch_msssim/ssim.py

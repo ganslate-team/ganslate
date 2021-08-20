@@ -2,9 +2,9 @@ import numpy as np
 import torch
 import SimpleITK as sitk
 
-from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.body_mask import get_body_mask
-from midaGAN.data.utils.normalization import min_max_normalize
+from ganslate.utils import sitk_utils
+from ganslate.data.utils.body_mask import get_body_mask
+from ganslate.data.utils.normalization import min_max_normalize
 
 
 # Body mask settings

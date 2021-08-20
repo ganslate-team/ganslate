@@ -1,7 +1,7 @@
 import SimpleITK as sitk
 import numpy as np
 
-from midaGAN.utils import sitk_utils
+from ganslate.utils import sitk_utils
 
 
 def truncate_CBCT_based_on_fov(image: sitk.Image):

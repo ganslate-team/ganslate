@@ -1,7 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
 
-from midaGAN.configs import base, validation_testing
+from ganslate.configs import base, validation_testing
 
 
 @dataclass

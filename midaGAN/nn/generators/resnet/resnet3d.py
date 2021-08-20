@@ -1,9 +1,9 @@
 from torch import nn
-from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
+from ganslate.nn.utils import get_norm_layer_3d, is_bias_before_norm
 
 # Config imports
 from dataclasses import dataclass
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

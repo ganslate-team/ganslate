@@ -5,7 +5,7 @@ train:
     n_iters: 15000
     n_iters_decay: 15000
     batch_size: 1
-    output_dir: /midagan/checkpoints/ssim_small_patch
+    output_dir: /ganslate/checkpoints/ssim_small_patch
     seed: 42
     
     logging:

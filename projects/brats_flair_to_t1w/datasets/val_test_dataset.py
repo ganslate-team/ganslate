@@ -4,16 +4,16 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import SimpleITK as sitk
-from midaGAN.utils.io import make_dataset_of_files
-from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.normalization import z_score_normalize
-from midaGAN.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
+from ganslate.utils.io import make_dataset_of_files
+from ganslate.utils import sitk_utils
+from ganslate.data.utils.normalization import z_score_normalize
+from ganslate.data.utils.stochastic_focal_patching import StochasticFocalPatchSampler
 
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

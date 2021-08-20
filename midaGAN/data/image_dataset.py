@@ -4,12 +4,12 @@ from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset
 
-from midaGAN.data.utils.transforms import get_transform
-from midaGAN.utils.io import make_dataset_of_files
+from ganslate.data.utils.transforms import get_transform
+from ganslate.utils.io import make_dataset_of_files
 
 # Config imports
 from dataclasses import dataclass
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

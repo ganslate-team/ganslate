@@ -1,11 +1,11 @@
 from typing import Tuple
 from torch import nn
-from midaGAN.nn.utils import get_norm_layer_3d, is_bias_before_norm
-from midaGAN.nn import attention
+from ganslate.nn.utils import get_norm_layer_3d, is_bias_before_norm
+from ganslate.nn import attention
 
 # Config imports
 from dataclasses import dataclass
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

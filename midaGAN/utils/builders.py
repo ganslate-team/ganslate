@@ -4,12 +4,12 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import omegaconf
 
-from midaGAN.configs.config import Config
-from midaGAN.configs.utils import IMPORT_LOCATIONS, init_config
-from midaGAN.data.samplers import InfiniteSampler
-from midaGAN.nn.utils import init_net
-from midaGAN.utils import communication
-from midaGAN.utils.io import import_class_from_dirs_and_modules
+from ganslate.configs.config import Config
+from ganslate.configs.utils import IMPORT_LOCATIONS, init_config
+from ganslate.data.samplers import InfiniteSampler
+from ganslate.nn.utils import init_net
+from ganslate.utils import communication
+from ganslate.utils.io import import_class_from_dirs_and_modules
 
 
 def build_conf():

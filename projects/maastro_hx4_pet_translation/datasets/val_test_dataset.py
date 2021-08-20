@@ -7,10 +7,10 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-from midaGAN import configs
-from midaGAN.utils import sitk_utils
-from midaGAN.data.utils.normalization import min_max_denormalize
-from midaGAN.data.utils.ops import pad
+from ganslate import configs
+from ganslate.utils import sitk_utils
+from ganslate.data.utils.normalization import min_max_denormalize
+from ganslate.data.utils.ops import pad
 
 from projects.maastro_hx4_pet_translation.datasets.utils.basic import (sitk2np, 
                                                                        np2tensor, 

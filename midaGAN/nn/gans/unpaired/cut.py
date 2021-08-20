@@ -2,15 +2,15 @@ import numpy as np
 import torch
 from torch import nn
 
-from midaGAN.nn.gans.base import BaseGAN
-from midaGAN.nn.losses.adversarial_loss import AdversarialLoss
-from midaGAN.nn.losses.cut_losses import PatchNCELoss
-from midaGAN.nn.utils import init_net, get_network_device
+from ganslate.nn.gans.base import BaseGAN
+from ganslate.nn.losses.adversarial_loss import AdversarialLoss
+from ganslate.nn.losses.cut_losses import PatchNCELoss
+from ganslate.nn.utils import init_net, get_network_device
 
 # Config imports
 from dataclasses import dataclass
 from typing import Tuple
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

@@ -5,12 +5,12 @@ from typing import Tuple
 
 import torch
 from torch import nn
-from midaGAN import configs
-from midaGAN.nn import invertible
-from midaGAN.nn import attention
+from ganslate import configs
+from ganslate.nn import invertible
+from ganslate.nn import attention
 
-from midaGAN.nn.generators.vnet.vnet3d import (DownBlock, InputBlock, OutBlock, UpBlock)
-from midaGAN.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, get_norm_layer_3d,
+from ganslate.nn.generators.vnet.vnet3d import (DownBlock, InputBlock, OutBlock, UpBlock)
+from ganslate.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, get_norm_layer_3d,
                               is_bias_before_norm)
 
 

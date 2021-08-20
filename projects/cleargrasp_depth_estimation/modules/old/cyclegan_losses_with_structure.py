@@ -1,7 +1,7 @@
 import math
 import torch
 
-from midaGAN.nn.losses import cyclegan_losses
+from ganslate.nn.losses import cyclegan_losses
 
 
 MIND_DESCRIPTOR_CONFIG = {'non_local_region_size': 9, 'patch_size': 7, 'neighbor_size': 3, 'gaussian_patch_sigma': 2.0}

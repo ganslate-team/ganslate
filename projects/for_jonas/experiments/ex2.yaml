@@ -1,4 +1,4 @@
-project_dir: "/work/ft002207/midaGAN/projects/for_jonas/"
+project_dir: "/work/ft002207/ganslate/projects/for_jonas/"
 cuda: True
 n_iters: 50000
 n_iters_decay: 0

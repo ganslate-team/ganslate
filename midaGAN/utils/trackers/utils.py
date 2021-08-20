@@ -1,5 +1,5 @@
 import torch
-from midaGAN.utils import communication
+from ganslate.utils import communication
 
 
 def concat_batch_of_visuals_after_gather(visuals_list):

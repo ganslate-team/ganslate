@@ -2,15 +2,15 @@ from loguru import logger
 import sys
 
 try:
-    import midaGAN
+    import ganslate
 except ImportError:
-    logger.warning("midaGAN not installed as a package, importing it from the local directory.")
+    logger.warning("ganslate not installed as a package, importing it from the local directory.")
     sys.path.append('./')
-    import midaGAN
+    import ganslate
 
-from midaGAN.engines.trainer import Trainer
-from midaGAN.utils import communication, environment
-from midaGAN.utils.builders import build_conf
+from ganslate.engines.trainer import Trainer
+from ganslate.utils import communication, environment
+from ganslate.utils.builders import build_conf
 
 
 def main():

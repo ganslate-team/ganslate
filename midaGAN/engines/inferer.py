@@ -1,10 +1,10 @@
 from loguru import logger
 
-from midaGAN.engines.base import BaseEngineWithInference
-from midaGAN.utils import environment
-from midaGAN.utils.builders import build_gan, build_loader
-from midaGAN.utils.trackers.inference import InferenceTracker
-from midaGAN.utils import communication
+from ganslate.engines.base import BaseEngineWithInference
+from ganslate.utils import environment
+from ganslate.utils.builders import build_gan, build_loader
+from ganslate.utils.trackers.inference import InferenceTracker
+from ganslate.utils import communication
 
 
 class Inferer(BaseEngineWithInference):

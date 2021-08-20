@@ -1,5 +1,5 @@
 import torch
-import midaGAN.nn.losses.utils.ssim as ssim
+import ganslate.nn.losses.utils.ssim as ssim
 
 import logging
 logger = logging.getLogger(__name__)

@@ -3,10 +3,10 @@ from pathlib import Path
 
 import torchvision
 from omegaconf import OmegaConf
-from midaGAN.utils import communication, io
+from ganslate.utils import communication, io
 
-from midaGAN.utils.trackers.tensorboard import TensorboardTracker
-from midaGAN.utils.trackers.wandb import WandbTracker
+from ganslate.utils.trackers.tensorboard import TensorboardTracker
+from ganslate.utils.trackers.wandb import WandbTracker
 
 
 class BaseTracker:

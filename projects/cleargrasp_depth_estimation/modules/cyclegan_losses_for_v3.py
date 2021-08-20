@@ -1,7 +1,7 @@
 import math
 import torch
 
-from midaGAN.nn.losses import cyclegan_losses
+from ganslate.nn.losses import cyclegan_losses
 
 
 class CycleGANLossesForV3(cyclegan_losses.CycleGANLosses):
