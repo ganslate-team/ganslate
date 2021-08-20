@@ -10,7 +10,6 @@ from midaGAN import configs
 @dataclass
 class PatchGAN3DConfig(configs.base.BaseDiscriminatorConfig):
     name: str = "PatchGAN3D"
-    in_channels: int = 1
     ndf: int = 64
     n_layers: int = 3
     kernel_size: Tuple[int] = (4, 4, 4)

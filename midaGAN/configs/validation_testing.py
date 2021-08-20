@@ -28,6 +28,10 @@ class BaseValTestMetricsConfig:
     mse: bool = True
     # Abs diff between the two images
     mae: bool = True
+    # Normalized Mutual Information
+    nmi: bool = False
+    # Chi-squared Histogram Distance
+    histogram_chi2: bool = False
 
 
 @dataclass

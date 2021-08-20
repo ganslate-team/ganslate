@@ -24,19 +24,29 @@ class BaseOptimizerConfig:
     lr_D: float = 0.0001
     lr_G: float = 0.0002
 
-
 @dataclass
-class BaseDiscriminatorConfig:
-    name: str = MISSING
-    in_channels: int = MISSING
-
+class GeneratorInOutChannelsConfig:
+    AB: Tuple[int, int] = MISSING
+    BA: Optional[Tuple[int, int]] = II("train.gan.generator.in_out_channels.AB")
 
 @dataclass
 class BaseGeneratorConfig:
     name: str = MISSING
-    in_channels: int = MISSING
-    out_channels: int = MISSING
+    # TODO: When OmegaConf implements Union, enable entering a single int when only AB is needed,
+    # or when AB and BA are the same. Otherwise use the GeneratorInOutChannelsConfig.
+    in_out_channels: GeneratorInOutChannelsConfig = GeneratorInOutChannelsConfig
+        
+@dataclass
+class DiscriminatorInChannelsConfig:
+    B: int = MISSING
+    A: Optional[int] = II("train.gan.discriminator.in_channels.B")
 
+@dataclass
+class BaseDiscriminatorConfig:
+    name: str = MISSING
+    # TODO: When OmegaConf implements Union, enable entering a single int when only B is needed,
+    # or when B and A are the same. Otherwise use the DiscriminatorInChannelsConfig.
+    in_channels: DiscriminatorInChannelsConfig = DiscriminatorInChannelsConfig
 
 @dataclass
 class BaseGANConfig:

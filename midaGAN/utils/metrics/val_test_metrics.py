@@ -1,8 +1,7 @@
 # import midaGAN.nn.losses.ssim as ssim
 import numpy as np
 from typing import Optional
-
-import numpy as np
+from scipy.stats import entropy
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
 
@@ -85,7 +84,49 @@ def ssim(gt: np.ndarray, pred: np.ndarray, maxval: Optional[float] = None) -> fl
     return ssim_sum / size
 
 
-METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae}
+def nmi(gt: np.ndarray, pred: np.ndarray) -> float:
+    """Normalized Mutual Information.
+    Implementation taken from scikit-image 0.19.0.dev0 source --
+        https://github.com/scikit-image/scikit-image/blob/main/skimage/metrics/simple_metrics.py#L193-L261
+    Not using scikit-image because NMI is supported only in >=0.19.
+    """
+    bins = 100  # 100 bins by default 
+    hist, bin_edges = np.histogramdd(
+            [np.reshape(gt, -1), np.reshape(pred, -1)],
+            bins=bins,
+            density=True,
+            )
+    H0 = entropy(np.sum(hist, axis=0))
+    H1 = entropy(np.sum(hist, axis=1))
+    H01 = entropy(np.reshape(hist, -1))
+    nmi_value = (H0 + H1) / H01
+    return float(nmi_value)
+
+
+def histogram_chi2(gt: np.ndarray, pred: np.ndarray) -> float:
+    """Chi-squared distance computed between histograms of the GT and the prediction.
+    More about comparing two histograms -- 
+        https://stackoverflow.com/questions/6499491/comparing-two-histograms
+    """
+    bins = 100  # 100 bins by default
+    
+    # Compute histograms
+    gt_histogram, gt_bin_edges = np.histogram(gt, bins=bins)
+    pred_histogram, pred_bin_edges = np.histogram(pred, bins=bins)
+    
+    # Normalize the histograms to convert them into discrete distributions
+    gt_histogram = gt_histogram / gt_histogram.sum()
+    pred_histogram = pred_histogram / pred_histogram.sum()
+    
+    # Compute chi-squared distance
+    bin_to_bin_distances = (pred_histogram - gt_histogram)**2 / (pred_histogram + gt_histogram)
+    # Remove NaN values caused by 0/0 division. Equivalent to manually setting them as 0.
+    bin_to_bin_distances = bin_to_bin_distances[np.logical_not(np.isnan(bin_to_bin_distances))]
+    chi2_distance_value = np.sum(bin_to_bin_distances)
+    return float(chi2_distance_value)
+
+
+METRIC_DICT = {"ssim": ssim, "mse": mse, "nmse": nmse, "psnr": psnr, "mae": mae, "nmi": nmi, "histogram_chi2": histogram_chi2}
 
 
 class ValTestMetrics:
@@ -95,7 +136,22 @@ class ValTestMetrics:
 
     def get_metrics(self, inputs, targets, mask=None):
         metrics = {}
+        
+        # Chinmay HX4-specific hack: If the tensors have 2 channels, take only the 1st channel (HX4-PET),
+        # because the 2nd channel is a dummy.
+        # Need this in case of HX4-CycleGAN-balanced.
+        if inputs.shape[1] == 2:   
+            inputs = inputs[:, :1]
+            targets = targets[:, :1]
 
+        # Chinmay Cleargrasp-specific hack: If the tensors have 4 channels, take only the last channel (depthmap),
+        # because the first 3 are a dummy array.
+        # Need this in case of CycleGAN-balanced applied to Cleargrasp (i.e. version 3 in this project).
+        if inputs.shape[1] == 4:   
+            inputs = inputs[:, 3:]
+            targets = targets[:, 3:]
+
+        
         inputs, targets = get_npy(inputs), get_npy(targets)
 
         # Iterating over all metrics that need to be computed

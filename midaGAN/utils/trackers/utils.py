@@ -100,28 +100,35 @@ def _split_multimodal_visuals(visuals, multi_modality_split):
         return visuals
 
     splitted_visuals = {}
+
     # For each tensor in visuals
-    for name in visuals:
-        # For each domain (A and B)
-        for domain in multi_modality_split:
-            # Names of visuals end with _A or _B
-            if name.endswith(domain):
-                channel_split = tuple(multi_modality_split[domain])
-                # Possible that the split is defined for only one of the two domains
-                if channel_split is None:
-                    # Then just copy the visual
-                    splitted_visuals[name] = visuals[name]
-                    continue
+    for name in visuals.keys():
+        # Consider only those visuals for splitting whose names contain `_A` or `_B` (for ex. images with names `real_A` or `fake_B`)
+        if '_A' in name or '_B' in name:
+            # For each domain (`A` and `B`)
+            for domain in multi_modality_split:
+                # Names of visuals ending with the domain name
+                if name.endswith(domain):
+                    channel_split = tuple(multi_modality_split[domain])
+                    # Possible that the split is defined for only one of the two domains
+                    if channel_split is None:
+                        # Then just copy the visual
+                        splitted_visuals[name] = visuals[name]
+                        continue
 
-                # Num of channels in split need to correspond to the actual num of channels
-                if sum(channel_split) != visuals[name].shape[1]:
-                    raise ValueError("Please specify channel-split correctly!")
+                    # Num of channels in split need to correspond to the actual num of channels
+                    if sum(channel_split) != visuals[name].shape[1]:
+                        raise ValueError("Please specify channel-split correctly!")
 
-                # Split the modalities and assign them to visuals
-                splitted_modalities = torch.split(visuals[name], channel_split, dim=1)
-                for i in range(len(channel_split)):
-                    splitted_visuals[f"{name}{i+1}"] = splitted_modalities[i]
-
+                    # Split the modalities and assign them to visuals
+                    splitted_modalities = torch.split(visuals[name], channel_split, dim=1)
+                    for i in range(len(channel_split)):
+                        splitted_visuals[f"{name}{i+1}"] = splitted_modalities[i]
+        
+        # No processing of visuals whose names do not contain `_A` or `_B` (for ex. masks with names `BODY` or `GTV`)
+        else:
+            splitted_visuals[name] = visuals[name]
+ 
     return splitted_visuals
 
 

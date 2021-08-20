@@ -108,6 +108,7 @@ class ValTestTracker(BaseTracker):
                     # When testing, there aren't multiple iters, so it isn't necessary.
                     name += "/" if self.conf.mode == "val" else "_"
                 name += f"{visuals_idx}"
+                
                 self._save_image(visuals, name)
 
         def clear_buffers():

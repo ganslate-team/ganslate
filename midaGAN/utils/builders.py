@@ -2,7 +2,7 @@ import copy
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from omegaconf import OmegaConf
+import omegaconf
 
 from midaGAN.configs.config import Config
 from midaGAN.configs.utils import IMPORT_LOCATIONS, init_config
@@ -13,15 +13,15 @@ from midaGAN.utils.io import import_class_from_dirs_and_modules
 
 
 def build_conf():
-    cli = OmegaConf.from_cli()
+    cli = omegaconf.OmegaConf.from_cli()
     conf = init_config(cli.pop("config"), config_class=Config)
-    return OmegaConf.merge(conf, cli)
+    return omegaconf.OmegaConf.merge(conf, cli)
 
 
 def build_loader(conf):
     """Builds the dataloader(s). If the config for dataset is a single dataset, it
     will return a dataloader for it, but if multiple datasets were specified,
-    a list of dataloaders, one for each dataset, will be returnet.
+    a list of dataloaders, one for each dataset, will be returned.
     """
     ############## Multi-dataset loaders #################
     if "multi_dataset" in conf[conf.mode] and conf[conf.mode].multi_dataset is not None:
@@ -78,16 +78,24 @@ def build_gan(conf):
     return model
 
 
-def build_G(conf, device):
-    return build_network_by_role('generator', conf, device)
+def build_G(conf, direction, device):
+    assert direction in ['AB', 'BA']
+    return build_network_by_role('generator', conf, direction, device)
 
 
-def build_D(conf, device):
-    return build_network_by_role('discriminator', conf, device)
+def build_D(conf, domain, device):
+    assert domain in ['B', 'A'] 
+    return build_network_by_role('discriminator', conf, domain, device)
 
 
-def build_network_by_role(role, conf, device):
-    """Builds a discriminator or generator. TODO: document """
+def build_network_by_role(role, conf, label, device):
+    """Builds a discriminator or generator. TODO: document better 
+    Parameters:
+            role -- `generator` or `discriminator`
+            conf -- conf
+            label -- role-specific label 
+            device -- torch device 
+    """
     assert role in ['discriminator', 'generator']
 
     name = conf.train.gan[role].name
@@ -96,6 +104,23 @@ def build_network_by_role(role, conf, device):
     network_args = dict(conf.train.gan[role])
     network_args.pop("name")
     network_args["norm_type"] = conf.train.gan.norm_type
+    
+    # Handle the network's channels settings
+    if role == 'generator':
+        in_out_channels = network_args.pop('in_out_channels')
+        # TODO: This will enable support for both Dict and a single Tuple as 
+        # mentioned in the config (configs/base.py#GeneratorInOutChannelsConfig) 
+        # when OmegaConf will allow Union. Update comment when that happens.
+        if isinstance(in_out_channels, omegaconf.dictconfig.DictConfig):
+            in_out_channels = in_out_channels[label]
+        network_args["in_channels"], network_args["out_channels"] = in_out_channels
+    
+    elif role == 'discriminator':
+        # TODO: This will enable support for both Dict and a single Int as 
+        # mentioned in the config (configs/base.py#DiscriminatorInChannelsConfig)
+        # when OmegaConf will allow Union. Update comment when that happens.
+        if isinstance(network_args["in_channels"] , omegaconf.dictconfig.DictConfig):
+            network_args["in_channels"] = network_args["in_channels"][label]
 
     network = network_class(**network_args)
     return init_net(network, conf, device)
