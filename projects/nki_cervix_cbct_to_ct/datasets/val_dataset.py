@@ -5,20 +5,20 @@ from pathlib import Path
 # Config imports
 from typing import List, Tuple
 
-import midaGAN
+import ganslate
 import numpy as np
 import torch
-from midaGAN import configs
-from midaGAN.data.utils.ops import pad
-from midaGAN.data.utils.body_mask import get_body_mask
-from midaGAN.data.utils.fov_truncate import truncate_CBCT_based_on_fov
-from midaGAN.data.utils.normalization import (min_max_denormalize, min_max_normalize)
-from midaGAN.data.utils.registration_methods import (register_CT_to_CBCT,
+from ganslate import configs
+from ganslate.data.utils.ops import pad
+from ganslate.data.utils.body_mask import get_body_mask
+from ganslate.data.utils.fov_truncate import truncate_CBCT_based_on_fov
+from ganslate.data.utils.normalization import (min_max_denormalize, min_max_normalize)
+from ganslate.data.utils.registration_methods import (register_CT_to_CBCT,
                                                      truncate_CT_to_scope_of_CBCT)
-from midaGAN.data.utils.stochastic_focal_patching import \
+from ganslate.data.utils.stochastic_focal_patching import \
     StochasticFocalPatchSampler
-from midaGAN.utils import sitk_utils
-from midaGAN.utils.io import load_json, make_recursive_dataset_of_files
+from ganslate.utils import sitk_utils
+from ganslate.utils.io import load_json, make_recursive_dataset_of_files
 from omegaconf import MISSING
 from torch.utils.data import Dataset
 from loguru import logger

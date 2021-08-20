@@ -30,7 +30,7 @@
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 
 source $HOME/.bashrc
-cd $HOME/midaGAN/
+cd $HOME/ganslate/
 
 ### your code goes here, the second part of the jobscript
 # DONT FORGET TO UPDATE THE SBATCH jobname

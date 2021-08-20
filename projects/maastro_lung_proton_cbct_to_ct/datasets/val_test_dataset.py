@@ -3,16 +3,16 @@ from loguru import logger
 import torch
 from torch.utils.data import Dataset
 
-import midaGAN
-from midaGAN.utils import io, sitk_utils
-from midaGAN.data.utils.normalization import min_max_normalize, min_max_denormalize
-from midaGAN.data.utils.body_mask import apply_body_mask
+import ganslate
+from ganslate.utils import io, sitk_utils
+from ganslate.data.utils.normalization import min_max_normalize, min_max_denormalize
+from ganslate.data.utils.body_mask import apply_body_mask
 
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass
 from omegaconf import MISSING
-from midaGAN import configs
+from ganslate import configs
 
 from .common import (get_ct_body_mask_path, mask_out_ct, mask_out_registered_cbct_with_ct_mask,
                      clamp_normalize)
@@ -91,7 +91,8 @@ class CBCTtoCTValTestDataset(Dataset):
         return tensor - self.hu_min
 
     def save(self, tensor, save_dir, metadata):
-        tensor = min_max_denormalize(tensor.cpu(), self.hu_min, self.hu_max)
+        tensor = tensor.squeeze().cpu()
+        tensor = min_max_denormalize(tensor, self.hu_min, self.hu_max)
 
         sitk_image = sitk_utils.tensor_to_sitk_image(tensor, metadata['origin'],
                                                      metadata['spacing'], metadata['direction'],

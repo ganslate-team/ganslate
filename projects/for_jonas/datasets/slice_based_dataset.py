@@ -5,14 +5,14 @@ import torch
 import torchvision
 import pandas as pd
 from torch.utils.data import Dataset
-from midaGAN.data.utils.normalization import z_score_normalize_with_precomputed_stats
-from midaGAN.utils import sitk_utils, io
+from ganslate.data.utils.normalization import z_score_normalize_with_precomputed_stats
+from ganslate.utils import sitk_utils, io
 
 # Config imports
 from typing import Tuple
 from dataclasses import dataclass, field
 from omegaconf import MISSING
-from midaGAN import configs
+from ganslate import configs
 
 
 @dataclass

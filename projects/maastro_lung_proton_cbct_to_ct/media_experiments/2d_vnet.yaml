@@ -63,3 +63,12 @@ val:
 
     sliding_window:
         window_size: ${train.dataset.patch_size}
+        
+        
+test:
+    dataset:
+        name: CBCTtoCTValTestDataset
+        root: /mnt/particija/train_val_test/val_phantom
+
+    sliding_window:
+        window_size: ${train.dataset.patch_size}

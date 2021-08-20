@@ -5,7 +5,7 @@ train:
     n_iters: 5
     n_iters_decay: 5
     batch_size: 1
-    output_dir: /midagan/checkpoints/benchmark
+    output_dir: /ganslate/checkpoints/benchmark
 
     logging:
         freq: 1

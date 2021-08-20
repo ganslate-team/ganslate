@@ -1,15 +1,15 @@
 import sys
 from loguru import logger
 
-# --------- midaGAN imports ----------
+# --------- ganslate imports ----------
 try:
-    import midaGAN
+    import ganslate
 except ImportError:
-    logger.warning("midaGAN not installed as a package, importing it from the local directory.")
+    logger.warning("ganslate not installed as a package, importing it from the local directory.")
     sys.path.append('./')
-    import midaGAN
+    import ganslate
 
-from midaGAN.utils.metrics.val_test_metrics import ValTestMetrics
+from ganslate.utils.metrics.val_test_metrics import ValTestMetrics
 import torch
 import numpy as np
 

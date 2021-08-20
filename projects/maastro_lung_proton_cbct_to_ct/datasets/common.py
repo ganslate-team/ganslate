@@ -1,8 +1,8 @@
 from loguru import logger
 
 import torch
-from midaGAN.data.utils.normalization import min_max_normalize
-from midaGAN.utils import io, sitk_utils
+from ganslate.data.utils.normalization import min_max_normalize
+from ganslate.utils import io, sitk_utils
 
 
 def mask_out_ct(ct_scan, ct_dir_path, masking_value):
