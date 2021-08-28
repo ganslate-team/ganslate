@@ -4,7 +4,14 @@ nav:
     - Home: index.md
     - Installation: installation.md
     - Tutorials:
-        - Your First Run: tutorials/your_first_run.md
-        - Loading Your Data: tutorials/loading_your_data.md
-        - Configuring Your Training: tutorials/configure_your_training.md
+        - Getting Started with horse2zebra: tutorials/horse2zebra.md
+        - Intro to Configuration: tutorials/configuration.md
+        - Starting a New Project: tutorials/starting_a_new_project.md
+        - Custom Dataset: tutorials/custom_dataset.md
+        - Custom Architecture: tutorials/custom_architecture.md
+        - Training, Validation, Testing, Inference: tutorials/engines.md
+
 theme: readthedocs
+
+markdown_extensions:
+    - admonition

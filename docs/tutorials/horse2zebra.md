@@ -1,4 +1,4 @@
-# Your First Run With horse2zebra Dataset
+# Your First Run (horse2zebra)
 
 
 ## For Docker Install

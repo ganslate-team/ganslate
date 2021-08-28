@@ -79,7 +79,7 @@ train:
     flip: True
 ```
 
-Apart from this, make sure the other parameters in the `default_docker.yaml` are set appropriately. [Refer to configuring your training with yaml files](configure_your_training.md). 
+Apart from this, make sure the other parameters in the `default_docker.yaml` are set appropriately. [Refer to configuring your training with yaml files](configuration.md). 
 
 You can now run training with your custom Dataset! Run this command from the root of the repository,
 ```python
