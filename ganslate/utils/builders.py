@@ -1,4 +1,5 @@
 import copy
+import sys
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -13,9 +14,13 @@ from ganslate.utils.io import import_class_from_dirs_and_modules
 
 
 def build_conf():
-    cli = omegaconf.OmegaConf.from_cli()
-    conf = init_config(cli.pop("config"), config_class=Config)
-    return omegaconf.OmegaConf.merge(conf, cli)
+    cli = omegaconf.OmegaConf.from_dotlist(sys.argv[2:])
+
+    yaml_conf = cli.pop("config")
+    cli_conf_overrides = cli
+
+    conf = init_config(yaml_conf, config_class=Config)
+    return omegaconf.OmegaConf.merge(conf, cli_conf_overrides)
 
 
 def build_loader(conf):
