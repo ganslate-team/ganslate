@@ -1,8 +1,4 @@
-ARG CUDA="10.2"
-ARG CUDNN="7"
-
-# TODO: conda installs its own version of cuda
-FROM nvidia/cuda:${CUDA}-cudnn${CUDNN}-devel-ubuntu18.04
+FROM nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
 
 ENV CUDA_PATH /usr/local/cuda
 ENV CUDA_ROOT /usr/local/cuda/bin
@@ -38,26 +34,28 @@ ENV PATH "/home/runner/miniconda3/bin:$PATH:$CUDA_ROOT"
 RUN conda update -n base conda -yq
 RUN conda install python=3.8
 RUN conda install numpy pyyaml mkl mkl-include setuptools cmake cffi typing boost
-RUN conda install pytorch torchvision cudatoolkit=10.2 -c pytorch
+RUN conda install pytorch torchvision cudatoolkit=10.1 -c pytorch
 RUN conda install scipy pandas scikit-learn scikit-image -yq
 RUN conda install cython tqdm jupyter sqlalchemy -yq
+
+RUN git clone https://github.com/NVIDIA/apex \
+ && cd apex \
+ && pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./ \
+ && cd ..
 
 RUN python -m pip install opencv-python simpleitk h5py -q
 RUN python -m pip install tb-nightly wandb -q
 RUN python -m pip install monai memcnn -q
 RUN python -m pip install omegaconf loguru -q
 
+
 USER root
 
-# Create runner for input and output
-RUN mkdir /runner && chmod 777 /runner
-RUN mkdir /runner/ganslate && chmod 777 /runner/ganslate
-RUN mkdir /runner/datasets && chmod 777 /runner/datasets
+# Create folders for input and output
+RUN mkdir /ganslate && chmod 777 /ganslate
+RUN mkdir /data && chmod 777 /data
 USER runner
 
-# Copy files into the docker
-COPY [".", "/runner"]
-
-WORKDIR /runner
+WORKDIR /ganslate
 
 ENTRYPOINT $0 $@
