@@ -35,16 +35,18 @@ train:
         name: "CycleGAN"
         generator:  
             name: "Unet2D" 
-            in_out_channels_AB: [6, 1]  # RGB + Normal -> Depth
-            in_out_channels_BA: [1, 6]  # Depth -> Normal + RGB
+            in_out_channels:
+                AB: [6, 1]  # RGB + Normal -> Depth
+                BA: [1, 6]  # Depth -> Normal + RGB
             num_downs: 4
             ngf: 64
             use_dropout: True
 
         discriminator:  
             name: "PatchGAN2D"
-            in_channels_B: 1
-            in_channels_A: 6
+            in_channels:
+                B: 1
+                A: 6
             n_layers: 3
             kernel_size: [4, 4]
             ndf: 64

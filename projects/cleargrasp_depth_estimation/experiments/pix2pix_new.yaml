@@ -33,14 +33,16 @@ train:
         name: "Pix2PixConditionalGAN"
         generator:  
             name: "Unet2D"
-            in_out_channels: [6, 1]
+            in_out_channels:
+                AB: [6, 1]
             num_downs: 4
             ngf: 64
             use_dropout: True
 
         discriminator:  
             name: "PatchGAN2D"
-            in_channels: 7
+            in_channels: 
+                B: 7
             n_layers: 3
             kernel_size: [4, 4]
             ndf: 64

@@ -1,3 +1,7 @@
+# Note:  The design of CycleGAN-balanced is a bit weird in the sense that the conventional notion of a domain A image and a domain B image does not apply.
+# Therefore, it is not supported by the Ganslate framework unless tweaking some code as a hack (specifically, in the `get_metrics()` function file `ganslate/utils/metrics/val_test_metrics.py`)
+
+
 project_dir: "./projects/maastro_hx4_pet_translation/"
 
 train:
@@ -35,16 +39,18 @@ train:
         name: "HX4CycleGANBalanced"
         generator:  
             name: "Unet3D"
-            in_out_channels_AB: [2, 1]  # Both G's take 2 inputs and predict 1 output
-            in_out_channels_BA: [2, 1]  #
+            in_out_channels:
+                AB: [2, 1]  # Both G's take 2 inputs and predict 1 output
+                BA: [2, 1]  #
             num_downs: 4
             ngf: 64
             use_dropout: True
 
         discriminator:  
             name: "PatchGAN3D"
-            in_channels_B: 1  # Both D's evaluate a single modality (the PETs)
-            in_channels_A: 1  #
+            in_channels:
+                B: 1  # Both D's evaluate a single modality (the PETs)
+                A: 1  #
             n_layers: 3
             kernel_size: [4, 4, 4]
             ndf: 64
