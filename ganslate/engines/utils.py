@@ -11,12 +11,12 @@ ENGINES = {
     'infer': Inferer
 }
 
-def init_engine(mode):
+def init_engine(mode, omegaconf_args):
     assert mode in ENGINES.keys()
 
     # inits distributed mode if ran with torch.distributed.launch
     communication.init_distributed()
     environment.setup_threading()
 
-    conf = build_conf()
+    conf = build_conf(omegaconf_args)
     return ENGINES[mode](conf)

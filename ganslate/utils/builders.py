@@ -13,9 +13,10 @@ from ganslate.utils import communication
 from ganslate.utils.io import import_class_from_dirs_and_modules
 
 
-def build_conf():
-    cli = omegaconf.OmegaConf.from_dotlist(sys.argv[2:])
+def build_conf(omegaconf_args):
+    cli = omegaconf.OmegaConf.from_dotlist(omegaconf_args)
 
+    assert "config" in cli, "Please provide path to a YAML config using `config` option."
     yaml_conf = cli.pop("config")
     cli_conf_overrides = cli
 
@@ -89,7 +90,7 @@ def build_G(conf, direction, device):
 
 
 def build_D(conf, domain, device):
-    assert domain in ['B', 'A'] 
+    assert domain in ['B', 'A']
     return build_network_by_role('discriminator', conf, domain, device)
 
 
