@@ -6,7 +6,7 @@ from ganslate.engines.utils import init_engine
 @click.group()
 def interface():
     """
-    GANSLATE: GAN image-to-image translation framework made simple and extensible. 
+    ganslate - GAN image-to-image translation framework made simple and extensible. 
     """
     pass
 

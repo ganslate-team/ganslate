@@ -1,28 +1,26 @@
 from pathlib import Path
 from loguru import logger
-import numpy as np
 import torch
-from torch.utils.data import Dataset
 
-import ganslate
-from ganslate.utils import sitk_utils
-from ganslate.data.utils.normalization import min_max_normalize, min_max_denormalize
-from ganslate.data.utils.body_mask import apply_body_mask
-
-# Config imports
 from typing import Tuple
 from dataclasses import dataclass
+
+from torch.utils.data import Dataset
 from omegaconf import MISSING
+
 from ganslate import configs
 
 
 @dataclass
-class CBCTtoCTInferenceDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "CBCTtoCTInferenceDataset"
-    hounsfield_units_range: Tuple[int, int] = (-1000, 2000)
+class TemplateInferDatasetConfig(configs.base.BaseDatasetConfig):
+    # The name of the PyTorch dataset class defined below
+    name: str = "TemplateInferDataset"
+    # Define other attributes, e.g.:
+    patch_size = Tuple[int, int] = [128, 128]
+    ...
 
 
-class CBCTtoCTInferenceDataset(Dataset):
+class TemplateInferDataset(Dataset):
 
     def __init__(self, conf):
         self.root_path = Path(conf.infer.dataset.root).resolve()
@@ -53,7 +51,8 @@ class CBCTtoCTInferenceDataset(Dataset):
         }
      
     def __len__(self):
-        return len(self.paths_CBCT)
+        # Depending on the dataset dir structure, you might want to change it.
+        return len(self.root_path)
 
     def save(self, tensor, save_dir, metadata=None):
         """ By default, ganslate logs images in png format. However, if you wish
