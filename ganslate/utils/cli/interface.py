@@ -1,13 +1,18 @@
 import subprocess
+import inspect
+from pathlib import Path
 import click
+from cookiecutter.main import cookiecutter
+from ganslate.utils.cli import cookiecutter_templates
 from ganslate.engines.utils import init_engine
+
+
+COOKIECUTTER_TEMPLATES_DIR = Path(inspect.getfile(cookiecutter_templates)).parent
 
 # Interface
 @click.group()
 def interface():
-    """
-    ganslate - GAN image-to-image translation framework made simple and extensible. 
-    """
+    """ganslate - GAN image-to-image translation framework made simple and extensible."""
     pass
 
 # Train
@@ -30,10 +35,10 @@ def infer(omegaconf_args):
 
 # New project
 @interface.command(help="Initialize a new project.")
-@click.argument("name")
-@click.argument("path")
-def new_project(name, path):
-    print(name, path)
+@click.argument("path", default="./")
+def new_project(path):
+    template = str(COOKIECUTTER_TEMPLATES_DIR / "new_project")
+    cookiecutter(template, output_dir=path)
 
 # Download project
 @interface.command(help="Download a project.")

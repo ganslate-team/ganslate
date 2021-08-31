@@ -1,7 +1,9 @@
 import random
-from dataclasses import dataclass
 from pathlib import Path
+import torch
+
 from typing import Tuple
+from dataclasses import dataclass
 
 from torch.utils.data import Dataset
 from omegaconf import MISSING

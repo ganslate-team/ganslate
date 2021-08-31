@@ -1,5 +1,4 @@
 from pathlib import Path
-from loguru import logger
 import torch
 
 from typing import Tuple

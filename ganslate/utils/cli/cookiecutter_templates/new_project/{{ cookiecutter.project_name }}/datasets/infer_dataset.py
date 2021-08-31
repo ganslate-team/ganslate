@@ -1,5 +1,4 @@
 from pathlib import Path
-from loguru import logger
 import torch
 
 from typing import Tuple
@@ -45,7 +44,7 @@ class TemplateInferDataset(Dataset):
 
         return {
             # Notice that the key for inference input is not "A"
-            'input': A,
+            "input": A,
             # [Optional] metadata - if `save()` is defined *and* if it requires metadata.
             "metadata": metadata,
         }
