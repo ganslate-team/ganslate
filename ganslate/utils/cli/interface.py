@@ -1,9 +1,13 @@
+import subprocess
 import click
 from ganslate.engines.utils import init_engine
 
 # Interface
 @click.group()
 def interface():
+    """
+    GANSLATE: GAN image-to-image translation framework made simple and extensible. 
+    """
     pass
 
 # Train
@@ -43,8 +47,8 @@ def download_project(name, path):
 @click.argument("name")
 @click.argument("path")
 def download_dataset(name, path):
-    print(name, path)
-
+    download_script_path = "ganslate/utils/scripts/download_cyclegan_datasets.sh"
+    subprocess.call(["bash", download_script_path, name, path])
 
 if __name__ == "__main__":
     interface()
