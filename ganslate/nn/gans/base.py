@@ -1,5 +1,6 @@
 from loguru import logger
 import os
+import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -115,9 +116,13 @@ class BaseGAN(ABC):
             "The (main) generator has to be named `G` or `G_AB`."
 
         if self.conf[self.conf.mode].mixed_precision:
-            from apex import amp
-
-            # Allow the methods to access AMP that was imported here
+            try:
+                from apex import amp
+            except ModuleNotFoundError:
+                sys.exit("\nMixed precision not installed! "
+                         "Install Nvidia Apex mixed precision support "
+                         "by running `ganslate install-nvidia-apex`'\n")
+            # Allow the methods to access AMP that's imported here
             globals()["amp"] = amp
 
         # Initialize Generators and Discriminators
