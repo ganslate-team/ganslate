@@ -11,54 +11,66 @@ from omegaconf import MISSING
 from ganslate import configs
 
 
-
 @dataclass
 class TemplateValTestDatasetConfig(configs.base.BaseDatasetConfig):
     # The name of the PyTorch dataset class defined below
-    name: str = "CBCTtoCTValidationDataset"
+    name: str = "TemplateValTestDataset"
     # Define other attributes, e.g.:
     patch_size = Tuple[int, int] = [128, 128]
     ...
 
 
-class CBCTtoCTValTestDataset(Dataset):
+class TemplateValTestDataset(Dataset):
 
     def __init__(self, conf):
         self.root_path = Path(conf[conf.mode].dataset.root).resolve()
         
-
     def __getitem__(self, index):
-        # Assumes that root_path contains
+        # Assigning paths for A and B depends on your dataset dir structure
         path_A = self.root_path[index] / "A.png"
         path_B = self.root_path[index] / "B.png"
 
-        CBCT = sitk_utils.load(path_CBCT)
-        CT = sitk_utils.load(path_CT)
+        # Read the images, `read` is a placeholder
+        A = read(path_A)
+        B = read(path_B)
 
-        # Only if you need it in `save()` method as explained below
+        # Preprocess and normalize to [-1,1], `preprocess` is a placeholder
+        A = preprocess(A)
+        B = preprocess(B)
+
+        # Metadata is optionally returned by this method, explained at the end of the method.
+        # Delete if not necessary.
         metadata = {
-            'path': str(path_CBCT),
+            'path': str(path_A),
             ...
         }
 
-        CBCT, CT = clamp_normalize(CBCT, CT, self.hu_min, self.hu_max)
+        # Masks are optionally returned by this method, explained at the end of the method.
+        # Delete if not necessary.
+        masks = {}
+        path_foreground_mask = self.root_path[index] / "foreground.png"
+        foreground_mask = read(path_mask)
+        masks["foreground"] = foreground_mask
 
-        return {'A': CBCT, 
-                'B': CT, 
-                # metadata [Optional] - if `save()` is defined and needs metadata
-                # for saving the images in a different format during validation
+        return {'A': A, 
+                'B': B, 
+                # [Optional] metadata - if `save()` is defined *and* if it requires metadata.
                 "metadata": metadata,
-                # masks [Optional] - a dict of masks, used in validation to
-                # calculate metrics in specific regions as well
-                "masks": {"BODY": body_mask}
+                # [Optional] masks - a dict of masks, used during the validation or
+                # testing to also calculate metrics over specific regions of the image.
+                "masks": masks
                 }
-    
      
-    def save(self, tensor, save_dir, metadata):
-        """Th
+    def save(self, tensor, save_dir, metadata=None):
+        """ By default, ganslate logs images in png format. However, if you wish
+        to save images in a different way, then implement this `save()` method. 
+        For example, you could save medical images in their native format for easier
+        inspection or usage.
+        If you do not need this method, remove it.
         """
         pass
 
     def __len__(self):
-        return len(self.pairs)
+        # Depending on the dataset dir structure, you might want to change it.
+        return len(self.root_path)
 
