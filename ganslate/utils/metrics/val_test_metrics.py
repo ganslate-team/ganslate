@@ -104,7 +104,7 @@ def nmi(gt: np.ndarray, pred: np.ndarray) -> float:
 
 
 def histogram_chi2(gt: np.ndarray, pred: np.ndarray) -> float:
-    """Chi-squared distance computed between histograms of the GT and the prediction.
+    """Chi-squared distance computed between global histograms of the GT and the prediction.
     More about comparing two histograms -- 
         https://stackoverflow.com/questions/6499491/comparing-two-histograms
     """
@@ -134,26 +134,10 @@ class ValTestMetrics:
     def __init__(self, conf):
         self.conf = conf
 
-    def get_metrics(self, inputs, targets, mask=None):
+    def get_metrics(self, inputs, targets, mask=None): 
+        inputs, targets = get_npy(inputs), get_npy(targets)
         metrics = {}
         
-        # Chinmay HX4-specific hack: If the tensors have 2 channels, take only the 1st channel (HX4-PET),
-        # because the 2nd channel is a dummy.
-        # Need this in case of HX4-CycleGAN-balanced.
-        if inputs.shape[1] == 2:   
-            inputs = inputs[:, :1]
-            targets = targets[:, :1]
-
-        # Chinmay Cleargrasp-specific hack: If the tensors have 4 channels, take only the last channel (depthmap),
-        # because the first 3 are a dummy array.
-        # Need this in case of CycleGAN-balanced applied to Cleargrasp (i.e. version 3 in this project).
-        if inputs.shape[1] == 4:   
-            inputs = inputs[:, 3:]
-            targets = targets[:, 3:]
-
-        
-        inputs, targets = get_npy(inputs), get_npy(targets)
-
         # Iterating over all metrics that need to be computed
         for metric_name, metric_fn in METRIC_DICT.items():
             if getattr(self.conf[self.conf.mode].metrics, metric_name):
