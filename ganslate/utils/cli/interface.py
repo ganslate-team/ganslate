@@ -1,5 +1,7 @@
 import subprocess
 import inspect
+import git
+import shutil
 from pathlib import Path
 import click
 from cookiecutter.main import cookiecutter
@@ -64,12 +66,21 @@ def download_dataset(name, path):
           "only when CUDA is not installed natively.")
 )
 def install_nvidia_apex(cpp):
-    # TODO: (Ibro) I need to verify this in a few days when I have access to the GPU
+    # TODO: Installing with C++ support is a pain due to CUDA installations,
+    # waiting for https://github.com/pytorch/pytorch/issues/40497#issuecomment-908685435
+    # to switch to PyTorch AMP and get rid of Nvidia Apex
+
+    # Removes the folder if it already exists from a previous, cancelled, try.
+    shutil.rmtree("./nvidia-apex-tmp", ignore_errors=True)
+    git.Repo.clone_from("https://github.com/NVIDIA/apex", './nvidia-apex-tmp')
+
     cmd = 'pip install -v --disable-pip-version-check --no-cache-dir'
     if cpp:
         cmd += ' --global-option="--cpp_ext" --global-option="--cuda_ext"'
-    cmd += ' git+https://github.com/NVIDIA/apex.git'
+    cmd += ' ./nvidia-apex-tmp'
+
     subprocess.run(cmd.split(' '))
+    shutil.rmtree("./nvidia-apex-tmp")
 
 if __name__ == "__main__":
     interface()
