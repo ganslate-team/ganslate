@@ -13,6 +13,7 @@ nav:
         - Training, Validation, Testing, Inference: tutorials/engines.md
     - API:
         - CLI: api/cli.md
+    - Contributing: contributing.md
 
 theme: readthedocs
 

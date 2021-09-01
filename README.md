@@ -1,34 +1,42 @@
-![YAPF Formatting Check](https://github.com/Maastro-CDS-Imaging-Group/ganslate/workflows/YAPF%20Formatting%20Check/badge.svg)
+# ganslate - GAN image-to-image translation framework made simple and extensible.
 
+For comprehensive documentation, visit: https://ganslate.netlify.app
 
+A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible for both beginner and advanced project with:
 
-## Installation
-To install apex run the 
-```
-bash install_apex.sh
-```
+- Simple configuration system
+- Extensibility for other datasets or architectures
+- Documentation and [video walk-throughs](INSERT_YOUTUBE_PLAYLIST)
 
-For all other dependencies use conda env 
-```
-conda env update -f environment.yml
-```
+## Features
 
+- 2D and 3D support
+- Mixed precision
+- Distributed training
+- Tensorboard and [Weights&Biases](https://wandb.ai/site) logging
+- Natural and medical image support
+- A range of generator and discriminator architectures
 
+## Available GANs
 
-## Running the code
+- Pix2Pix ([paper](https://www.google.com/search?q=pix2pix+paper&oq=pix2pix+paper&aqs=chrome.0.0l2j0i22i30l2j0i10i22i30.3304j0j7&sourceid=chrome&ie=UTF-8))
+- CycleGAN ([paper](https://arxiv.org/abs/1703.10593))
+- RevGAN ([paper](https://arxiv.org/abs/1902.02729))
+- CUT (Contrastive Unpaired Translation) ([paper](https://arxiv.org/abs/2007.15651))
 
-Run training:
-```
-python tools/train.py config="<PATH_TO_YAML>" 
-```
+## Projects
+`ganslate` was used in:
 
-Override options from yaml config, example - change batch_size to 4:
-```
-python tools/train.py config="<PATH_TO_YAML>" batch_size=4
-```
+- Project 1
+- Project 2
 
-Run in distributed mode, single node example:
+## Citation
+
+If you used `ganslate` in your project, please cite:
+
+```text
+@article{ganslate,
+  title = {I implemented this first},
+  author = {Jurgen Schmidhuber}
+}
 ```
-python -m torch.distributed.launch --use_env --nproc_per_node <NUM_GPUS_PER_NODE> tools/train.py config="<PATH_TO_YAML>"
-```
-Find more about other options by running `python -m torch.distributed.launch --help`

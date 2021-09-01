@@ -1,19 +1,6 @@
 # Installation
 
-You can begin the install by cloning the repo,
-```
-git clone https://github.com/Maastro-CDS-Imaging-Group/ganslate.git
-```
-
-Once the repo is fetched, you can either use a docker-based install or a conda-based install on your local system.
-
-!!! note 
-	You can get to the repository root level after cloning,
-	```
-	cd ganslate
-	```
-
-
+You can install `ganslate` either through a docker setup or directly on your system. 
 ## Docker
 *Supported operating systems: Linux, [Windows with WSL](https://docs.nvidia.com/cuda/wsl-user-guide/index.html)*
 
@@ -45,13 +32,13 @@ The docker container [mounts volumes from the host system](https://docs.docker.c
 
 ## Local
 
+!!! note
+	It is recommended to use to setup a conda environment to install pytorch dependencies. You can do this by 
+	[installing conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html#regular-installation) first, then followed by `conda create env -n ganslate_env python pytorch -c pytorch`.
+
 You can install the ganslate package along with its dependencies using
 ```console
-python setup.py install
+pip install ganslate
 ```
-
-!!! note
-	If you want to work on internals in the package then it is recommended to use `python setup.py develop`.
-	https://setuptools.readthedocs.io/en/latest/userguide/development_mode.html
 
 The `ganslate` package is now installed. [You can now check out the quickstart page](quickstart.md)
