@@ -3,6 +3,7 @@ site_name: GANslate
 nav:
     - Home: index.md
     - Installation: installation.md
+    - Quickstart: quickstart.md
     - Tutorials:
         - Getting Started with horse2zebra: tutorials/horse2zebra.md
         - Intro to Configuration: tutorials/configuration.md
@@ -10,6 +11,8 @@ nav:
         - Custom Dataset: tutorials/custom_dataset.md
         - Custom Architecture: tutorials/custom_architecture.md
         - Training, Validation, Testing, Inference: tutorials/engines.md
+    - API:
+        - CLI: api/cli.md
 
 theme: readthedocs
 

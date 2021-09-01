@@ -1,5 +1,7 @@
 import subprocess
 import inspect
+import git
+import shutil
 from pathlib import Path
 import click
 from cookiecutter.main import cookiecutter
@@ -54,6 +56,31 @@ def download_project(name, path):
 def download_dataset(name, path):
     download_script_path = "ganslate/utils/scripts/download_cyclegan_datasets.sh"
     subprocess.call(["bash", download_script_path, name, path])
+
+# Install Nvidia Apex
+@interface.command(help="Install Nvidia Apex for mixed precision support.")
+@click.option(
+    "--cpp/--python",
+    default=True,
+    help=("C++ support is faster and preferred, use Python fallback "
+          "only when CUDA is not installed natively.")
+)
+def install_nvidia_apex(cpp):
+    # TODO: Installing with C++ support is a pain due to CUDA installations,
+    # waiting for https://github.com/pytorch/pytorch/issues/40497#issuecomment-908685435
+    # to switch to PyTorch AMP and get rid of Nvidia Apex
+
+    # Removes the folder if it already exists from a previous, cancelled, try.
+    shutil.rmtree("./nvidia-apex-tmp", ignore_errors=True)
+    git.Repo.clone_from("https://github.com/NVIDIA/apex", './nvidia-apex-tmp')
+
+    cmd = 'pip install -v --disable-pip-version-check --no-cache-dir'
+    if cpp:
+        cmd += ' --global-option="--cpp_ext" --global-option="--cuda_ext"'
+    cmd += ' ./nvidia-apex-tmp'
+
+    subprocess.run(cmd.split(' '))
+    shutil.rmtree("./nvidia-apex-tmp")
 
 if __name__ == "__main__":
     interface()
