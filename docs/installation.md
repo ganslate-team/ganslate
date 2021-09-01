@@ -43,12 +43,15 @@ The docker container [mounts volumes from the host system](https://docs.docker.c
 !!! note
 	`<data_dir>` can initially point to an empty directory to simplify setup. Data can be moved into this directory later as docker mounts the directory to the container. 
 
-## Conda
+## Local
 
-The framework can be installed with Conda through following the steps,
-
-1. Create a [conda environment](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) from the `environment.yaml` file 
-
+You can install the ganslate package along with its dependencies using
 ```console
-conda env create -f environment.yml
+python setup.py install
 ```
+
+!!! note
+	If you want to work on internals in the package then it is recommended to use `python setup.py develop`.
+	https://setuptools.readthedocs.io/en/latest/userguide/development_mode.html
+
+The `ganslate` package is now installed. [You can now check out the quickstart page](quickstart.md)
