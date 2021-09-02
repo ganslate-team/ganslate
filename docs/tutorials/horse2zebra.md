@@ -1,24 +1,19 @@
 # Your First Run (horse2zebra)
 
-For both types of install, running the basic horse2zebra example is similar.
-#### Data download
-The horse2zebra dataset can be downloaded using instructions below,
-1. Open a terminal inside the cloned repository and run, 
+For both types of install, running the basic horse2zebra example is the same.
 
+Once the installation is complete and you can access the CLI as show in the [quickstart](../quickstart.md), run
 ```console
-cd projects/horse2zebra
-bash download_cyclegan_dataset.sh horse2zebra .
+ganslate your-first-run
 ```
-
-!!! note
-    The horse2zebra dataset will be downloaded at the root-level of the ganslate directory. This can be changed by providing a <data_dir> to the command `bash download_cyclegan_dataset.sh horse2zebra <data_dir>. However, the yaml files need to be manually changed. For non-advanced users, it is best to stick to the default location
+On running this, a few options will show up that can be customized. You may also leave it at its default values. Once the prompts
+are completed, you will have a folder generated with a demo `horse2zebra` project in the path you specified. 
 
 ### Training
 Next, you can run the training using the command below,
 
 ```console
-cd /code
-python tools/train.py config=projects/horse2zebra/experiments/default.yaml
+ganslate train config=<path_specified>/default.yaml
 ```
 
 !!! note

@@ -7,28 +7,18 @@ You can install `ganslate` either through a docker setup or directly on your sys
 Dockerized setup is the easiest way to get started with the framework. If you do not have docker installed, you can follow instructions [here](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository)
 
 
-First, you can build the docker image by running the following commands at the repository root level
+You can run the docker image, which will give you access to a container with all dependencies installed, using,
 
 ```console
-cd docker/
-docker build -t ganslate:latest .
+docker run --gpus all -it surajpaib/ganslate:latest
 ```
 
-Once the docker image is built, it can be run using,
+This will drop down to a shell and [you can now check out the quickstart page](quickstart.md)
 
-```console
-docker run --gpus all -it \
-	--shm-size=24gb --volume=<data_dir>:/data --volume=<repo_dir>:/ganslate \
-	--name=ganslate ganslate:latest /bin/bash
-```
 
-The docker container [mounts volumes from the host system](https://docs.docker.com/storage/volumes/) to allow easier persistence of data. 
 
-`<data_dir>` must be replaced with the full path of a directory where your data is located.
-`<repo_dir>` must be replaced with the path to the `ganslate` repository was cloned. 
-
-!!! note
-	`<data_dir>` can initially point to an empty directory to simplify setup. Data can be moved into this directory later as docker mounts the directory to the container. 
+!!! note 
+	To get your data into the docker container, you can use volume mounts. The docker container [mounts volumes from the host system](https://docs.docker.com/storage/volumes/) to allow easier persistence of data. This can be done as `docker run --gpus all --volume=<data_dir>:/data -it ganslate:latest`. `<data_dir>` must be replaced with the full path of a directory where your data is located, this will then be mounted on the `/data` path within the docker
 
 ## Local
 

@@ -1,0 +1,3 @@
+recursive-include ganslate *.sh
+recursive-include ganslate/utils/cli/cookiecutter_templates *
+recursive-exclude ganslate/utils/cli/cookiecutter_templates __pycache__/*

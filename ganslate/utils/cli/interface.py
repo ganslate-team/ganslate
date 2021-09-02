@@ -42,6 +42,15 @@ def new_project(path):
     template = str(COOKIECUTTER_TEMPLATES_DIR / "new_project")
     cookiecutter(template, output_dir=path)
 
+# First run
+@interface.command(help="Fetch resources for the horse2zebra first run")
+@click.argument("path", default="./")
+def your_first_run(path):
+    template = str(COOKIECUTTER_TEMPLATES_DIR / "your_first_run")
+    project_path = cookiecutter(template, output_dir=path)
+    download_script_path = "ganslate/utils/cli/scripts/download_cyclegan_datasets.sh"
+    subprocess.call(["bash", download_script_path, "horse2zebra", project_path])
+    
 # Download project
 @interface.command(help="Download a project.")
 @click.argument("name")
@@ -54,7 +63,7 @@ def download_project(name, path):
 @click.argument("name")
 @click.argument("path")
 def download_dataset(name, path):
-    download_script_path = "ganslate/utils/scripts/download_cyclegan_datasets.sh"
+    download_script_path = "ganslate/utils/cli/scripts/download_cyclegan_datasets.sh"
     subprocess.call(["bash", download_script_path, name, path])
 
 # Install Nvidia Apex
