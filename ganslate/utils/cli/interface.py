@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 from cookiecutter.main import cookiecutter
 from ganslate.utils.cli import cookiecutter_templates
+from ganslate.utils.cli.scripts import download_datasets
 from ganslate.engines.utils import init_engine
 
 
@@ -48,8 +49,7 @@ def new_project(path):
 def your_first_run(path):
     template = str(COOKIECUTTER_TEMPLATES_DIR / "your_first_run")
     project_path = cookiecutter(template, output_dir=path)
-    download_script_path = "ganslate/utils/cli/scripts/download_cyclegan_datasets.sh"
-    subprocess.call(["bash", download_script_path, "horse2zebra", project_path])
+    download_datasets.download("horse2zebra", project_path)
     
 # Download project
 @interface.command(help="Download a project.")
@@ -63,8 +63,7 @@ def download_project(name, path):
 @click.argument("name")
 @click.argument("path")
 def download_dataset(name, path):
-    download_script_path = "ganslate/utils/cli/scripts/download_cyclegan_datasets.sh"
-    subprocess.call(["bash", download_script_path, name, path])
+    download_datasets.download(name, path)
 
 # Install Nvidia Apex
 @interface.command(help="Install Nvidia Apex for mixed precision support.")
