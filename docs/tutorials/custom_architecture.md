@@ -3,70 +3,42 @@
 In addition to using out-of-the-box the [popular architectures](https://github.com/Maastro-CDS-Imaging-Group/ganslate/docs/index.md) of GANs and of the generators and discriminators supplied by `ganslate`, you can easily define your custom architectures to suit your specific requirements.
 
 
----------------------------
-## Custom GAN Architectures
+------------------------------
+## 1. Custom GAN Architectures
 
-In `ganslate`, a `gan` represents the *system* of generator(s) and discriminator(s) which, during training, includes the initialization of loss criteria and optimizers, the flow of data among the generator and discriminator networks during forward pass, the computation of losses, and the update sequence for the generator and discriminator models. Depending on your requirements, you can either override one or more of these specific functionalities of the existing GAN classes or write new GAN classes with entirely different architectures.
+In `ganslate`, a `gan` represents the *system* of generator(s) and discriminator(s) which, during training, includes a set of loss criteria and optimizers, the specification of the flow of data among the generator and discriminator networks during forward pass, the computation of losses, and the update sequence for the generator and discriminator parameters. Depending on your requirements, you can either override one or more of these specific functionalities of the existing GAN classes or write new GAN classes with entirely different architectures.
 
 
-### CycleGAN with Custom Losses
+### Example 1.1. CycleGAN with Custom Losses - Adding a New Loss Component
 
-This example shows how you can modify the default loss criteria of `CycleGAN` to include your custom fancy loss criterion as an additional loss component. This criterion could, for instance, be a *structure loss* that would constrain the high-level structure of a fake domain `B` image to be similar to that of its corresponding real domain `A` image.
+This example shows how you can modify the default loss criteria of `CycleGAN` to include your custom loss criterion as an _additional_ loss component. This criterion could, for instance, be a *structure-consistency loss* that would constrain the high-level structure of a fake domain `B` image to be similar to that of its corresponding real domain `A` image.
 
-Create a new file `projects/your_project/architectures/custom_cyclagan_losses.py` and write your loss function class as
+First, create a new file `projects/your_project/architectures/custom_cyclegan.py` and add the following lines. Note that your `CustomCycleGAN1` class must have an associated dataclass as shown.
 ```python
-from ganslate.nn.losses.cyclegan_losses import CycleGANLosses
-
-# Inherit from the default CycleGAN losses class
-class CustomCycleGANLosses(CycleGANLosses):
-    def __init__(self, conf):
-        # Invoke the constructor of the parent class to initialize the default loss criteria 
-        # such as cycle-consistency and identity (if enabled) losses
-        super.__init__(conf)                                                 
-        
-        # Initialize your structure criterion. 
-        # `lambda_structure_loss` is the scaling factor for this loss component
-        self.your_structure_criterion = YourStructureCriterion(lambda_structure_loss)
-
-    def __call__(self, visuals):
-        # Invoke the `__call__` method of the parent class to compute the the default loss criteria    
-        losses = super.__call__(visuals)
-        
-        # Compute your custom loss and store as an addiitonal emtry in the `losses` dictionary
-        real_A = visuals['real_A']
-        fake_B = visuals['fake_B']
-        losses['your_structure_loss'] = self.your_structure_criterion(real_A, fake_B) 
-
-        return losses
-```
-
-In the same file, define `YourStructureCriterion` as
-```python
-class YourStructureCriterion():
-    def __init__(self, lambda_structure_loss):
-        self.lambda_structure_loss = lambda_structure_loss
-        # Your structure criterion could be, for instance, an L1 loss, an SSIM loss, 
-        # or a custom similarity/distance metric
-        ...
-    
-    def __call__(self, real_image, fake_image):
-        # Compute the loss and return the scaled value
-        ... 
-        return self.lambda_structure_loss * loss_value 
-```
-
-Now, you can create your extended version of the `CycleGAN` that uses your `CustomCycleGANLosses`. Create a new file `projects/your_project/architectures/custom_cyclagan.py` and add the following lines. Note that your `CustomCycleGAN` must have an associated dataclass as shown.
-```python
+from dataclasses import dataclass
+from ganslate import configs
 from ganslate.nn.gans.unpaired import cyclegan
 
+
+@dataclass 
+class OptimizerConfig(configs.base.BaseOptimizerConfig):
+    # Define your optimizer parameters specific to your GAN 
+    # such as the scaling factor for your custom loss
+    lambda_structure_loss: float = 0.1
+
+
 @dataclass
-class CustomCycleGANConfig(cyclegan.CycleGANConfig):
-    name: str = "CustomCycleGAN"
+class CustomCycleGAN1Config(cyclegan.CycleGANConfig):  # Inherit from the `CycleGANConfig` class
+    """ Dataclass containing confiuration for your custom CycleGAN """
+    name: str = "CustomCycleGAN1"
+    optimizer: OptimizerConfig = OptimizerConfig
 
 
-class CustomCycleGAN(cyclegan.CycleGAN):
+class CustomCycleGAN1(cyclegan.CycleGAN):  # Inherit from the `CycleGAN` class
+    """ CycleGAN with a structure-consistency loss """
     
     def __init__(self, conf):
+        # Initialize by invoking the constructor of the parent class
         super().__init__(conf)
 
     # Now, extend or redefine method(s).
@@ -76,13 +48,121 @@ class CustomCycleGAN(cyclegan.CycleGAN):
         self.criterion_adv = AdversarialLoss(
             self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
 
-        # Custom loss for generator [Default CycleGAN losses plus the structure criterion]
-        self.criterion_G = CustomCycleGANLosses(self.conf)
+        # Custom set of losses for the generators [Default CycleGAN losses plus your structure-consistency criterion]
+        self.criterion_G = CycleGANLossesWithStructure(self.conf)
+```
+
+Now, define the `CycleGANLossesWithStructure` by adding the following lines
+```python
+from ganslate.nn.losses.cyclegan_losses import CycleGANLosses
+
+
+class CycleGANLossesWithStructure(CycleGANLosses):  # Inherit from the default CycleGAN losses class
+
+    def __init__(self, conf):
+        # Invoke the constructor of the parent class to initialize the default loss criteria 
+        # such as cycle-consistency and identity (if enabled) losses
+        super.__init__(conf)                                                 
+        
+        # Initialize your structure criterion. 
+        # The hyperparameter `lambda_structure_loss` is the scaling factor for this loss component
+        lambda_structure_loss = self.conf.train.optimizer.lambda_structure_loss
+        self.your_structure_criterion = YourStructureCriterion(lambda_structure_loss)
+
+    def __call__(self, visuals):
+        # Invoke the `__call__` method of the parent class to compute the the default CycleGAN losses    
+        losses = super.__call__(visuals)
+        
+        # Compute your custom loss and store as an addiitonal entry in the `losses` dictionary
+        real_A = visuals['real_A']
+        fake_B = visuals['fake_B']
+        losses['your_structure_loss'] = self.your_structure_criterion(real_A, fake_B) 
+
+        return losses
+```
+
+Define the class`YourStructureCriterion` that actually implements the structure-consistency criterion 
+```python
+class YourStructureCriterion():
+    def __init__(self, lambda_structure_loss):
+        self.lambda_structure_loss = lambda_structure_loss
+        # Your structure criterion could be, for instance, an L1 loss, an SSIM loss, 
+        # or a custom distance metric
+        ...
+    
+    def __call__(self, real_image, fake_image):
+        # Compute the loss and return the scaled value
+        ... 
+        return self.lambda_structure_loss * loss_value 
+```
+
+Finally, edit your YAML configuration file to include the settings for your custom hyperparameter `lambda_structure_loss`
+```yaml
+project_dir: projects/your_project
+...
+
+train:
+    ...
+
+    gan:
+        name: "CustomCycleGAN1"  # Name of your GAN class 
+        ...
+
+        optimizer:               # Optimizer config that includes your custom hyperparameter
+            lambda_structure_loss: 0.1
+            ...
+...
+
+```
+Upon starting the training process, `ganslate` will search `your_project` directory for the `CustomCycleGAN1` class and instantiate from it the GAN object with the supplied settings.
+
+
+
+### Example 1.2. CycleGAN with Custom Losses - Writing a New Set of CycleGAN Losses
+
+In this example, we seek to not use the default CycleGAN losses at all but instead completely redefine them. The original cycle-consistency criterion involves computing an `L1` loss between the real domain `A` or domain `B`images and their corresponding reconstructed versions. For the sake of this example, let us consider implementing cycle-consistency using a custom distance metric.
+
+Let your custom CycleGAN class be named `CustomCycleGAN2`. Its definition would be mostly the same as that of `CustomCycleGAN1` from _Example 1_. Moving on to the definition of your `CustomCycleGANLosses`, it would be of the following form
+```python
+class CustomCycleGANLosses(CycleGANLosses):  # Inherit from the default CycleGAN losses class
+
+    def __init__(self, conf):
+        # Hyperparameters (here, scaling factors) for your loss
+        self.lambda_AB = conf.train.gan.optimizer.lambda_AB
+        self.lambda_BA = conf.train.gan.optimizer.lambda_BA
+        
+        # Instantiate your custom cycle-consistency 
+        self.criterion_custom_cycle = CustomCycleLoss()
+
+    def __call__(self, visuals):
+        real_A, real_B = visuals['real_A'], visuals['real_B']
+        fake_A, fake_B = visuals['fake_A'], visuals['fake_B']
+        rec_A, rec_B = visuals['rec_A'], visuals['rec_B']
+        idt_A, idt_B = visuals['idt_A'], visuals['idt_B']
+
+        losses = {}
+
+        # Compute cycle-consistency loss        
+        losses['cycle_A'] = self.lambda_AB * self.criterion_cycle(real_A, rec_A)  # L_cyc( real_A, G_BA(G_AB(real_A)) )
+        losses['cycle_B'] = self.lambda_BA * self.criterion_cycle(real_B, rec_B)  # L_cyc( real_B, G_AB(G_BA(real_B)) )
+
+        return losses
+        
+        
+class CustomCycleLoss():
+
+    def __init__(self, proportion_ssim):
+        ...
+
+    def __call__(self, real, reconstructed):
+        # Your alternate formulation of the cycle-consistency criterion
+        ...
+        return custom_cycle_loss
 ```
 
 
 
-### Writing Your Own GAN Class from Scratch
+### Example 1.3. Writing Your Own GAN Class from Scratch
 
 Advanced users may opt to implement a new GAN architecture from scratch. You can do this by inheriting from the abstract base class `BaseGAN` and implementing the required methods. All the existing GAN architectures in `ganslate` are defined in this manner. The file containing your `FancyNewGAN` must be structured as follows
 
@@ -94,8 +174,9 @@ from ganslate.nn.gans.base import BaseGAN
 @dataclass
 class OptimizerConfig(configs.base.BaseOptimizerConfig):
     # Define your optimizer parameters specific to your GAN 
-    # such as the scaling factor for a custom loss 
-    lambda_fancy_loss: float = 0.1
+    # such as the scaling factors for a custom loss 
+    lambda_1: float = 0.1
+    lambda_2: float = 0.5
 
 
 @dataclass
@@ -167,7 +248,7 @@ def __init__(self, conf):
 def init_criterions(self):
     # Standard GAN (adversarial) loss
     self.criterion_adv = AdversarialLoss(self.conf.train.gan.optimizer.adversarial_loss_type).to(self.device)
-    # Pixelwise loss
+    # Pixelwise L1 loss
     self.criterion_pix2pix = Pix2PixLoss(self.conf).to(self.device)
 
 def init_optimizers(self):
@@ -284,7 +365,7 @@ def backward_D(self):
     self.backward(loss=self.losses['D'], optimizer=self.optimizers['D'])
 ```
 
-The aforementioned methods are to be mandatorily implemented if you wish to contruct your own GAN architecture in `ganslate` from scratch. Additionally, We also recommend referring to the abstract `BaseGAN` class ([source](https://github.com/Maastro-CDS-Imaging-Group/ganslate/blob/documentation/ganslate/nn/gans/base.py)) to get an overview of other existing methods and of the internal logic. Before using your custom GAN architecture in training, make sure your YAML configuration file includes the apporapriate settings for your custom-defined components as shown
+The aforementioned methods are to be mandatorily implemented if you wish to contruct your own GAN architecture in `ganslate` from scratch. Additionally, We also recommend referring to the abstract `BaseGAN` class ([source](https://github.com/Maastro-CDS-Imaging-Group/ganslate/blob/documentation/ganslate/nn/gans/base.py)) to get an overview of other existing methods and of the internal logic. Finally, update your YAML configuration file to include the apporapriate settings for your custom-defined components
 ```yaml
 project_dir: projects/your_project
 ...
@@ -292,26 +373,23 @@ project_dir: projects/your_project
 train:
     ...
 
-    gan:
-        # Name of your GAN class   
-        name: "YourFancyGAN"
+    gan:        
+        name: "YourFancyGAN"  # Name of your GAN class   
         ...
 
-        # Optimizaer config that includes your custom hyperparameter
-        optimizer:
-            lambda_fancy_loss: 0.1
+    optimizer:                # Optimizer config that includes your custom hyperparameter
+            lambda_1: 0.1
+            lambda_2: 0.5
             ...
 ...
 
 ```
-When executed, `ganslate` will search `your_project` directory, locate `YourFancyGAN` class and initialize it with the supplied settings.
 
 
+-----------------------------------------------------
+## 2. Custom Generator or Discriminator Architectures
 
---------------------------------------------------
-## Custom Generator or Discriminator Architectures
-
-In image translation GANs, the "generator" can be any network with an architecture that enables taking as input an image and producing an output image of the same size as the input. Whereas, the discriminator is any network that can take as input these images and produce a real/fake validity score which may either be a scalar or a 2D/3D map with each unit casting a fixed receptive field on the input. In `ganslate`, the generator and discriminator networks are defined as _PyTorch_ modules, constructed by [inheriting](https://pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html) from the type `torch.nn.Module`. In addition to defining your custom generator or discriminator network, you must also define a configuration dataclass for your network in the same file as follows
+In image translation GANs, the "generator" can be any network with an architecture that enables taking as input an image and producing an output image of the same size as the input. Whereas, the discriminator is any network that can take as input these images and produce a real/fake validity score which may either be a scalar or a 2D/3D map with each unit casting a fixed receptive field on the input. In `ganslate`, the generator and discriminator networks are defined as standard _PyTorch_ modules, [constructed by inheriting](https://pytorch.org/tutorials/beginner/basics/buildmodel_tutorial.html) from the type `torch.nn.Module`. In addition to defining your custom generator or discriminator network, you must also define a configuration dataclass for your network in the same file as follows
 ```python
 from torch import nn
 from dataclasses import dataclass
@@ -334,7 +412,7 @@ class CustomGenerator(nn.Module):
         ...
 ```
 
-Ensure that your YAML configuration file includes pointers to `CustomGenerator` and the appropriate settings
+Ensure that your YAML configuration file includes the pointer to your `CustomGenerator` as well as the appropriate settings
 ```yaml
 project_dir: projects/your_project
 ...
@@ -345,11 +423,9 @@ train:
     gan:
         ...
 
-        generator:  
-            # Name of your custom generator class
-            name: "CustomGenerator"
-            # Configuration
-            n_residual_blocks: 9
+        generator:              
+            name: "CustomGenerator"  # Name of your custom generator class            
+            n_residual_blocks: 9     # Configuration
             in_out_channels:
                 AB: [3, 3]
         ...
