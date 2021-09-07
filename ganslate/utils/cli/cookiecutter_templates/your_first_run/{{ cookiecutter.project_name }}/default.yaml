@@ -6,12 +6,10 @@ train:
     n_iters:  {{ cookiecutter.number_of_iterations }} 
     n_iters_decay: {{ cookiecutter.number_of_iterations }} 
     batch_size:  {{ cookiecutter.batch_size }}
-    mixed_precision: True
+    mixed_precision: False
 
     logging:
         freq: {{ cookiecutter.logging_frequency }}
-        wandb:
-            project: "horse2zebra"
     
     checkpointing:
         freq: {{ cookiecutter.checkpointing_frequency }} 
@@ -63,4 +61,3 @@ infer:
         preprocess: "resize"
         load_size: 256
         flip: False
-
