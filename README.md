@@ -1,9 +1,9 @@
-# ganslate - GAN image-to-image translation framework made simple and extensible.
+# ganslate - simple and extensible GAN image-to-image translation framework.
 
 For comprehensive documentation, visit: https://ganslate.netlify.app
 Note: The documentation is still in progress! Suggestions and criticism, as well as contributions, are welcome! 
 
-A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible for both beginner and advanced project with:
+A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible to both beginner and advanced project with:
 
 - Simple configuration system
 - Extensibility for other datasets or architectures
@@ -37,11 +37,11 @@ If you used `ganslate` in your project, please cite:
 
 ```text
 @misc{ganslate,
-  author = {Lisa, Mona and Bot, Hew},
-  doi = {10.5281/zenodo.1234},
-  month = {12},
-  title = {{My Research Software}},
-  url = {https://github.com/github/linguist},
-  year = {2017}
+  author = {ganslate-team},
+  doi = {},
+  month = {9},
+  title = {{ganslate - simple and extensible GAN image-to-image framework }},
+  url = {https://github.com/ganslate-team/ganslate},
+  year = {2020}
 }
 ```

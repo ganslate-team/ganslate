@@ -1,6 +1,6 @@
 # ganslate
 
-A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible for both beginner and advanced project with:
+A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible to both beginner and advanced project with:
 
 - Simple configuration system
 - Extensibility for other datasets or architectures
@@ -33,8 +33,12 @@ A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-imag
 If you used `ganslate` in your project, please cite:
 
 ```text
-@article{ganslate,
-  title = {I implemented this first},
-  author = {Jurgen Schmidhuber}
+@misc{ganslate,
+  author = {ganslate-team},
+  doi = {},
+  month = {9},
+  title = {{ganslate - simple and extensible GAN image-to-image framework }},
+  url = {https://github.com/ganslate-team/ganslate},
+  year = {2020}
 }
 ```
