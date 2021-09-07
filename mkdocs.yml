@@ -1,0 +1,21 @@
+site_name: ganslate
+
+nav:
+    - Home: index.md
+    - Installation: installation.md
+    - Quickstart: quickstart.md
+    - Tutorials:
+        - Getting Started with horse2zebra: tutorials/horse2zebra.md
+        - Intro to Configuration: tutorials/configuration.md
+        - Starting a New Project: tutorials/starting_a_new_project.md
+        - Custom Dataset: tutorials/custom_dataset.md
+        - Custom Architecture: tutorials/custom_architecture.md
+        - Training, Validation, Testing, Inference: tutorials/engines.md
+    - API:
+        - CLI: api/cli.md
+    - Contributing: contributing.md
+
+theme: readthedocs
+
+markdown_extensions:
+    - admonition

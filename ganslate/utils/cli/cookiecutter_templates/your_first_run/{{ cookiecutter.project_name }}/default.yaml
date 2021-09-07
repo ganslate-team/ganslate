@@ -1,0 +1,63 @@
+project_dir: null
+
+train:
+    output_dir: "./checkpoints/horse2zebra_default"
+    cuda: True
+    n_iters:  {{ cookiecutter.number_of_iterations }} 
+    n_iters_decay: {{ cookiecutter.number_of_iterations }} 
+    batch_size:  {{ cookiecutter.batch_size }}
+    mixed_precision: False
+
+    logging:
+        freq: {{ cookiecutter.logging_frequency }}
+    
+    checkpointing:
+        freq: {{ cookiecutter.checkpointing_frequency }} 
+
+    dataset: 
+        name: "ImageDataset"
+        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/horse2zebra/train/"
+        num_workers: 16
+        image_channels: 3
+        preprocess: "resize"
+        load_size: 256
+        flip: True
+        
+    gan:  
+        name: "CycleGAN"
+
+        generator:  
+            name: {{ cookiecutter.generator_model }}
+            n_residual_blocks: 9
+            in_out_channels:
+                AB: [3, 3]
+
+        discriminator:  
+            name: "PatchGAN2D"
+            n_layers: 3
+            in_channels:
+                B: 3
+
+        optimizer:
+            lambda_AB: 10.0
+            lambda_BA: 10.0
+            lambda_identity: 0
+            proportion_ssim: {{ cookiecutter.cycle_consistency_ssim_percentage }}
+            lr_D: 0.0002
+            lr_G: 0.0004
+    
+    metrics:
+        discriminator_evolution: True
+        ssim: True
+
+infer:
+    checkpointing:
+        load_iter: 1
+    dataset:
+        name: "ImageDataset"
+        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/horse2zebra/test/"
+        num_workers: 16
+        image_channels: 3
+        preprocess: "resize"
+        load_size: 256
+        flip: False

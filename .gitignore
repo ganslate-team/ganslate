@@ -112,16 +112,7 @@ venv.bak/
 checkpoints/
 \.wandb
 \wandb
-core.login18*
-IGNORE/
-output_*
-log.txt
-pad_crop_info.json
-
-output/
 
 apex
-results
 *.nrrd
-Untitled.ipynb
 core.*
