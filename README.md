@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5494572.svg)](https://doi.org/10.5281/zenodo.5494572)
+
 # ganslate - simple and extensible GAN image-to-image translation framework.
 
 For comprehensive documentation, visit: https://ganslate.readthedocs.io/en/latest/
@@ -36,12 +38,17 @@ A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-imag
 If you used `ganslate` in your project, please cite:
 
 ```text
-@misc{ganslate,
-  author = {ganslate-team},
-  doi = {},
-  month = {9},
-  title = {{ganslate - simple and extensible GAN image-to-image framework }},
-  url = {https://github.com/ganslate-team/ganslate},
-  year = {2020}
+@software{ibrahim_hadzic_2021_5494572,
+  author       = {Ibrahim Hadzic and
+                  Suraj Pai and
+                  Chinmay Rao and
+                  Jonas Teuwen},
+  title        = {ganslate-team/ganslate: Initial public release},
+  month        = sep,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {v0.1.0},
+  doi          = {10.5281/zenodo.5494572},
+  url          = {https://doi.org/10.5281/zenodo.5494572}
 }
 ```
