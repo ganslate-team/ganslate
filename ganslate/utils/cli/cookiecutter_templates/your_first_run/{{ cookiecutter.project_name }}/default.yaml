@@ -1,7 +1,7 @@
 project_dir: null
 
 train:
-    output_dir: "./checkpoints/horse2zebra_default"
+    output_dir: "./checkpoints/maps_default"
     cuda: True
     n_iters:  {{ cookiecutter.number_of_iterations }} 
     n_iters_decay: {{ cookiecutter.number_of_iterations }} 
@@ -16,7 +16,7 @@ train:
 
     dataset: 
         name: "ImageDataset"
-        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/horse2zebra/train/"
+        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/train/"
         num_workers: 16
         image_channels: 3
         preprocess: "resize"
@@ -55,7 +55,7 @@ infer:
         load_iter: 1
     dataset:
         name: "ImageDataset"
-        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/horse2zebra/test/"
+        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/test/"
         num_workers: 16
         image_channels: 3
         preprocess: "resize"

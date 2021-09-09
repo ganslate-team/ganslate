@@ -1,4 +1,4 @@
-# Quickstart
+# Using the command line interface
 
 Interact with `ganslate` using:
 
