@@ -15,13 +15,12 @@ train:
         freq: {{ cookiecutter.checkpointing_frequency }} 
 
     dataset: 
-        name: "ImageDataset"
+        name: "UnpairedImageDataset"
         root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/train/"
-        num_workers: 16
+        num_workers: 4
         image_channels: 3
-        preprocess: "resize"
-        load_size: 256
-        flip: True
+        preprocess: ["resize", "random_flip"]
+        load_size: [256, 256]
         
     gan:  
         name: "CycleGAN"
@@ -50,14 +49,28 @@ train:
         discriminator_evolution: True
         ssim: True
 
+# Uncomment to enable validation, a folder called val needs to be
+# created with some A->B paired samples within it. 
+# val:
+#     freq: {{ cookiecutter.logging_frequency }} * 10
+#     dataset: 
+#         name: "PairedImageDataset"  # Paired dataset for validation
+#         root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/val"
+#         num_workers: 4
+#         image_channels: 3
+#         preprocess: ["resize"]
+#         load_size: [256, 256]
+#         flip: False
+#     metrics:
+#         cycle_metrics: False        
+
 infer:
     checkpointing:
         load_iter: 1
     dataset:
-        name: "ImageDataset"
+        name: "UnpairedImageDataset"
         root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/test/"
-        num_workers: 16
+        num_workers: 4
         image_channels: 3
-        preprocess: "resize"
-        load_size: 256
-        flip: False
+        preprocess: ["resize"]
+        load_size: [256, 256]
