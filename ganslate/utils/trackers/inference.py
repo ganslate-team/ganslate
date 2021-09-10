@@ -45,16 +45,12 @@ class InferenceTracker(BaseTracker):
             if self.wandb:
                 self.wandb.log_iter(iter_idx=self.iter_idx + i,
                                     visuals=visuals_grid,
-                                    mode=self.conf.mode)
+                                    mode="infer")
 
-            # TODO: revisit tensorboard support
             if self.tensorboard:
-                raise NotImplementedError("Tensorboard tracking not implemented")
-                # self.tensorboard.log_iter(self.iter_idx + i,
-                #                           learning_rates,
-                #                           losses,
-                #                           visuals_grid,
-                #                           metrics, self.conf.mode)
+                self.tensorboard.log_iter(iter_idx=self.iter_idx + i,
+                                          visuals=visuals_grid,
+                                          mode="infer")
 
 
     def start_saving_timer(self):

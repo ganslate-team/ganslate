@@ -1,4 +1,5 @@
 import torch
+import wandb
 from ganslate.utils import communication
 
 
@@ -89,6 +90,24 @@ def process_visuals_for_logging(conf, visuals, single_example=False, mid_slice_o
     return final_visuals_grids
 
 
+def process_visuals_wandb_tensorboard(visuals, image_window=None, is_wandb=False):
+    # Resursively process a list of visuals
+    if isinstance(visuals, list):
+        return [process_visuals_wandb_tensorboard(v, image_window, is_wandb) for v in visuals]
+
+    name, image = visuals['name'], visuals['image']
+    # CxHxW -> HxWxC
+    image = image.permute(1, 2, 0)
+
+    if image_window:
+        image = image.clamp(image_window[0], image_window[1])
+        image = (image - image_window[0]) / image_window[1] - image_window[0]
+
+    if is_wandb:
+        return wandb.Image(image.cpu().detach().numpy(), caption=name)
+    return {"name": name, "image": image}
+
+
 def _split_multimodal_visuals(visuals, multi_modality_split):
     """
     Separate out multi-modality images from each tensor by splitting it channel-wise.
@@ -103,7 +122,7 @@ def _split_multimodal_visuals(visuals, multi_modality_split):
 
     # For each tensor in visuals
     for name in visuals.keys():
-        # Consider only those visuals for splitting whose names contain `_A` or `_B` (for ex. images with names `real_A` or `fake_B`)
+        # Consider only those visuals whose names contain `_A` or `_B` (e.g. `real_A` or `fake_B`)
         if '_A' in name or '_B' in name:
             # For each domain (`A` and `B`)
             for domain in multi_modality_split:

@@ -73,8 +73,6 @@ class WandbConfig:
     run: Optional[str] = None
     # Run id to be provided incase runs are to be resumed
     id: Optional[str] = None
-    # Min and max value for the image filter # TODO: explain!
-    image_filter: Optional[Tuple[float, float]] = None
 
 
 @dataclass
@@ -103,6 +101,8 @@ class LoggingConfig:
     tensorboard: bool = False
     # Use Weights & Biases?
     wandb: Optional[WandbConfig] = None
+    # Optionally, log windowed images with the min and max values for windowing specified here
+    image_window: Optional[Tuple[float, float]] = None
 
 
 ############# Config for engines (trainer, tester, inferencer...) ##############

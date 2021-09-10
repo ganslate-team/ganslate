@@ -45,14 +45,18 @@ class TrainingTracker(BaseTracker):
             return metrics
 
         def log_message():
-            lr_G, lr_D = learning_rates["lr_G"], learning_rates["lr_D"]
             message = '\n' + 20 * '-' + ' '
-            message += (f"(iter: {self.iter_idx} | comp: {self.t_comp:.3f}, "
-                        f"data: {self.t_data:.3f} | lr_G: {lr_G:.7f}, lr_D = {lr_D:.7f})")
-            message += ' ' + 20 * '-' + '\n'
-
-            for k, v in losses.items():
-                message += f"{k}: {v:.3f} "
+            # Iteration, computing time, dataloading time
+            message += f"(iter: {self.iter_idx} | comp: {self.t_comp:.3f}, data: {self.t_data:.3f}"
+            message += " | "
+            # Learning rates
+            for i, (name, learning_rate) in enumerate(learning_rates.items()):
+                message += "" if i == 0 else ", "
+                message += f"{name}: {learning_rate:.7f}"
+            message += ') ' + 20 * '-' + '\n'
+            # Losses
+            for name, loss in losses.items():
+                message += f"{name}: {loss:.3f} "
             self.logger.info(message)
 
         def log_visuals():
@@ -68,12 +72,15 @@ class TrainingTracker(BaseTracker):
         if self.wandb:
             self.wandb.log_iter(iter_idx=self.iter_idx,
                                 visuals=visuals,
-                                mode=self.conf.mode,
+                                mode="train",
                                 learning_rates=learning_rates,
                                 losses=losses,
                                 metrics=metrics)
 
         if self.tensorboard:
-            raise NotImplementedError("Tensorboard tracking not implemented")
-            # self.tensorboard.log_iter(self.iter_idx, learning_rates, losses, visuals, metrics)
-
+            self.tensorboard.log_iter(iter_idx=self.iter_idx,
+                                      visuals=visuals,
+                                      mode="train",
+                                      learning_rates=learning_rates,
+                                      losses=losses,
+                                      metrics=metrics)
