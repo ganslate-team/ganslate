@@ -3,6 +3,7 @@ import wandb
 import os
 import torch
 import numpy as np
+from ganslate.utils.trackers.utils import process_visuals_wandb_tensorboard
 
 
 def torch_npy_to_python(x):
@@ -30,14 +31,14 @@ class WandbTracker:
         if conf[conf.mode].logging.wandb.run:
             wandb.run.name = conf[conf.mode].logging.wandb.run
 
-        self.image_filter = None
-        if conf[conf.mode].logging.wandb.image_filter:
-            self.image_filter = conf[conf.mode].logging.wandb.image_filter
+        self.image_window = None
+        if conf[conf.mode].logging.image_window:
+            self.image_window = conf[conf.mode].logging.image_window
 
     def log_iter(self,
                  iter_idx,
                  visuals,
-                 mode='train',
+                 mode,
                  learning_rates=None,
                  losses=None,
                  metrics=None):
@@ -46,58 +47,27 @@ class WandbTracker:
 
         # Learning rates
         if learning_rates:
-            log_dict['lr_G'] = learning_rates['lr_G']
-            log_dict['lr_D'] = learning_rates['lr_D']
+            for name, learning_rate in learning_rates.items():
+                log_dict[f"Learning rate: {name}"] = learning_rate
 
         # Losses
         if losses:
             for name, loss in losses.items():
-                log_dict[f"loss_{name}"] = torch_npy_to_python(loss)
+                log_dict[f"Loss: {name}"] = torch_npy_to_python(loss)
 
         # Metrics
         if metrics:
             for name, metric in metrics.items():
-                log_dict[f"metric_{mode}_{name}"] = torch_npy_to_python(metric)
+                log_dict[f"Metric: {name} ({mode})"] = torch_npy_to_python(metric)
 
-        log_dict[f"{mode} Images"] = self.create_wandb_images(visuals)
+        normal_visuals = process_visuals_wandb_tensorboard(visuals,
+                                                           image_window=None,
+                                                           is_wandb=True)
+        log_dict[f"Images ({mode})"] = normal_visuals
 
-        if self.image_filter:
-            log_dict[f"{mode} Windowed Images"] = self.create_wandb_images(
-                visuals, image_threshold=self.image_filter)
-
+        if self.image_window:
+            windowed_visuals = process_visuals_wandb_tensorboard(visuals,
+                                                                 self.image_window,
+                                                                 is_wandb=True)
+            log_dict[f"Windowed images ({mode})"] = windowed_visuals
         wandb.log(log_dict, step=iter_idx)
-
-    def create_wandb_images(self, visuals, image_threshold=None):
-        """
-        Create wandb images from visuals
-        """
-        # Check if visuals is a list of images and create a list of wandb.Image's
-        if isinstance(visuals, list):
-            wandb_images = []
-            for idx, visual in enumerate(visuals):
-                # Add sample index to visual name to identify it.
-                if image_threshold is not None:
-                    visual['name'] = f"{idx}_{visual['name']}"
-
-                visual = self._wandb_image_from_visual(visual, image_threshold)
-                wandb_images.append(visual)
-            return wandb_images
-
-        # If visual is an image then a single wandb.Image is created
-        return self._wandb_image_from_visual(visuals, image_threshold=image_threshold)
-
-    def _wandb_image_from_visual(self, visual, image_threshold=None):
-        """
-        Wandb Image Reference:
-        https://docs.wandb.ai/library/log#images-and-overlays
-        """
-        name, image = visual['name'], visual['image']
-        # CxHxW -> HxWxC
-        image = image.permute(1, 2, 0)
-
-        # Check if a threshold is defined while creating the wandb image.
-        if image_threshold:
-            image = image.clamp(image_threshold[0], image_threshold[1])
-            image = (image - image_threshold[0]) / image_threshold[1] - image_threshold[0]
-
-        return wandb.Image(image.cpu().detach().numpy(), caption=name)
