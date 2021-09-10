@@ -1,7 +1,7 @@
-project_dir: "./projects/cityscapes_label2photo/"
+project_dir: "/home/chinmay/git/ganslate/projects/horse2zebra"
 
 train:
-    output_dir: "./checkpoints/label2photo_pix2pix/"
+    output_dir: "/home/chinmay/git/ganslate/checkpoints/label2photo_pix2pix/"
     cuda: True
     n_iters: 297500      # 2975 (images) x 100 ("epochs")
     n_iters_decay: 5000
@@ -12,28 +12,26 @@ train:
         freq: 100
         wandb:
             project: "cityscapes_label2photo"
-            run: "pix2pix_lambda_30"
+            run: "pix2pix_trial"
         
     checkpointing:
         freq: 5000
 
     dataset: 
-        name: "Label2PhotoDataset"
-        root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
-        load_size: [572, 286]
-        crop_size: [512, 256]
-        paired: True  # Paired, for training 
-        random_flip: True
-        random_crop: True
-        masking: False
+        name: "PairedImageDataset"
+        root: "/home/chinmay/Datasets/Cityscapes_label2photo/train"
         num_workers: 8
+        image_channels: 3
+        preprocess: ['resize', 'random_crop', 'random_flip']
+        load_size: [286, 572]
+        final_size: [256, 512]  
 
     gan: 
         name: "Pix2PixConditionalGAN"
         generator:  
             name: "Unet2D"
-            in_channels: 3
-            out_channels: 3
+            in_out_channels: 
+                AB: [3, 3]
             num_downs: 7
             ngf: 128
             use_dropout: True
@@ -41,7 +39,8 @@ train:
         discriminator:  
             name: "PatchGAN2D"
             n_layers: 4
-            in_channels: 6
+            in_channels: 
+                B: 6
 
         optimizer:
             lr_D: 0.0001
@@ -50,19 +49,17 @@ train:
     
     metrics:
         discriminator_evolution: True
-        ssim: True
 
 
 val:
     freq: 5000
     dataset: 
-        name: "Label2PhotoDataset"
-        root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/val"
-        load_size: [512, 256]
-        paired: True   # Paired, to compute similarity metrics 
-        random_flip: False
-        random_crop: False
-        masking: False
-        num_workers: 8        
+        name: "PairedImageDataset"
+        root: "/home/chinmay/Datasets/Cityscapes_label2photo/val"
+        num_workers: 8
+        image_channels: 3
+        preprocess: ['resize']
+        load_size: [286, 572]
+        final_size: [256, 512]     
     metrics:
         cycle_metrics: False

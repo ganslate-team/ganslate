@@ -1,33 +1,35 @@
 import random
 from pathlib import Path
+from typing import Tuple
 
 from PIL import Image
 from torch.utils.data import Dataset
 
-from ganslate.data.utils.transforms import get_transform
+from ganslate.data.utils.transforms import get_single_image_transform
 from ganslate.utils.io import make_dataset_of_files
 
 # Config imports
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from ganslate import configs
-
-
-@dataclass
-class ImageDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "ImageDataset"
-    image_channels: int = 3
-    # Scaling and cropping of images at load time:
-    # [resize_and_crop | crop | scale_width | scale_width_and_crop | none]'
-    preprocess: str = "resize_and_crop"
-    load_size: int = 286
-    crop_size: int = 256
-    flip: bool = True
 
 
 EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 
-class ImageDataset(Dataset):
+@dataclass
+class UnpairedImageDatasetConfig(configs.base.BaseDatasetConfig):
+    name: str = "UnpairedImageDataset"
+    image_channels: int = 3
+    # Preprocessing instructions for images at load time:
+    #   Initial resizing:   'resize', 'scale_width'
+    #   Random transforms:  'random_zoom', 'random_crop', 'random_flip'
+    preprocess: Tuple[str] = ('resize', 'random_crop', 'random_flip')
+    # Sizes in (H, W) format
+    load_size: Tuple[int, int] = field(default_factory=lambda: [286, 286])
+    final_size: Tuple[int, int] = field(default_factory=lambda: [256, 256])
+
+
+class UnpairedImageDataset(Dataset):
 
     def __init__(self, conf):
 
@@ -39,7 +41,7 @@ class ImageDataset(Dataset):
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 
-        self.transform = get_transform(conf)
+        self.transform = get_single_image_transform(conf)
         self.rgb_or_grayscale = 'RGB' if conf[conf.mode].dataset.image_channels == 3 else 'L'
 
     def __getitem__(self, index):
