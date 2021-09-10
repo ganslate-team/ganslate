@@ -1,11 +1,12 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5494572.svg)](https://doi.org/10.5281/zenodo.5494572)
 
-# ganslate - simple and extensible GAN image-to-image translation framework.
+# `ganslate` - a simple and extensible GAN image-to-image translation framework
 
 For comprehensive documentation, visit: https://ganslate.readthedocs.io/en/latest/
-Note: The documentation is still in progress! Suggestions and criticism, as well as contributions, are welcome! 
 
-A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible to both beginner and advanced project with:
+***Note**: The documentation is still in progress! Suggestions and contributions are welcome!* 
+
+`ganslate` is a [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible to both beginner and advanced project with:
 
 - Simple configuration system
 - Extensibility for other datasets or architectures
