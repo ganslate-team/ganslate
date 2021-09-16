@@ -13,7 +13,7 @@ def download(name, path):
         print(""".Available datasets are: apple2orange, summer2winter_yosemite, horse2zebra, monet2photo, cezanne2photo, ukiyoe2photo, vangogh2photo, maps, cityscapes, facades, iphone2dslr_flower, ae_photos
         
                 facades: 400 images from the CMP Facades dataset. [Citation]
-                cityscapes: 2975 images from the Cityscapes training set. [Citation]. Note: Due to license issue, we cannot directly provide the Cityscapes dataset. Please download the Cityscapes dataset from https://cityscapes-dataset.com and use the script ./datasets/prepare_cityscapes_dataset.py.
+                cityscapes: 2975 images from the Cityscapes training set. [Citation]. Note: Due to license issue, we cannot directly provide the Cityscapes dataset. Please download the Cityscapes dataset from https://cityscapes-dataset.com
                 maps: 1096 training images scraped from Google Maps.
                 horse2zebra: 939 horse images and 1177 zebra images downloaded from ImageNet using keywords wild horse and zebra
                 apple2orange: 996 apple images and 1020 orange images downloaded from ImageNet using keywords apple and navel orange.

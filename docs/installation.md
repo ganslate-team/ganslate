@@ -13,7 +13,7 @@ You can run the docker image, which will give you access to a container with all
 docker run --gpus all -it surajpaib/ganslate:latest
 ```
 
-This will drop down to a shell and [you can now check out the quickstart page](quickstart.md)
+This will drop down to a shell and [you can now check out the Getting Started page](getting_started/first_run.md)
 
 
 
@@ -31,4 +31,4 @@ You can install the ganslate package along with its dependencies using
 pip install ganslate
 ```
 
-The `ganslate` package is now installed. [You can now check out the quickstart page](quickstart.md)
+The `ganslate` package is now installed. [You can now check out the Getting Started page](getting_started/first_run.md)

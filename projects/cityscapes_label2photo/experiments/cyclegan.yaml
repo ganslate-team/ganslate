@@ -1,7 +1,7 @@
-project_dir: "./projects/cityscapes_label2photo/datasets"
+project_dir: "/home/chinmay/git/ganslate/projects/horse2zebra"
 
 train:
-    output_dir: "./checkpoints/label2photo_cyclegan/"
+    output_dir: "/home/chinmay/git/ganslate/checkpoints/label2photo_cyclegan/"
     cuda: True
     n_iters: 297500      # 2975 x 100 
     n_iters_decay: 297500
@@ -18,15 +18,13 @@ train:
         freq: 10000
 
     dataset: 
-        name: "Label2PhotoDataset"
-        root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/train"
-        load_size: [572, 286]
-        crop_size: [512, 256]
-        paired: False  # Unpaired, for training
-        random_flip: True
-        random_crop: True
-        masking: False
+        name: "UnpairedImageDataset"
+        root: "/home/chinmay/Datasets/Cityscapes_label2photo/train"
         num_workers: 8
+        image_channels: 3
+        preprocess: ['resize', 'random_crop', 'random_flip']
+        load_size: [286, 572]
+        final_size: [256, 512]
 
     gan:  
         name: "CycleGAN"
@@ -58,13 +56,12 @@ train:
 val:
     freq: 200
     dataset: 
-        name: "Label2PhotoDataset"
-        root: "/home/zk315372/Chinmay/Datasets/Cityscapes_label2photo/val"
-        load_size: [512, 256]
-        paired: True  # Paired, to compute similarity metrics 
-        random_flip: False
-        random_crop: False
-        masking: False
-        num_workers: 8 
+        name: "PairedImageDataset"  # Paired dataset for validation
+        root: "/home/chinmay/Datasets/Cityscapes_label2photo/val"
+        num_workers: 8
+        image_channels: 3
+        preprocess: ['resize']
+        load_size: [286, 572]
+        final_size: [256, 512]
     metrics:
         cycle_metrics: False

@@ -147,4 +147,4 @@ class BaseGANConfig:
 As a result of inheriting from it, `CycleGANConfig` has the options defined in `BaseGANConfig`, such as `norm_type` or `generator`.
 
 !!! note
-    When writing custom architecture or dataset classes, you also need to write such dataclass configs for them, as demonstrated in [Custom Architecture](tutorials/custom_architecture.md) and [Custom Dataset](tutorials/custom_dataset.md) sections. 
+    When writing custom architecture or dataset classes, you also need to write such dataclass configs for them, as demonstrated in [Custom Architecture](custom_architecture.md) and [Custom Dataset](custom_dataset.md) sections. 

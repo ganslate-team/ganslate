@@ -68,7 +68,11 @@ class Trainer(BaseEngine):
             self.run_validation()
 
             self.tracker.start_dataloading_timer()
+
+        # Close tensorboard trackers
         self.tracker.close()
+        if self.validator:
+            self.validator.tracker.close()
 
     def _do_iteration(self, data):
         self.model.set_input(data)

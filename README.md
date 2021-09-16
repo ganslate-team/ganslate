@@ -1,9 +1,12 @@
-# ganslate - GAN image-to-image translation framework made simple and extensible.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5494572.svg)](https://doi.org/10.5281/zenodo.5494572)
 
-For comprehensive documentation, visit: https://ganslate.netlify.app
-Note: The documentation is still in progress! Suggestions and criticism, as well as contributions, are welcome! 
+# `ganslate` - a simple and extensible GAN image-to-image translation framework
 
-A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible for both beginner and advanced project with:
+For comprehensive documentation, visit: https://ganslate.readthedocs.io/en/latest/
+
+***Note**: The documentation is still in progress! Suggestions and contributions are welcome!* 
+
+`ganslate` is a [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-image translation more accessible to both beginner and advanced project with:
 
 - Simple configuration system
 - Extensibility for other datasets or architectures
@@ -36,12 +39,17 @@ A [PyTorch](https://pytorch.org/) framework which aims to make GAN image-to-imag
 If you used `ganslate` in your project, please cite:
 
 ```text
-@misc{ganslate,
-  author = {Lisa, Mona and Bot, Hew},
-  doi = {10.5281/zenodo.1234},
-  month = {12},
-  title = {{My Research Software}},
-  url = {https://github.com/github/linguist},
-  year = {2017}
+@software{ibrahim_hadzic_2021_5494572,
+  author       = {Ibrahim Hadzic and
+                  Suraj Pai and
+                  Chinmay Rao and
+                  Jonas Teuwen},
+  title        = {ganslate-team/ganslate: Initial public release},
+  month        = sep,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {v0.1.0},
+  doi          = {10.5281/zenodo.5494572},
+  url          = {https://doi.org/10.5281/zenodo.5494572}
 }
 ```

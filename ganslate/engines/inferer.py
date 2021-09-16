@@ -65,6 +65,7 @@ class Inferer(BaseEngineWithInference):
             visuals = {"input": data[input_key], "output": out.cpu()}
             self.tracker.log_iter(visuals, len(self.data_loader.dataset))
             self.tracker.start_dataloading_timer()
+        self.tracker.close()
 
     def _get_input_key(self, data):
         """The dataset (dataloader) needs to return a dict with input data 

@@ -1,0 +1,14 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Hadzic
+    given-names: Ibrahim
+  - family-names: Pai
+    given-names: Suraj
+  - family-names: Rao
+    given-names: Chinmay
+  - family-names: Teuwen
+    given-names: Jonas    
+title: ganslate-team/ganslate: Initial public release
+version: v0.1.0
+date-released: 2017-12-1

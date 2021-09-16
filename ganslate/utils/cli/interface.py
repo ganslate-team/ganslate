@@ -44,12 +44,12 @@ def new_project(path):
     cookiecutter(template, output_dir=path)
 
 # First run
-@interface.command(help="Fetch resources for the horse2zebra first run")
+@interface.command(help="Fetch resources for the maps first run")
 @click.argument("path", default="./")
 def your_first_run(path):
     template = str(COOKIECUTTER_TEMPLATES_DIR / "your_first_run")
     project_path = cookiecutter(template, output_dir=path)
-    download_datasets.download("horse2zebra", project_path)
+    download_datasets.download("maps", project_path)
     
 # Download project
 @interface.command(help="Download a project.")

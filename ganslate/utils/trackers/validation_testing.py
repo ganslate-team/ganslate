@@ -17,7 +17,7 @@ class ValTestTracker(BaseTracker):
     def __init__(self, conf):
         super().__init__(conf)
         self.logger = logger
-        
+
         # Save to csv
         if getattr(self.conf[self.conf.mode].metrics, "save_to_csv", False):
             self.saver = Saver()
@@ -92,9 +92,9 @@ class ValTestTracker(BaseTracker):
                 message += f" for dataset '{dataset_name}'"
             message += ') ' + 20 * '-' + '\n'
 
-            for k, v in metrics.items():
-                name = f'{dataset_name}_{k}' if dataset_name is not None else str(k)
-                message += f"{name}: {v:.3f} "
+            for name, metric in metrics.items():
+                name = f'{dataset_name}_{name}' if dataset_name is not None else str(name)
+                message += f"{name}: {metric:.3f} "
             self.logger.info(message)
 
         def log_visuals():
@@ -120,19 +120,23 @@ class ValTestTracker(BaseTracker):
         metrics = get_metrics()
         log_message()
         log_visuals()
-            
+
+        mode = self.conf.mode
+        if dataset_name is not None:
+            mode = f"{mode}_{dataset_name}"
+
         if self.wandb:
-            mode = self.conf.mode
-            if dataset_name is not None:
-                mode = f"{mode}_{dataset_name}"
             self.wandb.log_iter(iter_idx=iter_idx,
                                 visuals=self.visuals,
                                 mode=mode,
                                 metrics=metrics)
 
-        # TODO: revisit tensorboard support
         if self.tensorboard:
-            raise NotImplementedError("Tensorboard tracking not implemented")
-            # self.tensorboard.log_iter(iter_idx, None, None, visuals, metrics)
+            self.tensorboard.log_iter(iter_idx=iter_idx,
+                                      learning_rates=None,
+                                      losses=None,
+                                      visuals=self.visuals,
+                                      mode=mode,
+                                      metrics=metrics)
 
         clear_buffers()

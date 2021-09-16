@@ -12,8 +12,8 @@ train:
         freq: 100
         wandb:
             project: Media_Experiments_Proton
-            image_filter: [0.289 ,0.40]
             run: baseline_2d
+        image_window: [0.289 ,0.40]
 
     checkpointing:
         freq: 1000

@@ -51,6 +51,9 @@ class BaseValTestEngine(BaseEngineWithInference):
 
             self.tracker.log_samples(current_idx, dataset_name=dataset_name)
 
+        if self.conf.mode == "test":
+            self.tracker.close()
+
     def _calculate_metrics(self):
         # TODO: Decide if cycle metrics also need to be scaled
         original, pred, target = self.visuals["real_A"], self.visuals["fake_B"], self.visuals["real_B"]
