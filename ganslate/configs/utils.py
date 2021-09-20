@@ -1,16 +1,11 @@
+import sys
+import importlib
+from pathlib import Path
+
 from loguru import logger
-from omegaconf import DictConfig, OmegaConf, ListConfig
+from omegaconf import DictConfig, OmegaConf
 
-import ganslate
-from ganslate.utils.io import import_class_from_dirs_and_modules
-
-IMPORT_LOCATIONS = [ganslate]
-
-# TODO: instead of importing using IMPORT_LOCATIONS, maybe something more explicit,
-# like `__target__` in https://hydra.cc/docs/next/patterns/instantiate_objects/overview/
-# would be better. However, that would mean that each `name` will have to be, instead of
-# e.g. "CycleGAN" - "ganslate.nn.gans.unpaired.cyclegan.CycleGAN". Is it worth it?
-
+from ganslate.utils.io import import_attr
 
 def init_config(conf, config_class):
     # Run-specific config
@@ -19,15 +14,19 @@ def init_config(conf, config_class):
     # Allows the framework to find user-defined, project-specific, classes and their configs
     if conf.project_dir:
 
-        assert isinstance(conf.project_dir, (ListConfig, str)), \
-            "project_dir needs to be a list or str"
+        assert isinstance(conf.project_dir, str), "project_dir needs to be a str path"
 
-        if isinstance(conf.project_dir, ListConfig):
-            IMPORT_LOCATIONS.extend(conf.project_dir)
-        else:
-            IMPORT_LOCATIONS.append(conf.project_dir)
+        # Import project as module with name "project"
+        # https://stackoverflow.com/a/41595552
+        project_path = Path(conf.project_dir).resolve() / "__init__.py"
+        assert project_path.is_file(), f"No `__init__.py` in project `{project_path}`."
 
-        logger.info(f"Project directories {conf.project_dir} added to the"
+        spec = importlib.util.spec_from_file_location("project", str(project_path))
+        project_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(project_module)
+        sys.modules["project"] = project_module
+
+        logger.info(f"Project directory {conf.project_dir} added to the"
                     " path to allow imports of modules from it.")
 
     # Make yaml mergeable by instantiating the dataclasses
@@ -59,7 +58,7 @@ def init_dataclass(field):
     format "name" + "Config", e.g. "MRIDatasetConfig".
     """
     dataclass_name = f'{field["name"]}Config'
-    dataclass = import_class_from_dirs_and_modules(dataclass_name, IMPORT_LOCATIONS)
+    dataclass = import_attr(dataclass_name)
     return OmegaConf.structured(dataclass)
 
 

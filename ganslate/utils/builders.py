@@ -6,11 +6,11 @@ from torch.utils.data.distributed import DistributedSampler
 import omegaconf
 
 from ganslate.configs.config import Config
-from ganslate.configs.utils import IMPORT_LOCATIONS, init_config
+from ganslate.configs.utils import init_config
 from ganslate.data.samplers import InfiniteSampler
 from ganslate.nn.utils import init_net
 from ganslate.utils import communication
-from ganslate.utils.io import import_class_from_dirs_and_modules
+from ganslate.utils.io import import_attr
 
 
 def build_conf(omegaconf_args):
@@ -50,7 +50,7 @@ def build_loader(conf):
 
     ############## Single dataset loader #################
     name = conf[conf.mode].dataset.name
-    dataset_class = import_class_from_dirs_and_modules(name, IMPORT_LOCATIONS)
+    dataset_class = import_attr(name)
     dataset = dataset_class(conf)
 
     # Prevent DDP from running on a dataset smaller than the total batch size over processes
@@ -79,7 +79,7 @@ def build_loader(conf):
 
 def build_gan(conf):
     name = conf.train.gan.name
-    model_class = import_class_from_dirs_and_modules(name, IMPORT_LOCATIONS)
+    model_class = import_attr(name)
     model = model_class(conf)
     return model
 
@@ -105,7 +105,7 @@ def build_network_by_role(role, conf, label, device):
     assert role in ['discriminator', 'generator']
 
     name = conf.train.gan[role].name
-    network_class = import_class_from_dirs_and_modules(name, IMPORT_LOCATIONS)
+    network_class = import_attr(name)
 
     network_args = dict(conf.train.gan[role])
     network_args.pop("name")
