@@ -13,7 +13,6 @@ class BaseEngine(ABC):
         # deep copy to isolate the conf.mode of an engine from other engines (e.g train from val)
         self.conf = copy.deepcopy(conf)
         self._set_mode()
-        self._override_conf()
 
         self.output_dir = Path(conf[conf.mode].output_dir) / self.conf.mode
         self.model = None
@@ -24,10 +23,6 @@ class BaseEngine(ABC):
         """Sets the mode for the particular engine.
         E.g., 'train' for Trainer, 'val' for 'Validator' etc."""
         self.conf.mode = ...
-
-    def _override_conf(self):
-        """If any default overriding of config necessary, define it
-        in this method when inherited."""
 
 
 class BaseEngineWithInference(BaseEngine):
