@@ -34,7 +34,7 @@ class ClearGraspValTestDatasetConfig(configs.base.BaseDatasetConfig):
     """
     Note: Val dataset is paired, and does not supply RGB in domain-B
     """
-    name: str = "ClearGraspValTestDataset"
+    _target_: str = "ClearGraspValTestDataset"
     load_size: Tuple[int, int] = (512, 256)
     model_is_cyclegan_balanced: bool = False
 

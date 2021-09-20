@@ -13,9 +13,9 @@ from ganslate import configs
 @dataclass
 class TemplateInferDatasetConfig(configs.base.BaseDatasetConfig):
     # The name of the PyTorch dataset class defined below
-    name: str = "TemplateInferDataset"
+    _target_: str = "TemplateInferDataset"
     # Define other attributes, e.g.:
-    patch_size = Tuple[int, int] = [128, 128]
+    patch_size: Tuple[int, int] = [128, 128]
     ...
 
 

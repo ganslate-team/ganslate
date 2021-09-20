@@ -8,7 +8,7 @@ from ganslate import configs
 
 @dataclass
 class Resnet3DConfig(configs.base.BaseGeneratorConfig):
-    name: str = 'Resnet3D'
+    _target_: str = 'Resnet3D'
     n_residual_blocks: int = 9
 
 

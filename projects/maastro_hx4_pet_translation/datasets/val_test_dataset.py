@@ -23,7 +23,7 @@ class HX4PETTranslationValTestDatasetConfig(configs.base.BaseDatasetConfig):
     """
     Note: Val dataset is paired, and does not supply ldCT
     """
-    name: str = "HX4PETTranslationValTestDataset" 
+    _target_: str = "HX4PETTranslationValTestDataset" 
     hu_range: Tuple[int, int] = (-1000, 2000)
     fdg_suv_range: Tuple[float, float] = (0.0, 15.0)  
     hx4_tbr_range: Tuple[float, float] = (0.0, 3.0)

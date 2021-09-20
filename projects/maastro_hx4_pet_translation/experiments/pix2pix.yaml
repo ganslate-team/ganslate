@@ -1,4 +1,4 @@
-project_dir: "./projects/maastro_hx4_pet_translation/"
+project: "./projects/maastro_hx4_pet_translation/"
 
 train:
     output_dir: "/workspace/Chinmay-Checkpoints-Ephemeral/HX4-PET-Translation/hx4_pet_pix2pix_lambda10/"
@@ -22,7 +22,7 @@ train:
         freq: 1000
 
     dataset: 
-        name: "HX4PETTranslationTrainDataset"
+        _target_: "HX4PETTranslationTrainDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
         paired: True    # Paired training
         patch_size: [32, 128, 128]   # (D,H,W)
@@ -30,9 +30,9 @@ train:
         num_workers: 8
 
     gan: 
-        name: "Pix2PixConditionalGAN"
+        _target_: "Pix2PixConditionalGAN"
         generator:  
-            name: "Unet3D"
+            _target_: "Unet3D"
             in_out_channels: 
                 AB: [2, 1]
             num_downs: 4
@@ -40,7 +40,7 @@ train:
             use_dropout: True
 
         discriminator:  
-            name: "PatchGAN3D"
+            _target_: "PatchGAN3D"
             in_channels:
                 B: 3
             n_layers: 3
@@ -59,7 +59,7 @@ train:
 val:
     freq: 1000
     dataset: 
-        name: "HX4PETTranslationValTestDataset"
+        _target_: "HX4PETTranslationValTestDataset"
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
         supply_masks: False  # Do not supply masks -> less number of val metrics to compute, faster training 

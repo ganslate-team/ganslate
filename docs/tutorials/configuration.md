@@ -7,7 +7,7 @@ Setting up an experiment is done through a YAML file. This is an example of a ru
 ```
 # Project path from which custom, non-framework, can be loaded.
 # If not using any custom code, set it to `null`
-project_dir: "./projects/cityscapes_label2photo/datasets"
+project: "./projects/cityscapes_label2photo/datasets"
 
 train:
     output_dir: "./checkpoints/label2photo_cyclegan/"
@@ -27,7 +27,7 @@ train:
         freq: 10000
 
     dataset: 
-        name: "Label2PhotoDataset"
+        _target_: "Label2PhotoDataset"
         root: "~/Downloads/Datasets/Cityscapes_label2photo/train"
         load_size: [572, 286]
         crop_size: [512, 256]
@@ -38,16 +38,16 @@ train:
         num_workers: 8
 
     gan:  
-        name: "CycleGAN"
+        _target_: "CycleGAN"
 
         generator:  
-            name: "Resnet2D"
+            _target_: "Resnet2D"
             n_residual_blocks: 9
             in_channels: 3
             out_channels: 3
 
         discriminator:  
-            name: "PatchGAN2D"
+            _target_: "PatchGAN2D"
             n_layers: 3
             in_channels: 3
 
@@ -68,7 +68,7 @@ val:
     freq: 200
 
     dataset: 
-        name: "Label2PhotoDataset"
+        _target_: "Label2PhotoDataset"
         root: "~/Downloads/Datasets/Cityscapes_label2photo/val"
         load_size: [512, 256]
         paired: True  # Paired, to compute similarity metrics 
@@ -118,11 +118,11 @@ from ganslate import configs
 @dataclass
 class CycleGANConfig(configs.base.BaseGANConfig):
     """CycleGAN Config"""
-    name: str = "CycleGAN"  # refers to the class that this config describes
+    _target_: str = "CycleGAN"  # refers to the class that this config describes
     pool_size: int = 50
     optimizer: OptimizerConfig = OptimizerConfig
 ```
-`CycleGANConfig` specifies three different options: `name`, `pool_size`, and `optimizer`. Each has the type specified as well as the default value. For instance, `pool_size` option needs to be an `int` and defaults to `50`. If we tried to set `pool_size` to a string `"fifty"`, OmegaConf would raise an error.
+`CycleGANConfig` specifies three different options: `_target_`, `pool_size`, and `optimizer`. Each has the type specified as well as the default value. For instance, `pool_size` option needs to be an `int` and defaults to `50`. If we tried to set `pool_size` to a string `"fifty"`, OmegaConf would raise an error.
 
 We can also see that `CycleGANConfig` inherits from `configs.base.BaseGANConfig`. `BaseGANConfig` is an abstraction of a GAN config, and defines several options necessary for any GAN.
 
@@ -133,7 +133,7 @@ from omegaconf import MISSING
 @dataclass
 class BaseGANConfig:
     """Base GAN config."""
-    name: str = MISSING  # refers to the class that this config describes
+    _target_: str = MISSING  # refers to the class that this config describes
     norm_type: str = "instance"
     weight_init_type: str = "normal"
     weight_init_gain: float = 0.02

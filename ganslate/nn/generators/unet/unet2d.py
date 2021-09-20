@@ -9,7 +9,7 @@ from ganslate import configs
 
 @dataclass
 class Unet2DConfig(configs.base.BaseGeneratorConfig):
-    name: str = 'Unet2D'
+    _target_: str = 'Unet2D'
     num_downs: int = 7
     ngf: int = 64
     use_dropout: bool = False

@@ -9,7 +9,7 @@ from ganslate.configs.inference import InferenceConfig
 @dataclass
 class Config:
     # Enables importing project-specific classes located in the project's dir
-    project_dir: Optional[Any] = None
+    project: Optional[Any] = None
     # Modes handled internally
     mode: str = "train"
 

@@ -18,7 +18,7 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 @dataclass
 class Pix2PixConditionalGANConfig(configs.base.BaseGANConfig):
     """Pix2pix Config"""
-    name: str = "Pix2PixConditionalGAN"
+    _target_: str = "Pix2PixConditionalGAN"
     optimizer: OptimizerConfig = OptimizerConfig()
 
 

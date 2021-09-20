@@ -29,7 +29,7 @@ UPPER_DEPTH_INTENSITY_LIMIT = 8.0
 
 @dataclass
 class ClearGraspPix2PixDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "ClearGraspPix2PixDataset"
+    _target_: str = "ClearGraspPix2PixDataset"
     load_size: Tuple[int, int] = (512, 256)
 
 

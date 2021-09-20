@@ -16,7 +16,7 @@ from ganslate import configs
 @dataclass
 class Vnet3DConfig(configs.base.BaseGeneratorConfig):
     """Partially-invertible V-Net generator."""
-    name: str = "Vnet3D"
+    _target_: str = "Vnet3D"
     use_memory_saving: bool = False  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse: bool = False  # Specifies if the inverse forward will be used so that it construct the required layers
     first_layer_channels: int = 16

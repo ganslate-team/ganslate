@@ -28,7 +28,7 @@ class SAVnet3DConfig(configs.base.BaseGeneratorConfig):
     translation
     
     """
-    name: str = "SAVnet3D"
+    _target_: str = "SAVnet3D"
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse: bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
     first_layer_channels: int = 16

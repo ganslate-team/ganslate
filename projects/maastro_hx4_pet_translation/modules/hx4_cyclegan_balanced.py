@@ -12,7 +12,7 @@ from projects.maastro_hx4_pet_translation.modules.hx4_cyclegan_balanced_losses \
 @dataclass
 class HX4CycleGANBalancedConfig(cyclegan.CycleGANConfig):
     """ HX4CycleGANBalanced Config """
-    name: str = "HX4CycleGANBalanced"
+    _target_: str = "HX4CycleGANBalanced"
 
 
 class HX4CycleGANBalanced(cyclegan.CycleGAN):

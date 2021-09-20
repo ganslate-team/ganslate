@@ -9,7 +9,7 @@ from ganslate import configs
 
 @dataclass
 class PatchGAN3DConfig(configs.base.BaseDiscriminatorConfig):
-    name: str = "PatchGAN3D"
+    _target_: str = "PatchGAN3D"
     ndf: int = 64
     n_layers: int = 3
     kernel_size: Tuple[int] = (4, 4, 4)

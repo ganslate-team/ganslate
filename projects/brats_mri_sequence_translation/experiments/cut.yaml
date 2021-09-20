@@ -1,4 +1,4 @@
-project_dir: "./projects/brats_flair_to_t1w/"
+project: "./projects/brats_flair_to_t1w/"
 
 train:
     output_dir: "./checkpoints/dke_brats_cut/"
@@ -17,16 +17,16 @@ train:
         freq: 5000
 
     dataset: 
-        name: "BratsDataset"
+        _target_: "BratsDataset"
         root: "/workspace/Task01_BrainTumour/imagesTr"
         num_workers: 8
         patch_size: [32, 176, 176]
     
     gan:  
-        name: "CUT"
+        _target_: "CUT"
         nce_layers: [0, 1, 2, 3, 4]
         generator:  
-            name: "Vnet3D"
+            _target_: "Vnet3D"
             use_memory_saving: False
             use_inverse: False
             in_out_channels: 
@@ -35,7 +35,7 @@ train:
             up_blocks: [3, 3, 3]
 
         discriminator:  
-            name: "PatchGAN3D"
+            _target_: "PatchGAN3D"
             n_layers: 2
             in_channels: 
                 B: 1
@@ -47,7 +47,7 @@ train:
 val:
     freq: 40000
     dataset: 
-        name: "BratsValTestDataset"
+        _target_: "BratsValTestDataset"
         root: "/workspace/Task01_BrainTumour/imagesTs"
     sliding_window:
         window_size: ${train.dataset.patch_size}

@@ -35,7 +35,7 @@ from ganslate import configs
 
 @dataclass
 class YourDatasetNameConfig(configs.base.BaseDatasetConfig): # Your dataset always needs to inherit the BaseDatasetConfig
-    name: str = "YourDatasetName"
+    _target_: str = "YourDatasetName"
 
     # Define additional parameters below, these parameters are passed to
     # the dataset and can be used for dynamic configuration. 
@@ -70,10 +70,10 @@ projects/
 
 Modify the `default_docker.yaml`
 ```yaml
-project_dir: "./projects/your_project" # This needs to point to the directory where your_dataset.py is located
+project: "./projects/your_project" # This needs to point to the directory where your_dataset.py is located
 train:
     dataset:
-    name: "YourDatasetName"
+    _target_: "YourDatasetName"
     root: "<path_to_datadir>" # Path to where the data is 
     # Additional parameters
     flip: True

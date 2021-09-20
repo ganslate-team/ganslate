@@ -19,7 +19,7 @@ class OptimizerConfig(cyclegan.OptimizerConfig):
 @dataclass
 class RevGANConfig(configs.base.BaseGANConfig):
     """RevGAN Config"""
-    name: str = "RevGAN"
+    _target_: str = "RevGAN"
     pool_size: int = 50
     optimizer: OptimizerConfig = OptimizerConfig
 

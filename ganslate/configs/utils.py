@@ -12,13 +12,13 @@ def init_config(conf, config_class):
     conf = conf if isinstance(conf, DictConfig) else OmegaConf.load(str(conf))
 
     # Allows the framework to find user-defined, project-specific, classes and their configs
-    if conf.project_dir:
+    if conf.project:
 
-        assert isinstance(conf.project_dir, str), "project_dir needs to be a str path"
+        assert isinstance(conf.project, str), "project needs to be a str path"
 
         # Import project as module with name "project"
         # https://stackoverflow.com/a/41595552
-        project_path = Path(conf.project_dir).resolve() / "__init__.py"
+        project_path = Path(conf.project).resolve() / "__init__.py"
         assert project_path.is_file(), f"No `__init__.py` in project `{project_path}`."
 
         spec = importlib.util.spec_from_file_location("project", str(project_path))
@@ -26,7 +26,7 @@ def init_config(conf, config_class):
         spec.loader.exec_module(project_module)
         sys.modules["project"] = project_module
 
-        logger.info(f"Project directory {conf.project_dir} added to the"
+        logger.info(f"Project directory {conf.project} added to the"
                     " path to allow imports of modules from it.")
 
     # Make yaml mergeable by instantiating the dataclasses
@@ -37,9 +37,8 @@ def init_config(conf, config_class):
 
 def instantiate_dataclasses_from_yaml(conf):
     """Goes through a config and instantiates the fields that are dataclasses.
-    A field is a dataclass if its key can be found in the keys of the IMPORT_LOCATIONS.
-    Each such dataclass should have an entry "name" which is used to import its dataclass
-    class using that "name" + "Config" as class name.
+    Each such dataclass should have an entry "_target_" which is used to import its dataclass
+    class using that "_target_" + "Config" as class name.
     Instantiates the deepest dataclasses first as otherwise OmegaConf would throw an error.
     """
     for key in get_all_conf_keys(conf):
@@ -53,18 +52,17 @@ def instantiate_dataclasses_from_yaml(conf):
 
 
 def init_dataclass(field):
-    """Initialize a dataclass. Requires the field to have a "name" entry and a dataclass class
-    whose destination can be found with IMPORT_LOCATIONS. Assumes that the class name is of
-    format "name" + "Config", e.g. "MRIDatasetConfig".
+    """Initialize a dataclass. Requires the field to have a "_target_" entry.
+    Assumes that the class name is of format "_target_" + "Config", e.g. "MRIDatasetConfig".
     """
-    dataclass_name = f'{field["name"]}Config'
-    dataclass = import_attr(dataclass_name)
+    dataclass = f'{field["_target_"]}Config'
+    dataclass = import_attr(dataclass)
     return OmegaConf.structured(dataclass)
 
 
 def is_dataclass(field):
-    """If a field contains `name` key, it is a dataclass."""
-    return bool(isinstance(field, DictConfig) and "name" in field)
+    """If a field contains `_target_` key, it is a dataclass."""
+    return bool(isinstance(field, DictConfig) and "_target_" in field)
 
 
 def get_all_conf_keys(conf):
@@ -78,7 +76,7 @@ def get_all_conf_keys(conf):
 def iterate_nested_dict_keys(dictionary):
     """Returns an iterator that returns all keys of a nested dictionary ordered
     from the shallowest to the deepest key. The nested keys are in the dot-list format,
-    e.g. "gan.discriminator.name".
+    e.g. "gan.discriminator.in_channels".
     """
     if isinstance(dictionary, dict):
         current_level_keys = []

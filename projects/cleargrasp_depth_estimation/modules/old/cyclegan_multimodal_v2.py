@@ -17,7 +17,7 @@ class OptimizerV2Config(cyclegan.OptimizerConfig):
 @dataclass
 class CycleGANMultiModalV2Config(cyclegan.CycleGANConfig):
     """ CycleGANMultiModalV2 Config """
-    name: str = "CycleGANMultiModalV2"
+    _target_: str = "CycleGANMultiModalV2"
     optimizer: OptimizerV2Config = OptimizerV2Config()
 
 

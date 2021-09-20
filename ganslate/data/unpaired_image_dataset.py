@@ -18,7 +18,7 @@ EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 @dataclass
 class UnpairedImageDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "UnpairedImageDataset"
+    _target_: str = "UnpairedImageDataset"
     image_channels: int = 3
     # Preprocessing instructions for images at load time:
     #   Initial resizing:   'resize', 'scale_width'

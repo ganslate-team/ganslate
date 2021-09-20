@@ -21,7 +21,7 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 @dataclass
 class CycleGANConfig(configs.base.BaseGANConfig):
     """CycleGAN Config"""
-    name: str = "CycleGAN"
+    _target_: str = "CycleGAN"
     pool_size: int = 50
     optimizer: OptimizerConfig = OptimizerConfig
 

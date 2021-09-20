@@ -18,7 +18,7 @@ from ganslate import configs
 
 @dataclass
 class BratsDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "BratsDataset"
+    _target_: str = "BratsDataset"
     patch_size: Tuple[int, int, int] = (32, 32, 32)
     # Proportion of focal region size compared to original volume size
     focal_region_proportion: float = 0
