@@ -28,7 +28,6 @@ from projects.maastro_hx4_pet_translation.datasets.utils.basic import (sitk2np,
 
 @dataclass
 class HX4PETTranslationTrainDatasetConfig(configs.base.BaseDatasetConfig):
-    _target_: str = "HX4PETTranslationTrainDataset"
     paired: bool = True   # `True` only for Pix2Pix
     require_ldct_for_training: bool = False  # `True` only for HX4-CycleGAN-balanced
     hu_range: Tuple[int, int] = (-1000, 2000)

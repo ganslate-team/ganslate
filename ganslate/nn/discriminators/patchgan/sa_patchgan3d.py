@@ -10,7 +10,6 @@ from ganslate import configs
 
 @dataclass
 class SAPatchGAN3DConfig(configs.base.BaseDiscriminatorConfig):
-    _target_: str = "SAPatchGAN3D"
     ndf: int = 64
     n_layers: int = 3
     kernel_size: Tuple[int] = (4, 4, 4)

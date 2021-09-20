@@ -28,7 +28,6 @@ UPPER_DEPTH_INTENSITY_LIMIT = 8.0
 
 @dataclass
 class ClearGraspCycleGANDatasetConfig(configs.base.BaseDatasetConfig):
-    _target_: str = "ClearGraspCycleGANDataset"
     load_size: Tuple[int, int] = (512, 256)
     paired: bool = False   # `True` for paired A-B.  Need paired during validation
     fetch_rgb_b: bool = False  # Whether to fetch noisy RGB photo for domain B

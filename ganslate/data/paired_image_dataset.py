@@ -18,7 +18,6 @@ EXTENSIONS = ['.jpg', '.jpeg', '.png']
 
 @dataclass
 class PairedImageDatasetConfig(configs.base.BaseDatasetConfig):
-    _target_: str = "PairedImageDataset"
     image_channels: int = 3
     # Preprocessing instructions for images at load time:
     #   Initial resizing:   'resize', 'scale_width'

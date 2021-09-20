@@ -397,7 +397,6 @@ from ganslate import configs
 
 @dataclass
 class CustomGeneratorConfig(configs.base.BaseGeneratorConfig):
-    _target_: str = 'CustomGenerator'
     n_residual_blocks: int = 9
     use_dropout: bool = False
 
