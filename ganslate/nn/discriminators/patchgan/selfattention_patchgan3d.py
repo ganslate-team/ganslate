@@ -9,13 +9,13 @@ from ganslate import configs
 
 
 @dataclass
-class SAPatchGAN3DConfig(configs.base.BaseDiscriminatorConfig):
+class SelfAttentionPatchGAN3DConfig(configs.base.BaseDiscriminatorConfig):
     ndf: int = 64
     n_layers: int = 3
     kernel_size: Tuple[int] = (4, 4, 4)
 
 
-class SAPatchGAN3D(nn.Module):
+class SelfAttentionPatchGAN3D(nn.Module):
 
     def __init__(self, in_channels, ndf, n_layers, kernel_size, norm_type):
         super().__init__()
