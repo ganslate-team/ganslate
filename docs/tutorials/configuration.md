@@ -7,7 +7,7 @@ Setting up an experiment is done through a YAML file. This is an example of a ru
 ```
 # Project path from which custom, non-framework, can be loaded.
 # If not using any custom code, set it to `null`
-project: "./projects/cityscapes_label2photo/datasets"
+project: "./projects/cityscapes_label2photo/"
 
 train:
     output_dir: "./checkpoints/label2photo_cyclegan/"
