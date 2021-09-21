@@ -30,7 +30,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 @dataclass
 class CustomCycleGAN1Config(cyclegan.CycleGANConfig):  # Inherit from the `CycleGANConfig` class
     """ Dataclass containing confiuration for your custom CycleGAN """
-    _target_: str = "CustomCycleGAN1"
     optimizer: OptimizerConfig = OptimizerConfig
 
 
@@ -182,7 +181,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 @dataclass
 class FancyNewGANConfig(configs.base.BaseGANConfig):
     # Configuration dataclass for your GAN
-    _target_: str = "FancyNewGAN"
     optimizer: OptimizerConfig = OptimizerConfig
 
 

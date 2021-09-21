@@ -21,7 +21,7 @@ train:
         freq: 10000
 
     dataset: 
-        _target_: "ClearGraspCycleGANDataset"
+        _target_: project.datasets.ClearGraspCycleGANDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: False
@@ -29,16 +29,16 @@ train:
         num_workers: 8
 
     gan: 
-        _target_: "CycleGANMultiModalV1Structure" 
+        _target_: project.modules.CycleGANMultiModalV1Structure 
         generator:  
-            _target_: "Unet2D"
+            _target_: ganslate.nn.generators.Unet2D
             in_out_channels_AB: [6, 1]
             in_out_channels_BA: [1, 6]
             num_downs: 5
             ngf: 64
 
         discriminator:  
-            _target_: "PatchGAN2D"
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             in_channels_B: 1
             in_channels_A: 6
             n_layers: 4
@@ -61,7 +61,7 @@ train:
 val:
     freq: 5000
     dataset: 
-        _target_: "ClearGraspCycleGANDataset"
+        _target_: project.datasets.ClearGraspCycleGANDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         fetch_rgb_b: False  # `False` for v1 

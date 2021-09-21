@@ -17,7 +17,7 @@ train:
         freq: 20000
 
     dataset: 
-        _target_: "UnpairedImageDataset"
+        _target_: ganslate.data.UnpairedImageDataset
         root: "/home/chinmay/Datasets/horse2zebra/train/"
         num_workers: 16
         image_channels: 3
@@ -26,16 +26,16 @@ train:
         final_size: [128, 128]  # (H, W)
         
     gan:  
-        _target_: "CycleGAN"
+        _target_: ganslate.nn.gans.unpaired.CycleGAN
 
         generator:  
-            _target_: "Resnet2D"
+            _target_: ganslate.nn.generators.Resnet2D
             n_residual_blocks: 9
             in_out_channels:
                 AB: [3, 3]
 
         discriminator:  
-            _target_: "PatchGAN2D"
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             n_layers: 3
             in_channels:
                 B: 3
@@ -56,7 +56,7 @@ infer:
     checkpointing:
         load_iter: 1
     dataset:
-        _target_: "UnpairedImageDataset"
+        _target_: ganslate.data.UnpairedImageDataset
         root: "/home/chinmay/Datasets/horse2zebra/test/"
         num_workers: 16
         image_channels: 3

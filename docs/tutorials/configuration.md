@@ -27,7 +27,7 @@ train:
         freq: 10000
 
     dataset: 
-        _target_: "Label2PhotoDataset"
+        _target_: project.datasets.Label2PhotoDataset
         root: "~/Downloads/Datasets/Cityscapes_label2photo/train"
         load_size: [572, 286]
         crop_size: [512, 256]
@@ -38,16 +38,16 @@ train:
         num_workers: 8
 
     gan:  
-        _target_: "CycleGAN"
+        _target_: ganslate.nn.gans.unpaired.CycleGAN
 
         generator:  
-            _target_: "Resnet2D"
+            _target_: ganslate.nn.generators.Resnet2D
             n_residual_blocks: 9
             in_channels: 3
             out_channels: 3
 
         discriminator:  
-            _target_: "PatchGAN2D"
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             n_layers: 3
             in_channels: 3
 
@@ -68,7 +68,7 @@ val:
     freq: 200
 
     dataset: 
-        _target_: "Label2PhotoDataset"
+        _target_: project.datasets.Label2PhotoDataset
         root: "~/Downloads/Datasets/Cityscapes_label2photo/val"
         load_size: [512, 256]
         paired: True  # Paired, to compute similarity metrics 
@@ -118,11 +118,10 @@ from ganslate import configs
 @dataclass
 class CycleGANConfig(configs.base.BaseGANConfig):
     """CycleGAN Config"""
-    _target_: str = "CycleGAN"  # refers to the class that this config describes
     pool_size: int = 50
     optimizer: OptimizerConfig = OptimizerConfig
 ```
-`CycleGANConfig` specifies three different options: `_target_`, `pool_size`, and `optimizer`. Each has the type specified as well as the default value. For instance, `pool_size` option needs to be an `int` and defaults to `50`. If we tried to set `pool_size` to a string `"fifty"`, OmegaConf would raise an error.
+`CycleGANConfig` specifies two different options: `pool_size`, and `optimizer`. Each has the type specified as well as the default value. For instance, `pool_size` option needs to be an `int` and defaults to `50`. If we tried to set `pool_size` to a string `"fifty"`, OmegaConf would raise an error.
 
 We can also see that `CycleGANConfig` inherits from `configs.base.BaseGANConfig`. `BaseGANConfig` is an abstraction of a GAN config, and defines several options necessary for any GAN.
 

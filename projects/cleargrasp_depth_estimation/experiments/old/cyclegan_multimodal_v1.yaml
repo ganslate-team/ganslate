@@ -21,7 +21,7 @@ train:
         freq: 5000
 
     dataset: 
-        _target_: "ClearGraspCycleGANDataset"
+        _target_: project.datasets.ClearGraspCycleGANDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: False
@@ -29,9 +29,9 @@ train:
         num_workers: 8
 
     gan: 
-        _target_: "CycleGAN"
+        _target_: ganslate.nn.gans.unpaired.CycleGAN
         generator:  
-            _target_: "Unet2D" 
+            _target_: ganslate.nn.generators.Unet2D 
             in_out_channels_AB: [6, 1]  # RGB + Normal -> Depth
             in_out_channels_BA: [1, 6]  # Depth -> Normal + RGB
             num_downs: 4
@@ -39,7 +39,7 @@ train:
             use_dropout: True
 
         discriminator:  
-            _target_: "PatchGAN2D"
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             in_channels_B: 1
             in_channels_A: 6
             n_layers: 3
@@ -62,7 +62,7 @@ train:
 val:
     freq: 2500
     dataset: 
-        _target_: "ClearGraspCycleGANDataset"
+        _target_: project.datasets.ClearGraspCycleGANDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         paired: True

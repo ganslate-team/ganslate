@@ -12,7 +12,7 @@ from projects.cleargrasp_depth_estimation.modules.cyclegan_losses_for_v3 \
 @dataclass
 class CycleGANMultiModalV3Config(cyclegan.CycleGANConfig):
     """ CycleGANMultiModalV3 Config """
-    _target_: str = "CycleGANMultiModalV3"
+    pass
 
 
 class CycleGANMultiModalV3(cyclegan.CycleGAN):

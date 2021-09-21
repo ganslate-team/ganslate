@@ -13,8 +13,6 @@ from ganslate import configs
 
 @dataclass
 class TemplateTrainDatasetConfig(configs.base.BaseDatasetConfig):
-    # The name of the PyTorch dataset class defined below
-    _target_: str = "TemplateTrainDataset"
     # Define other attributes, e.g.:
     patch_size: Tuple[int, int] = [128, 128]
     ...

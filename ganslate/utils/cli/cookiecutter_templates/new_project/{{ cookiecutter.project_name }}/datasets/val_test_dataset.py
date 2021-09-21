@@ -12,8 +12,6 @@ from ganslate import configs
 
 @dataclass
 class TemplateValTestDatasetConfig(configs.base.BaseDatasetConfig):
-    # The name of the PyTorch dataset class defined below
-    _target_: str = "TemplateValTestDataset"
     # Define other attributes, e.g.:
     patch_size: Tuple[int, int] = [128, 128]
     ...

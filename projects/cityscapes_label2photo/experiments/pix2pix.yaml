@@ -18,7 +18,7 @@ train:
         freq: 5000
 
     dataset: 
-        _target_: "PairedImageDataset"
+        _target_: ganslate.data.PairedImageDataset
         root: "/home/chinmay/Datasets/Cityscapes_label2photo/train"
         num_workers: 8
         image_channels: 3
@@ -27,9 +27,9 @@ train:
         final_size: [256, 512]  
 
     gan: 
-        _target_: "Pix2PixConditionalGAN"
+        _target_: ganslate.nn.gans.paired.Pix2PixConditionalGAN
         generator:  
-            _target_: "Unet2D"
+            _target_: ganslate.nn.generators.Unet2D
             in_out_channels: 
                 AB: [3, 3]
             num_downs: 7
@@ -37,7 +37,7 @@ train:
             use_dropout: True
 
         discriminator:  
-            _target_: "PatchGAN2D"
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             n_layers: 4
             in_channels: 
                 B: 6
@@ -54,7 +54,7 @@ train:
 val:
     freq: 5000
     dataset: 
-        _target_: "PairedImageDataset"
+        _target_: ganslate.data.PairedImageDataset
         root: "/home/chinmay/Datasets/Cityscapes_label2photo/val"
         num_workers: 8
         image_channels: 3

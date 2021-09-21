@@ -22,7 +22,7 @@ train:
         freq: 25000
 
     dataset: 
-        _target_: "ClearGraspTrainDataset"
+        _target_: project.datasets.ClearGraspTrainDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: True
@@ -30,9 +30,9 @@ train:
         num_workers: 8
 
     gan: 
-        _target_: "Pix2PixConditionalGAN"
+        _target_: ganslate.nn.gans.paired.Pix2PixConditionalGAN
         generator:  
-            _target_: "Unet2D"
+            _target_: ganslate.nn.generators.Unet2D
             in_out_channels:
                 AB: [6, 1]
             num_downs: 4
@@ -40,7 +40,7 @@ train:
             use_dropout: True
 
         discriminator:  
-            _target_: "PatchGAN2D"
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             in_channels: 
                 B: 7
             n_layers: 3
@@ -60,7 +60,7 @@ train:
 val:
     freq: 2500
     dataset: 
-        _target_: "ClearGraspValTestDataset"
+        _target_: project.datasets.ClearGraspValTestDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         model_is_cyclegan_balanced: False

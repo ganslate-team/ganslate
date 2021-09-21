@@ -22,7 +22,7 @@ train:
         freq: 1000
 
     dataset: 
-        _target_: "HX4PETTranslationTrainDataset"
+        _target_: project.datasets.HX4PETTranslationTrainDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
         paired: False                     # Unpaired training
         require_ldct_for_training: False  # ldCT not required for training
@@ -32,9 +32,9 @@ train:
         num_workers: 8
 
     gan: 
-        _target_: "CycleGAN"
+        _target_: ganslate.nn.gans.unpaired.CycleGAN
         generator:  
-            _target_: "Unet3D"
+            _target_: ganslate.nn.generators.Unet3D
             in_out_channels:
                 AB: [2, 1]
                 BA: [1, 2]
@@ -43,7 +43,7 @@ train:
             use_dropout: True
 
         discriminator:  
-            _target_: "PatchGAN3D"
+            _target_: ganslate.nn.discriminators.PatchGAN3D
             in_channels:
                 B: 1
                 A: 2
@@ -67,7 +67,7 @@ train:
 val:
     freq: 1000
     dataset: 
-        _target_: "HX4PETTranslationValTestDataset"
+        _target_: project.datasets.HX4PETTranslationValTestDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
         supply_masks: False  # Do not supply masks -> less number of val metrics to compute, faster training 
