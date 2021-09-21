@@ -27,6 +27,7 @@ train:
         freq: 10000
 
     dataset: 
+        # TODO: this should be PairedImageDataset i think
         _target_: project.datasets.Label2PhotoDataset
         root: "~/Downloads/Datasets/Cityscapes_label2photo/train"
         load_size: [572, 286]

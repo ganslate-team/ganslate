@@ -22,7 +22,7 @@ train:
         freq: 25000
 
     dataset: 
-        _target_: project.datasets.ClearGraspTrainDataset
+        _target_: project.datasets.train_dataset.ClearGraspTrainDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: True
@@ -60,7 +60,7 @@ train:
 val:
     freq: 2500
     dataset: 
-        _target_: project.datasets.ClearGraspValTestDataset
+        _target_: project.datasets.val_test_dataset.ClearGraspValTestDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         model_is_cyclegan_balanced: False

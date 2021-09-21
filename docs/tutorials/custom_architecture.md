@@ -104,7 +104,7 @@ train:
     ...
 
     gan:
-        _target_: "project.architectures.CustomCycleGAN1"  # Location of your GAN class 
+        _target_: project.architectures.CustomCycleGAN1  # Location of your GAN class 
         ...
 
         optimizer:               # Optimizer config that includes your custom hyperparameter
@@ -372,7 +372,7 @@ train:
     ...
 
     gan:        
-        _target_: "project.architectures.YourFancyGAN"  # Location of your GAN class   
+        _target_: project.architectures.YourFancyGAN  # Location of your GAN class   
         ...
 
     optimizer:                # Optimizer config that includes your custom hyperparameter
@@ -421,7 +421,7 @@ train:
         ...
 
         generator:              
-            _target_: "project.architectures.CustomGenerator"  # Location of your custom generator class            
+            _target_: project.architectures.CustomGenerator  # Location of your custom generator class            
             n_residual_blocks: 9     # Configuration
             in_out_channels:
                 AB: [3, 3]

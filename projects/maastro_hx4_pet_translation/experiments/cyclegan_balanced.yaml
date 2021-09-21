@@ -26,7 +26,7 @@ train:
         freq: 1000
 
     dataset: 
-        _target_: project.datasets.HX4PETTranslationTrainDataset
+        _target_: project.datasets.train_dataset.HX4PETTranslationTrainDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/train"
         paired: False                    # Unpaired training
         require_ldct_for_training: True  # ldCT required for training
@@ -71,7 +71,7 @@ train:
 val:
     freq: 1000
     dataset: 
-        _target_: project.datasets.HX4PETTranslationValTestDataset
+        _target_: project.datasets.val_test_dataset.HX4PETTranslationValTestDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/HX4-PET-Translation-Processed/val"
         num_workers: 8
         supply_masks: False  # Do not supply masks -> less number of val metrics to compute, faster training 

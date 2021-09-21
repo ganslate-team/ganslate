@@ -21,7 +21,7 @@ train:
         freq: 10000
 
     dataset: 
-        _target_: project.datasets.ClearGraspCycleGANDataset
+        _target_: project.datasets.old.train_val_cyclegan_dataset.ClearGraspCycleGANDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: False
@@ -61,7 +61,7 @@ train:
 val:
     freq: 5000
     dataset: 
-        _target_: project.datasets.ClearGraspCycleGANDataset
+        _target_: project.datasets.old.train_val_cyclegan_dataset.ClearGraspCycleGANDataset
         root: "/workspace/Chinmay-Datasets-Ephemeral/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         fetch_rgb_b: False  # `False` for v1 

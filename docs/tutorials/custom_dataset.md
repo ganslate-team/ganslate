@@ -70,7 +70,7 @@ Modify the `default_docker.yaml`
 project: "./projects/your_project" # This needs to point to the directory where your_dataset.py is located
 train:
     dataset:
-        _target_: "YourDatasetName"
+        _target_: project.datasets.YourDatasetName
         root: "<path_to_datadir>" # Path to where the data is 
         # Additional parameters
         flip: True

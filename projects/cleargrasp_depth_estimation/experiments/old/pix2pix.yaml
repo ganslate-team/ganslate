@@ -21,7 +21,7 @@ train:
         freq: 5000
 
     dataset: 
-        _target_: project.datasets.ClearGraspPix2PixDataset
+        _target_: project.datasets.old.train_val_pix2pix_dataset.ClearGraspPix2PixDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         num_workers: 8
@@ -55,7 +55,7 @@ train:
 val:
     freq: 2500
     dataset: 
-        _target_: project.datasets.ClearGraspPix2PixDataset
+        _target_: project.datasets.old.train_val_pix2pix_dataset.ClearGraspPix2PixDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         num_workers: 8

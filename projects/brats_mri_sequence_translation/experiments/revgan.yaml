@@ -17,7 +17,7 @@ train:
         freq: 5000
 
     dataset: 
-        _target_: project.datasets.BratsDataset
+        _target_: project.datasets.train_dataset.BratsDataset
         root: "/workspace/Task01_BrainTumour/imagesTr"
         num_workers: 8
         patch_size: [32, 176, 176]
@@ -49,7 +49,7 @@ train:
 val:
     freq: 40000
     dataset: 
-        _target_: project.datasets.BratsValTestDataset
+        _target_: project.datasets.val_test_dataset.BratsValTestDataset
         root: "/workspace/Task01_BrainTumour/imagesTs"
     sliding_window:
         window_size: ${train.dataset.patch_size}
