@@ -22,7 +22,7 @@ from ganslate.nn.gans.unpaired import cyclegan
 
 @dataclass
 class CustomCycleGANConfig(cyclegan.CycleGANConfig):
-    name: str = "CustomCycleGAN"
+    pass
 
 
 class CustomCycleGAN(cyclegan.CycleGAN):

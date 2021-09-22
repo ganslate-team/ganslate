@@ -29,7 +29,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 @dataclass
 class CUTConfig(configs.base.BaseGANConfig):
     """CUT Config"""
-    name: str = "CUT"
     # On which layers to compute the NCE loss. 0 (zero) denotes the input itself.
     nce_layers: Tuple[int] = (0, 4, 8, 12, 16)
     # num of features in MLP

@@ -56,7 +56,7 @@ class Trainer(BaseEngine):
             self.tracker.start_computation_timer()
             self.tracker.end_dataloading_timer()
 
-            self._do_iteration(data)
+            self._run_iteration(data)
             self.tracker.end_computation_timer()
 
             learning_rates, losses, visuals, metrics = self.model.get_loggable_data()
@@ -65,7 +65,7 @@ class Trainer(BaseEngine):
             self._save_checkpoint()
             self._perform_scheduler_step()
 
-            self.run_validation()
+            self._run_validation()
 
             self.tracker.start_dataloading_timer()
 
@@ -74,7 +74,7 @@ class Trainer(BaseEngine):
         if self.validator:
             self.validator.tracker.close()
 
-    def _do_iteration(self, data):
+    def _run_iteration(self, data):
         self.model.set_input(data)
         self.model.optimize_parameters()
 
@@ -100,7 +100,7 @@ class Trainer(BaseEngine):
             return
         return Validator(self.conf, self.model)
 
-    def run_validation(self):
+    def _run_validation(self):
         if self.validator:
             val_freq = self.conf.val.freq
             val_after = self.conf.val.start_after

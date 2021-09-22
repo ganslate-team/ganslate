@@ -31,7 +31,6 @@ def get_cropped_patch(input: torch.Tensor, scale: int = 1) -> torch.Tensor:
 
 @dataclass
 class MultiScalePatchGAN3DConfig(configs.base.BaseDiscriminatorConfig):
-    name: str = "MultiScalePatchGAN3D"
     ndf: int = 64
     n_layers: int = 3
     kernel_size: Tuple[int] = (4, 4, 4)

@@ -18,7 +18,6 @@ from ganslate import configs
 
 @dataclass
 class BratsValTestDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "BratsValTestDataset"
     source_sequence: str = "flair"
     target_sequence: str = "t1w"
 

@@ -7,7 +7,7 @@ from omegaconf import MISSING, II
 
 @dataclass
 class BaseDatasetConfig:
-    name: str = MISSING
+    _target_: str = MISSING
     root: str = MISSING
     num_workers: int = 4
     pin_memory: bool = True
@@ -31,7 +31,7 @@ class GeneratorInOutChannelsConfig:
 
 @dataclass
 class BaseGeneratorConfig:
-    name: str = MISSING
+    _target_: str = MISSING
     # TODO: When OmegaConf implements Union, enable entering a single int when only AB is needed,
     # or when AB and BA are the same. Otherwise use the GeneratorInOutChannelsConfig.
     in_out_channels: GeneratorInOutChannelsConfig = GeneratorInOutChannelsConfig
@@ -43,7 +43,7 @@ class DiscriminatorInChannelsConfig:
 
 @dataclass
 class BaseDiscriminatorConfig:
-    name: str = MISSING
+    _target_: str = MISSING
     # TODO: When OmegaConf implements Union, enable entering a single int when only B is needed,
     # or when B and A are the same. Otherwise use the DiscriminatorInChannelsConfig.
     in_channels: DiscriminatorInChannelsConfig = DiscriminatorInChannelsConfig
@@ -51,7 +51,7 @@ class BaseDiscriminatorConfig:
 @dataclass
 class BaseGANConfig:
     """Base GAN config."""
-    name: str = MISSING
+    _target_: str = MISSING
     norm_type: str = "instance"
     weight_init_type: str = "normal"
     weight_init_gain: float = 0.02

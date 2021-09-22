@@ -15,7 +15,7 @@ from ganslate.nn.utils import (get_conv_layer_3d, get_conv_transpose_layer_3d, g
 
 
 @dataclass
-class SAVnet3DConfig(configs.base.BaseGeneratorConfig):
+class SelfAttentionVnet3DConfig(configs.base.BaseGeneratorConfig):
     """Partially-invertible V-Net generator with Self-Attention
 
     Self Attention Blocks are added at each DownBlock. 
@@ -28,7 +28,6 @@ class SAVnet3DConfig(configs.base.BaseGeneratorConfig):
     translation
     
     """
-    name: str = "SAVnet3D"
     use_memory_saving: bool = True  # Turn on memory saving for invertible layers. [Default: True]
     use_inverse: bool = True  # Specifies if the inverse forward will be used so that it construct the required layers
     first_layer_channels: int = 16
@@ -40,7 +39,7 @@ class SAVnet3DConfig(configs.base.BaseGeneratorConfig):
     enable_attention_block: Tuple[bool] = (False, False, True, True)
 
 
-class SAVnet3D(nn.Module):
+class SelfAttentionVnet3D(nn.Module):
 
     def __init__(self,
                  in_channels,

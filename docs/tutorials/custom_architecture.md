@@ -30,7 +30,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 @dataclass
 class CustomCycleGAN1Config(cyclegan.CycleGANConfig):  # Inherit from the `CycleGANConfig` class
     """ Dataclass containing confiuration for your custom CycleGAN """
-    name: str = "CustomCycleGAN1"
     optimizer: OptimizerConfig = OptimizerConfig
 
 
@@ -98,14 +97,14 @@ class YourStructureCriterion():
 
 Finally, edit your YAML configuration file to include the settings for your custom hyperparameter `lambda_structure_loss`
 ```yaml
-project_dir: projects/your_project
+project: projects/your_project
 ...
 
 train:
     ...
 
     gan:
-        name: "CustomCycleGAN1"  # Name of your GAN class 
+        _target_: project.architectures.CustomCycleGAN1  # Location of your GAN class 
         ...
 
         optimizer:               # Optimizer config that includes your custom hyperparameter
@@ -182,7 +181,6 @@ class OptimizerConfig(configs.base.BaseOptimizerConfig):
 @dataclass
 class FancyNewGANConfig(configs.base.BaseGANConfig):
     # Configuration dataclass for your GAN
-    name: str = "FancyNewGAN"
     optimizer: OptimizerConfig = OptimizerConfig
 
 
@@ -367,14 +365,14 @@ def backward_D(self):
 
 The aforementioned methods are to be mandatorily implemented if you wish to contruct your own GAN architecture in `ganslate` from scratch. Additionally, We also recommend referring to the abstract `BaseGAN` class ([source](https://github.com/Maastro-CDS-Imaging-Group/ganslate/blob/documentation/ganslate/nn/gans/base.py)) to get an overview of other existing methods and of the internal logic. Finally, update your YAML configuration file to include the apporapriate settings for your custom-defined components
 ```yaml
-project_dir: projects/your_project
+project: projects/your_project
 ...
 
 train:
     ...
 
     gan:        
-        name: "YourFancyGAN"  # Name of your GAN class   
+        _target_: project.architectures.YourFancyGAN  # Location of your GAN class   
         ...
 
     optimizer:                # Optimizer config that includes your custom hyperparameter
@@ -397,7 +395,6 @@ from ganslate import configs
 
 @dataclass
 class CustomGeneratorConfig(configs.base.BaseGeneratorConfig):
-    name: str = 'CustomGenerator'
     n_residual_blocks: int = 9
     use_dropout: bool = False
 
@@ -414,7 +411,7 @@ class CustomGenerator(nn.Module):
 
 Ensure that your YAML configuration file includes the pointer to your `CustomGenerator` as well as the appropriate settings
 ```yaml
-project_dir: projects/your_project
+project: projects/your_project
 ...
 
 train:
@@ -424,7 +421,7 @@ train:
         ...
 
         generator:              
-            name: "CustomGenerator"  # Name of your custom generator class            
+            _target_: project.architectures.CustomGenerator  # Location of your custom generator class            
             n_residual_blocks: 9     # Configuration
             in_out_channels:
                 AB: [3, 3]

@@ -1,4 +1,4 @@
-project_dir: null
+project: null
 
 train:
     output_dir: "./checkpoints/maps_default"
@@ -15,7 +15,7 @@ train:
         freq: {{ cookiecutter.checkpointing_frequency }} 
 
     dataset: 
-        name: "UnpairedImageDataset"
+        _target_: ganslate.data.UnpairedImageDataset
         root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/train/"
         num_workers: 4
         image_channels: 3
@@ -23,16 +23,16 @@ train:
         load_size: [256, 256]
         
     gan:  
-        name: "CycleGAN"
+        _target_: ganslate.nn.gans.unpaired.CycleGAN
 
         generator:  
-            name: {{ cookiecutter.generator_model }}
+            _target_: {{ cookiecutter.generator_model }}
             n_residual_blocks: 9
             in_out_channels:
                 AB: [3, 3]
 
         discriminator:  
-            name: "PatchGAN2D"
+            _target_: ganslate.discriminators.PatchGAN2D
             n_layers: 3
             in_channels:
                 B: 3
@@ -54,7 +54,7 @@ train:
 # val:
 #     freq: {{ cookiecutter.logging_frequency }} * 10
 #     dataset: 
-#         name: "PairedImageDataset"  # Paired dataset for validation
+#         _target_: ganslate.data.PairedImageDataset  # Paired dataset for validation
 #         root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/val"
 #         num_workers: 4
 #         image_channels: 3
@@ -68,7 +68,7 @@ infer:
     checkpointing:
         load_iter: 1
     dataset:
-        name: "UnpairedImageDataset"
+        _target_: ganslate.data.UnpairedImageDataset
         root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/test/"
         num_workers: 4
         image_channels: 3

@@ -1,4 +1,4 @@
-project_dir: "./projects/cleargrasp_depth_estimation/"
+project: "./projects/cleargrasp_depth_estimation/"
 
 train:
     output_dir: "/home/zk315372/Chinmay/Cleargrasp-Depth-Estimation/cyclegan_balanced/"
@@ -21,7 +21,7 @@ train:
         freq: 5000
 
     dataset: 
-        name: "ClearGraspCycleGANDataset"
+        _target_: project.datasets.old.train_val_cyclegan_dataset.ClearGraspCycleGANDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/train"
         load_size: [512, 256]
         paired: False
@@ -29,9 +29,9 @@ train:
         num_workers: 8
 
     gan: 
-        name: "CycleGANMultiModalV3"
+        _target_: project.modules.CycleGANMultiModalV3
         generator:  
-            name: "Unet2D"
+            _target_: ganslate.nn.generators.Unet2D
             in_out_channels_AB: [6, 1]  # RGB + Normal -> Depth
             in_out_channels_BA: [4, 3]  # RGB + Depth -> Normal
             num_downs: 4
@@ -39,7 +39,7 @@ train:
             use_dropout: True
 
         discriminator:  
-            name: "PatchGAN2D"
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             in_channels_B: 1
             in_channels_A: 3
             n_layers: 3
@@ -62,7 +62,7 @@ train:
 val:
     freq: 2500
     dataset: 
-        name: "ClearGraspCycleGANDataset"
+        _target_: project.datasets.old.train_val_cyclegan_dataset.ClearGraspCycleGANDataset
         root: "/home/zk315372/Chinmay/Datasets/Cleargrasp_rgbnormal2depth_resized/val"
         load_size: [512, 256]
         fetch_rgb_b: True  # `True` for v3

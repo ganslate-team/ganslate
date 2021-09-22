@@ -30,7 +30,6 @@ UPPER_DEPTH_INTENSITY_LIMIT = 8.0
 
 @dataclass
 class ClearGraspTrainDatasetConfig(configs.base.BaseDatasetConfig):
-    name: str = "ClearGraspTrainDataset"
     load_size: Tuple[int, int] = (512, 256)
     paired: bool = True   # `True` for paired A-B. 
     require_domain_B_rgb: bool = False  # Whether to fetch noisy RGB photo for domain B
