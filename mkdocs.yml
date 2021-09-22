@@ -1,28 +1,36 @@
 site_name: ganslate
   
+
 nav:
+  
     - Home: index.md
     - Installation: installation.md
-    - Getting Started:
-        - Using the command line interface: getting_started/using_cli.md
-        - First run with maps to aerial photo dataset: getting_started/first_run.md
 
-    - Tutorials:
-        - Intro to Configuration: tutorials/configuration.md
-        - Starting a New Project: tutorials/starting_a_new_project.md
-        - Custom Dataset: tutorials/custom_dataset.md
-        - Custom Architecture: tutorials/custom_architecture.md
-    
-    - User Guide:
-        - Visualizations and logging with ganslate: user_guide/visualizations.md
-        - Training, Validation, Testing, Inference: user_guide/engines.md
+    - Package Overview:
+        - Commandline Interface: package_overview/1_cli.md
+        - Projects: package_overview/2_projects.md
+        - Datasets: package_overview/3_datasets.md
+        - GAN Architectures and Loss Functions: package_overview/4_gans.md
+        - Engines: package_overview/5_engines.md
+        - Logging and Visualization: package_overview/6_logging.md
+        - Configuration: package_overview/7_configuration.md
+
+    - Basic Tutorials:
+        - First Run: tutorials_basic/1_first_run_with_aerial2maps.md
+        - Your New Project: tutorials_basic/2_new_project.md
+
+    - Advanced Tutorials:
+        - Custom GAN Architectures: tutorials_advanced/1_custom_gans_architecture.md
+        - Custom Generator and Discriminator Architectures: tutorials_advanced/2_custom_G_and_D_architectures.md
 
     - API: api/*
         
     - Community:
         - Contributing:  community/contributing.md
 
+
 theme: readthedocs
+
 
 markdown_extensions:
     - admonition
