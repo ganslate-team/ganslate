@@ -44,8 +44,6 @@ class PairedImageDataset(Dataset):
         self.transform = get_paired_image_transform(conf)
         self.rgb_or_grayscale = 'RGB' if conf[conf.mode].dataset.image_channels == 3 else 'L'
 
-        self.mode = conf.mode
-
     def __getitem__(self, index):
         index = index % self.n_samples 
 

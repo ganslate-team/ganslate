@@ -21,7 +21,7 @@ train:
         root: "/home/chinmay/Datasets/horse2zebra/train/"
         num_workers: 16
         image_channels: 3
-        preprocess: ["resize", "flip"]
+        preprocess: ["resize", "random_flip"]
         load_size: [128, 128]   # (H, W)
         final_size: [128, 128]  # (H, W)
         
