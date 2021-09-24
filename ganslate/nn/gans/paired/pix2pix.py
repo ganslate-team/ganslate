@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 import torch
 from ganslate import configs
-from ganslate.data.utils.image_pool import ImagePool
 from ganslate.nn.gans.base import BaseGAN
 from ganslate.nn.losses.adversarial_loss import AdversarialLoss
 from ganslate.nn.losses.pix2pix_losses import Pix2PixLoss

@@ -1,6 +1,14 @@
 # Your First Project
 
 
+
+-------------------------------------
+## Creating a Project from a Template
+
+TODO: Cookiecutter stuff
+
+
+
 -------------------------------------------------------------------
 ## Loading Your Own Data into ganslate with Custom Pytorch Datasets
 
