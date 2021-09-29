@@ -1,8 +1,5 @@
 # Using the command line interface
 
-Interact with `ganslate` using:
-
-## CLI
 The command line interface for `ganslate` offers a very simple way to interact with various functionalities.
 
 After installing the package, you can type 
