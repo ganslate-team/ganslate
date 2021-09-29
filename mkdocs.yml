@@ -12,7 +12,7 @@ nav:
         - Datasets: package_overview/3_datasets.md
         - Model Architectures and Loss Functions: package_overview/4_architectures.md
         - Engines: package_overview/5_engines.md
-        - Logging and Visualization: package_overview/6_logging.md
+        - Logging and Visualization: package_overview/6_trackers.md
         - Configuration: package_overview/7_configuration.md
 
     - Basic Tutorials:

@@ -62,11 +62,11 @@ The two image datasets have additional settings which are same across the two da
 
 Note: In `PairedImageDataset`, these transforms are applied jointly to the _A_ and _B_ images, whereas in `UnpairedImageDataset`, they are applied on each image independently.
 
-- `load_size`: This parameter accepts a tuple that specifies the size (`H`, `W`) to which the images are to be loaded from the storage and resized as a result of the `resize` preprocessing instruction.
+- `load_size`: This parameter accepts a tuple that specifies the size (`H`, `W`) to which the images are to be loaded from the storage and resized as a result of the `resize` preprocessing instruction. If instead the `scale_width` instruction is specified, only the width component if of the `load_size` is considered and the image width is scaled to this value while preserving its aspect ratio. 
 
 - `final_size`: This parameter accepts a tuple that specifies the size (`H`, `W`) to which the images are converted as a result of the random transforms. This is the final size of the images that should be expected from the dataloader.
 
-Note: When not using random transforms (for example, during validation), specify the `final_size` the same as `load_size`.
+Note: When not using random transforms (for example, during validation/testing), specify the `final_size` the same as `load_size`.
 
 
 

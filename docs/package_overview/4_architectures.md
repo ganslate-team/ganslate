@@ -31,7 +31,7 @@
 
 The `BaseGAN` class has an associated `dataclass` at `ganslate.configs.base.BaseGANConfig` that defines all its basic settings including the settings for optimizer, generator, and discriminator. Since the different GAN architectures have their own specific settings, each of them also has an associated configuration `dataclass` that inherits from `ganslate.configs.base.BaseGANConfig` and defines additional architecture-specific settings.
 
-Owing to its extensible design, `ganslate` additionally enables users to modify the existing GANs by overriding certain functionalities or to define their own custom image translation GAN from scratch. The former is discussed in the context of loss functions as part of the basic tutorial [Your First Project](../tutorials_basic/2_new_project.md). Whereas, the latter is part of the advanced tutorial [Writing Your Own GAN Class from Scratch](../tutorials_advanced/1_custom_gan_architecture.md).
+As a result to its extensible design, `ganslate` additionally enables users to modify the existing GANs by overriding certain functionalities or to define their own custom image translation GAN from scratch. The former is discussed in the context of loss functions as part of the basic tutorial [Your First Project](../tutorials_basic/2_new_project.md). Whereas, the latter is part of the advanced tutorial [Writing Your Own GAN Class from Scratch](../tutorials_advanced/1_custom_gan_architecture.md).
 
 
 
@@ -70,24 +70,24 @@ And here is the list of the available discriminator architectures:
 -----------------
 ## Loss Functions
 
-Several different loss function classes are provided in the `ganslate` package. These include flavors of the adversarial loss as well as various GAN architecture-specific losses.
+Several different loss function classes are provided in the `ganslate` package. These include different flavors of the adversarial loss as well as various GAN architecture-specific losses.
 
-1. Adversarial loss:
+1. Adversarial loss
     - Class: `ganslate.nn.losses.adversarial_loss.AdversarialLoss`
     - Variants: `'vanilla'` (original adversarial loss based on cross-entropy), `'lsgan'` (least-squares loss), `'wgangp'` (Wasserstein-1 distance with gradient penalty), and `'nonsaturating'`
 
-2. Pix2Pix loss:
+2. Pix2Pix loss
     - Class: `ganslate.nn.losses.pix2pix_losses.Pix2PixLoss`
     - Components: 
         - Pixel-to-pixel L1 loss between synthetic image and ground truth (weighted by the scalar `lambda_pix2pix`)
 
-3. CycleGAN losses:
+3. CycleGAN losses
     - Class: `ganslate.nn.losses.cyclegan_losses.CycleGANLosses`
     - Components: 
-        - Cycle-consistency loss based on L1 distance (A-B-A and B-A-B components separated weighted by `lambda_AB` and `lambda_BA`, respectively). Option to compute cycle-consistency as using a weighted sum of L1 and SSIM losses (weights defined by the hyperparameter `proportion_ssim`).
+        - Cycle-consistency loss based on L1 distance (_A-B-A_ and _B-A-B_ components separated weighted by `lambda_AB` and `lambda_BA`, respectively). Option to compute cycle-consistency as using a weighted sum of L1 and SSIM losses (weights defined by the hyperparameter `proportion_ssim`).
         - Identity loss implemented with L1 distance
 
-3. CUT losses:
+3. CUT losses
     - Class: `ganslate.nn.losses.cut_losses.PatchNCELoss`
     - Components:
         - PatchNCE loss
