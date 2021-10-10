@@ -8,22 +8,22 @@
 `ganslate` provides implementations of several popular image translation GANs, which you can use out-of-the-box in your projects. Here is the list of currently supported GAN architectures:
 
 1. Pix2Pix
-    - Class: `ganslate.nn.gans.paired.pix2pix.Pix2PixConditionalGAN`
+    - Class: `ganslate.nn.gans.paired.Pix2PixConditionalGAN`
     - Data requirements: Paired pixel-wise aligned domain _A_ and domain _B_ images
     - Original paper: Isola et. al - Image-to-Image Translation with Conditional Adversarial Networks ([arXiv](https://arxiv.org/abs/1611.07004))
 
 2. CycleGAN
-    - Class: `ganslate.nn.gans.unpaired.cyclegan.CycleGAN` 
+    - Class: `ganslate.nn.gans.unpaired.CycleGAN` 
     - Data requirements: Unpaired domain _A_ and domain _B_ images
     - Original paper: Zhu et. al - Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks ([arXiv](https://arxiv.org/abs/1703.10593))
 
 3. RevGAN
-    - Class: `ganslate.nn.gans.unpaired.revgan.RevGAN`
+    - Class: `ganslate.nn.gans.unpaired.RevGAN`
     - Data requirements: Unpaired domain _A_ and domain _B_ images
     - Original paper: Ouderaa et. al - Reversible GANs for Memory-efficient Image-to-Image Translation ([arXiv](https://arxiv.org/abs/1902.02729))
 
 4. CUT
-    - Class: `ganslate.nn.gans.unpaired.cut.CUT`
+    - Class: `ganslate.nn.gans.unpaired.CUT`
     - Data requirements: Unpaired domain _A_ and domain _B_ images
     - Original paper: Park et. al - Contrastive Learning for Unpaired Image-to-Image Translation ([arXiv](https://arxiv.org/abs/2007.15651))
 
@@ -43,27 +43,27 @@ Generators and discriminators are defined in `ganslate` as regular _PyTorch_ mod
 Following is the list of the available generator architectures:
 
 1. ResNet variants (Original ResNet paper - [arXiv](https://arxiv.org/abs/1512.03385)):
-    - 2D ResNet: `ganslate.nn.generators.resent.resnet2d.Resnet2D`
-    - 3D ResNet: `ganslate.nn.generators.resent.resnet3d.Resnet3D`
-    - Partially-invertible ResNet generator: `ganslate.nn.generators.resent.piresnet3d.Piresnet3D`
+    - 2D ResNet: `ganslate.nn.generators.Resnet2D`
+    - 3D ResNet: `ganslate.nn.generators.Resnet3D`
+    - Partially-invertible ResNet generator: `ganslate.nn.generators.Piresnet3D`
 
 2. U-Net variants (Original U-Net paper - [arXiv](https://arxiv.org/abs/1505.04597)):
-    - 2D U-Net: `ganslate.nn.generators.unet.unet2d.Unet2D`
-    - 3D U-Net: `ganslate.nn.generators.unet.unet3d.Unet#D`
+    - 2D U-Net: `ganslate.nn.generators.Unet2D`
+    - 3D U-Net: `ganslate.nn.generators.Unet3D`
 
 3. V-Net variants (Original V-Net paper - [arXiv](https://arxiv.org/abs/1606.04797))
-    - 2D V-Net: `ganslate.nn.generators.vnet.vnet2d.Vnet2D`
-    - 3D V-Net: `ganslate.nn.generators.vnet.vnet3d.Vnet3D`
-    - Partially-invertible 3D V-Net generator with Self-Attention: `ganslate.nn.generators.vnet.sa_vnet3d.SAVnet3D`
+    - 2D V-Net: `ganslate.nn.generators.Vnet2D`
+    - 3D V-Net: `ganslate.nn.generators.Vnet3D`
+    - Partially-invertible 3D V-Net generator with Self-Attention: `ganslate.nn.generators.SelfAttentionVnet3D`
 
 
 And here is the list of the available discriminator architectures:
 
 1. PatchGAN discriminator variants (PatchGAN originally described in the Pix2Pix paper - [arXiv](https://arxiv.org/abs/1611.07004))
-    - 2D PatchGAN: `ganslate.nn.discriminators.patchgan.patchgan2d.PatchGAN2D`
-    - 3D PatchGAN: `ganslate.nn.discriminators.patchgan.patchgan3d.PatchGAN3D`
-    - Multiscale 3D PatchGAN: `ganslate.nn.discriminators.patchgan.ms_patchgan3d.MSPatchGAN3D`
-    - 3D PatchGAN with Self-Attention: `ganslate.nn.discriminators.patchgan.sa_patchgan3d.SAPatchGAN3D`
+    - 2D PatchGAN: `ganslate.nn.discriminators.PatchGAN2D`
+    - 3D PatchGAN: `ganslate.nn.discriminators.PatchGAN3D`
+    - Multiscale 3D PatchGAN: `ganslate.nn.discriminators.MultiScalePatchGAN3D`
+    - 3D PatchGAN with Self-Attention: `ganslate.nn.discriminators.SelfAttentionPatchGAN3D`
 
 
 
@@ -74,18 +74,18 @@ Several different loss function classes are provided in the `ganslate` package. 
 
 1. Adversarial loss
     - Class: `ganslate.nn.losses.adversarial_loss.AdversarialLoss`
-    - Variants: `'vanilla'` (original adversarial loss based on cross-entropy), `'lsgan'` (least-squares loss), `'wgangp'` (Wasserstein-1 distance with gradient penalty), and `'nonsaturating'`
+    - Variants: `'vanilla'` (original adversarial loss based on cross-entropy), `'lsgan'` (least-squares loss), `'wgangp'` (Wasserstein-1 distance with gradient penalty), and `'nonsaturating'`.
 
-2. Pix2Pix loss
+2. Pix2Pix losses
     - Class: `ganslate.nn.losses.pix2pix_losses.Pix2PixLoss`
     - Components: 
-        - Pixel-to-pixel L1 loss between synthetic image and ground truth (weighted by the scalar `lambda_pix2pix`)
+        - Pixel-to-pixel L1 loss between synthetic image and ground truth (weighted by the scalar `lambda_pix2pix`).
 
 3. CycleGAN losses
     - Class: `ganslate.nn.losses.cyclegan_losses.CycleGANLosses`
     - Components: 
         - Cycle-consistency loss based on L1 distance (_A-B-A_ and _B-A-B_ components separated weighted by `lambda_AB` and `lambda_BA`, respectively). Option to compute cycle-consistency as using a weighted sum of L1 and SSIM losses (weights defined by the hyperparameter `proportion_ssim`).
-        - Identity loss implemented with L1 distance
+        - Identity loss implemented with L1 distance.
 
 3. CUT losses
     - Class: `ganslate.nn.losses.cut_losses.PatchNCELoss`

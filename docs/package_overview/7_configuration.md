@@ -2,6 +2,9 @@
 
 `ganslate`'s configuration system is based on [OmegaConf](https://github.com/omry/omegaconf). If you have used [hydra](https://hydra.cc/docs/intro/), you might already be familiar with it. Otherwise, please refer to [OmegaConf documentation](https://omegaconf.readthedocs.io/)
 
+
+
+--------------------
 ## Configuring a Run
 Setting up an experiment is done through a YAML file. This is an example of a run on `cityscapes` dataset:
 ```
@@ -105,6 +108,9 @@ If you need a quick override of an option, you can do so from the command line i
 ganslate train config=<CONFIG_PATH> train.dataset.root=./Downloads/cityscapes/train/
 ```
 
+
+
+-------------------------------------
 ## Configuration Structure Definition
 
 The *configuration structure* in `ganslate` is defined using [Python dataclasses and OmegaConf](https://omegaconf.readthedocs.io/en/2.1_branch/structured_config.html). Defining config like that enables modular config design, so that options differ based on the architecture, dataset, or some other choice. Additionally, it enables static type checking.

@@ -1,6 +1,6 @@
 # Engines
 
-`ganslate` defines four _engines_ that implement processes crucial to deep learning workflow. These are `Trainer`, `Validator`, `Tester`, and `Inferer`. The following UML diagram shows the design of the `ganslate`'s `engines` module and the relationship between the different engine classes defined in it. 
+`ganslate` defines four _engines_ that implement processes crucial to deep learning workflow. These are `Trainer`, `Validator`, `Tester`, and `Inferer`. The following UML diagram shows the design of the `ganslate.engines` package and the relationship between the different engine classes defined in it. 
 
 ![alt text](../imgs/uml-ganslate_engines.png "Relationship between ganslate's engine classes")
 
@@ -9,7 +9,7 @@
 ------------
 ## `Trainer`
 
-The `Trainer` class ([source](https://github.com/ganslate-team/ganslate/ganslate/engines/trainer.py)) implements the training procedure and is instantiated at the start of the training process. Upon initialization, the trainer object executes the following tasks:
+The `Trainer` class (`ganslate.engines.Trainer` [source](https://github.com/ganslate-team/ganslate/ganslate/engines/trainer.py)) implements the training procedure and is instantiated at the start of the training process. Upon initialization, the trainer object executes the following tasks:
 1. Preparing the environment.
 2. Initializing the GAN model, training data loader, traning tracker, and validator.
 
@@ -27,7 +27,7 @@ All configuration pertaining to the `Trainer` is grouped under the `'train'` mod
 
 --------------
 ## `Validator`
-The `Validator`class ([source](https://github.com/ganslate-team/ganslate/ganslate/engines/validator_tester.py)) inherits almost all of its properties and functionalities from the `BaseValTestEngine`, and is responsible for performing validation given a model during the training process. It is instantiated and utilized within the `Trainer` where it is supplied with its configuration and the model. Upon initialization, a `Validator` object executes the following:
+The `Validator`class (`ganslate.engines.Validator` [source](https://github.com/ganslate-team/ganslate/ganslate/engines/validator_tester.py)) inherits almost all of its properties and functionalities from the `BaseValTestEngine`, and is responsible for performing validation given a model during the training process. It is instantiated and utilized within the `Trainer` where it is supplied with its configuration and the model. Upon initialization, a `Validator` object executes the following:
 1. Initializes the sliding window inferer, validation data loader, validation tracker, and the validation-test metricizer
 
 The `run()` method of the `Validator` iterates over the validation dataset and executes the following steps:
@@ -43,7 +43,7 @@ All configuration pertaining to the `Validator` is grouped under the `'val'` mod
 
 -----------
 ## `Tester`
-The `Tester` class ([source](https://github.com/ganslate-team/ganslate/ganslate/engines/validator_tester.py)), like the `Validator`, inherits from the `BaseValTestEngine` and has the same properties and functionalities as the `Validator`. The only difference is that a `Tester` instance sets up the environment and builds its own GAN model, and is therefore used independently of the `Trainer`.
+The `Tester` class (`ganslate.engines.Tester` [source](https://github.com/ganslate-team/ganslate/ganslate/engines/validator_tester.py)), like the `Validator`, inherits from the `BaseValTestEngine` and has the same properties and functionalities as the `Validator`. The only difference is that a `Tester` instance sets up the environment and builds its own GAN model, and is therefore used independently of the `Trainer`.
 
 All configuration pertaining to the `Tester` is grouped under the `'test'` mode in `ganslate`.
 
@@ -51,4 +51,4 @@ All configuration pertaining to the `Tester` is grouped under the `'test'` mode 
 
 ------------
 ## `Inferer`
-The `Inferer` class ([source](https://github.com/ganslate-team/ganslate/ganslate/engines/validator_tester.py)) represents a simplified inference engine without any mechanism for metric calculation. Therefore, it expects data without a ground truth to compare against. It does execute utility tasks like fetching data from a data loader, tracking I/O and computation time, and logging and saving images under normal circumstances. However, when used in the _deployment_ mode, the `Inferer` essentially acts as a minimal inference engine that can be easily integrated into other applications.
+The `Inferer` class (`ganslate.engines.Inferer` [source](https://github.com/ganslate-team/ganslate/ganslate/engines/validator_tester.py)) represents a simplified inference engine without any mechanism for metric calculation. Therefore, it expects data without a ground truth to compare against. It does execute utility tasks like fetching data from a data loader, tracking I/O and computation time, and logging and saving images under normal circumstances. However, when used in the _deployment_ mode, the `Inferer` essentially acts as a minimal inference engine that can be easily integrated into other applications.

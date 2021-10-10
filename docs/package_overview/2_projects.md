@@ -1,4 +1,4 @@
-# `ganslate` Projects
+# Projects in `ganslate`
 
 In `ganslate`, a _project_ refers to a collection of all custom code and configuration files pertaining to your specific task. The project directory is expected to have a certain structure that isolates logically different parts of the project, such as data pipeline, GAN implementation, and configuration. The directory structure is as follows
 

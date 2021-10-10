@@ -1,1 +1,1 @@
-# Logging and Visualization:
+# Logging and Visualization

@@ -8,7 +8,7 @@ nav:
 
     - Package Overview:
         - Commandline Interface: package_overview/1_cli.md
-        - ganslate Projects: package_overview/2_projects.md
+        - Projects in ganslate: package_overview/2_projects.md
         - Datasets: package_overview/3_datasets.md
         - Model Architectures and Loss Functions: package_overview/4_architectures.md
         - Engines: package_overview/5_engines.md
@@ -16,14 +16,15 @@ nav:
         - Configuration: package_overview/7_configuration.md
 
     - Basic Tutorials:
-        - First Run: tutorials_basic/1_first_run_with_aerial2maps.md
+        - First Run: tutorials_basic/1_first_run_with_maps2aerial.md
         - Your New Project: tutorials_basic/2_new_project.md
 
     - Advanced Tutorials:
         - Custom GAN Architectures: tutorials_advanced/1_custom_gan_architecture.md
-        - Custom Generator and Discriminator Architectures: tutorials_advanced/2_custom_G_and_D_architectures.md
+        - Custom Generator and Discriminator Architectures: tutorials_advanced/2_custom_G_and_D_architecture.md
 
-    - API: api/*
+    - API Reference: 
+        - Commandline API: api_reference/cli.md
         
     - Community:
         - Contributing:  community/contributing.md
