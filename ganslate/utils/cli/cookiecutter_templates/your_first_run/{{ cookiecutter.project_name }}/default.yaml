@@ -32,7 +32,7 @@ train:
                 AB: [3, 3]
 
         discriminator:  
-            _target_: ganslate.discriminators.PatchGAN2D
+            _target_: ganslate.nn.discriminators.PatchGAN2D
             n_layers: 3
             in_channels:
                 B: 3
