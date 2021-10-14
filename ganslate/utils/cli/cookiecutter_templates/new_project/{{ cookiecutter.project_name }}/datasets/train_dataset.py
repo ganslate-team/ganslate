@@ -12,13 +12,13 @@ from ganslate import configs
 
 
 @dataclass
-class TemplateTrainDatasetConfig(configs.base.BaseDatasetConfig):
+class {{cookiecutter.dataset_name}}TrainConfig(configs.base.BaseDatasetConfig):
     # Define other attributes, e.g.:
     patch_size: Tuple[int, int] = [128, 128]
     ...
 
 
-class TemplateTrainDataset(Dataset):
+class {{cookiecutter.dataset_name}}TrainDataset(Dataset):
 
     def __init__(self, conf):
         root_path = Path(conf.train.dataset.root).resolve()

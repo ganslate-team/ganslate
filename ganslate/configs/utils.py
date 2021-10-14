@@ -27,7 +27,8 @@ def init_config(conf, config_class):
         sys.modules["project"] = project_module
 
         logger.info(f"Project directory {conf.project} added to the"
-                    " path to allow imports of modules from it.")
+                    " path as `project` to allow imports of modules from it.")
+
 
     # Make yaml mergeable by instantiating the dataclasses
     conf = instantiate_dataclasses_from_yaml(conf)
