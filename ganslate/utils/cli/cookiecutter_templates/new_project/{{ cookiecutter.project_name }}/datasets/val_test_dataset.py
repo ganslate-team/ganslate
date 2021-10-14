@@ -11,13 +11,13 @@ from ganslate import configs
 
 
 @dataclass
-class TemplateValTestDatasetConfig(configs.base.BaseDatasetConfig):
+class {{cookiecutter.dataset_name}}ValTestDatasetConfig(configs.base.BaseDatasetConfig):
     # Define other attributes, e.g.:
     patch_size: Tuple[int, int] = [128, 128]
     ...
 
 
-class TemplateValTestDataset(Dataset):
+class {{cookiecutter.dataset_name}}ValTestDataset(Dataset):
 
     def __init__(self, conf):
         self.root_path = Path(conf[conf.mode].dataset.root).resolve()

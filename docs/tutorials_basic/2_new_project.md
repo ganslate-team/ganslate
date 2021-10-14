@@ -5,9 +5,27 @@
 -------------------------------------
 ## Creating a Project from a Template
 
-TODO: Cookiecutter stuff
+You can use our inbuilt project generator to get started easier. Type in
+```
+ganslate new-project
+```
 
+The project generator asks you for the `project_name` and some other parameters that can be left as defaults. 
 
+The project will be generated in the path you provided and will have the following structure,
+
+```
+- architectures
+    - template_architecture.py
+- datasets
+    - infer_dataset.py # Dataset that will be used for inference
+    - train_dataset.py # Dataset that will be used during training
+    - val_test_dataset.py  # Dataset that will be used during validation and testing
+ 
+- experiments
+    - template_experiment.yaml  # A generated experiment template that is ready to run once the datasets are loaded
+
+```
 
 -------------------------------------------------------------------
 ## Loading Your Own Data into ganslate with Custom Pytorch Datasets
@@ -55,6 +73,7 @@ class YourDatasetNameConfig(configs.base.BaseDatasetConfig): # Your dataset alwa
 ```
 
 `YourDatasetName` is to be consistent with the name of your Pytorch Dataset. The name is also used to import the Dataset module. 
+If using the project generation, you can see these are already generated.
 
 
 To allow your Dataset to access parameters defined in the Dataclass configuration, the `___init___` function of the Dataset can be modified.
@@ -68,6 +87,8 @@ class YourDatasetName(Dataset):
 ```
 
 #### Importing your Dataset with `ganslate`
+If you used the project generator to generate a new project, you can ignore this section as the dataset is already configured as ganslate needs it. 
+
 Your Dataset along with its Dataclass configuration can be placed in the `projects` folder under a specific project name.
 For example,
 ```

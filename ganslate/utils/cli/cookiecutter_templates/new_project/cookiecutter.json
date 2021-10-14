@@ -1,3 +1,12 @@
 {
-    "project_name": null
+    "project_name": null,
+    "dataset_name": "{{ cookiecutter.project_name | replace(' ', '') | capitalize}}",
+    "cyclegan_name": "{{ cookiecutter.project_name | replace(' ', '') | capitalize}}",
+    "number_of_iterations": 117700,
+    "batch_size": 1,
+    "logging_frequency": 500,
+    "checkpointing_frequency": 2000,
+    "generator_model": ["Resnet2D", "Unet2D"],
+    "cycle_consistency_ssim_percentage": 0.84,
+    "path": "."
 }

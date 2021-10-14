@@ -21,11 +21,11 @@ from ganslate.nn.gans.unpaired import cyclegan
 
 
 @dataclass
-class CustomCycleGANConfig(cyclegan.CycleGANConfig):
+class {{cookiecutter.cyclegan_name}}CycleGANConfig(cyclegan.CycleGANConfig):
     pass
 
 
-class CustomCycleGAN(cyclegan.CycleGAN):
+class {{cookiecutter.cyclegan_name}}CycleGAN(cyclegan.CycleGAN):
     
     def __init__(self, conf):
         super().__init__(conf)

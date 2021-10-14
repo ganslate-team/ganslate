@@ -1,0 +1,75 @@
+project: {{cookiecutter.path}}
+
+train:
+    output_dir: "./checkpoints/{{ cookiecutter.project_name }}"
+    cuda: True
+    n_iters:  {{ cookiecutter.number_of_iterations }} 
+    n_iters_decay: {{ cookiecutter.number_of_iterations }} 
+    batch_size:  {{ cookiecutter.batch_size }}
+    mixed_precision: False
+
+    logging:
+        freq: {{ cookiecutter.logging_frequency }}
+    
+    checkpointing:
+        freq: {{ cookiecutter.checkpointing_frequency }} 
+
+    dataset: 
+        _target_: project.datasets.{{cookiecutter.dataset_name}}TrainDataset
+        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/train/"
+        num_workers: 4
+        image_channels: 3
+        preprocess: ["resize", "random_flip"]
+        load_size: [256, 256]
+        
+    gan:  
+        _target_: ganslate.nn.gans.unpaired.CycleGAN
+
+        generator:  
+            _target_: ganslate.nn.generators.{{ cookiecutter.generator_model }}
+            in_out_channels:
+                AB: [3, 3]
+
+        discriminator:  
+            _target_: ganslate.nn.discriminators.PatchGAN2D
+            n_layers: 3
+            in_channels:
+                B: 3
+
+        optimizer:
+            lambda_AB: 10.0
+            lambda_BA: 10.0
+            lambda_identity: 0
+            proportion_ssim: {{ cookiecutter.cycle_consistency_ssim_percentage }}
+            lr_D: 0.0002
+            lr_G: 0.0004
+    
+    metrics:
+        discriminator_evolution: True
+        ssim: True
+
+# Uncomment to enable validation, a folder called val needs to be
+# created with some A->B paired samples within it. 
+# val:
+#     freq: {{ cookiecutter.logging_frequency }} * 10
+#     dataset: 
+#         _target_: project.datasets.{{cookiecutter.dataset_name}}ValTestDataset # Paired dataset for validation
+#         root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/val"
+#         num_workers: 4
+#         image_channels: 3
+#         preprocess: ["resize"]
+#         load_size: [256, 256]
+#         flip: False
+#     metrics:
+#         cycle_metrics: False        
+
+infer:
+    checkpointing:
+        load_iter: 1
+    dataset:
+        _target_: project.datasets.{{cookiecutter.dataset_name}}InferenceDataset
+        root: "{{ cookiecutter.path }}/{{ cookiecutter.project_name }}/maps/test/"
+        num_workers: 4
+        image_channels: 3
+        preprocess: ["resize"]
+        load_size: [256, 256]

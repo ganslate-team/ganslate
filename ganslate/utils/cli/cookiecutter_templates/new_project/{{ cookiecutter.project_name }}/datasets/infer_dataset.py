@@ -11,13 +11,13 @@ from ganslate import configs
 
 
 @dataclass
-class TemplateInferDatasetConfig(configs.base.BaseDatasetConfig):
+class {{cookiecutter.dataset_name}}InferDatasetConfig(configs.base.BaseDatasetConfig):
     # Define other attributes, e.g.:
     patch_size: Tuple[int, int] = [128, 128]
     ...
 
 
-class TemplateInferDataset(Dataset):
+class {{cookiecutter.dataset_name}}InferDataset(Dataset):
 
     def __init__(self, conf):
         self.root_path = Path(conf.infer.dataset.root).resolve()
