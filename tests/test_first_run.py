@@ -25,4 +25,4 @@ def test_training():
     """[summary]
     Run 10 iterations of dummy training and see if it works.
     """
-    assert init_engine('train', ["config=first_run_test/default.yaml"]).run()
+    assert init_engine('train', ["config=first_run_test/default.yaml"]).run() is None
