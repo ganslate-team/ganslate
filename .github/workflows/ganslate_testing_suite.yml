@@ -35,3 +35,12 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+    - name: Bump version to patch with bumpver
+      if: "PATCH" in ${{github.event.head_commit.message}}
+      run: bumpver update -n --patch
+    - name: Bump version to minor with bumpver
+      if: "MINOR" in ${{github.event.head_commit.message}}
+      run: bumpver update -n --minor        
+    - name: Bump version to major with bumpver
+      if: "MAJOR" in ${{github.event.head_commit.message}}
+      run: bumpver update -n --major      
