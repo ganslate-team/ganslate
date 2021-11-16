@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python package
+name: Latest version on pypi
 
 on:
   push:
@@ -29,6 +29,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
     - name: Install package dependencies
       run: |
         python setup.py install     
@@ -38,15 +39,15 @@ jobs:
     - name: Bump version to patch with bumpver
       if: contains(github.event.head_commit.message, '[PATCH]')
       run: |
-        bumpver update -n --patch
+        bumpver update --patch 
     - name: Bump version to minor with bumpver
       if: contains(github.event.head_commit.message, '[MINOR]')
       run: |
-        bumpver update -n --minor        
+        bumpver update --minor 
     - name: Bump version to major with bumpver
       if: contains(github.event.head_commit.message, '[MAJOR]')
       run: |
-        bumpver update -n --major
+        bumpver update --major
     - name: Install pypa/build
       run: >-
         python -m
