@@ -36,14 +36,14 @@ jobs:
       run: |
         pytest
     - name: Bump version to patch with bumpver
-      if: 'PATCH' in ${{github.event.head_commit.message}}
+      if: contains(github.event.head_commit.message, '[PATCH]')
       run: |
         bumpver update -n --patch
     - name: Bump version to minor with bumpver
-      if: 'MINOR' in ${{github.event.head_commit.message}}
+      if: contains(github.event.head_commit.message, '[MINOR]')
       run: |
         bumpver update -n --minor        
     - name: Bump version to major with bumpver
-      if: 'MAJOR' in ${{github.event.head_commit.message}}
+      if: contains(github.event.head_commit.message, '[MAJOR]')
       run: |
         bumpver update -n --major      
