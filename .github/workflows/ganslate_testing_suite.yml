@@ -5,9 +5,9 @@ name: Latest version on pypi
 
 on:
   push:
-    branches: [ testing_suite ]
+    branches: [ master ]
   pull_request:
-    branches: [ testing_suite ]
+    branches: [ master ]
 
 jobs:
   build:
