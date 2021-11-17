@@ -1,10 +1,11 @@
 {
-    "project_name": "maps_project",
-    "number_of_iterations": 117700,
+    "project_name": "facades_project",
+    "number_of_iterations": 100000,
     "batch_size": 1,
     "logging_frequency": 500,
     "checkpointing_frequency": 2000,
     "generator_model": ["Resnet2D", "Unet2D"],
     "cycle_consistency_ssim_percentage": 0.84,
-    "path": "."
+    "path": ".",
+    "enable_cuda": true
 }

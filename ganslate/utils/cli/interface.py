@@ -44,13 +44,18 @@ def new_project(path):
     cookiecutter(template, output_dir=path)
 
 # First run
+def setup_first_run(path, no_input=False, extra_context={}):
+    template = str(COOKIECUTTER_TEMPLATES_DIR / "your_first_run")
+    project_path = cookiecutter(template, output_dir=path, no_input=no_input,\
+                         overwrite_if_exists=True, extra_context=extra_context)
+    download_datasets.download("facades", project_path)
+
+
 @interface.command(help="Fetch resources for the maps first run")
 @click.argument("path", default="./")
 def your_first_run(path):
-    template = str(COOKIECUTTER_TEMPLATES_DIR / "your_first_run")
-    project_path = cookiecutter(template, output_dir=path)
-    download_datasets.download("maps", project_path)
-    
+    click.echo(setup_first_run(path))
+
 # Download project
 @interface.command(help="Download a project.")
 @click.argument("name")
@@ -73,6 +78,8 @@ def download_dataset(name, path):
     help=("C++ support is faster and preferred, use Python fallback "
           "only when CUDA is not installed natively.")
 )
+
+
 def install_nvidia_apex(cpp):
     # TODO: Installing with C++ support is a pain due to CUDA installations,
     # waiting for https://github.com/pytorch/pytorch/issues/40497#issuecomment-908685435

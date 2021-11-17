@@ -4,3 +4,18 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+[tool.bumpver]
+current_version = "0.1.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version to {new_version}"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+]
+"setup.cfg" = [
+    "version = {version}"
+]

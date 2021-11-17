@@ -1,5 +1,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5494572.svg)](https://doi.org/10.5281/zenodo.5494572)
 
+[![Python package](https://github.com/ganslate-team/ganslate/actions/workflows/ganslate_testing_suite.yml/badge.svg)](https://github.com/ganslate-team/ganslate/actions/workflows/ganslate_testing_suite.yml)
+
 # `ganslate` - a simple and extensible GAN image-to-image translation framework
 
 For comprehensive documentation, visit: https://ganslate.readthedocs.io/en/latest/

@@ -39,6 +39,9 @@ def download(name, path):
         print(f"Fetching {name} datasets from {url}:")
         wget.download(url, out=path_to_zip_file)
 
+        if Path(f"{path}/{name}").is_dir():
+            shutil.rmtree(Path(f"{path}/{name}"))
+
         print(f"Extracting zip file to {path}")
         with zipfile.ZipFile(path_to_zip_file, 'r') as zip_ref:
             zip_ref.extractall(path)
@@ -70,4 +73,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    download_datasets(args.name, args.path)
+    download(args.name, args.path)
